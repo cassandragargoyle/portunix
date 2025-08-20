@@ -89,7 +89,7 @@ Flags:
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		installationType := args[0]
-		
+
 		// Validate installation type
 		validTypes := []string{"default", "empty", "python", "java", "vscode"}
 		isValid := false
@@ -99,19 +99,19 @@ Flags:
 				break
 			}
 		}
-		
+
 		if !isValid {
 			fmt.Printf("Error: Invalid installation type '%s'\n", installationType)
 			fmt.Printf("Valid types: %s\n", strings.Join(validTypes, ", "))
 			return
 		}
-		
+
 		// Parse flags
 		image, _ := cmd.Flags().GetString("image")
 		if image == "" {
 			image = "ubuntu:22.04" // Default base image
 		}
-		
+
 		name, _ := cmd.Flags().GetString("name")
 		ports, _ := cmd.Flags().GetStringSlice("port")
 		volumes, _ := cmd.Flags().GetStringSlice("volume")
@@ -126,7 +126,7 @@ Flags:
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		checkRequirements, _ := cmd.Flags().GetBool("check-requirements")
 		autoInstallDocker, _ := cmd.Flags().GetBool("auto-install-docker")
-		
+
 		// Handle check-requirements flag
 		if checkRequirements {
 			err := docker.CheckRequirements()
@@ -137,7 +137,7 @@ Flags:
 			fmt.Println("✅ All requirements are satisfied!")
 			return
 		}
-		
+
 		// Build Docker configuration
 		config := docker.DockerConfig{
 			Image:             image,
@@ -156,12 +156,12 @@ Flags:
 			DryRun:            dryRun,
 			AutoInstallDocker: autoInstallDocker,
 		}
-		
+
 		// Add SSH port if enabled
 		if sshEnabled {
 			config.Ports = append(config.Ports, "2222:22")
 		}
-		
+
 		// Run container
 		err := docker.RunInContainer(config)
 		if err != nil {
@@ -173,7 +173,7 @@ Flags:
 
 func init() {
 	dockerCmd.AddCommand(dockerRunInContainerCmd)
-	
+
 	// Add flags
 	dockerRunInContainerCmd.Flags().String("image", "", "Base Docker image (default: ubuntu:22.04)")
 	dockerRunInContainerCmd.Flags().String("name", "", "Custom container name")

@@ -134,7 +134,7 @@ func (suite *DockerTestSuite) TestBuildDockerRunArgs_MinimalConfig() {
 	suite.Contains(args, "--name")
 	suite.Contains(args, "minimal-container")
 	suite.Contains(args, "alpine:latest")
-	
+
 	// Should not contain privileged flag for minimal config
 	suite.NotContains(args, "--privileged")
 }
@@ -142,7 +142,7 @@ func (suite *DockerTestSuite) TestBuildDockerRunArgs_MinimalConfig() {
 // Test generateDockerfile function
 func (suite *DockerTestSuite) TestGenerateDockerfile_Ubuntu() {
 	dockerfile := generateDockerfile("ubuntu:22.04")
-	
+
 	suite.Contains(dockerfile, "FROM ubuntu:22.04")
 	suite.Contains(dockerfile, "RUN apt-get update")
 	suite.Contains(dockerfile, "RUN apt-get install -y openssh-server")
@@ -153,7 +153,7 @@ func (suite *DockerTestSuite) TestGenerateDockerfile_Ubuntu() {
 // Test generateDockerfile function with Alpine
 func (suite *DockerTestSuite) TestGenerateDockerfile_Alpine() {
 	dockerfile := generateDockerfile("alpine:3.18")
-	
+
 	suite.Contains(dockerfile, "FROM alpine:3.18")
 	suite.Contains(dockerfile, "RUN apk update")
 	suite.Contains(dockerfile, "RUN apk add --no-cache openssh-server")
@@ -165,11 +165,11 @@ func (suite *DockerTestSuite) TestGenerateDockerfile_Alpine() {
 func TestIsDockerInstalled_MockCommand(t *testing.T) {
 	// This test would require mocking exec.Command, which is complex
 	// For now, we'll test the logic conceptually
-	
+
 	// We can't easily mock exec.Command in Go without dependency injection
 	// But we can verify the function exists and has correct signature
 	installed := isDockerInstalled()
-	
+
 	// The result depends on whether Docker is actually installed
 	// So we just verify the function doesn't panic
 	assert.IsType(t, true, installed)
@@ -179,10 +179,10 @@ func TestIsDockerInstalled_MockCommand(t *testing.T) {
 func TestInstallDocker_InvalidAutoAccept(t *testing.T) {
 	// This test focuses on the function signature and basic validation
 	// The actual installation would require system-level privileges
-	
+
 	// Test that function exists and can be called
 	err := InstallDocker(true)
-	
+
 	// Result depends on system state, but function should not panic
 	assert.IsType(t, (*error)(nil), &err)
 }
@@ -191,9 +191,9 @@ func TestInstallDocker_InvalidAutoAccept(t *testing.T) {
 func TestRunInContainer_InvalidConfig(t *testing.T) {
 	// Test with empty config
 	config := DockerConfig{}
-	
+
 	err := RunInContainer(config)
-	
+
 	// Should return error for invalid/empty config
 	assert.Error(t, err)
 }
@@ -201,17 +201,17 @@ func TestRunInContainer_InvalidConfig(t *testing.T) {
 // Test RunInContainer function with valid config structure
 func TestRunInContainer_ValidConfigStructure(t *testing.T) {
 	config := DockerConfig{
-		Image:           "ubuntu:22.04",
-		ContainerName:   "test-container",
+		Image:            "ubuntu:22.04",
+		ContainerName:    "test-container",
 		InstallationType: "python",
-		EnableSSH:       true,
-		Disposable:      true,
+		EnableSSH:        true,
+		Disposable:       true,
 	}
-	
+
 	// We can't actually run Docker in unit tests, but we can test
 	// that the function accepts the config structure correctly
 	err := RunInContainer(config)
-	
+
 	// The error type depends on whether Docker is available
 	// But the function should handle the config properly
 	assert.IsType(t, (*error)(nil), &err)
@@ -228,8 +228,8 @@ func (suite *DockerTestSuite) TestDockerCommandGeneration() {
 		{
 			name: "SSH enabled",
 			config: DockerConfig{
-				Image:       "ubuntu:22.04",
-				EnableSSH:   true,
+				Image:     "ubuntu:22.04",
+				EnableSSH: true,
 			},
 			checks: []string{"-p", "22"},
 		},
@@ -254,7 +254,7 @@ func (suite *DockerTestSuite) TestDockerCommandGeneration() {
 	for _, tc := range testCases {
 		suite.Run(tc.name, func() {
 			args := buildDockerRunArgs(tc.config)
-			
+
 			for _, check := range tc.checks {
 				suite.Contains(args, check, "Expected argument %s not found", check)
 			}
@@ -282,7 +282,7 @@ func TestPackageManagerDetection(t *testing.T) {
 		t.Run(tc.baseImage, func(t *testing.T) {
 			// This would require implementing package manager detection
 			// For now, we test the concept
-			
+
 			if strings.Contains(tc.baseImage, "ubuntu") || strings.Contains(tc.baseImage, "debian") {
 				assert.Equal(t, "apt-get", tc.expectedType)
 			} else if strings.Contains(tc.baseImage, "alpine") {
@@ -299,7 +299,7 @@ func TestPackageManagerDetection(t *testing.T) {
 // Test OS-specific installation paths
 func TestOSSpecificInstallation(t *testing.T) {
 	currentOS := runtime.GOOS
-	
+
 	switch currentOS {
 	case "windows":
 		// Test Windows-specific logic exists
@@ -323,10 +323,10 @@ func (suite *DockerTestSuite) TestDockerConfigValidation() {
 			ContainerName: "valid-container",
 		},
 		{
-			Image:           "alpine:3.18",
-			ContainerName:   "alpine-container",
+			Image:            "alpine:3.18",
+			ContainerName:    "alpine-container",
 			InstallationType: "python",
-			EnableSSH:       true,
+			EnableSSH:        true,
 		},
 		{
 			Image:         "nginx:latest",
@@ -341,7 +341,7 @@ func (suite *DockerTestSuite) TestDockerConfigValidation() {
 			// Basic validation - config should have required fields
 			suite.NotEmpty(config.Image, "Image should not be empty")
 			suite.NotEmpty(config.ContainerName, "Container name should not be empty")
-			
+
 			// Test that config can be used to build Docker args
 			args := buildDockerRunArgs(config)
 			suite.NotEmpty(args, "Docker args should not be empty")
@@ -367,7 +367,7 @@ func TestDockerErrorHandling(t *testing.T) {
 			},
 		},
 		{
-			name:        "EmptyContainerName", 
+			name:        "EmptyContainerName",
 			description: "Should handle empty container name",
 			testFunc: func() error {
 				config := DockerConfig{Image: "ubuntu:22.04"}

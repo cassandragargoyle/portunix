@@ -58,15 +58,15 @@ Examples:
   portunix choco install-chocolatey`,
 	Run: func(cmd *cobra.Command, args []string) {
 		chocoMgr := chocolatey.NewChocolateyManager()
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		chocoMgr.DryRun = dryRun
-		
+
 		if err := chocoMgr.InstallChocolatey(); err != nil {
 			fmt.Printf("Error: Failed to install Chocolatey: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Chocolatey installation completed successfully")
 	},
 }
@@ -82,21 +82,21 @@ Examples:
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		chocoMgr := chocolatey.NewChocolateyManager()
-		
+
 		if !chocoMgr.IsSupported() {
 			fmt.Println("Error: Chocolatey is not installed on this system")
 			fmt.Println("Run 'portunix choco install-chocolatey' to install it first")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		chocoMgr.DryRun = dryRun
-		
+
 		if err := chocoMgr.Install(args); err != nil {
 			fmt.Printf("Error: Failed to install packages: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Package installation completed successfully")
 	},
 }
@@ -112,20 +112,20 @@ Examples:
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		chocoMgr := chocolatey.NewChocolateyManager()
-		
+
 		if !chocoMgr.IsSupported() {
 			fmt.Println("Error: Chocolatey is not installed on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		chocoMgr.DryRun = dryRun
-		
+
 		if err := chocoMgr.Uninstall(args); err != nil {
 			fmt.Printf("Error: Failed to uninstall packages: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Package uninstallation completed successfully")
 	},
 }
@@ -142,31 +142,31 @@ Examples:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		chocoMgr := chocolatey.NewChocolateyManager()
-		
+
 		if !chocoMgr.IsSupported() {
 			fmt.Println("Error: Chocolatey is not installed on this system")
 			return
 		}
-		
+
 		packages, err := chocoMgr.Search(args[0])
 		if err != nil {
 			fmt.Printf("Error: Search failed: %v\n", err)
 			return
 		}
-		
+
 		if len(packages) == 0 {
 			fmt.Printf("No packages found matching '%s'\n", args[0])
 			return
 		}
-		
+
 		fmt.Printf("Found %d package(s) matching '%s':\n\n", len(packages), args[0])
-		
+
 		for _, pkg := range packages {
 			status := "not installed"
 			if pkg.Installed {
 				status = "installed"
 			}
-			
+
 			fmt.Printf("📦 %s (v%s) - %s\n", pkg.Name, pkg.Version, status)
 		}
 	},
@@ -184,20 +184,20 @@ Examples:
   portunix choco list`,
 	Run: func(cmd *cobra.Command, args []string) {
 		chocoMgr := chocolatey.NewChocolateyManager()
-		
+
 		if !chocoMgr.IsSupported() {
 			fmt.Println("Error: Chocolatey is not installed on this system")
 			return
 		}
-		
+
 		packages, err := chocoMgr.ListInstalled()
 		if err != nil {
 			fmt.Printf("Error: Failed to list packages: %v\n", err)
 			return
 		}
-		
+
 		fmt.Printf("Installed packages (%d total):\n\n", len(packages))
-		
+
 		for _, pkg := range packages {
 			fmt.Printf("📦 %s (v%s)\n", pkg.Name, pkg.Version)
 		}
@@ -215,20 +215,20 @@ Examples:
   portunix choco upgrade git nodejs`,
 	Run: func(cmd *cobra.Command, args []string) {
 		chocoMgr := chocolatey.NewChocolateyManager()
-		
+
 		if !chocoMgr.IsSupported() {
 			fmt.Println("Error: Chocolatey is not installed on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		chocoMgr.DryRun = dryRun
-		
+
 		if err := chocoMgr.Upgrade(args); err != nil {
 			fmt.Printf("Error: Failed to upgrade packages: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Package upgrade completed successfully")
 	},
 }
@@ -243,20 +243,20 @@ Examples:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		chocoMgr := chocolatey.NewChocolateyManager()
-		
+
 		if !chocoMgr.IsSupported() {
 			fmt.Println("Error: Chocolatey is not installed on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		chocoMgr.DryRun = dryRun
-		
+
 		if err := chocoMgr.Pin(args[0]); err != nil {
 			fmt.Printf("Error: Failed to pin package: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Package pinned successfully")
 	},
 }
@@ -271,20 +271,20 @@ Examples:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		chocoMgr := chocolatey.NewChocolateyManager()
-		
+
 		if !chocoMgr.IsSupported() {
 			fmt.Println("Error: Chocolatey is not installed on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		chocoMgr.DryRun = dryRun
-		
+
 		if err := chocoMgr.Unpin(args[0]); err != nil {
 			fmt.Printf("Error: Failed to unpin package: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Package unpinned successfully")
 	},
 }
@@ -311,12 +311,12 @@ Examples:
   portunix choco source list`,
 	Run: func(cmd *cobra.Command, args []string) {
 		chocoMgr := chocolatey.NewChocolateyManager()
-		
+
 		if !chocoMgr.IsSupported() {
 			fmt.Println("Error: Chocolatey is not installed on this system")
 			return
 		}
-		
+
 		if err := chocoMgr.ListSources(); err != nil {
 			fmt.Printf("Error: Failed to list sources: %v\n", err)
 			return
@@ -335,23 +335,23 @@ Examples:
 	Args: cobra.ExactArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		chocoMgr := chocolatey.NewChocolateyManager()
-		
+
 		if !chocoMgr.IsSupported() {
 			fmt.Println("Error: Chocolatey is not installed on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		username, _ := cmd.Flags().GetString("username")
 		password, _ := cmd.Flags().GetString("password")
-		
+
 		chocoMgr.DryRun = dryRun
-		
+
 		if err := chocoMgr.AddSource(args[0], args[1], username, password); err != nil {
 			fmt.Printf("Error: Failed to add source: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Source added successfully")
 	},
 }
@@ -366,20 +366,20 @@ Examples:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		chocoMgr := chocolatey.NewChocolateyManager()
-		
+
 		if !chocoMgr.IsSupported() {
 			fmt.Println("Error: Chocolatey is not installed on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		chocoMgr.DryRun = dryRun
-		
+
 		if err := chocoMgr.RemoveSource(args[0]); err != nil {
 			fmt.Printf("Error: Failed to remove source: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Source removed successfully")
 	},
 }
@@ -393,30 +393,30 @@ Examples:
   portunix choco clean`,
 	Run: func(cmd *cobra.Command, args []string) {
 		chocoMgr := chocolatey.NewChocolateyManager()
-		
+
 		if !chocoMgr.IsSupported() {
 			fmt.Println("Error: Chocolatey is not installed on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		chocoMgr.DryRun = dryRun
-		
+
 		if err := chocoMgr.Clean(); err != nil {
 			fmt.Printf("Error: Failed to clean cache: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Cache cleaned successfully")
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(chocoCmd)
-	
+
 	// Add flags
 	chocoCmd.Flags().Bool("info", false, "Show information about Chocolatey")
-	
+
 	// Add subcommands
 	chocoCmd.AddCommand(chocoInstallSelfCmd)
 	chocoCmd.AddCommand(chocoInstallCmd)
@@ -428,12 +428,12 @@ func init() {
 	chocoCmd.AddCommand(chocoUnpinCmd)
 	chocoCmd.AddCommand(chocoSourceCmd)
 	chocoCmd.AddCommand(chocoCleanCmd)
-	
+
 	// Source commands
 	chocoSourceCmd.AddCommand(chocoSourceListCmd)
 	chocoSourceCmd.AddCommand(chocoSourceAddCmd)
 	chocoSourceCmd.AddCommand(chocoSourceRemoveCmd)
-	
+
 	// Add flags
 	chocoInstallSelfCmd.Flags().Bool("dry-run", false, "Show what would be done without executing")
 	chocoInstallCmd.Flags().Bool("dry-run", false, "Show what would be done without executing")

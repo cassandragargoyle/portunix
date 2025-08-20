@@ -61,7 +61,7 @@ Examples:
 				return
 			}
 		}
-		
+
 		if len(args) == 0 {
 			fmt.Println("Please specify the software to install.")
 			return

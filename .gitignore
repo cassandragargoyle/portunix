@@ -12,3 +12,7 @@ portunix
 
 # GitHub sync staging directory
 .portunix-github-sync
+
+# Test coverage files
+coverage.out
+coverage.html

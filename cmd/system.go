@@ -78,7 +78,7 @@ Examples:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		condition := strings.ToLower(args[0])
-		
+
 		sysInfo, err := system.GetSystemInfo()
 		if err != nil {
 			fmt.Printf("Error getting system information: %v\n", err)
@@ -102,21 +102,21 @@ func printSystemInfo(info *system.SystemInfo) {
 	fmt.Printf("Hostname:     %s\n", info.Hostname)
 	fmt.Printf("Variant:      %s\n", info.Variant)
 	fmt.Printf("Environment:  %s\n", strings.Join(info.Environment, ", "))
-	
+
 	if info.WindowsInfo != nil {
 		fmt.Printf("\nWindows Details:\n")
 		fmt.Printf("Edition:      %s\n", info.WindowsInfo.Edition)
 		fmt.Printf("Product:      %s\n", info.WindowsInfo.ProductName)
 		fmt.Printf("Install Date: %s\n", info.WindowsInfo.InstallDate)
 	}
-	
+
 	if info.LinuxInfo != nil {
 		fmt.Printf("\nLinux Details:\n")
 		fmt.Printf("Distribution: %s\n", info.LinuxInfo.Distribution)
 		fmt.Printf("Codename:     %s\n", info.LinuxInfo.Codename)
 		fmt.Printf("Kernel:       %s\n", info.LinuxInfo.KernelVersion)
 	}
-	
+
 	fmt.Printf("\nCapabilities:\n")
 	fmt.Printf("PowerShell:   %t\n", info.Capabilities.PowerShell)
 	fmt.Printf("Docker:       %t\n", info.Capabilities.Docker)
@@ -127,7 +127,7 @@ func init() {
 	rootCmd.AddCommand(systemCmd)
 	systemCmd.AddCommand(systemInfoCmd)
 	systemCmd.AddCommand(systemCheckCmd)
-	
+
 	// Add flags for system info command
 	systemInfoCmd.Flags().BoolP("json", "j", false, "Output as JSON")
 	systemInfoCmd.Flags().BoolP("short", "s", false, "Short output (OS Version Variant)")

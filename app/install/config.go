@@ -15,33 +15,33 @@ var DefaultInstallConfig string
 
 // InstallConfig represents the complete installation configuration
 type InstallConfig struct {
-	Version  string                    `json:"version"`
-	Packages map[string]PackageConfig  `json:"packages"`
-	Presets  map[string]PresetConfig   `json:"presets"`
+	Version  string                   `json:"version"`
+	Packages map[string]PackageConfig `json:"packages"`
+	Presets  map[string]PresetConfig  `json:"presets"`
 }
 
 // PackageConfig represents configuration for a single package
 type PackageConfig struct {
-	Name           string                           `json:"name"`
-	Description    string                           `json:"description"`
-	Platforms      map[string]PlatformConfig        `json:"platforms"`
-	DefaultVariant string                           `json:"default_variant"`
+	Name           string                    `json:"name"`
+	Description    string                    `json:"description"`
+	Platforms      map[string]PlatformConfig `json:"platforms"`
+	DefaultVariant string                    `json:"default_variant"`
 }
 
 // PlatformConfig represents configuration for a specific platform (OS)
 type PlatformConfig struct {
-	Type         string                        `json:"type"` // msi, exe, zip, tar.gz, deb, apt, snap
-	Variants     map[string]VariantConfig      `json:"variants"`
-	InstallArgs  []string                      `json:"install_args,omitempty"`
-	Verification VerificationConfig            `json:"verification,omitempty"`
-	Environment  map[string]string             `json:"environment,omitempty"`
+	Type         string                   `json:"type"` // msi, exe, zip, tar.gz, deb, apt, snap
+	Variants     map[string]VariantConfig `json:"variants"`
+	InstallArgs  []string                 `json:"install_args,omitempty"`
+	Verification VerificationConfig       `json:"verification,omitempty"`
+	Environment  map[string]string        `json:"environment,omitempty"`
 }
 
 // VariantConfig represents a specific variant of a package
 type VariantConfig struct {
 	Version       string            `json:"version"`
-	URLs          map[string]string `json:"urls,omitempty"`          // arch -> url
-	Packages      []string          `json:"packages,omitempty"`      // for apt/snap packages
+	URLs          map[string]string `json:"urls,omitempty"`           // arch -> url
+	Packages      []string          `json:"packages,omitempty"`       // for apt/snap packages
 	InstallScript string            `json:"install_script,omitempty"` // for powershell/script installs
 	InstallPath   string            `json:"install_path,omitempty"`
 	ExtractTo     string            `json:"extract_to,omitempty"`
@@ -75,14 +75,14 @@ func LoadInstallConfig() (*InstallConfig, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to load default config: %w", err)
 	}
-	
+
 	// Try to load user config overlay
 	userConfig, err := loadUserConfig()
 	if err != nil {
 		// User config is optional, just use default
 		return defaultConfig, nil
 	}
-	
+
 	// Merge user config with default
 	mergedConfig := mergeConfigs(defaultConfig, userConfig)
 	return mergedConfig, nil
@@ -93,12 +93,12 @@ func loadDefaultConfig() (*InstallConfig, error) {
 	if DefaultInstallConfig == "" {
 		return nil, fmt.Errorf("default install config not embedded")
 	}
-	
+
 	var config InstallConfig
 	if err := json.Unmarshal([]byte(DefaultInstallConfig), &config); err != nil {
 		return nil, fmt.Errorf("failed to parse default config: %w", err)
 	}
-	
+
 	return &config, nil
 }
 
@@ -108,51 +108,51 @@ func loadUserConfig() (*InstallConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	configPath := filepath.Join(homeDir, ".portunix", "install-config.json")
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		return nil, fmt.Errorf("user config not found")
 	}
-	
+
 	data, err := os.ReadFile(configPath)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	var config InstallConfig
 	if err := json.Unmarshal(data, &config); err != nil {
 		return nil, err
 	}
-	
+
 	return &config, nil
 }
 
 // mergeConfigs merges user configuration with default configuration
 func mergeConfigs(defaultConfig, userConfig *InstallConfig) *InstallConfig {
 	merged := *defaultConfig
-	
+
 	// Merge packages (user config overrides default)
 	for name, pkg := range userConfig.Packages {
 		merged.Packages[name] = pkg
 	}
-	
+
 	// Merge presets (user config overrides default)
 	for name, preset := range userConfig.Presets {
 		merged.Presets[name] = preset
 	}
-	
+
 	return &merged
 }
 
 // IsWindowsSandbox detects if the program is running in Windows Sandbox
 func IsWindowsSandbox() bool {
 	// Check multiple indicators that we're in Windows Sandbox
-	
+
 	// 1. Check for WDAGUtilityAccount user (primary indicator)
 	if username := os.Getenv("USERNAME"); username == "WDAGUtilityAccount" {
 		return true
 	}
-	
+
 	// 2. Check for typical sandbox registry entries if possible
 	// In sandbox, we often have limited registry access, but let's check
 	cmd := exec.Command("reg", "query", "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", "/v", "EditionID")
@@ -161,32 +161,32 @@ func IsWindowsSandbox() bool {
 		// Windows Sandbox often runs Windows Core edition
 		return true
 	}
-	
+
 	// 3. Check for sandbox-specific environment variables or paths
 	if os.Getenv("WDAG_COMPUTERNAME") != "" {
 		return true
 	}
-	
+
 	// 4. Check if we're in typical sandbox temp directory structure
 	if hostname, err := os.Hostname(); err == nil {
-		if strings.HasPrefix(strings.ToLower(hostname), "sandbox-") || 
-		   strings.Contains(strings.ToLower(hostname), "wdag") {
+		if strings.HasPrefix(strings.ToLower(hostname), "sandbox-") ||
+			strings.Contains(strings.ToLower(hostname), "wdag") {
 			return true
 		}
 	}
-	
+
 	return false
 }
 
 // GetOperatingSystem returns the current operating system, with special handling for Windows Sandbox
 func GetOperatingSystem() string {
 	baseOS := runtime.GOOS
-	
+
 	// If we're on Windows, check if we're specifically in Windows Sandbox
 	if baseOS == "windows" && IsWindowsSandbox() {
 		return "windows_sandbox"
 	}
-	
+
 	return baseOS
 }
 
@@ -220,11 +220,11 @@ func (config *InstallConfig) GetPackageInfo(packageName, variant string) (*Packa
 	if !exists {
 		return nil, nil, nil, fmt.Errorf("package '%s' not found", packageName)
 	}
-	
+
 	// Get current OS platform
 	currentOS := GetOperatingSystem()
 	platform, exists := pkg.Platforms[currentOS]
-	
+
 	// If sandbox-specific config doesn't exist, fallback to windows
 	if !exists && currentOS == "windows_sandbox" {
 		platform, exists = pkg.Platforms["windows"]
@@ -234,7 +234,7 @@ func (config *InstallConfig) GetPackageInfo(packageName, variant string) (*Packa
 	} else if !exists {
 		return nil, nil, nil, fmt.Errorf("package '%s' not supported on %s", packageName, currentOS)
 	}
-	
+
 	// Use default variant if not specified
 	if variant == "" {
 		variant = pkg.DefaultVariant
@@ -246,12 +246,12 @@ func (config *InstallConfig) GetPackageInfo(packageName, variant string) (*Packa
 			}
 		}
 	}
-	
+
 	variantConfig, exists := platform.Variants[variant]
 	if !exists {
 		return nil, nil, nil, fmt.Errorf("variant '%s' not found for package '%s' on %s", variant, packageName, currentOS)
 	}
-	
+
 	return &pkg, &platform, &variantConfig, nil
 }
 
@@ -277,19 +277,19 @@ func (variant *VariantConfig) GetFileName() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	// Extract filename from URL
 	parts := strings.Split(url, "/")
 	if len(parts) == 0 {
 		return "", fmt.Errorf("invalid URL: %s", url)
 	}
-	
+
 	filename := parts[len(parts)-1]
-	
+
 	// Remove query parameters
 	if idx := strings.Index(filename, "?"); idx >= 0 {
 		filename = filename[:idx]
 	}
-	
+
 	return filename, nil
 }

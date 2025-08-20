@@ -9,6 +9,7 @@ This directory contains detailed documentation for GitHub issues, feature reques
 | [#1](001-cross-platform-os-detection.md) | Cross-Platform Intelligent OS Detection System with Shell/PowerShell Integration | ✅ Implemented | High | enhancement, cross-platform, powershell |
 | [#2](002-docker-management-command.md) | Docker Management Command - Similar to Sandbox Command | 📋 Open | High | enhancement, docker, cross-platform |
 | [#3](003-podman-management-command.md) | Podman Management Command - Similar to Docker Command | 📋 Open | High | enhancement, podman, cross-platform |
+| [#4](004-mcp-server-ai-integration.md) | MCP Server for AI Assistant Integration | 📋 Open | High | enhancement, mcp, ai-integration, cross-platform, security |
 
 ## Usage
 

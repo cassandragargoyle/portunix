@@ -13,10 +13,11 @@ import (
 // transfers a local script to the remote machine using SFTP, and then executes it.
 //
 // Parameters:
-//   host: The IP address or hostname of the remote Linux machine.
-//   port: The SSH port of the remote machine (e.g., "22").
-//   user: The username for SSH authentication on the remote machine.
-//   localScriptPath: The local path to the script file to be transferred and executed.
+//
+//	host: The IP address or hostname of the remote Linux machine.
+//	port: The SSH port of the remote machine (e.g., "22").
+//	user: The username for SSH authentication on the remote machine.
+//	localScriptPath: The local path to the script file to be transferred and executed.
 //
 // Note:
 //   - This function currently uses hardcoded paths for the SSH private key

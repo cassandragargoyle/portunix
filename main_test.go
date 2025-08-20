@@ -10,9 +10,8 @@ import (
 	"portunix.cz/app/install"
 )
 
-// Test for InstallJavaWinRunDry
+// Test for InstallJavaWinRunDry.
 func TestInstallJavaRunDry(t *testing.T) {
-
 	err := install.WinInstallJavaRun("", "", true)
 
 	if err != nil {
@@ -27,7 +26,6 @@ func TestInstallJavaRunDry(t *testing.T) {
 }
 
 func TestProcessArgumentsInstallJava(t *testing.T) {
-
 	arguments := []string{"11", "openjdk"}
 	result := install.ProcessArgumentsInstallJava(arguments)
 	expected := "11"
@@ -89,7 +87,7 @@ func TestUnzip(t *testing.T) {
 
 	// Create a simple test file to zip
 	testFile := filepath.Join(tempDir, "test.txt")
-	err = os.WriteFile(testFile, []byte("test content"), 0644)
+	err = os.WriteFile(testFile, []byte("test content"), 0600)
 	if err != nil {
 		t.Fatalf("Failed to create test file: %s", err)
 	}
@@ -122,7 +120,7 @@ func TestUnzip(t *testing.T) {
 	}
 }
 
-// createTestZip creates a simple ZIP file for testing
+// createTestZip creates a simple ZIP file for testing.
 func createTestZip(zipPath, filePath string) error {
 	zipFile, err := os.Create(zipPath)
 	if err != nil {

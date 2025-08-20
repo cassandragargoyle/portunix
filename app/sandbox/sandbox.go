@@ -339,10 +339,10 @@ func getSandboxIPFromInfo() string {
 	if err != nil {
 		return ""
 	}
-	
+
 	var newestDir string
 	var newestTime int64
-	
+
 	for _, entry := range entries {
 		if entry.IsDir() && strings.HasPrefix(entry.Name(), "portunix_") {
 			info, err := entry.Info()
@@ -355,25 +355,25 @@ func getSandboxIPFromInfo() string {
 			}
 		}
 	}
-	
+
 	if newestDir == "" {
 		return ""
 	}
-	
+
 	// Try to read ssh_info.txt from the found directory
 	sshInfoPath := filepath.Join(tmpDir, newestDir, ".tmp", "ssh_info.txt")
-	
+
 	// Check if file exists
 	if _, err := os.Stat(sshInfoPath); os.IsNotExist(err) {
 		return ""
 	}
-	
+
 	// Read the file
 	content, err := os.ReadFile(sshInfoPath)
 	if err != nil {
 		return ""
 	}
-	
+
 	// Parse IP address from content
 	lines := strings.Split(string(content), "\n")
 	for _, line := range lines {
@@ -389,7 +389,7 @@ func getSandboxIPFromInfo() string {
 			}
 		}
 	}
-	
+
 	return ""
 }
 
@@ -629,9 +629,9 @@ func copyDirectory(src, dst string) error {
 func CheckSandboxRunning() (bool, error) {
 	// Debug mode - can be enabled for troubleshooting
 	debug := false
-	
+
 	// Try multiple approaches to detect Windows Sandbox
-	
+
 	// Method 1: Check for WindowsSandboxServer.exe
 	cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq WindowsSandboxServer.exe", "/FO", "CSV", "/NH")
 	output, err := cmd.Output()
@@ -650,7 +650,7 @@ func CheckSandboxRunning() (bool, error) {
 			}
 		}
 	}
-	
+
 	// Method 2: Check for any sandbox-related processes
 	cmd2 := exec.Command("tasklist")
 	output2, err2 := cmd2.Output()
@@ -660,7 +660,7 @@ func CheckSandboxRunning() (bool, error) {
 	if err2 == nil {
 		outputStr := strings.ToLower(string(output2))
 		sandboxProcesses := []string{"windowssandboxserver.exe", "windowssandbox.exe", "sandbox.exe", "wsreset.exe"}
-		
+
 		for _, process := range sandboxProcesses {
 			if strings.Contains(outputStr, process) {
 				if debug {
@@ -670,7 +670,7 @@ func CheckSandboxRunning() (bool, error) {
 			}
 		}
 	}
-	
+
 	// Method 3: Check for Windows Sandbox service (this might not be the right service name)
 	cmd3 := exec.Command("sc", "query", "WindowsSandbox")
 	output3, err3 := cmd3.Output()
@@ -882,27 +882,26 @@ func CloseSandbox() error {
 	return nil
 }
 
-
 // PreDownloadWinget downloads winget and its dependencies from GitHub to host cache for sandbox use
 func PreDownloadWinget(sandboxDir string) error {
 	fmt.Println("📦 Pre-downloading winget and dependencies for sandbox...")
 	fmt.Println("┌─────────────────────────────────────────────────────────")
-	
+
 	// Use persistent cache directory in current working directory
 	cacheDir := ".cache"
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
-	
+
 	// Also create cache in sandbox folder for copying
 	sandboxCacheDir := filepath.Join(sandboxDir, ".cache")
 	if err := os.MkdirAll(sandboxCacheDir, 0755); err != nil {
 		return fmt.Errorf("failed to create sandbox cache directory: %w", err)
 	}
-	
+
 	// Using compatible VCLibs version (14.0.33321.0) with older winget (v1.6.3482)
 	fmt.Println("├─ Using VCLibs 14.0.33321.0 with compatible winget v1.6.3482")
-	
+
 	// Check if winget is already cached
 	targetFile := filepath.Join(cacheDir, "Microsoft.DesktopAppInstaller.msixbundle")
 	if _, err := os.Stat(targetFile); err == nil {
@@ -911,21 +910,21 @@ func PreDownloadWinget(sandboxDir string) error {
 		// Download older compatible winget version instead of latest
 		fmt.Println("├─ Downloading compatible winget version (v1.6.3482)...")
 		downloadURL := "https://github.com/microsoft/winget-cli/releases/download/v1.6.3482/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle"
-		
+
 		// Download the file
 		if err := downloadFileFromURL(downloadURL, targetFile); err != nil {
 			return fmt.Errorf("failed to download winget: %w", err)
 		}
 	}
-	
+
 	// Copy winget and dependencies to sandbox directory
 	fmt.Println("├─ Copying winget and dependencies to sandbox...")
-	
+
 	// Copy winget
 	if err := copyFile(targetFile, filepath.Join(sandboxCacheDir, "Microsoft.DesktopAppInstaller.msixbundle")); err != nil {
 		return fmt.Errorf("failed to copy winget to sandbox: %w", err)
 	}
-	
+
 	// Copy VCLibs if exists in cache
 	vcLibsFile := filepath.Join(cacheDir, "Microsoft.VCLibs.140.00.UWPDesktop_latest_x64.appx")
 	if _, err := os.Stat(vcLibsFile); err == nil {
@@ -937,7 +936,7 @@ func PreDownloadWinget(sandboxDir string) error {
 	} else {
 		fmt.Printf("├─ VCLibs not found in cache\n")
 	}
-	
+
 	// Copy UI.Xaml if exists in cache
 	xamlFile := filepath.Join(cacheDir, "Microsoft.UI.Xaml.2.8_latest_x64.appx")
 	if _, err := os.Stat(xamlFile); err == nil {
@@ -949,7 +948,7 @@ func PreDownloadWinget(sandboxDir string) error {
 	} else {
 		fmt.Printf("├─ UI.Xaml not found in cache\n")
 	}
-	
+
 	fmt.Println("└─────────────────────────────────────────────────────────")
 	fmt.Printf("✅ Winget and dependencies cached successfully!\n")
 	return nil
@@ -966,20 +965,20 @@ func downloadWingetDependencies(cacheDir string) error {
 			url:  "https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe",
 		},
 		{
-			name: "Microsoft.UI.Xaml.2.8_latest_x64.appx", 
+			name: "Microsoft.UI.Xaml.2.8_latest_x64.appx",
 			url:  "https://github.com/microsoft/microsoft-ui-xaml/releases/download/v2.8.6/Microsoft.UI.Xaml.2.8.x64.appx",
 		},
 	}
-	
+
 	for _, dep := range dependencies {
 		targetFile := filepath.Join(cacheDir, dep.name)
-		
+
 		// Skip if already exists
 		if _, err := os.Stat(targetFile); err == nil {
 			fmt.Printf("├─ %s ✓ (cached)\n", dep.name)
 			continue
 		}
-		
+
 		// Clean up any old versions of this specific dependency before downloading new one
 		pattern := strings.Split(dep.name, "_")[0] + "*.appx" // e.g., "Microsoft.VCLibs*.appx"
 		if matches, err := filepath.Glob(filepath.Join(cacheDir, pattern)); err == nil {
@@ -990,12 +989,12 @@ func downloadWingetDependencies(cacheDir string) error {
 				}
 			}
 		}
-		
+
 		if err := downloadFileFromURL(dep.url, targetFile); err != nil {
 			return fmt.Errorf("failed to download %s: %w", dep.name, err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -1006,16 +1005,16 @@ func downloadFileFromURL(url, filepath string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	
+
 	out, err := os.Create(filepath)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
-	
+
 	// Get file size for progress calculation
 	size := resp.ContentLength
-	
+
 	if size > 0 {
 		// Download with progress indicator
 		return downloadWithProgress(resp.Body, out, size, filepath)
@@ -1029,9 +1028,9 @@ func downloadFileFromURL(url, filepath string) error {
 func downloadWithProgress(src io.Reader, dst io.Writer, total int64, filename string) error {
 	var downloaded int64
 	buf := make([]byte, 32*1024) // 32KB buffer
-	
+
 	fmt.Printf("├─ %s ", filepath.Base(filename))
-	
+
 	for {
 		n, err := src.Read(buf)
 		if n > 0 {
@@ -1040,12 +1039,12 @@ func downloadWithProgress(src io.Reader, dst io.Writer, total int64, filename st
 				return writeErr
 			}
 			downloaded += int64(n)
-			
+
 			// Calculate and display progress
 			progress := float64(downloaded) / float64(total) * 100
 			fmt.Printf("\r├─ %s [%.1f%%] ", filepath.Base(filename), progress)
 		}
-		
+
 		if err == io.EOF {
 			fmt.Printf("\r├─ %s [100.0%%] ✓\n", filepath.Base(filename))
 			return nil
@@ -1061,9 +1060,9 @@ func downloadWithProgress(src io.Reader, dst io.Writer, total int64, filename st
 func downloadWithSpinner(src io.Reader, dst io.Writer, filename string) error {
 	spinner := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 	spinnerIndex := 0
-	
+
 	buf := make([]byte, 32*1024)
-	
+
 	// Start spinner in goroutine
 	done := make(chan bool)
 	go func() {
@@ -1078,18 +1077,18 @@ func downloadWithSpinner(src io.Reader, dst io.Writer, filename string) error {
 			}
 		}
 	}()
-	
+
 	// Download
 	_, err := io.CopyBuffer(dst, src, buf)
-	
+
 	// Stop spinner
 	done <- true
-	
+
 	if err != nil {
 		fmt.Printf("\r├─ %s ✗\n", filepath.Base(filename))
 		return err
 	}
-	
+
 	fmt.Printf("\r├─ %s ✓\n", filepath.Base(filename))
 	return nil
 }
@@ -1099,34 +1098,34 @@ func copyWingetCacheToSandbox(srcCacheDir, dstCacheDir string) error {
 	// Copy all winget-related files (use pattern matching for flexibility)
 	patterns := []string{
 		"Microsoft.VCLibs*.appx",
-		"Microsoft.UI.Xaml*.appx", 
+		"Microsoft.UI.Xaml*.appx",
 		"Microsoft.DesktopAppInstaller.msixbundle",
 	}
-	
+
 	for _, pattern := range patterns {
 		matches, err := filepath.Glob(filepath.Join(srcCacheDir, pattern))
 		if err != nil {
 			continue
 		}
-		
+
 		for _, srcFile := range matches {
 			filename := filepath.Base(srcFile)
 			dstFile := filepath.Join(dstCacheDir, filename)
-			
+
 			// Copy file
 			if err := copyFile(srcFile, dstFile); err != nil {
 				return fmt.Errorf("failed to copy %s: %w", filename, err)
 			}
 		}
 	}
-	
+
 	return nil
 }
 
 // exportHostVCLibs exports the working VCLibs from host Windows system for sandbox use
 func exportHostVCLibs(cacheDir string) error {
 	fmt.Println("├─ Exporting VCLibs from host system...")
-	
+
 	// Use PowerShell to find and export the installed VCLibs packages
 	psScript := `
 $ErrorActionPreference = "Stop"
@@ -1163,18 +1162,17 @@ try {
 	// Execute PowerShell script
 	cmd := exec.Command("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", psScript)
 	output, err := cmd.CombinedOutput()
-	
+
 	if err != nil {
 		return fmt.Errorf("PowerShell execution failed: %w, output: %s", err, string(output))
 	}
-	
+
 	// Parse output to find exported file
 	outputStr := string(output)
 	if !strings.Contains(outputStr, "Successfully exported VCLibs") {
 		return fmt.Errorf("VCLibs export failed: %s", outputStr)
 	}
-	
+
 	fmt.Printf("├─ %s", outputStr)
 	return nil
 }
-

@@ -16,61 +16,61 @@ import (
 
 // DockerConfig defines the configuration for Docker containers
 type DockerConfig struct {
-	Image           string
-	ContainerName   string
-	Ports           []string
-	Volumes         []string
-	Environment     []string
-	Command         []string
-	EnableSSH       bool
-	KeepRunning     bool
-	Disposable      bool
-	Privileged      bool
-	Network         string
-	CacheShared     bool
-	CachePath       string
-	InstallationType string
-	DryRun          bool
+	Image             string
+	ContainerName     string
+	Ports             []string
+	Volumes           []string
+	Environment       []string
+	Command           []string
+	EnableSSH         bool
+	KeepRunning       bool
+	Disposable        bool
+	Privileged        bool
+	Network           string
+	CacheShared       bool
+	CachePath         string
+	InstallationType  string
+	DryRun            bool
 	AutoInstallDocker bool
 }
 
 // ContainerInfo represents information about a Docker container
 type ContainerInfo struct {
-	ID          string
-	Name        string
-	Image       string
-	Status      string
-	Ports       string
-	Created     string
-	Command     string
+	ID      string
+	Name    string
+	Image   string
+	Status  string
+	Ports   string
+	Created string
+	Command string
 }
 
 // PackageManagerInfo holds detected package manager information
 type PackageManagerInfo struct {
-	Manager     string // apt-get, yum, dnf, apk, etc.
-	UpdateCmd   string
-	InstallCmd  string
+	Manager      string // apt-get, yum, dnf, apk, etc.
+	UpdateCmd    string
+	InstallCmd   string
 	Distribution string // ubuntu, debian, alpine, centos, etc.
 }
 
 // InstallDocker performs intelligent OS-based Docker installation
 func InstallDocker(autoAccept bool) error {
 	fmt.Println("Starting Docker installation with intelligent OS detection...")
-	
+
 	// Detect OS
 	osInfo, err := system.GetSystemInfo()
 	if err != nil {
 		return fmt.Errorf("failed to detect operating system: %w", err)
 	}
-	
+
 	fmt.Printf("✓ Detected: %s %s\n", osInfo.OS, osInfo.Version)
-	
+
 	// Check if Docker is already installed
 	if isDockerInstalled() {
 		fmt.Println("✓ Docker is already installed")
 		return verifyDockerInstallation()
 	}
-	
+
 	// Analyze storage and install based on OS
 	switch runtime.GOOS {
 	case "windows":
@@ -92,7 +92,7 @@ func isDockerInstalled() bool {
 // verifyDockerInstallation verifies Docker installation
 func verifyDockerInstallation() error {
 	fmt.Println("\nVerifying Docker installation...")
-	
+
 	// Check Docker version
 	cmd := exec.Command("docker", "--version")
 	output, err := cmd.Output()
@@ -100,7 +100,7 @@ func verifyDockerInstallation() error {
 		return fmt.Errorf("docker --version failed: %w", err)
 	}
 	fmt.Printf("✓ %s", string(output))
-	
+
 	// Check Docker daemon status
 	cmd = exec.Command("docker", "info")
 	err = cmd.Run()
@@ -109,101 +109,101 @@ func verifyDockerInstallation() error {
 		return fmt.Errorf("docker daemon not accessible: %w", err)
 	}
 	fmt.Println("✓ Docker daemon is running")
-	
+
 	return nil
 }
 
 // RunInContainer runs Portunix installation inside a Docker container
 func RunInContainer(config DockerConfig) error {
 	fmt.Printf("Starting Docker container with %s installation...\n", config.InstallationType)
-	
+
 	// In dry-run mode, show what would be executed
 	if config.DryRun {
 		return runInContainerDryRun(config)
 	}
-	
+
 	// Check if Docker is available
 	if err := checkDockerAvailable(); err != nil {
 		return fmt.Errorf("Docker is not available: %w", err)
 	}
-	
+
 	// Pull base image if needed
 	if err := pullImageIfNeeded(config.Image); err != nil {
 		return fmt.Errorf("failed to pull image: %w", err)
 	}
-	
+
 	// Detect package manager in the image
 	pkgManager, err := detectPackageManager(config.Image)
 	if err != nil {
 		return fmt.Errorf("failed to detect package manager: %w", err)
 	}
 	fmt.Printf("✓ Detected package manager: %s\n", pkgManager.Manager)
-	
+
 	// Create container name if not provided
 	if config.ContainerName == "" {
 		config.ContainerName = fmt.Sprintf("portunix-%s-%s", config.InstallationType, generateID())
 	}
-	
+
 	// Setup cache directory
 	if config.CacheShared {
 		if err := setupCacheDirectory(config.CachePath); err != nil {
 			return fmt.Errorf("failed to setup cache directory: %w", err)
 		}
 	}
-	
+
 	// Build Docker run command
 	dockerArgs := buildDockerRunArgs(config)
-	
+
 	fmt.Printf("✓ Creating container: %s\n", config.ContainerName)
-	
+
 	// Run the container
 	cmd := exec.Command("docker", dockerArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start container: %w", err)
 	}
-	
+
 	// Wait for container to be ready
 	if err := waitForContainer(config.ContainerName); err != nil {
 		return fmt.Errorf("container failed to start: %w", err)
 	}
-	
+
 	// Setup SSH if enabled
 	if config.EnableSSH {
 		return setupContainerSSH(config.ContainerName, pkgManager)
 	}
-	
+
 	return nil
 }
 
 // BuildImage builds a Docker image for Portunix
 func BuildImage(baseImage string) error {
 	fmt.Printf("Building Portunix Docker image based on %s...\n", baseImage)
-	
+
 	// Create temporary Dockerfile
 	dockerfile := generateDockerfile(baseImage)
-	
+
 	// Write Dockerfile to temp location
 	tempDir := ".tmp"
 	os.MkdirAll(tempDir, 0755)
-	
+
 	dockerfilePath := filepath.Join(tempDir, "Dockerfile")
 	if err := os.WriteFile(dockerfilePath, []byte(dockerfile), 0644); err != nil {
 		return fmt.Errorf("failed to write Dockerfile: %w", err)
 	}
-	
+
 	// Build image
 	imageName := fmt.Sprintf("portunix:%s", strings.ReplaceAll(baseImage, ":", "-"))
 	cmd := exec.Command("docker", "build", "-t", imageName, "-f", dockerfilePath, ".")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to build image: %w", err)
 	}
-	
+
 	fmt.Printf("✓ Image built successfully: %s\n", imageName)
 	return nil
 }
@@ -215,17 +215,17 @@ func ListContainers() ([]ContainerInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to list containers: %w", err)
 	}
-	
+
 	lines := strings.Split(string(output), "\n")
 	var containers []ContainerInfo
-	
+
 	// Skip header line
 	for i := 1; i < len(lines); i++ {
 		line := strings.TrimSpace(lines[i])
 		if line == "" {
 			continue
 		}
-		
+
 		fields := strings.Fields(line)
 		if len(fields) >= 4 {
 			container := ContainerInfo{
@@ -243,19 +243,19 @@ func ListContainers() ([]ContainerInfo, error) {
 			containers = append(containers, container)
 		}
 	}
-	
+
 	return containers, nil
 }
 
 // StopContainer stops a running container
 func StopContainer(containerID string) error {
 	fmt.Printf("Stopping container %s...\n", containerID)
-	
+
 	cmd := exec.Command("docker", "stop", containerID)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to stop container: %w", err)
 	}
-	
+
 	fmt.Printf("✓ Container %s stopped\n", containerID)
 	return nil
 }
@@ -263,12 +263,12 @@ func StopContainer(containerID string) error {
 // StartContainer starts a stopped container
 func StartContainer(containerID string) error {
 	fmt.Printf("Starting container %s...\n", containerID)
-	
+
 	cmd := exec.Command("docker", "start", containerID)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to start container: %w", err)
 	}
-	
+
 	fmt.Printf("✓ Container %s started\n", containerID)
 	return nil
 }
@@ -276,18 +276,18 @@ func StartContainer(containerID string) error {
 // RemoveContainer removes a container
 func RemoveContainer(containerID string, force bool) error {
 	fmt.Printf("Removing container %s...\n", containerID)
-	
+
 	args := []string{"rm"}
 	if force {
 		args = append(args, "-f")
 	}
 	args = append(args, containerID)
-	
+
 	cmd := exec.Command("docker", args...)
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to remove container: %w", err)
 	}
-	
+
 	fmt.Printf("✓ Container %s removed\n", containerID)
 	return nil
 }
@@ -299,23 +299,23 @@ func ShowLogs(containerID string, follow bool) error {
 		args = append(args, "-f")
 	}
 	args = append(args, containerID)
-	
+
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	return cmd.Run()
 }
 
 // ExecCommand executes a command in a running container
 func ExecCommand(containerID string, command []string) error {
 	args := append([]string{"exec", "-it", containerID}, command...)
-	
+
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
-	
+
 	return cmd.Run()
 }
 
@@ -323,13 +323,13 @@ func ExecCommand(containerID string, command []string) error {
 
 func installDockerWindows(autoAccept bool) error {
 	fmt.Println("\nAnalyzing available storage...")
-	
+
 	// Analyze drives and recommend storage location
 	drives, err := analyzeWindowsStorage()
 	if err != nil {
 		return fmt.Errorf("failed to analyze storage: %w", err)
 	}
-	
+
 	var selectedDrive string
 	if autoAccept {
 		// Auto-select drive with most space
@@ -341,33 +341,33 @@ func installDockerWindows(autoAccept bool) error {
 			return err
 		}
 	}
-	
+
 	fmt.Println("\nInstalling Docker Desktop for Windows...")
-	
+
 	// Download Docker Desktop installer
 	installerPath := filepath.Join(".cache", "DockerDesktopInstaller.exe")
 	if err := downloadDockerDesktop(installerPath); err != nil {
 		return fmt.Errorf("failed to download Docker Desktop: %w", err)
 	}
-	
+
 	// Install Docker Desktop with custom data-root
 	dataRoot := fmt.Sprintf("%s:\\docker-data", selectedDrive)
 	if err := installDockerDesktopWindows(installerPath, dataRoot); err != nil {
 		return fmt.Errorf("failed to install Docker Desktop: %w", err)
 	}
-	
+
 	return verifyDockerInstallation()
 }
 
 func installDockerLinux(autoAccept bool, osInfo *system.SystemInfo) error {
 	fmt.Println("\nAnalyzing available storage...")
-	
+
 	// Analyze partitions and recommend storage location
 	partitions, err := analyzeLinuxStorage()
 	if err != nil {
 		return fmt.Errorf("failed to analyze storage: %w", err)
 	}
-	
+
 	var selectedPath string
 	if autoAccept {
 		// Auto-select partition with most space
@@ -379,15 +379,15 @@ func installDockerLinux(autoAccept bool, osInfo *system.SystemInfo) error {
 			return err
 		}
 	}
-	
+
 	fmt.Printf("\nInstalling Docker Engine for %s...\n", osInfo.OS)
-	
+
 	// Install Docker based on distribution
 	distribution := osInfo.OS
 	if osInfo.LinuxInfo != nil {
 		distribution = osInfo.LinuxInfo.Distribution
 	}
-	
+
 	switch strings.ToLower(distribution) {
 	case "ubuntu", "debian":
 		return installDockerUbuntuDebian(selectedPath)
@@ -407,17 +407,17 @@ func pullImageIfNeeded(image string) error {
 		fmt.Printf("Using cached image: %s\n", image)
 		return nil
 	}
-	
+
 	// Pull image
 	fmt.Printf("Pulling image: %s...\n", image)
 	cmd = exec.Command("docker", "pull", image)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to pull image %s: %w", image, err)
 	}
-	
+
 	fmt.Printf("✓ Image pulled successfully\n")
 	return nil
 }
@@ -429,10 +429,10 @@ func detectPackageManager(image string) (*PackageManagerInfo, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to detect package manager: %w", err)
 	}
-	
+
 	pkgManagerPath := strings.TrimSpace(string(output))
 	pkgManager := &PackageManagerInfo{}
-	
+
 	switch {
 	case strings.Contains(pkgManagerPath, "apt-get"):
 		pkgManager.Manager = "apt-get"
@@ -458,7 +458,7 @@ func detectPackageManager(image string) (*PackageManagerInfo, error) {
 		pkgManager.Manager = "unknown"
 		pkgManager.Distribution = "unknown"
 	}
-	
+
 	return pkgManager, nil
 }
 
@@ -466,39 +466,39 @@ func setupCacheDirectory(cachePath string) error {
 	if cachePath == "" {
 		cachePath = ".cache"
 	}
-	
+
 	return os.MkdirAll(cachePath, 0755)
 }
 
 func buildDockerRunArgs(config DockerConfig) []string {
 	args := []string{"run"}
-	
+
 	// Detached mode
 	args = append(args, "-d")
-	
+
 	// Interactive terminal
 	args = append(args, "-it")
-	
+
 	// Container name
 	if config.ContainerName != "" {
 		args = append(args, "--name", config.ContainerName)
 	}
-	
+
 	// Port mappings
 	for _, port := range config.Ports {
 		args = append(args, "-p", port)
 	}
-	
+
 	// Volume mappings
 	for _, volume := range config.Volumes {
 		args = append(args, "-v", volume)
 	}
-	
+
 	// Environment variables
 	for _, env := range config.Environment {
 		args = append(args, "-e", env)
 	}
-	
+
 	// Cache directory mounting
 	if config.CacheShared {
 		cachePath := config.CachePath
@@ -508,34 +508,34 @@ func buildDockerRunArgs(config DockerConfig) []string {
 		abs, _ := filepath.Abs(cachePath)
 		args = append(args, "-v", fmt.Sprintf("%s:/portunix-cache", abs))
 	}
-	
+
 	// Current directory mounting
 	pwd, _ := os.Getwd()
 	args = append(args, "-v", fmt.Sprintf("%s:/workspace", pwd))
-	
+
 	// SSH port mapping if enabled
 	if config.EnableSSH {
 		args = append(args, "-p", "2222:22")
 	}
-	
+
 	// Privileged mode
 	if config.Privileged {
 		args = append(args, "--privileged")
 	}
-	
+
 	// Network
 	if config.Network != "" {
 		args = append(args, "--network", config.Network)
 	}
-	
+
 	// Auto-remove if disposable
 	if config.Disposable {
 		args = append(args, "--rm")
 	}
-	
+
 	// Image
 	args = append(args, config.Image)
-	
+
 	// Command
 	if len(config.Command) > 0 {
 		args = append(args, config.Command...)
@@ -543,14 +543,14 @@ func buildDockerRunArgs(config DockerConfig) []string {
 		// Default command to keep container running
 		args = append(args, "sleep", "infinity")
 	}
-	
+
 	return args
 }
 
 func waitForContainer(containerName string) error {
 	timeout := 30 * time.Second
 	start := time.Now()
-	
+
 	for time.Since(start) < timeout {
 		cmd := exec.Command("docker", "ps", "--filter", fmt.Sprintf("name=%s", containerName), "--format", "{{.Status}}")
 		output, err := cmd.Output()
@@ -559,49 +559,49 @@ func waitForContainer(containerName string) error {
 		}
 		time.Sleep(1 * time.Second)
 	}
-	
+
 	return fmt.Errorf("container did not start within %v", timeout)
 }
 
 func setupContainerSSH(containerName string, pkgManager *PackageManagerInfo) error {
 	fmt.Println("\nSetting up SSH in container...")
-	
+
 	// Install OpenSSH server
 	installSSHCmd := generateSSHInstallCommand(pkgManager)
 	if err := execInContainer(containerName, installSSHCmd); err != nil {
 		return fmt.Errorf("failed to install SSH: %w", err)
 	}
-	
+
 	// Generate SSH credentials
 	username := fmt.Sprintf("portunix_user_%s", generateShortID())
 	password := generatePassword()
-	
+
 	// Create user and set password
 	createUserCmd := []string{"sh", "-c", fmt.Sprintf("useradd -m -s /bin/bash %s && echo '%s:%s' | chpasswd", username, username, password)}
 	if err := execInContainer(containerName, createUserCmd); err != nil {
 		return fmt.Errorf("failed to create SSH user: %w", err)
 	}
-	
+
 	// Configure SSH daemon
 	configSSHCmd := []string{"sh", "-c", "mkdir -p /run/sshd && /usr/sbin/sshd -D &"}
 	if err := execInContainer(containerName, configSSHCmd); err != nil {
 		return fmt.Errorf("failed to start SSH daemon: %w", err)
 	}
-	
+
 	// Test SSH connectivity
 	if err := testSSHConnectivity(containerName); err != nil {
 		return fmt.Errorf("SSH connectivity test failed: %w", err)
 	}
-	
+
 	// Display connection information
 	displaySSHInfo(containerName, username, password)
-	
+
 	return nil
 }
 
 func generateSSHInstallCommand(pkgManager *PackageManagerInfo) []string {
 	var cmd string
-	
+
 	switch pkgManager.Manager {
 	case "apt-get":
 		cmd = "apt-get update && apt-get install -y openssh-server sudo"
@@ -614,7 +614,7 @@ func generateSSHInstallCommand(pkgManager *PackageManagerInfo) []string {
 	default:
 		cmd = "echo 'Unknown package manager, SSH setup may fail'"
 	}
-	
+
 	return []string{"sh", "-c", cmd}
 }
 
@@ -631,16 +631,16 @@ func testSSHConnectivity(containerName string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	ip := strings.TrimSpace(string(output))
 	if ip == "" {
 		return fmt.Errorf("could not get container IP")
 	}
-	
+
 	// Test SSH port
 	timeout := 10 * time.Second
 	start := time.Now()
-	
+
 	for time.Since(start) < timeout {
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "22"), 1*time.Second)
 		if err == nil {
@@ -649,7 +649,7 @@ func testSSHConnectivity(containerName string) error {
 		}
 		time.Sleep(1 * time.Second)
 	}
-	
+
 	return fmt.Errorf("SSH port not responding within %v", timeout)
 }
 
@@ -659,12 +659,12 @@ func cleanSSHHostKeys() {
 	if err != nil {
 		return
 	}
-	
+
 	knownHostsPath := filepath.Join(homeDir, ".ssh", "known_hosts")
 	if _, err := os.Stat(knownHostsPath); os.IsNotExist(err) {
 		return
 	}
-	
+
 	// Clean host key for port 2222
 	cmd := exec.Command("ssh-keygen", "-f", knownHostsPath, "-R", "[localhost]:2222")
 	cmd.Run() // Ignore errors - the key might not exist
@@ -673,12 +673,12 @@ func cleanSSHHostKeys() {
 func displaySSHInfo(containerName, username, password string) {
 	// Clean any conflicting SSH host keys
 	cleanSSHHostKeys()
-	
+
 	// Get container IP
 	cmd := exec.Command("docker", "inspect", "-f", "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}", containerName)
 	output, _ := cmd.Output()
 	ip := strings.TrimSpace(string(output))
-	
+
 	fmt.Println("\n📡 SSH CONNECTION INFORMATION:")
 	fmt.Println("════════════════════════════════════════════════════════")
 	fmt.Printf("🔗 Container IP:   %s\n", ip)
@@ -760,8 +760,8 @@ func generatePassword() string {
 // Storage analysis functions (placeholders - to be implemented)
 
 type DriveInfo struct {
-	Letter    string
-	FreeSpace string
+	Letter     string
+	FreeSpace  string
 	TotalSpace string
 }
 
@@ -803,15 +803,15 @@ func promptStorageSelection(drives []DriveInfo) (string, error) {
 	fmt.Println("4. Custom path")
 	fmt.Println()
 	fmt.Print("Choice [1]: ")
-	
+
 	reader := bufio.NewReader(os.Stdin)
 	response, _ := reader.ReadString('\n')
 	response = strings.TrimSpace(response)
-	
+
 	if response == "" || response == "1" {
 		return drives[0].Letter, nil
 	}
-	
+
 	// Handle other choices (simplified)
 	return drives[0].Letter, nil
 }
@@ -832,15 +832,15 @@ func promptLinuxStorageSelection(partitions []PartitionInfo) (string, error) {
 	fmt.Println("4. Custom path")
 	fmt.Println()
 	fmt.Print("Choice [1]: ")
-	
+
 	reader := bufio.NewReader(os.Stdin)
 	response, _ := reader.ReadString('\n')
 	response = strings.TrimSpace(response)
-	
+
 	if response == "" || response == "1" {
 		return partitions[0].MountPoint + "/docker-data", nil
 	}
-	
+
 	// Handle other choices (simplified)
 	return partitions[0].MountPoint + "/docker-data", nil
 }
@@ -877,11 +877,11 @@ func installDockerUbuntuDebian(dataRoot string) error {
 func installDockerCentOSFedora(dataRoot string) error {
 	fmt.Println("🔧 Installing Docker on CentOS/RHEL/Rocky Linux/Fedora...")
 	fmt.Println()
-	
+
 	// Detect package manager
 	var packageManager string
 	var installCmd *exec.Cmd
-	
+
 	// Check if dnf is available (Fedora, newer RHEL, Rocky Linux)
 	if _, err := exec.LookPath("dnf"); err == nil {
 		packageManager = "dnf"
@@ -894,7 +894,7 @@ func installDockerCentOSFedora(dataRoot string) error {
 		fmt.Println("Running: sudo yum install -y docker-ce docker-ce-cli containerd.io")
 		installCmd = exec.Command("sudo", "yum", "install", "-y", "docker-ce", "docker-ce-cli", "containerd.io")
 	}
-	
+
 	installCmd.Stdout = os.Stdout
 	installCmd.Stderr = os.Stderr
 	if err := installCmd.Run(); err != nil {
@@ -902,23 +902,23 @@ func installDockerCentOSFedora(dataRoot string) error {
 	}
 	fmt.Println("✓ Docker installed successfully")
 	fmt.Println()
-	
+
 	// Configure Docker daemon
 	fmt.Printf("🔧 Configuring Docker data-root: %s\n", dataRoot)
-	
+
 	// Create Docker configuration directory and daemon.json
 	dockerConfigDir := "/etc/docker"
 	if err := os.MkdirAll(dockerConfigDir, 0755); err != nil {
 		fmt.Printf("⚠️  Could not create Docker config directory: %v\n", err)
 	}
-	
+
 	// Create data-root directory
 	if dataRoot != "" {
 		if err := os.MkdirAll(dataRoot, 0755); err != nil {
 			fmt.Printf("⚠️  Could not create data-root directory: %v\n", err)
 		}
 	}
-	
+
 	// Start and enable Docker service
 	fmt.Println("🔧 Starting Docker service...")
 	startCmd := exec.Command("sudo", "systemctl", "start", "docker")
@@ -927,18 +927,18 @@ func installDockerCentOSFedora(dataRoot string) error {
 	if err := startCmd.Run(); err != nil {
 		fmt.Printf("⚠️  Could not start Docker service: %v\n", err)
 	}
-	
+
 	enableCmd := exec.Command("sudo", "systemctl", "enable", "docker")
-	enableCmd.Stdout = os.Stdout  
+	enableCmd.Stdout = os.Stdout
 	enableCmd.Stderr = os.Stderr
 	if err := enableCmd.Run(); err != nil {
 		fmt.Printf("⚠️  Could not enable Docker service: %v\n", err)
 	}
-	
+
 	fmt.Println("✅ Docker service started and enabled")
 	fmt.Println()
 	fmt.Println("💡 Note: You may need to restart your terminal or run 'newgrp docker' for group changes to take effect")
-	
+
 	return nil
 }
 
@@ -966,21 +966,21 @@ func CheckDockerAvailableWithInstall(autoInstall bool) error {
 		if !autoInstall {
 			return err
 		}
-		
+
 		// Try to install Docker automatically
 		fmt.Println("Docker is not available. Attempting automatic installation...")
 		if installErr := InstallDocker(true); installErr != nil {
 			return fmt.Errorf("Docker is not available and automatic installation failed: %v\nOriginal error: %v", installErr, err)
 		}
-		
+
 		// Verify installation was successful
 		if verifyErr := checkDockerAvailable(); verifyErr != nil {
 			return fmt.Errorf("Docker installation appeared to succeed but verification failed: %v", verifyErr)
 		}
-		
+
 		fmt.Println("✓ Docker installed and verified successfully")
 	}
-	
+
 	return nil
 }
 
@@ -990,19 +990,19 @@ func checkDockerAvailable() error {
 	cmd := exec.Command("docker", "version")
 	output, err := cmd.Output()
 	if err != nil {
-		return fmt.Errorf("Docker is not installed or not accessible. Please install Docker first.\n" +
-			"Installation guide: https://docs.docker.com/get-docker/\n" +
+		return fmt.Errorf("Docker is not installed or not accessible. Please install Docker first.\n"+
+			"Installation guide: https://docs.docker.com/get-docker/\n"+
 			"Error: %v", err)
 	}
-	
+
 	// Check if Docker daemon is running
 	cmd = exec.Command("docker", "info")
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("Docker daemon is not running. Please start Docker.\n" +
-			"Try: sudo systemctl start docker (Linux) or start Docker Desktop (Windows/macOS)\n" +
+		return fmt.Errorf("Docker daemon is not running. Please start Docker.\n"+
+			"Try: sudo systemctl start docker (Linux) or start Docker Desktop (Windows/macOS)\n"+
 			"Error: %v", err)
 	}
-	
+
 	// Extract just the version line
 	lines := strings.Split(string(output), "\n")
 	for _, line := range lines {
@@ -1021,35 +1021,35 @@ func checkDockerAvailable() error {
 func runInContainerDryRun(config DockerConfig) error {
 	fmt.Println("🔍 DRY RUN MODE - Showing what would be executed:")
 	fmt.Println()
-	
+
 	// Show configuration
 	fmt.Printf("📋 Configuration:\n")
 	fmt.Printf("  • Installation Type: %s\n", config.InstallationType)
 	fmt.Printf("  • Base Image: %s\n", config.Image)
-	
+
 	if config.ContainerName == "" {
 		config.ContainerName = fmt.Sprintf("portunix-%s-%s", config.InstallationType, "GENERATED_ID")
 	}
 	fmt.Printf("  • Container Name: %s\n", config.ContainerName)
-	
+
 	if config.EnableSSH {
 		fmt.Printf("  • SSH Enabled: Yes (port 2222:22)\n")
 	} else {
 		fmt.Printf("  • SSH Enabled: No\n")
 	}
-	
+
 	if len(config.Ports) > 0 {
 		fmt.Printf("  • Additional Ports: %v\n", config.Ports)
 	}
-	
+
 	if len(config.Volumes) > 0 {
 		fmt.Printf("  • Volume Mounts: %v\n", config.Volumes)
 	}
-	
+
 	if len(config.Environment) > 0 {
 		fmt.Printf("  • Environment Variables: %v\n", config.Environment)
 	}
-	
+
 	if config.CacheShared {
 		cachePath := config.CachePath
 		if cachePath == "" {
@@ -1057,44 +1057,44 @@ func runInContainerDryRun(config DockerConfig) error {
 		}
 		fmt.Printf("  • Cache Directory: %s mounted to /portunix-cache\n", cachePath)
 	}
-	
+
 	fmt.Printf("  • Keep Running: %v\n", config.KeepRunning)
 	fmt.Printf("  • Disposable: %v\n", config.Disposable)
 	fmt.Printf("  • Privileged: %v\n", config.Privileged)
-	
+
 	if config.Network != "" {
 		fmt.Printf("  • Network: %s\n", config.Network)
 	}
-	
+
 	fmt.Println()
-	
+
 	// Show Docker commands that would be executed
 	fmt.Printf("🐳 Docker commands that would be executed:\n")
 	fmt.Println()
-	
+
 	// 1. Check Docker availability
 	fmt.Printf("1. Check Docker availability:\n")
 	fmt.Printf("   docker version\n")
 	fmt.Printf("   docker info\n")
 	fmt.Println()
-	
+
 	// 2. Pull image
 	fmt.Printf("2. Pull base image (if not cached):\n")
 	fmt.Printf("   docker image inspect %s\n", config.Image)
 	fmt.Printf("   docker pull %s\n", config.Image)
 	fmt.Println()
-	
+
 	// 3. Detect package manager
 	fmt.Printf("3. Detect package manager:\n")
 	fmt.Printf("   docker run --rm %s /bin/sh -c \"command -v dnf && exit 0; command -v yum && exit 0; command -v apt-get && exit 0; command -v apk && exit 0\"\n", config.Image)
 	fmt.Println()
-	
+
 	// 4. Build Docker run command
 	dockerArgs := buildDockerRunArgs(config)
 	fmt.Printf("4. Create and run container:\n")
 	fmt.Printf("   docker run %s\n", strings.Join(dockerArgs[1:], " "))
 	fmt.Println()
-	
+
 	// 5. Install packages based on type
 	fmt.Printf("5. Install software in container:\n")
 	switch config.InstallationType {
@@ -1110,7 +1110,7 @@ func runInContainerDryRun(config DockerConfig) error {
 		fmt.Printf("   • No additional software installation\n")
 	}
 	fmt.Println()
-	
+
 	// 6. SSH setup
 	if config.EnableSSH {
 		fmt.Printf("6. Setup SSH access:\n")
@@ -1120,7 +1120,7 @@ func runInContainerDryRun(config DockerConfig) error {
 		fmt.Printf("   • Test SSH connectivity on localhost:2222\n")
 		fmt.Println()
 	}
-	
+
 	// 7. Expected outcome
 	fmt.Printf("📊 Expected outcome:\n")
 	fmt.Printf("  • Container '%s' would be created and running\n", config.ContainerName)
@@ -1132,10 +1132,10 @@ func runInContainerDryRun(config DockerConfig) error {
 		fmt.Printf("  • Cache directory mounted for persistent downloads\n")
 	}
 	fmt.Printf("  • %s development environment ready\n", config.InstallationType)
-	
+
 	fmt.Println()
 	fmt.Printf("💡 To execute for real, remove the --dry-run flag\n")
-	
+
 	return nil
 }
 
@@ -1143,7 +1143,7 @@ func runInContainerDryRun(config DockerConfig) error {
 func CheckRequirements() error {
 	fmt.Println("🔍 Checking system requirements for Docker container operations...")
 	fmt.Println()
-	
+
 	// Check Docker installation
 	fmt.Print("📦 Docker installation: ")
 	cmd := exec.Command("docker", "version", "--format", "{{.Client.Version}}")
@@ -1156,7 +1156,7 @@ func CheckRequirements() error {
 
 	}
 	fmt.Printf("✅ OK (Version: %s)\n", strings.TrimSpace(string(output)))
-	
+
 	// Check Docker daemon
 	fmt.Print("🐳 Docker daemon: ")
 	cmd = exec.Command("docker", "info", "--format", "{{.ServerVersion}}")
@@ -1168,7 +1168,7 @@ func CheckRequirements() error {
 		return fmt.Errorf("Docker daemon not running")
 	}
 	fmt.Printf("✅ OK (Server: %s)\n", strings.TrimSpace(string(output)))
-	
+
 	// Check Docker permissions
 	fmt.Print("🔐 Docker permissions: ")
 	cmd = exec.Command("docker", "ps")
@@ -1180,7 +1180,7 @@ func CheckRequirements() error {
 		return fmt.Errorf("insufficient Docker permissions")
 	}
 	fmt.Println("✅ OK")
-	
+
 	// Check available space
 	fmt.Print("💾 Disk space: ")
 	cmd = exec.Command("docker", "system", "df", "--format", "table {{.Type}}\t{{.Size}}\t{{.Reclaimable}}")
@@ -1198,7 +1198,7 @@ func CheckRequirements() error {
 	} else {
 		fmt.Println("⚠️  WARNING (could not check disk usage)")
 	}
-	
+
 	// Check current directory permissions
 	fmt.Print("📁 Current directory: ")
 	currentDir, err := os.Getwd()
@@ -1206,7 +1206,7 @@ func CheckRequirements() error {
 		fmt.Println("❌ FAILED")
 		return fmt.Errorf("cannot determine current directory")
 	}
-	
+
 	// Test if we can create a test file (needed for volume mounting)
 	testFile := filepath.Join(currentDir, ".portunix-test")
 	err = os.WriteFile(testFile, []byte("test"), 0644)
@@ -1217,7 +1217,7 @@ func CheckRequirements() error {
 	}
 	os.Remove(testFile) // cleanup
 	fmt.Printf("✅ OK (%s)\n", currentDir)
-	
+
 	// Check cache directory
 	fmt.Print("🗂️  Cache directory: ")
 	cacheDir := ".cache"
@@ -1229,7 +1229,7 @@ func CheckRequirements() error {
 	}
 	cachePath, _ := filepath.Abs(cacheDir)
 	fmt.Printf("✅ OK (%s)\n", cachePath)
-	
+
 	// Check network connectivity (optional)
 	fmt.Print("🌐 Network connectivity: ")
 	cmd = exec.Command("docker", "run", "--rm", "alpine:latest", "ping", "-c", "1", "google.com")
@@ -1239,10 +1239,10 @@ func CheckRequirements() error {
 	} else {
 		fmt.Println("✅ OK")
 	}
-	
+
 	fmt.Println()
 	fmt.Println("🎉 All critical requirements are satisfied!")
 	fmt.Println("💡 You can now run: portunix docker run-in-container <type>")
-	
+
 	return nil
 }

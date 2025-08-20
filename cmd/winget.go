@@ -41,7 +41,7 @@ Examples:
 
 func init() {
 	rootCmd.AddCommand(wingetCmd)
-	
+
 	// Add flags
 	wingetCmd.Flags().Bool("info", false, "Show information about Windows Package Manager")
 }

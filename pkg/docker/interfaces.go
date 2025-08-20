@@ -2,12 +2,13 @@ package docker
 
 import (
 	"context"
+
 	"portunix.cz/app/system"
 )
 
 //go:generate mockgen -source=interfaces.go -destination=../../test/mocks/docker_mock.go
 
-// DockerClient interface for mocking Docker operations
+// DockerClient interface for mocking Docker operations.
 type DockerClient interface {
 	PullImage(ctx context.Context, image string) error
 	CreateContainer(ctx context.Context, config ContainerConfig) (string, error)
@@ -19,21 +20,21 @@ type DockerClient interface {
 	GetContainerLogs(ctx context.Context, containerID string, follow bool) error
 }
 
-// SystemDetector interface for mocking system detection
+// SystemDetector interface for mocking system detection.
 type SystemDetector interface {
 	GetSystemInfo() (*system.SystemInfo, error)
 	DetectPackageManager(image string) (*PackageManagerInfo, error)
 	IsDockerInstalled() bool
 }
 
-// NetworkManager interface for network operations
+// NetworkManager interface for network operations.
 type NetworkManager interface {
 	TestConnectivity(host string, port string) error
 	GetContainerIP(containerID string) (string, error)
 	WaitForService(host, port string, timeout int) error
 }
 
-// FileSystem interface for file operations
+// FileSystem interface for file operations.
 type FileSystem interface {
 	CreateTempDir(prefix string) (string, error)
 	WriteFile(path string, content []byte, perm int) error
@@ -43,7 +44,7 @@ type FileSystem interface {
 	MkdirAll(path string, perm int) error
 }
 
-// ContainerConfig represents container configuration
+// ContainerConfig represents container configuration.
 type ContainerConfig struct {
 	Image       string
 	Name        string
@@ -56,7 +57,7 @@ type ContainerConfig struct {
 	Network     string
 }
 
-// ContainerInfo represents container information
+// ContainerInfo represents container information.
 type ContainerInfo struct {
 	ID     string
 	Name   string
@@ -66,11 +67,11 @@ type ContainerInfo struct {
 	State  string
 }
 
-// PackageManagerInfo represents package manager information
+// PackageManagerInfo represents package manager information.
 type PackageManagerInfo struct {
-	Type        string   // apt-get, yum, dnf, apk, etc.
-	Commands    []string // install commands
-	UpdateCmd   string   // update command
-	SearchCmd   string   // search command
-	Available   bool     // whether package manager is available
+	Type      string   // apt-get, yum, dnf, apk, etc.
+	Commands  []string // install commands
+	UpdateCmd string   // update command
+	SearchCmd string   // search command
+	Available bool     // whether package manager is available
 }

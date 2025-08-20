@@ -187,7 +187,7 @@ func GetValueOrDefault(value string, defaultValue string) string {
 
 func ReplaceTemplateVariables(template string, replacements map[string]string) string {
 	for key, value := range replacements {
-		template = strings.ReplaceAll(template, "$" + "{" + key + "}", value)
+		template = strings.ReplaceAll(template, "$"+"{"+key+"}", value)
 	}
 	return template
 }

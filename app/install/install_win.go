@@ -174,7 +174,7 @@ func WinInstallJavaHttpRun(version string, variant string, dryRun bool) error {
 	if err := os.MkdirAll(cacheDir, 0755); err != nil {
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
-	
+
 	cachedInstallerPath := filepath.Join(cacheDir, fileName)
 	installerPath := filepath.Join(cwd, fileName)
 
@@ -262,19 +262,19 @@ func WinInstallJavaHttpRun(version string, variant string, dryRun bool) error {
 
 func WinInstallDefault() {
 	fmt.Println("Installing default packages: Python embedded, Java, and VSCode...")
-	
+
 	// Install Python embedded
 	fmt.Println("1/3 Installing Python embedded...")
 	WinInstallPython([]string{"--embeddable"})
-	
+
 	// Install Java
 	fmt.Println("2/3 Installing Java...")
 	WinInstallJava([]string{})
-	
+
 	// Install VSCode
 	fmt.Println("3/3 Installing VSCode...")
 	InstallVSCode([]string{})
-	
+
 	fmt.Println("Default installation completed!")
 }
 
@@ -317,4 +317,3 @@ func isInstalledByVersion(program string) bool {
 	// program is installed
 	return true
 }
-

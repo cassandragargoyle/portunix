@@ -57,20 +57,20 @@ Post-Installation:
 	Run: func(cmd *cobra.Command, args []string) {
 		// Parse flags
 		autoAccept, _ := cmd.Flags().GetBool("yes")
-		
+
 		err := docker.InstallDocker(autoAccept)
 		if err != nil {
 			fmt.Printf("Error installing Docker: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("\n🎉 Docker installation completed successfully!")
 	},
 }
 
 func init() {
 	dockerCmd.AddCommand(dockerInstallCmd)
-	
+
 	// Add flags
 	dockerInstallCmd.Flags().BoolP("yes", "y", false, "Auto-accept recommended storage location without prompting")
 }
