@@ -1,0 +1,258 @@
+# Golangci-lint configuration for Portunix
+# Modern Go linting with comprehensive rules
+
+run:
+  timeout: 5m
+  issues-exit-code: 1
+  tests: true
+  skip-dirs:
+    - vendor
+    - .git
+    - bin
+    - test/fixtures
+  skip-files:
+    - ".*\\.pb\\.go$"
+    - ".*_generated\\.go$"
+
+output:
+  format: colored-line-number
+  print-issued-lines: true
+  print-linter-name: true
+  uniq-by-line: true
+  sort-results: true
+
+linters-settings:
+  # Cyclomatic complexity
+  cyclop:
+    max-complexity: 15
+    package-average: 10.0
+
+  # Cognitive complexity
+  gocognit:
+    min-complexity: 20
+
+  # Function length
+  funlen:
+    lines: 80
+    statements: 50
+
+  # Line length
+  lll:
+    line-length: 120
+
+  # Unused code
+  deadcode:
+    test: true
+  varcheck:
+    check-exported: false
+  structcheck:
+    check-exported: false
+
+  # Formatting
+  gofmt:
+    simplify: true
+  goimports:
+    local-prefixes: portunix.cz
+
+  # Error handling
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+    exclude-functions:
+      - (*os.File).Close
+      - (*sql.DB).Close
+      - (*sql.Rows).Close
+
+  # Inefficient assignments
+  ineffassign:
+    check-exported: false
+
+  # Unused parameters
+  unparam:
+    check-exported: false
+
+  # Misspelling
+  misspell:
+    locale: US
+
+  # Naming conventions
+  golint:
+    min-confidence: 0.8
+
+  # Performance
+  prealloc:
+    simple: true
+    range-loops: true
+    for-loops: false
+
+  # Security
+  gosec:
+    severity: medium
+    confidence: medium
+    excludes:
+      - G104 # Unhandled errors (covered by errcheck)
+      - G204 # Subprocess with variable (needed for Docker commands)
+
+  # Code duplication
+  dupl:
+    threshold: 100
+
+  # Package comments
+  godot:
+    scope: declarations
+    capital: true
+
+  # Test helpers
+  testpackage:
+    skip-regexp: .*_test\.go
+
+  # Go mod
+  gomoddirectives:
+    replace-allow-list:
+      - portunix.cz/app
+      - portunix.cz/parser
+      - portunix.cz/cmd
+
+linters:
+  enable:
+    # Enabled by default
+    - errcheck        # Check for unhandled errors
+    - gosimple        # Simplify code
+    - govet           # Go vet
+    - ineffassign     # Inefficient assignments
+    - staticcheck     # Static analysis
+    - typecheck       # Type checking
+    - unused          # Unused code
+    
+    # Additional linters
+    - bodyclose       # HTTP response body close
+    - cyclop          # Cyclomatic complexity
+    - dupl            # Code duplication
+    - exportloopref   # Loop variable capture
+    - funlen          # Function length
+    - gocognit        # Cognitive complexity
+    - goconst         # Repeated strings as constants
+    - gocritic        # Comprehensive checks
+    - gofmt           # Formatting
+    - goimports       # Import formatting
+    - golint          # Linting
+    - gosec           # Security checks
+    - lll             # Line length
+    - misspell        # Misspelling
+    - nakedret        # Naked returns
+    - prealloc        # Slice preallocation
+    - rowserrcheck    # SQL rows error check
+    - sqlclosecheck   # SQL close check
+    - unconvert       # Unnecessary conversions
+    - unparam         # Unused parameters
+    - whitespace      # Whitespace issues
+    
+    # Test specific
+    - testpackage     # Test package naming
+    
+    # Documentation
+    - godot           # Comments end with period
+    
+    # Go modules
+    - gomoddirectives # Go mod directives
+
+  disable:
+    - deadcode        # Deprecated (replaced by unused)
+    - varcheck        # Deprecated (replaced by unused)
+    - structcheck     # Deprecated (replaced by unused)
+    - interfacer      # Deprecated
+    - maligned        # Deprecated
+    - scopelint       # Deprecated (replaced by exportloopref)
+
+issues:
+  # Maximum issues count per one linter
+  max-issues-per-linter: 50
+  
+  # Maximum count of issues with the same text
+  max-same-issues: 10
+
+  # Show only new issues
+  new: false
+
+  # Fix found issues (if it's supported by the linter)
+  fix: false
+
+  exclude-rules:
+    # Exclude some linters from running on tests files
+    - path: _test\.go
+      linters:
+        - gocognit
+        - errcheck
+        - dupl
+        - gosec
+        - funlen
+        - lll
+
+    # Exclude some staticcheck messages
+    - linters:
+        - staticcheck
+      text: "SA9003:"
+
+    # Exclude lll issues for long lines with go:generate
+    - linters:
+        - lll
+      source: "^//go:generate "
+
+    # Exclude certain golint issues
+    - linters:
+        - golint
+      text: "should be"
+
+    # Exclude some gosec messages
+    - linters:
+        - gosec
+      text: "G204:"  # Allow subprocess with variables for Docker commands
+      
+    # Exclude ineffassign for test files
+    - path: _test\.go
+      linters:
+        - ineffassign
+
+  # Independently of option `exclude` we use default exclude patterns,
+  # it can be disabled by this option. To list all
+  # excluded by default patterns execute `golangci-lint run --help`.
+  exclude-use-default: false
+
+  # List of regexps of issue texts to exclude, empty list by default.
+  exclude:
+    # errcheck: Almost all programs ignore errors on these functions
+    - Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*printf?|os\.(Un)?Setenv). is not checked
+    
+    # golint: False positives
+    - should have a package comment
+    - comment on exported method
+    - comment on exported function
+    - comment on exported type
+    - comment on exported const
+    
+    # gosec: Allow certain security issues in development
+    - G104  # Unhandled errors
+    - G304  # File path from variable (needed for file operations)
+    - G306  # Poor file permissions (tests may need specific permissions)
+
+severity:
+  # Default value is empty string.
+  # Set the default severity for issues.
+  default-severity: error
+
+  # The default value is false.
+  # If set to true, `severity-rules` regular expressions become case-sensitive.
+  case-sensitive: false
+
+  # When a list of severity rules are provided, severity information
+  # will be added to lint issues.
+  rules:
+    - linters:
+        - dupl
+      severity: info
+    - linters:
+        - gocritic
+      severity: warning
+    - linters:
+        - gosec
+      severity: error

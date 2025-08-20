@@ -1,0 +1,80 @@
+{
+  "version": "1.0",
+  "packages": {
+    "node": {
+      "name": "Node.js",
+      "description": "JavaScript runtime built on Chrome's V8 JavaScript engine",
+      "type": "msi",
+      "variants": {
+        "lts": {
+          "version": "20.18.0",
+          "urls": {
+            "x64": "https://nodejs.org/dist/v20.18.0/node-v20.18.0-x64.msi",
+            "x86": "https://nodejs.org/dist/v20.18.0/node-v20.18.0-x86.msi"
+          },
+          "install_path": "${ProgramFiles}/nodejs"
+        },
+        "current": {
+          "version": "23.3.0",
+          "urls": {
+            "x64": "https://nodejs.org/dist/v23.3.0/node-v23.3.0-x64.msi",
+            "x86": "https://nodejs.org/dist/v23.3.0/node-v23.3.0-x86.msi"
+          },
+          "install_path": "${ProgramFiles}/nodejs"
+        }
+      },
+      "default_variant": "lts",
+      "install_args": ["/quiet"],
+      "verification": {
+        "command": "node --version",
+        "expected_exit_code": 0
+      },
+      "environment": {
+        "PATH_APPEND": "${install_path}"
+      }
+    },
+    "git": {
+      "name": "Git",
+      "description": "Distributed version control system",
+      "type": "exe",
+      "variants": {
+        "latest": {
+          "version": "2.47.1",
+          "urls": {
+            "x64": "https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-64-bit.exe",
+            "x86": "https://github.com/git-for-windows/git/releases/download/v2.47.1.windows.1/Git-2.47.1-32-bit.exe"
+          },
+          "install_path": "${ProgramFiles}/Git"
+        }
+      },
+      "default_variant": "latest",
+      "install_args": ["/VERYSILENT", "/NORESTART"],
+      "verification": {
+        "command": "git --version",
+        "expected_exit_code": 0
+      }
+    }
+  },
+  "presets": {
+    "web-dev": {
+      "name": "Web Development Setup",
+      "description": "Node.js, Git, VSCode for web development",
+      "packages": [
+        {"name": "node", "variant": "lts"},
+        {"name": "git", "variant": "latest"},
+        {"name": "vscode", "variant": "user"}
+      ]
+    },
+    "my-custom": {
+      "name": "My Custom Setup",
+      "description": "Custom development environment",
+      "packages": [
+        {"name": "python", "variant": "full"},
+        {"name": "java", "variant": "21"},
+        {"name": "node", "variant": "current"},
+        {"name": "git", "variant": "latest"},
+        {"name": "vscode", "variant": "user"}
+      ]
+    }
+  }
+}

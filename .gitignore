@@ -1,0 +1,14 @@
+*.msi
+.claude
+.tmp
+.cache
+portunix.exe
+dist
+bin
+
+# local helper scripts
+cleanup-public.ps1
+portunix
+
+# GitHub sync staging directory
+.portunix-github-sync

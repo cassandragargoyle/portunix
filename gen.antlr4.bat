@@ -1,0 +1,1 @@
+D:\Antlr\antlr4.bat -Dlanguage=Go -o parser Portunix.g4

@@ -1,0 +1,27 @@
+version: '3'
+
+tasks:
+  test:
+    desc: Run all tests
+    cmds:
+      - echo "Running all tests..."
+      - go test -v ./...
+
+  test-unit:
+    desc: Run unit tests only
+    cmds:
+      - echo "Running unit tests..."
+      - go test -tags=unit -v ./...
+
+  build:
+    desc: Build the project
+    cmds:
+      - echo "Building..."
+      - go build -o portunix .
+
+  lint:
+    desc: Run linters
+    cmds:
+      - echo "Running linters..."
+      - go vet ./...
+      - go fmt ./...

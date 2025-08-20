@@ -1,0 +1,517 @@
+{
+  "version": "1.1",
+  "packages": {
+    "java": {
+      "name": "Java (OpenJDK)",
+      "description": "Java Development Kit from Eclipse Adoptium",
+      "platforms": {
+        "windows": {
+          "type": "msi",
+          "variants": {
+            "8": {
+              "version": "8u432b06",
+              "urls": {
+                "x64": "https://github.com/adoptium/temurin8-binaries/releases/download/jdk-8u432%2Bb06/OpenJDK8U-jdk_x64_windows_hotspot_8u432b06.msi",
+                "x86": "https://github.com/adoptium/temurin8-binaries/releases/download/jdk-8u432%2Bb06/OpenJDK8U-jdk_x86_windows_hotspot_8u432b06.msi"
+              },
+              "install_path": "${ProgramFiles}/Eclipse Adoptium/jdk-8u432b06-hotspot"
+            },
+            "11": {
+              "version": "11.0.25_9",
+              "urls": {
+                "x64": "https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.25%2B9/OpenJDK11U-jdk_x64_windows_hotspot_11.0.25_9.msi",
+                "x86": "https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.25%2B9/OpenJDK11U-jdk_x86_windows_hotspot_11.0.25_9.msi"
+              },
+              "install_path": "${ProgramFiles}/Eclipse Adoptium/jdk-11.0.25.9-hotspot"
+            },
+            "17": {
+              "version": "17.0.13_11", 
+              "urls": {
+                "x64": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.13%2B11/OpenJDK17U-jdk_x64_windows_hotspot_17.0.13_11.msi",
+                "x86": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.13%2B11/OpenJDK17U-jdk_x86_windows_hotspot_17.0.13_11.msi"
+              },
+              "install_path": "${ProgramFiles}/Eclipse Adoptium/jdk-17.0.13.11-hotspot"
+            },
+            "21": {
+              "version": "21.0.5_11",
+              "urls": {
+                "x64": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jdk_x64_windows_hotspot_21.0.5_11.msi",
+                "x86": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jdk_x86_windows_hotspot_21.0.5_11.msi"
+              },
+              "install_path": "${ProgramFiles}/Eclipse Adoptium/jdk-21.0.5.11-hotspot"
+            }
+          },
+          "install_args": ["ADDLOCAL=ALL", "/quiet"],
+          "verification": {
+            "command": "java -version",
+            "expected_exit_code": 0
+          },
+          "environment": {
+            "JAVA_HOME": "${install_path}",
+            "PATH_APPEND": "${install_path}/bin"
+          }
+        },
+        "linux": {
+          "type": "tar.gz",
+          "variants": {
+            "8": {
+              "version": "8u432b06",
+              "urls": {
+                "x64": "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u432-b06/OpenJDK8U-jdk_x64_linux_hotspot_8u432b06.tar.gz",
+                "arm64": "https://github.com/adoptium/temurin8-binaries/releases/download/jdk8u432-b06/OpenJDK8U-jdk_aarch64_linux_hotspot_8u432b06.tar.gz"
+              },
+              "extract_to": "/opt/java/jdk-8u432b06",
+              "post_install": [
+                "sudo update-alternatives --install /usr/bin/java java /opt/java/jdk-8u432b06/bin/java 1",
+                "sudo update-alternatives --install /usr/bin/javac javac /opt/java/jdk-8u432b06/bin/javac 1"
+              ]
+            },
+            "11": {
+              "version": "11.0.25_9",
+              "urls": {
+                "x64": "https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.25%2B9/OpenJDK11U-jdk_x64_linux_hotspot_11.0.25_9.tar.gz",
+                "arm64": "https://github.com/adoptium/temurin11-binaries/releases/download/jdk-11.0.25%2B9/OpenJDK11U-jdk_aarch64_linux_hotspot_11.0.25_9.tar.gz"
+              },
+              "extract_to": "/opt/java/jdk-11.0.25+9",
+              "post_install": [
+                "sudo update-alternatives --install /usr/bin/java java /opt/java/jdk-11.0.25+9/bin/java 1",
+                "sudo update-alternatives --install /usr/bin/javac javac /opt/java/jdk-11.0.25+9/bin/javac 1"
+              ]
+            },
+            "17": {
+              "version": "17.0.13_11",
+              "urls": {
+                "x64": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.13%2B11/OpenJDK17U-jdk_x64_linux_hotspot_17.0.13_11.tar.gz",
+                "arm64": "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.13%2B11/OpenJDK17U-jdk_aarch64_linux_hotspot_17.0.13_11.tar.gz"
+              },
+              "extract_to": "/opt/java/jdk-17.0.13+11",
+              "post_install": [
+                "sudo update-alternatives --install /usr/bin/java java /opt/java/jdk-17.0.13+11/bin/java 1",
+                "sudo update-alternatives --install /usr/bin/javac javac /opt/java/jdk-17.0.13+11/bin/javac 1"
+              ]
+            },
+            "21": {
+              "version": "21.0.5_11",
+              "urls": {
+                "x64": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jdk_x64_linux_hotspot_21.0.5_11.tar.gz",
+                "arm64": "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.5%2B11/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.5_11.tar.gz"
+              },
+              "extract_to": "/opt/java/jdk-21.0.5+11",
+              "post_install": [
+                "sudo update-alternatives --install /usr/bin/java java /opt/java/jdk-21.0.5+11/bin/java 1",
+                "sudo update-alternatives --install /usr/bin/javac javac /opt/java/jdk-21.0.5+11/bin/javac 1"
+              ]
+            }
+          },
+          "verification": {
+            "command": "java -version",
+            "expected_exit_code": 0
+          },
+          "environment": {
+            "JAVA_HOME": "${extract_to}",
+            "PATH_APPEND": "${extract_to}/bin"
+          }
+        }
+      },
+      "default_variant": "21"
+    },
+    "python": {
+      "name": "Python",
+      "description": "Python programming language",
+      "platforms": {
+        "windows": {
+          "type": "zip",
+          "variants": {
+            "embeddable": {
+              "version": "3.13.6",
+              "urls": {
+                "x64": "https://www.python.org/ftp/python/3.13.6/python-3.13.6-embed-amd64.zip",
+                "x86": "https://www.python.org/ftp/python/3.13.6/python-3.13.6-embed-win32.zip"
+              },
+              "extract_to": "C:/PortablePython",
+              "post_install": [
+                "echo import sys >> python313._pth",
+                "echo site-packages >> python313._pth"
+              ]
+            },
+            "full": {
+              "version": "3.13.6",
+              "urls": {
+                "x64": "https://www.python.org/ftp/python/3.13.6/python-3.13.6-amd64.exe",
+                "x86": "https://www.python.org/ftp/python/3.13.6/python-3.13.6.exe"
+              },
+              "install_args": ["/quiet", "InstallAllUsers=1", "PrependPath=1"]
+            }
+          },
+          "verification": {
+            "command": "python --version",
+            "expected_exit_code": 0
+          }
+        },
+        "linux": {
+          "type": "apt",
+          "variants": {
+            "default": {
+              "version": "3.13",
+              "packages": ["python3", "python3-pip", "python3-venv"],
+              "post_install": [
+                "sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1"
+              ]
+            },
+            "dev": {
+              "version": "3.13",
+              "packages": ["python3", "python3-pip", "python3-venv", "python3-dev", "build-essential"],
+              "post_install": [
+                "sudo update-alternatives --install /usr/bin/python python /usr/bin/python3 1"
+              ]
+            }
+          },
+          "verification": {
+            "command": "python --version",
+            "expected_exit_code": 0
+          }
+        }
+      },
+      "default_variant": "embeddable"
+    },
+    "vscode": {
+      "name": "Visual Studio Code",
+      "description": "Source code editor from Microsoft",
+      "platforms": {
+        "windows": {
+          "type": "exe",
+          "variants": {
+            "user": {
+              "version": "latest",
+              "urls": {
+                "x64": "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user",
+                "x86": "https://code.visualstudio.com/sha/download?build=stable&os=win32-user"
+              },
+              "install_args": ["/verysilent", "/mergetasks=!runcode"]
+            },
+            "system": {
+              "version": "latest", 
+              "urls": {
+                "x64": "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64",
+                "x86": "https://code.visualstudio.com/sha/download?build=stable&os=win32"
+              },
+              "install_args": ["/verysilent", "/mergetasks=!runcode"]
+            }
+          },
+          "verification": {
+            "command": "code --version",
+            "expected_exit_code": 0
+          }
+        },
+        "linux": {
+          "type": "deb",
+          "variants": {
+            "stable": {
+              "version": "latest",
+              "urls": {
+                "x64": "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64",
+                "arm64": "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-arm64"
+              },
+              "post_install": [
+                "sudo dpkg -i ${downloaded_file}",
+                "sudo apt-get install -f"
+              ]
+            },
+            "snap": {
+              "version": "latest",
+              "packages": ["code"],
+              "type": "snap",
+              "install_args": ["--classic"]
+            }
+          },
+          "verification": {
+            "command": "code --version",
+            "expected_exit_code": 0
+          }
+        }
+      },
+      "default_variant": "user"
+    },
+    "go": {
+      "name": "Go Programming Language",
+      "description": "Go programming language from Google",
+      "platforms": {
+        "windows": {
+          "type": "msi",
+          "variants": {
+            "latest": {
+              "version": "1.23.4",
+              "urls": {
+                "x64": "https://go.dev/dl/go1.23.4.windows-amd64.msi",
+                "x86": "https://go.dev/dl/go1.23.4.windows-386.msi"
+              },
+              "install_path": "${ProgramFiles}/Go"
+            }
+          },
+          "install_args": ["/quiet"],
+          "verification": {
+            "command": "go version",
+            "expected_exit_code": 0
+          },
+          "environment": {
+            "GOROOT": "${install_path}",
+            "PATH_APPEND": "${install_path}/bin"
+          }
+        },
+        "linux": {
+          "type": "tar.gz",
+          "variants": {
+            "latest": {
+              "version": "1.23.4",
+              "urls": {
+                "x64": "https://go.dev/dl/go1.23.4.linux-amd64.tar.gz",
+                "arm64": "https://go.dev/dl/go1.23.4.linux-arm64.tar.gz"
+              },
+              "extract_to": "/usr/local",
+              "post_install": [
+                "sudo tar -C /usr/local -xzf ${downloaded_file}",
+                "echo 'export PATH=$PATH:/usr/local/go/bin' | sudo tee /etc/profile.d/go.sh"
+              ]
+            }
+          },
+          "verification": {
+            "command": "go version",
+            "expected_exit_code": 0
+          },
+          "environment": {
+            "GOROOT": "/usr/local/go",
+            "PATH_APPEND": "/usr/local/go/bin"
+          }
+        }
+      },
+      "default_variant": "latest"
+    },
+    "chocolatey": {
+      "name": "Chocolatey Package Manager",
+      "description": "Package manager for Windows",
+      "platforms": {
+        "windows": {
+          "type": "powershell",
+          "variants": {
+            "latest": {
+              "version": "latest",
+              "install_script": "Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))",
+              "post_install": [
+                "refreshenv"
+              ]
+            }
+          },
+          "verification": {
+            "command": "choco --version",
+            "expected_exit_code": 0
+          }
+        }
+      },
+      "default_variant": "latest"
+    },
+    "chrome": {
+      "name": "Google Chrome",
+      "description": "Google Chrome web browser",
+      "platforms": {
+        "windows": {
+          "type": "msi",
+          "variants": {
+            "stable": {
+              "version": "latest",
+              "urls": {
+                "x64": "https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi",
+                "x86": "https://dl.google.com/chrome/install/googlechromestandaloneenterprise.msi"
+              }
+            }
+          },
+          "install_args": ["/quiet"],
+          "verification": {
+            "command": "chrome --version",
+            "expected_exit_code": 0
+          }
+        },
+        "linux": {
+          "type": "deb",
+          "variants": {
+            "stable": {
+              "version": "latest",
+              "urls": {
+                "x64": "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
+              }
+            }
+          },
+          "verification": {
+            "command": "google-chrome --version",
+            "expected_exit_code": 0
+          }
+        }
+      },
+      "default_variant": "stable"
+    },
+    "mvn": {
+      "name": "Apache Maven",
+      "description": "Build automation and project management tool for Java projects",
+      "platforms": {
+        "windows": {
+          "type": "zip",
+          "variants": {
+            "3.9.9": {
+              "version": "3.9.9",
+              "urls": {
+                "x64": "https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.zip"
+              },
+              "extract_to": "C:/Program Files/Apache/Maven",
+              "post_install": [
+                "echo Maven extracted successfully"
+              ]
+            },
+            "latest": {
+              "version": "3.9.9",
+              "urls": {
+                "x64": "https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.zip"
+              },
+              "extract_to": "C:/Program Files/Apache/Maven",
+              "post_install": [
+                "echo Maven extracted successfully"
+              ]
+            }
+          },
+          "verification": {
+            "command": "mvn --version",
+            "expected_exit_code": 0
+          },
+          "environment": {
+            "M2_HOME": "${extract_to}/apache-maven-3.9.9",
+            "MAVEN_HOME": "${extract_to}/apache-maven-3.9.9",
+            "PATH_APPEND": "${extract_to}/apache-maven-3.9.9/bin"
+          }
+        },
+        "linux": {
+          "type": "tar.gz",
+          "variants": {
+            "3.9.9": {
+              "version": "3.9.9",
+              "urls": {
+                "x64": "https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz"
+              },
+              "extract_to": "/opt/maven",
+              "post_install": [
+                "sudo mkdir -p /opt/maven",
+                "sudo tar -C /opt/maven -xzf ${downloaded_file} --strip-components=1",
+                "echo 'export M2_HOME=/opt/maven' | sudo tee /etc/profile.d/maven.sh",
+                "echo 'export MAVEN_HOME=/opt/maven' | sudo tee -a /etc/profile.d/maven.sh", 
+                "echo 'export PATH=$PATH:/opt/maven/bin' | sudo tee -a /etc/profile.d/maven.sh",
+                "sudo chmod +x /etc/profile.d/maven.sh"
+              ]
+            },
+            "latest": {
+              "version": "3.9.9",
+              "urls": {
+                "x64": "https://archive.apache.org/dist/maven/maven-3/3.9.9/binaries/apache-maven-3.9.9-bin.tar.gz"
+              },
+              "extract_to": "/opt/maven",
+              "post_install": [
+                "sudo mkdir -p /opt/maven",
+                "sudo tar -C /opt/maven -xzf ${downloaded_file} --strip-components=1",
+                "echo 'export M2_HOME=/opt/maven' | sudo tee /etc/profile.d/maven.sh",
+                "echo 'export MAVEN_HOME=/opt/maven' | sudo tee -a /etc/profile.d/maven.sh",
+                "echo 'export PATH=$PATH:/opt/maven/bin' | sudo tee -a /etc/profile.d/maven.sh",
+                "sudo chmod +x /etc/profile.d/maven.sh"
+              ]
+            },
+            "apt": {
+              "version": "latest",
+              "type": "apt",
+              "packages": ["maven"],
+              "post_install": []
+            }
+          },
+          "verification": {
+            "command": "mvn --version",
+            "expected_exit_code": 0
+          },
+          "environment": {
+            "M2_HOME": "/opt/maven",
+            "MAVEN_HOME": "/opt/maven",
+            "PATH_APPEND": "/opt/maven/bin"
+          }
+        }
+      },
+      "default_variant": "latest"
+    },
+    "winget": {
+      "name": "Windows Package Manager",
+      "description": "Microsoft's official package manager for Windows",
+      "platforms": {
+        "windows": {
+          "type": "powershell",
+          "variants": {
+            "github": {
+              "version": "latest",
+              "install_script": "Write-Host 'Checking if winget is already installed...'; try { $wingetCheck = winget --version 2>$null; if ($wingetCheck) { Write-Host \"✓ Winget is already installed (version: $wingetCheck)\"; Write-Host 'No installation needed.'; exit 0 } } catch { Write-Host 'Winget not found, proceeding with installation...' }; $cacheDir = 'C:\\Portunix\\.cache'; $winget = \"$cacheDir\\Microsoft.DesktopAppInstaller.msixbundle\"; if (Test-Path $winget) { Write-Host 'Using cached winget installer...'; Write-Host 'Installing winget with compatible VCLibs (14.0.33321.0)...'; try { $progressPreference = 'SilentlyContinue'; Write-Host 'Installing cached VCLibs 14.0.33321.0...'; $vcLibs = \"$cacheDir\\Microsoft.VCLibs.140.00.UWPDesktop_latest_x64.appx\"; if (Test-Path $vcLibs) { Add-AppxPackage $vcLibs -ErrorAction Stop; Write-Host '✓ VCLibs 14.0.33321.0 installed successfully!'; } else { Write-Host 'Warning: VCLibs not found in cache'; }; Write-Host 'Installing older compatible winget...'; Add-AppxPackage $winget -ErrorAction Stop; Write-Host '✓ Winget installed successfully with compatible VCLibs!' } catch { Write-Host \"Installation error: $_\"; Write-Host 'Error details:'; Write-Host $_.Exception.Message; Write-Host 'Trying fallback method with older winget version...'; try { Write-Host 'Downloading older winget version (v1.6.3482)...'; $olderWingetUrl = 'https://github.com/microsoft/winget-cli/releases/download/v1.6.3482/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle'; $tempWinget = Join-Path $env:TEMP 'Microsoft.DesktopAppInstaller_old.msixbundle'; Invoke-WebRequest -Uri $olderWingetUrl -OutFile $tempWinget; Write-Host 'Installing older winget version...'; Add-AppxPackage $tempWinget -ErrorAction Stop; Remove-Item $tempWinget -ErrorAction SilentlyContinue; Write-Host '✓ Older winget installed successfully!' } catch { throw \"Both new and old winget installation failed: $_\" } } } else { Write-Host 'Cache not found, downloading compatible winget from GitHub...'; Write-Host 'Downloading older winget version (v1.6.3482) that works with VCLibs 14.0.33321.0...'; $olderWingetUrl = 'https://github.com/microsoft/winget-cli/releases/download/v1.6.3482/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle'; $tempFile = Join-Path $env:TEMP 'Microsoft.DesktopAppInstaller.msixbundle'; Invoke-WebRequest -Uri $olderWingetUrl -OutFile $tempFile; Add-AppxPackage $tempFile; Remove-Item $tempFile; Write-Host 'Installation completed!' }",
+              "post_install": [
+                "winget --info"
+              ]
+            },
+            "register": {
+              "version": "latest",
+              "install_script": "Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe",
+              "post_install": [
+                "winget --info"
+              ]
+            }
+          },
+          "verification": {
+            "command": "winget --version",
+            "expected_exit_code": 0
+          }
+        },
+        "windows_sandbox": {
+          "type": "powershell",
+          "variants": {
+            "sandbox": {
+              "version": "latest",
+              "install_script": "$progressPreference = 'silentlyContinue'\nWrite-Host \"Installing WinGet PowerShell module from PSGallery...\"\nInstall-PackageProvider -Name NuGet -Force | Out-Null\nInstall-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null\nWrite-Host \"Using Repair-WinGetPackageManager cmdlet to bootstrap WinGet...\"\nRepair-WinGetPackageManager -AllUsers\nWrite-Host \"Done.\"",
+              "post_install": [
+                "winget --info"
+              ]
+            }
+          },
+          "verification": {
+            "command": "winget --version",
+            "expected_exit_code": 0
+          }
+        }
+      },
+      "default_variant": "github"
+    }
+  },
+  "presets": {
+    "default": {
+      "name": "Default Development Setup",
+      "description": "Python embedded, Java 17, and VSCode",
+      "packages": [
+        {"name": "python", "variant": "embeddable"},
+        {"name": "java", "variant": "17"},
+        {"name": "vscode", "variant": "user"}
+      ]
+    },
+    "minimal": {
+      "name": "Minimal Setup",
+      "description": "Just Python embedded",
+      "packages": [
+        {"name": "python", "variant": "embeddable"}
+      ]
+    },
+    "full": {
+      "name": "Full Development Setup", 
+      "description": "All development tools",
+      "packages": [
+        {"name": "python", "variant": "full"},
+        {"name": "java", "variant": "17"},
+        {"name": "vscode", "variant": "user"},
+        {"name": "go", "variant": "latest"}
+      ]
+    }
+  }
+}
