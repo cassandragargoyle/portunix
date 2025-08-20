@@ -22,7 +22,7 @@ func WinInstallMSBuildtools(arguments []string) error {
 			return err
 		}
 		fmt.Println("Download complete.")
-	}else {
+	} else {
 		fmt.Printf("Installer file %s exists.\n", installer)
 	}
 
@@ -40,7 +40,7 @@ func WinInstallMSBuildtools(arguments []string) error {
 
 func WinSetupMSBuildtools(installer string) error {
 	fmt.Printf("Install file %s.\n", installer)
-	cmd := exec.Command("./" + installer, "--quiet", "--wait", "--add", "Microsoft.VisualStudio.Workload.VCTools", "--includeRecommended", "--norestart")
+	cmd := exec.Command("./"+installer, "--quiet", "--wait", "--add", "Microsoft.VisualStudio.Workload.VCTools", "--includeRecommended", "--norestart")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()

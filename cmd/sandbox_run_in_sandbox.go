@@ -45,7 +45,7 @@ Flags:
 		// Parse flags manually since we need to handle both flags and installation type
 		var keepFiles bool
 		var filteredArgs []string
-		
+
 		for _, arg := range args {
 			if arg == "--keep-files" || arg == "--no-cleanup" {
 				keepFiles = true
@@ -53,7 +53,7 @@ Flags:
 				filteredArgs = append(filteredArgs, arg)
 			}
 		}
-		
+
 		// Use filtered args (without flags) for installation type
 		args = filteredArgs
 		if len(args) == 0 {
@@ -187,14 +187,14 @@ Flags:
 			fmt.Printf("Error setting up Win32-OpenSSH: %v\n", err)
 			return
 		}
-		
+
 		// Check if Python embeddable should be cached and copied
 		err = sandbox.EnsurePythonEmbeddable(args, tempPortunixDir)
 		if err != nil {
 			fmt.Printf("Error setting up Python embeddable: %v\n", err)
 			return
 		}
-		
+
 		// Pre-download winget for faster sandbox installation
 		if shouldPreDownloadWinget(args) {
 			err = sandbox.PreDownloadWinget(tempPortunixDir)
@@ -203,7 +203,7 @@ Flags:
 				// Continue execution, this is not critical
 			}
 		}
-		
+
 		// Check if VSCode should use custom configuration (after sandbox check)
 		useVSCodeWSB := false
 		for i, arg := range args {
@@ -212,21 +212,21 @@ Flags:
 				break
 			}
 		}
-		
+
 		if useVSCodeWSB {
 			err = sandbox.EnsureVSCodeScripts(tempPortunixDir)
 			if err != nil {
 				fmt.Printf("Error setting up VSCode scripts: %v\n", err)
 				return
 			}
-			
+
 			// Use custom VSCode WSB configuration
 			err = sandbox.UseVSCodeWSBFile(tempPortunixDir)
 			if err != nil {
 				fmt.Printf("Error setting up VSCode WSB file: %v\n", err)
 				return
 			}
-			
+
 			// Handle cleanup for VSCode sandbox - wait for user input
 			fmt.Println("\nVSCode sandbox is running!")
 			fmt.Printf("Temporary files preserved at: %s\n", absPortunixDir)
@@ -236,19 +236,19 @@ Flags:
 			fmt.Println("The sandbox needs access to the mapped files during installation.")
 			fmt.Println()
 			fmt.Print("Press Enter after VSCode installation completes to clean up and exit...")
-			
+
 			reader := bufio.NewReader(os.Stdin)
 			reader.ReadString('\n')
-			
+
 			fmt.Println("Cleaning up temporary files...")
 			// Note: cleanup happens when function exits
 			return
 		}
-		
+
 		// 3. Generate .wsb file with SSH enabled and mapped folder
 		// Prepend "install" to the arguments since sandbox commands typically use install subcommand
 		sandboxArgs := append([]string{"install"}, args...)
-		
+
 		config := sandbox.SandboxConfig{
 			EnableNetworking: true,
 			EnableClipboard:  true,
@@ -372,11 +372,11 @@ Flags:
 		fmt.Println("✓ Monitor the sandbox window to see real-time progress")
 		fmt.Println("✓ All operations are logged with timestamps and exit codes")
 		fmt.Println()
-		
+
 		// Display SSH connection information
 		fmt.Println("📡 SSH CONNECTION INFORMATION:")
 		fmt.Println("════════════════════════════════════════════════")
-		
+
 		// Try to read SSH info from the shared file
 		var sandboxIP, username, password string
 		sshInfoPath := filepath.Join(".tmp")
@@ -384,7 +384,7 @@ Flags:
 		if err == nil {
 			var newestDir string
 			var newestTime int64
-			
+
 			for _, entry := range entries {
 				if entry.IsDir() && strings.HasPrefix(entry.Name(), "portunix_") {
 					info, err := entry.Info()
@@ -397,12 +397,12 @@ Flags:
 					}
 				}
 			}
-			
+
 			if newestDir != "" {
 				sshInfoFile := filepath.Join(sshInfoPath, newestDir, ".tmp", "ssh_info.txt")
 				if content, err := os.ReadFile(sshInfoFile); err == nil {
 					lines := strings.Split(string(content), "\n")
-					
+
 					for _, line := range lines {
 						line = strings.TrimSpace(line)
 						if strings.HasPrefix(line, "IP Address:") {
@@ -425,7 +425,7 @@ Flags:
 				}
 			}
 		}
-		
+
 		if sandboxIP != "" && username != "" && password != "" {
 			fmt.Printf("🔗 IP Address: %s\n", sandboxIP)
 			fmt.Printf("👤 Username:   %s\n", username)
@@ -449,38 +449,38 @@ Flags:
 			fmt.Printf("   • SSH info file: %s\n", filepath.Join(absPortunixDir, ".tmp", "ssh_info.txt"))
 			fmt.Println("   • You can connect manually once setup completes")
 		}
-		
+
 		fmt.Println("════════════════════════════════════════════════")
 		fmt.Println()
-		
+
 		// 7. Wait for sandbox to complete and close
 		fmt.Println("Waiting for sandbox to complete execution...")
 		fmt.Println("The sandbox window will close automatically when commands finish.")
 		fmt.Println("You can also close it manually when you're done.")
 		fmt.Println()
-		
+
 		// Monitor sandbox until it's closed
 		ticker := time.NewTicker(5 * time.Second)
 		defer ticker.Stop()
-		
+
 		for {
 			running, err := sandbox.CheckSandboxRunning()
 			if err != nil {
 				fmt.Printf("Error checking sandbox status: %v\n", err)
 				break
 			}
-			
+
 			if !running {
 				fmt.Println("✓ Sandbox has been closed")
 				break
 			}
-			
+
 			select {
 			case <-ticker.C:
 				// Continue monitoring
 			}
 		}
-		
+
 		// 8. Cleanup decision
 		fmt.Println()
 		if keepFiles {
@@ -492,7 +492,7 @@ Flags:
 			reader := bufio.NewReader(os.Stdin)
 			response, _ := reader.ReadString('\n')
 			response = strings.TrimSpace(strings.ToLower(response))
-			
+
 			if response == "n" || response == "no" {
 				shouldCleanup = false
 				fmt.Printf("Temporary files preserved in: %s\n", absPortunixDir)

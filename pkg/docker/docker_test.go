@@ -107,13 +107,13 @@ func TestDockerInstall_ValidLinuxSystem_Success(t *testing.T) {
 			Distribution: "ubuntu",
 		},
 	}
-	
+
 	mockDetector.On("GetSystemInfo").Return(expectedInfo, nil)
 	mockDetector.On("IsDockerInstalled").Return(false)
-	
+
 	// Act
 	err := InstallDockerWithDetector(mockDetector, true)
-	
+
 	// Assert
 	assert.NoError(t, err)
 	mockDetector.AssertExpectations(t)
@@ -123,10 +123,10 @@ func TestDockerInstall_DockerAlreadyInstalled_SkipsInstallation(t *testing.T) {
 	// Arrange
 	mockDetector := new(MockSystemDetector)
 	mockDetector.On("IsDockerInstalled").Return(true)
-	
+
 	// Act
 	err := InstallDockerWithDetector(mockDetector, false)
-	
+
 	// Assert
 	assert.NoError(t, err)
 	mockDetector.AssertExpectations(t)
@@ -141,13 +141,13 @@ func TestPackageManagerDetection_Ubuntu_ReturnsApt(t *testing.T) {
 		Commands:  []string{"apt-get", "install", "-y"},
 		Available: true,
 	}
-	
+
 	mockDetector := new(MockSystemDetector)
 	mockDetector.On("DetectPackageManager", image).Return(expected, nil)
-	
+
 	// Act
 	result, err := mockDetector.DetectPackageManager(image)
-	
+
 	// Assert
 	assert.NoError(t, err)
 	assert.Equal(t, expected.Type, result.Type)
@@ -164,13 +164,13 @@ func TestPackageManagerDetection_Alpine_ReturnsApk(t *testing.T) {
 		Commands:  []string{"apk", "add", "--no-cache"},
 		Available: true,
 	}
-	
+
 	mockDetector := new(MockSystemDetector)
 	mockDetector.On("DetectPackageManager", image).Return(expected, nil)
-	
+
 	// Act
 	result, err := mockDetector.DetectPackageManager(image)
-	
+
 	// Assert
 	assert.NoError(t, err)
 	assert.Equal(t, expected.Type, result.Type)
@@ -186,13 +186,13 @@ func TestContainerCreation_ValidConfig_Success(t *testing.T) {
 		Name:  "test-container",
 		Ports: []string{"8080:8080"},
 	}
-	
+
 	expectedContainerID := "abc123456789"
 	mockClient.On("CreateContainer", mock.Anything, config).Return(expectedContainerID, nil)
-	
+
 	// Act
 	containerID, err := mockClient.CreateContainer(context.Background(), config)
-	
+
 	// Assert
 	assert.NoError(t, err)
 	assert.Equal(t, expectedContainerID, containerID)
@@ -203,21 +203,21 @@ func TestContainerLifecycle_StartStopRemove_Success(t *testing.T) {
 	// Arrange
 	mockClient := new(MockDockerClient)
 	containerID := "abc123456789"
-	
+
 	mockClient.On("StartContainer", mock.Anything, containerID).Return(nil)
 	mockClient.On("StopContainer", mock.Anything, containerID).Return(nil)
 	mockClient.On("RemoveContainer", mock.Anything, containerID, false).Return(nil)
-	
+
 	// Act & Assert
 	err := mockClient.StartContainer(context.Background(), containerID)
 	assert.NoError(t, err)
-	
+
 	err = mockClient.StopContainer(context.Background(), containerID)
 	assert.NoError(t, err)
-	
+
 	err = mockClient.RemoveContainer(context.Background(), containerID, false)
 	assert.NoError(t, err)
-	
+
 	mockClient.AssertExpectations(t)
 }
 
@@ -225,12 +225,12 @@ func TestListContainers_EmptyList_ReturnsEmptySlice(t *testing.T) {
 	// Arrange
 	mockClient := new(MockDockerClient)
 	expected := []ContainerInfo{}
-	
+
 	mockClient.On("ListContainers", mock.Anything).Return(expected, nil)
-	
+
 	// Act
 	containers, err := mockClient.ListContainers(context.Background())
-	
+
 	// Assert
 	assert.NoError(t, err)
 	assert.Empty(t, containers)
@@ -256,12 +256,12 @@ func TestListContainers_WithContainers_ReturnsContainerList(t *testing.T) {
 			Ports:  []string{},
 		},
 	}
-	
+
 	mockClient.On("ListContainers", mock.Anything).Return(expected, nil)
-	
+
 	// Act
 	containers, err := mockClient.ListContainers(context.Background())
-	
+
 	// Assert
 	assert.NoError(t, err)
 	assert.Len(t, containers, 2)
@@ -273,11 +273,11 @@ func TestListContainers_WithContainers_ReturnsContainerList(t *testing.T) {
 func TestGeneratePassword_ValidLength_ReturnsCorrectLength(t *testing.T) {
 	// Act
 	password := "mock-password-16"
-	
+
 	// Assert
 	assert.Len(t, password, 16)
 	assert.NotEmpty(t, password)
-	
+
 	// Test that multiple calls generate different passwords
 	password2 := "mock-password-diff"
 	assert.NotEqual(t, password, password2)
@@ -286,7 +286,7 @@ func TestGeneratePassword_ValidLength_ReturnsCorrectLength(t *testing.T) {
 func TestGenerateID_ReturnsUnixTimestamp(t *testing.T) {
 	// Act
 	id := "mock-id-123456"
-	
+
 	// Assert
 	assert.NotEmpty(t, id)
 	assert.Contains(t, id, "123456")
@@ -294,7 +294,7 @@ func TestGenerateID_ReturnsUnixTimestamp(t *testing.T) {
 
 func TestValidateInstallationType_ValidTypes_ReturnsTrue(t *testing.T) {
 	validTypes := []string{"default", "empty", "python", "java", "vscode"}
-	
+
 	for _, installType := range validTypes {
 		t.Run(installType, func(t *testing.T) {
 			isValid := validateInstallationType(installType)
@@ -305,7 +305,7 @@ func TestValidateInstallationType_ValidTypes_ReturnsTrue(t *testing.T) {
 
 func TestValidateInstallationType_InvalidType_ReturnsFalse(t *testing.T) {
 	invalidTypes := []string{"invalid", "unknown", "", "PYTHON", "Default"}
-	
+
 	for _, installType := range invalidTypes {
 		t.Run(installType, func(t *testing.T) {
 			isValid := validateInstallationType(installType)
@@ -338,15 +338,15 @@ func InstallDockerWithDetector(detector SystemDetector, autoAccept bool) error {
 	if detector.IsDockerInstalled() {
 		return nil // Already installed
 	}
-	
+
 	osInfo, err := detector.GetSystemInfo()
 	if err != nil {
 		return err
 	}
-	
+
 	// Mock installation logic
 	_ = osInfo
 	_ = autoAccept
-	
+
 	return nil // Success
 }

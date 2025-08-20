@@ -46,26 +46,26 @@ func extractGo(src, dest string) error {
 			}
 
 			// Determine target file path
-		targetPath := filepath.Join(dest, header.Name)
+			targetPath := filepath.Join(dest, header.Name)
 
-		switch header.Typeflag {
-		case tar.TypeDir:
-			if err := os.MkdirAll(targetPath, os.ModePerm); err != nil {
-				return fmt.Errorf("failed to create directory: %v", err)
-			}
-		case tar.TypeReg:
-			outFile, err := os.Create(targetPath)
-			if err != nil {
-				return fmt.Errorf("failed to create file: %v", err)
-			}
-			if _, err := io.Copy(outFile, tarReader); err != nil {
+			switch header.Typeflag {
+			case tar.TypeDir:
+				if err := os.MkdirAll(targetPath, os.ModePerm); err != nil {
+					return fmt.Errorf("failed to create directory: %v", err)
+				}
+			case tar.TypeReg:
+				outFile, err := os.Create(targetPath)
+				if err != nil {
+					return fmt.Errorf("failed to create file: %v", err)
+				}
+				if _, err := io.Copy(outFile, tarReader); err != nil {
+					outFile.Close()
+					return fmt.Errorf("failed to copy file: %v", err)
+				}
 				outFile.Close()
-				return fmt.Errorf("failed to copy file: %v", err)
+			default:
+				fmt.Printf("Ignoring file of type %c in tarball\n", header.Typeflag)
 			}
-			outFile.Close()
-		default:
-			fmt.Printf("Ignoring file of type %c in tarball\n", header.Typeflag)
-		}
 		}
 	}
 	fmt.Println("Extraction complete.")
@@ -121,7 +121,7 @@ func InstallGo(arguments []string) error {
 	// Check if the tarball already exists
 	if !app.FileExist(tarballPath) {
 		// Download Go tarball
-		if err := app.DownloadFile(tarballPath,downloadURL); err != nil {
+		if err := app.DownloadFile(tarballPath, downloadURL); err != nil {
 			fmt.Println("Error downloading Go:", err)
 			return err
 		}
@@ -161,8 +161,8 @@ func WinInstallGo(arguments []string) error {
 	if !app.FileExist(installer) {
 		fmt.Println("Download Go instaler ...")
 		// Download the installer
-		err := app.DownloadFile(installer,installerURL)
-		
+		err := app.DownloadFile(installer, installerURL)
+
 		if err != nil {
 			fmt.Println("Error during download:", err)
 			return err

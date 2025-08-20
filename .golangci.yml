@@ -5,20 +5,12 @@ run:
   timeout: 5m
   issues-exit-code: 1
   tests: true
-  skip-dirs:
-    - vendor
-    - .git
-    - bin
-    - test/fixtures
-  skip-files:
-    - ".*\\.pb\\.go$"
-    - ".*_generated\\.go$"
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
-  uniq-by-line: true
   sort-results: true
 
 linters-settings:
@@ -40,13 +32,6 @@ linters-settings:
   lll:
     line-length: 120
 
-  # Unused code
-  deadcode:
-    test: true
-  varcheck:
-    check-exported: false
-  structcheck:
-    check-exported: false
 
   # Formatting
   gofmt:
@@ -76,8 +61,8 @@ linters-settings:
     locale: US
 
   # Naming conventions
-  golint:
-    min-confidence: 0.8
+  revive:
+    confidence: 0.8
 
   # Performance
   prealloc:
@@ -112,6 +97,8 @@ linters-settings:
       - portunix.cz/app
       - portunix.cz/parser
       - portunix.cz/cmd
+      - portunix.cz/app/sandbox
+      - portunix.cz/app/install
 
 linters:
   enable:
@@ -128,14 +115,14 @@ linters:
     - bodyclose       # HTTP response body close
     - cyclop          # Cyclomatic complexity
     - dupl            # Code duplication
-    - exportloopref   # Loop variable capture
+    - copyloopvar     # Loop variable capture (replaces exportloopref)
     - funlen          # Function length
     - gocognit        # Cognitive complexity
     - goconst         # Repeated strings as constants
     - gocritic        # Comprehensive checks
     - gofmt           # Formatting
     - goimports       # Import formatting
-    - golint          # Linting
+    - revive          # Linting (replaces golint)
     - gosec           # Security checks
     - lll             # Line length
     - misspell        # Misspelling
@@ -162,9 +149,10 @@ linters:
     - structcheck     # Deprecated (replaced by unused)
     - interfacer      # Deprecated
     - maligned        # Deprecated
-    - scopelint       # Deprecated (replaced by exportloopref)
+    - scopelint       # Deprecated (replaced by copyloopvar)
+    - golint          # Deprecated (replaced by revive)
+    - exportloopref   # Deprecated (replaced by copyloopvar)
 
-issues:
   # Maximum issues count per one linter
   max-issues-per-linter: 50
   
@@ -176,6 +164,20 @@ issues:
 
   # Fix found issues (if it's supported by the linter)
   fix: false
+  
+  # Use uniq-by-line instead of deprecated run.uniq-by-line
+  uniq-by-line: true
+  
+  # Directories to exclude
+  exclude-dirs:
+    - vendor
+    - .git
+    - bin
+    - test/fixtures
+    - .portunix-github-sync
+  exclude-files:
+    - ".*\\.pb\\.go$"
+    - ".*_generated\\.go$"
 
   exclude-rules:
     # Exclude some linters from running on tests files
@@ -198,9 +200,9 @@ issues:
         - lll
       source: "^//go:generate "
 
-    # Exclude certain golint issues
+    # Exclude certain revive issues
     - linters:
-        - golint
+        - revive
       text: "should be"
 
     # Exclude some gosec messages
@@ -223,7 +225,7 @@ issues:
     # errcheck: Almost all programs ignore errors on these functions
     - Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*printf?|os\.(Un)?Setenv). is not checked
     
-    # golint: False positives
+    # revive: False positives
     - should have a package comment
     - comment on exported method
     - comment on exported function

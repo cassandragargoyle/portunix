@@ -1,4 +1,4 @@
-//Portunus (jméno římského boha klíčů a dveří, symbolizujícího průchod kamkoliv).
+// Portunus (jméno římského boha klíčů a dveří, symbolizujícího průchod kamkoliv).
 
 package main
 

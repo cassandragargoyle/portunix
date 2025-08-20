@@ -106,7 +106,7 @@ Flags:
 		if len(args) > 0 {
 			installationType = args[0]
 		}
-		
+
 		// Validate installation type
 		validTypes := []string{"default", "empty", "python", "java", "vscode"}
 		isValid := false
@@ -116,13 +116,13 @@ Flags:
 				break
 			}
 		}
-		
+
 		if !isValid {
 			fmt.Printf("Invalid installation type: %s\n", installationType)
 			fmt.Printf("Valid types: %s\n", strings.Join(validTypes, ", "))
 			return
 		}
-		
+
 		// Parse flags
 		image, _ := cmd.Flags().GetString("image")
 		name, _ := cmd.Flags().GetString("name")
@@ -140,14 +140,14 @@ Flags:
 		network, _ := cmd.Flags().GetString("network")
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		autoInstall, _ := cmd.Flags().GetBool("auto-install")
-		
+
 		// Check if Podman is available (skip in dry-run mode)
 		if !dryRun {
 			if err := checkPodmanWithInstallPrompt(autoInstall); err != nil {
 				return
 			}
 		}
-		
+
 		// Create Podman configuration
 		config := podman.PodmanConfig{
 			Image:             image,
@@ -168,14 +168,14 @@ Flags:
 			Rootless:          rootless,
 			Pod:               pod,
 		}
-		
+
 		// Run container
 		err := podman.RunInContainer(config)
 		if err != nil {
 			fmt.Printf("Error running container: %v\n", err)
 			return
 		}
-		
+
 		if !dryRun {
 			fmt.Printf("\n🎉 Container setup completed successfully!\n")
 			if sshEnabled {
@@ -194,7 +194,7 @@ func checkPodmanWithInstallPrompt(autoInstall bool) error {
 		// If auto-install flag was used, don't prompt - show helpful error
 		if autoInstall {
 			fmt.Printf("❌ Auto-installation failed: %v\n\n", err)
-			
+
 			// Check if it's a PATH issue
 			if strings.Contains(err.Error(), "executable file not found in $PATH") {
 				fmt.Println("⚠️  This might be a PATH refresh issue.")
@@ -212,10 +212,10 @@ func checkPodmanWithInstallPrompt(autoInstall bool) error {
 			}
 			return fmt.Errorf("podman not available")
 		}
-		
+
 		// Show error and offer installation
 		fmt.Printf("❌ Podman is not available: %v\n\n", err)
-		
+
 		fmt.Println("🔧 Would you like to install Podman now?")
 		fmt.Println("   This will:")
 		fmt.Println("   • Detect your operating system automatically")
@@ -223,12 +223,12 @@ func checkPodmanWithInstallPrompt(autoInstall bool) error {
 		fmt.Println("   • Configure rootless containers for enhanced security")
 		fmt.Println("   • Optimize storage location")
 		fmt.Println()
-		
+
 		fmt.Print("Install Podman? [Y/n]: ")
 		reader := bufio.NewReader(os.Stdin)
 		response, _ := reader.ReadString('\n')
 		response = strings.TrimSpace(strings.ToLower(response))
-		
+
 		if response == "" || response == "y" || response == "yes" {
 			fmt.Println("\n🚀 Starting Podman installation...")
 			if installErr := podman.InstallPodman(true); installErr != nil {
@@ -238,7 +238,7 @@ func checkPodmanWithInstallPrompt(autoInstall bool) error {
 				fmt.Printf("   • Or use: portunix install podman -y\n")
 				return fmt.Errorf("podman installation failed")
 			}
-			
+
 			// Verify installation
 			if verifyErr := podman.CheckPodmanAvailableWithInstall(false); verifyErr != nil {
 				fmt.Printf("⚠️  Installation completed but Podman is not yet accessible.\n")
@@ -254,7 +254,7 @@ func checkPodmanWithInstallPrompt(autoInstall bool) error {
 				fmt.Printf("💡 You can also test without installation: portunix podman run-in-container --dry-run\n")
 				return fmt.Errorf("podman needs PATH refresh")
 			}
-			
+
 			fmt.Println("✅ Podman installed successfully!")
 			fmt.Println("🔒 Rootless containers are ready for enhanced security.")
 			return nil
@@ -267,13 +267,13 @@ func checkPodmanWithInstallPrompt(autoInstall bool) error {
 			return fmt.Errorf("user declined installation")
 		}
 	}
-	
+
 	return nil
 }
 
 func init() {
 	podmanCmd.AddCommand(podmanRunInContainerCmd)
-	
+
 	// Add flags
 	podmanRunInContainerCmd.Flags().String("image", "ubuntu:22.04", "Base container image to use")
 	podmanRunInContainerCmd.Flags().String("name", "", "Custom container name")

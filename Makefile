@@ -73,7 +73,7 @@ vet: ## Run go vet
 security: ## Run security scans
 	@echo "🔒 Running security scans..."
 	gosec ./...
-	nancy sleuth
+	go list -json -deps ./... | nancy sleuth
 
 # Test setup and utilities
 setup-test: ## Setup test environment
@@ -88,8 +88,7 @@ deps: ## Install testing dependencies
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/golang/mock/mockgen@latest
 	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/securecodewarrior/nancy@latest
-	go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+	go install github.com/sonatype-nexus-community/nancy@latest
 	go install github.com/axw/gocov/gocov@latest
 	@echo "✅ Testing dependencies installed"
 

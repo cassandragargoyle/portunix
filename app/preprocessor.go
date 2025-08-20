@@ -42,4 +42,3 @@ func CheckIfExecutableExists(program string) (bool, error) {
 	}
 	return true, nil
 }
-

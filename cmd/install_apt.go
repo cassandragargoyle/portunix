@@ -37,26 +37,26 @@ Examples:
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		aptMgr := apt.NewAptManager()
-		
+
 		if !aptMgr.IsSupported() {
 			fmt.Println("Error: APT is not supported on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		aptMgr.DryRun = dryRun
-		
+
 		// Update package list first
 		if err := aptMgr.Update(); err != nil {
 			fmt.Printf("Warning: Failed to update package list: %v\n", err)
 		}
-		
+
 		// Install packages
 		if err := aptMgr.Install(args); err != nil {
 			fmt.Printf("Error: Failed to install packages: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Package installation completed successfully")
 	},
 }
@@ -73,28 +73,28 @@ Examples:
 	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		aptMgr := apt.NewAptManager()
-		
+
 		if !aptMgr.IsSupported() {
 			fmt.Println("Error: APT is not supported on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		purge, _ := cmd.Flags().GetBool("purge")
 		aptMgr.DryRun = dryRun
-		
+
 		var err error
 		if purge {
 			err = aptMgr.Purge(args)
 		} else {
 			err = aptMgr.Remove(args)
 		}
-		
+
 		if err != nil {
 			fmt.Printf("Error: Failed to remove packages: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Package removal completed successfully")
 	},
 }
@@ -111,31 +111,31 @@ Examples:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		aptMgr := apt.NewAptManager()
-		
+
 		if !aptMgr.IsSupported() {
 			fmt.Println("Error: APT is not supported on this system")
 			return
 		}
-		
+
 		packages, err := aptMgr.Search(args[0])
 		if err != nil {
 			fmt.Printf("Error: Search failed: %v\n", err)
 			return
 		}
-		
+
 		if len(packages) == 0 {
 			fmt.Printf("No packages found matching '%s'\n", args[0])
 			return
 		}
-		
+
 		fmt.Printf("Found %d package(s) matching '%s':\n\n", len(packages), args[0])
-		
+
 		for _, pkg := range packages {
 			status := "not installed"
 			if pkg.Installed {
 				status = "installed"
 			}
-			
+
 			fmt.Printf("📦 %s (%s)\n", pkg.Name, status)
 			if pkg.Description != "" {
 				fmt.Printf("   %s\n", pkg.Description)
@@ -156,27 +156,27 @@ Examples:
   portunix install apt list-installed | grep python`,
 	Run: func(cmd *cobra.Command, args []string) {
 		aptMgr := apt.NewAptManager()
-		
+
 		if !aptMgr.IsSupported() {
 			fmt.Println("Error: APT is not supported on this system")
 			return
 		}
-		
+
 		packages, err := aptMgr.ListInstalled()
 		if err != nil {
 			fmt.Printf("Error: Failed to list packages: %v\n", err)
 			return
 		}
-		
+
 		fmt.Printf("Installed packages (%d total):\n\n", len(packages))
-		
+
 		for _, pkg := range packages {
 			fmt.Printf("📦 %s", pkg.Name)
 			if pkg.Version != "" {
 				fmt.Printf(" (v%s)", pkg.Version)
 			}
 			fmt.Println()
-			
+
 			if pkg.Description != "" {
 				fmt.Printf("   %s\n", pkg.Description)
 			}
@@ -195,26 +195,26 @@ Examples:
   portunix install apt upgrade git vim`,
 	Run: func(cmd *cobra.Command, args []string) {
 		aptMgr := apt.NewAptManager()
-		
+
 		if !aptMgr.IsSupported() {
 			fmt.Println("Error: APT is not supported on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		aptMgr.DryRun = dryRun
-		
+
 		// Update package list first
 		if err := aptMgr.Update(); err != nil {
 			fmt.Printf("Warning: Failed to update package list: %v\n", err)
 		}
-		
+
 		// Upgrade packages
 		if err := aptMgr.Upgrade(args); err != nil {
 			fmt.Printf("Error: Failed to upgrade packages: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Package upgrade completed successfully")
 	},
 }
@@ -231,20 +231,20 @@ Examples:
   portunix install apt clean`,
 	Run: func(cmd *cobra.Command, args []string) {
 		aptMgr := apt.NewAptManager()
-		
+
 		if !aptMgr.IsSupported() {
 			fmt.Println("Error: APT is not supported on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		aptMgr.DryRun = dryRun
-		
+
 		if err := aptMgr.Clean(); err != nil {
 			fmt.Printf("Error: Failed to clean: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ APT cache cleaned successfully")
 	},
 }
@@ -274,18 +274,18 @@ Examples:
 	Args: cobra.MinimumNArgs(3),
 	Run: func(cmd *cobra.Command, args []string) {
 		aptMgr := apt.NewAptManager()
-		
+
 		if !aptMgr.IsSupported() {
 			fmt.Println("Error: APT is not supported on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		gpgURL, _ := cmd.Flags().GetString("gpg-url")
 		gpgKey, _ := cmd.Flags().GetString("gpg-key")
-		
+
 		aptMgr.DryRun = dryRun
-		
+
 		repo := apt.Repository{
 			URI:          args[0],
 			Distribution: args[1],
@@ -293,12 +293,12 @@ Examples:
 			GPGKeyURL:    gpgURL,
 			GPGKey:       gpgKey,
 		}
-		
+
 		if err := aptMgr.AddRepository(repo); err != nil {
 			fmt.Printf("Error: Failed to add repository: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Repository added successfully")
 	},
 }
@@ -313,27 +313,27 @@ Examples:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		aptMgr := apt.NewAptManager()
-		
+
 		if !aptMgr.IsSupported() {
 			fmt.Println("Error: APT is not supported on this system")
 			return
 		}
-		
+
 		dryRun, _ := cmd.Flags().GetBool("dry-run")
 		aptMgr.DryRun = dryRun
-		
+
 		if err := aptMgr.RemoveRepository(args[0]); err != nil {
 			fmt.Printf("Error: Failed to remove repository: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("✓ Repository removed successfully")
 	},
 }
 
 func init() {
 	installCmd.AddCommand(aptCmd)
-	
+
 	// Add subcommands
 	aptCmd.AddCommand(aptInstallCmd)
 	aptCmd.AddCommand(aptRemoveCmd)
@@ -342,11 +342,11 @@ func init() {
 	aptCmd.AddCommand(aptUpgradeCmd)
 	aptCmd.AddCommand(aptCleanCmd)
 	aptCmd.AddCommand(aptRepoCmd)
-	
+
 	// Repository commands
 	aptRepoCmd.AddCommand(aptRepoAddCmd)
 	aptRepoCmd.AddCommand(aptRepoRemoveCmd)
-	
+
 	// Add flags
 	aptInstallCmd.Flags().Bool("dry-run", false, "Show what would be done without executing")
 	aptRemoveCmd.Flags().Bool("dry-run", false, "Show what would be done without executing")

@@ -20,7 +20,7 @@ func Install(arguments []string) {
 	if len(arguments) == 0 {
 		return
 	}
-	
+
 	// Special handling for Docker and Podman installation
 	packageName := arguments[0]
 	if packageName == "docker" {
@@ -32,13 +32,13 @@ func Install(arguments []string) {
 				break
 			}
 		}
-		
+
 		if err := docker.InstallDocker(autoAccept); err != nil {
 			return
 		}
 		return
 	}
-	
+
 	if packageName == "podman" {
 		// Check for -y flag
 		autoAccept := false
@@ -48,16 +48,16 @@ func Install(arguments []string) {
 				break
 			}
 		}
-		
+
 		if err := podman.InstallPodman(autoAccept); err != nil {
 			return
 		}
 		return
 	}
-	
+
 	// Try new JSON-based installer first
 	variant := ""
-	
+
 	// Check if variant is specified
 	if len(arguments) > 1 {
 		for _, arg := range arguments[1:] {
@@ -67,12 +67,12 @@ func Install(arguments []string) {
 			}
 		}
 	}
-	
+
 	// Try to install using new system
 	if err := InstallPackage(packageName, variant); err == nil {
 		return // Success with new system
 	}
-	
+
 	// Fall back to old system
 	os := runtime.GOOS
 	if os == "linux" {

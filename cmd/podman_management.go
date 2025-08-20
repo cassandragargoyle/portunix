@@ -53,12 +53,12 @@ Examples:
 			fmt.Printf("Podman is not available: %v\n", err)
 			return
 		}
-		
+
 		baseImage := "ubuntu:22.04"
 		if len(args) > 0 {
 			baseImage = args[0]
 		}
-		
+
 		err := podman.BuildImage(baseImage)
 		if err != nil {
 			fmt.Printf("Error building image: %v\n", err)
@@ -101,24 +101,24 @@ Output format:
 			fmt.Printf("Podman is not available: %v\n", err)
 			return
 		}
-		
+
 		containers, err := podman.ListContainers()
 		if err != nil {
 			fmt.Printf("Error listing containers: %v\n", err)
 			return
 		}
-		
+
 		if len(containers) == 0 {
 			fmt.Println("No Portunix Podman containers found.")
 			fmt.Println("Create a container with: portunix podman run-in-container <type>")
 			return
 		}
-		
+
 		// Create table writer
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Fprintln(w, "ID\tNAME\tIMAGE\tSTATUS\tPORTS\tCREATED")
 		fmt.Fprintln(w, "------\t----\t-----\t------\t-----\t-------")
-		
+
 		for _, container := range containers {
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
 				container.ID[:8], // Short ID
@@ -129,9 +129,9 @@ Output format:
 				container.Created,
 			)
 		}
-		
+
 		w.Flush()
-		
+
 		fmt.Printf("\nFound %d Portunix container(s).\n", len(containers))
 		fmt.Println("\nManagement commands:")
 		fmt.Println("  portunix podman start <container-id>    # Start stopped container")
@@ -163,7 +163,7 @@ Examples:
 			fmt.Printf("Podman is not available: %v\n", err)
 			return
 		}
-		
+
 		containerID := args[0]
 		err := podman.StartContainer(containerID)
 		if err != nil {
@@ -194,7 +194,7 @@ Examples:
 			fmt.Printf("Podman is not available: %v\n", err)
 			return
 		}
-		
+
 		containerID := args[0]
 		err := podman.StopContainer(containerID)
 		if err != nil {
@@ -227,10 +227,10 @@ Examples:
 			fmt.Printf("Podman is not available: %v\n", err)
 			return
 		}
-		
+
 		containerID := args[0]
 		force, _ := cmd.Flags().GetBool("force")
-		
+
 		err := podman.RemoveContainer(containerID, force)
 		if err != nil {
 			fmt.Printf("Error removing container: %v\n", err)
@@ -259,10 +259,10 @@ Examples:
 			fmt.Printf("Podman is not available: %v\n", err)
 			return
 		}
-		
+
 		containerID := args[0]
 		follow, _ := cmd.Flags().GetBool("follow")
-		
+
 		err := podman.ShowLogs(containerID, follow)
 		if err != nil {
 			fmt.Printf("Error showing logs: %v\n", err)
@@ -292,10 +292,10 @@ Examples:
 			fmt.Printf("Podman is not available: %v\n", err)
 			return
 		}
-		
+
 		containerID := args[0]
 		command := args[1:]
-		
+
 		err := podman.ExecCommand(containerID, command)
 		if err != nil {
 			fmt.Printf("Error executing command: %v\n", err)
@@ -340,7 +340,7 @@ func init() {
 	podmanCmd.AddCommand(podmanLogsCmd)
 	podmanCmd.AddCommand(podmanExecCmd)
 	podmanCmd.AddCommand(podmanCheckRequirementsCmd)
-	
+
 	// Add flags
 	podmanBuildCmd.Flags().Bool("auto-install", false, "Automatically install Podman if not available")
 	podmanListCmd.Flags().Bool("auto-install", false, "Automatically install Podman if not available")

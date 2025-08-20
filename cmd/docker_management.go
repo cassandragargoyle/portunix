@@ -51,12 +51,12 @@ Examples:
 			fmt.Printf("Docker is not available: %v\n", err)
 			return
 		}
-		
+
 		baseImage := "ubuntu:22.04"
 		if len(args) > 0 {
 			baseImage = args[0]
 		}
-		
+
 		err := docker.BuildImage(baseImage)
 		if err != nil {
 			fmt.Printf("Error building image: %v\n", err)
@@ -94,35 +94,35 @@ Output format:
 			fmt.Printf("Docker is not available: %v\n", err)
 			return
 		}
-		
+
 		containers, err := docker.ListContainers()
 		if err != nil {
 			fmt.Printf("Error listing containers: %v\n", err)
 			return
 		}
-		
+
 		if len(containers) == 0 {
 			fmt.Println("No Portunix containers found.")
 			return
 		}
-		
+
 		// Create tabwriter for aligned output
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 2, ' ', 0)
 		fmt.Fprintln(w, "ID\tNAME\tIMAGE\tSTATUS\tPORTS\tCREATED")
-		
+
 		for _, container := range containers {
 			// Truncate ID to 8 characters
 			shortID := container.ID
 			if len(shortID) > 8 {
 				shortID = shortID[:8]
 			}
-			
+
 			// Truncate name to remove portunix- prefix if present
 			displayName := container.Name
 			if strings.HasPrefix(displayName, "portunix-") {
 				displayName = strings.TrimPrefix(displayName, "portunix-")
 			}
-			
+
 			fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
 				shortID,
 				displayName,
@@ -131,7 +131,7 @@ Output format:
 				container.Ports,
 				container.Created)
 		}
-		
+
 		w.Flush()
 	},
 }
@@ -156,9 +156,9 @@ Examples:
 			fmt.Printf("Docker is not available: %v\n", err)
 			return
 		}
-		
+
 		containerID := args[0]
-		
+
 		err := docker.StartContainer(containerID)
 		if err != nil {
 			fmt.Printf("Error starting container: %v\n", err)
@@ -185,9 +185,9 @@ Examples:
 			fmt.Printf("Docker is not available: %v\n", err)
 			return
 		}
-		
+
 		containerID := args[0]
-		
+
 		err := docker.StopContainer(containerID)
 		if err != nil {
 			fmt.Printf("Error stopping container: %v\n", err)
@@ -216,10 +216,10 @@ Examples:
 			fmt.Printf("Docker is not available: %v\n", err)
 			return
 		}
-		
+
 		containerID := args[0]
 		force, _ := cmd.Flags().GetBool("force")
-		
+
 		err := docker.RemoveContainer(containerID, force)
 		if err != nil {
 			fmt.Printf("Error removing container: %v\n", err)
@@ -248,10 +248,10 @@ Examples:
 			fmt.Printf("Docker is not available: %v\n", err)
 			return
 		}
-		
+
 		containerID := args[0]
 		follow, _ := cmd.Flags().GetBool("follow")
-		
+
 		err := docker.ShowLogs(containerID, follow)
 		if err != nil {
 			fmt.Printf("Error showing logs: %v\n", err)
@@ -282,10 +282,10 @@ Examples:
 			fmt.Printf("Docker is not available: %v\n", err)
 			return
 		}
-		
+
 		containerID := args[0]
 		command := args[1:]
-		
+
 		err := docker.ExecCommand(containerID, command)
 		if err != nil {
 			fmt.Printf("Error executing command: %v\n", err)
@@ -302,7 +302,7 @@ func init() {
 	dockerCmd.AddCommand(dockerRemoveCmd)
 	dockerCmd.AddCommand(dockerLogsCmd)
 	dockerCmd.AddCommand(dockerExecCmd)
-	
+
 	// Add flags
 	dockerBuildCmd.Flags().BoolP("auto-install", "y", false, "Automatically install Docker if not available")
 	dockerListCmd.Flags().BoolP("auto-install", "y", false, "Automatically install Docker if not available")

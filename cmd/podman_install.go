@@ -1,7 +1,10 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strings"
 
 	"portunix.cz/app/podman"
 
@@ -10,8 +13,8 @@ import (
 
 // podmanInstallCmd represents the podman install command
 var podmanInstallCmd = &cobra.Command{
-	Use:   "install [-y]",
-	Short: "Install Podman with intelligent OS detection and storage optimization.",
+	Use:   "install [-y] [--desktop-only] [--with-desktop]",
+	Short: "Install Podman CLI and/or Desktop with intelligent OS detection.",
 	Long: `Install Podman with intelligent operating system detection and optimal storage configuration.
 
 This command automatically detects your operating system and installs the appropriate Podman variant:
@@ -34,9 +37,17 @@ Key Podman advantages:
 - Pod support for Kubernetes-style container grouping
 - Better default security posture
 
+Installation Options:
+  CLI Only:     Install just the command-line tools
+  Desktop Only: Install just the GUI application (Podman Desktop)
+  Both:         Install CLI + Desktop for complete experience
+
 Examples:
-  portunix podman install              # Interactive installation with storage selection
-  portunix podman install -y          # Automated installation (accepts recommended storage)
+  portunix podman install              # Interactive CLI installation with Desktop option
+  portunix podman install -y          # Automated CLI installation (accepts defaults)
+  portunix podman install --desktop-only  # Install only Podman Desktop GUI
+  portunix podman install --with-desktop  # Install both CLI and Desktop
+  portunix podman desktop             # Alternative way to install just Desktop
 
 Flags:
   -y, --yes    Auto-accept recommended storage location without prompting
@@ -63,21 +74,74 @@ Post-Installation:
 	Run: func(cmd *cobra.Command, args []string) {
 		// Parse flags
 		autoAccept, _ := cmd.Flags().GetBool("yes")
-		
+		desktopOnly, _ := cmd.Flags().GetBool("desktop-only")
+		withDesktop, _ := cmd.Flags().GetBool("with-desktop")
+
+		// If desktop-only flag is set, install only Podman Desktop
+		if desktopOnly {
+			err := podman.InstallPodmanDesktop(autoAccept)
+			if err != nil {
+				fmt.Printf("Error installing Podman Desktop: %v\n", err)
+				return
+			}
+			fmt.Println("\n🎉 Podman Desktop installation completed successfully!")
+			fmt.Println("🖥️  Launch Podman Desktop to get started with container management")
+			return
+		}
+
+		// Install Podman CLI
 		err := podman.InstallPodman(autoAccept)
 		if err != nil {
 			fmt.Printf("Error installing Podman: %v\n", err)
 			return
 		}
-		
-		fmt.Println("\n🎉 Podman installation completed successfully!")
+
+		fmt.Println("\n🎉 Podman CLI installation completed successfully!")
 		fmt.Println("💡 Podman runs rootless by default for enhanced security.")
+
+		// Ask about Desktop installation if not auto-accepting and not explicitly requested
+		if !withDesktop && !autoAccept {
+			fmt.Println()
+			fmt.Println("🖥️  Would you also like to install Podman Desktop?")
+			fmt.Println("   Podman Desktop is the official GUI from Red Hat that provides:")
+			fmt.Println("   • Visual container and image management")
+			fmt.Println("   • Integration with Docker and Podman")
+			fmt.Println("   • Remote container management")
+			fmt.Println("   • Kubernetes integration")
+			fmt.Println("   Learn more: https://podman-desktop.io")
+			fmt.Println()
+			
+			reader := bufio.NewReader(os.Stdin)
+			fmt.Print("Install Podman Desktop? [y/N]: ")
+			response, _ := reader.ReadString('\n')
+			response = strings.TrimSpace(strings.ToLower(response))
+			
+			if response == "y" || response == "yes" {
+				withDesktop = true
+			}
+		}
+
+		// Install Desktop if requested
+		if withDesktop {
+			fmt.Println("\n📦 Installing Podman Desktop...")
+			err := podman.InstallPodmanDesktop(autoAccept)
+			if err != nil {
+				fmt.Printf("⚠️  Podman Desktop installation failed: %v\n", err)
+				fmt.Println("💡 You can install it later with: portunix podman desktop")
+				return
+			}
+			fmt.Println("\n🎉 Complete installation finished!")
+			fmt.Println("✅ Podman CLI - ready for command-line container management")
+			fmt.Println("✅ Podman Desktop - ready for GUI container management")
+		}
 	},
 }
 
 func init() {
 	podmanCmd.AddCommand(podmanInstallCmd)
-	
+
 	// Add flags
 	podmanInstallCmd.Flags().BoolP("yes", "y", false, "Auto-accept recommended storage location without prompting")
+	podmanInstallCmd.Flags().Bool("desktop-only", false, "Install only Podman Desktop (GUI)")
+	podmanInstallCmd.Flags().Bool("with-desktop", false, "Install both Podman CLI and Desktop")
 }

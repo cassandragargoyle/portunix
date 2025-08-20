@@ -27,7 +27,7 @@ func WinInstallPython(arguments []string) error {
 	var last_version = "3.13.6"
 	var useGUI = false
 	var useEmbeddable = false
-	
+
 	// Check for parameters
 	for _, arg := range arguments {
 		if arg == "--gui" || arg == "-gui" {
@@ -146,49 +146,49 @@ func downloadFile(filepath string, url string) error {
 // Function to run the Python installer
 func WinSetupPython(installer string, useGUI bool) error {
 	fmt.Printf("Installing Python from %s...\n", installer)
-	
+
 	var cmd *exec.Cmd
-	
+
 	if useGUI {
 		// GUI installation
 		fmt.Println("Starting Python installer with GUI...")
 		fmt.Println("Please follow the installation wizard in the GUI window.")
-		
-		cmd = exec.Command("./"+installer)
+
+		cmd = exec.Command("./" + installer)
 	} else {
 		// Silent installation
 		fmt.Println("Using silent installation. This may take a few minutes. Please wait...")
-		
+
 		// Create context with timeout (10 minutes should be enough)
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 		defer cancel()
-		
+
 		// Correct Python installer parameters for silent installation
-		cmd = exec.CommandContext(ctx, "./"+installer, 
+		cmd = exec.CommandContext(ctx, "./"+installer,
 			"/quiet",                    // Silent installation
 			"InstallAllUsers=1",         // Install for all users
-			"PrependPath=1",            // Add to PATH
-			"Include_test=0",           // Don't install test suite
-			"Include_tcltk=0",          // Don't install Tcl/Tk
-			"Include_launcher=1",       // Include py launcher
+			"PrependPath=1",             // Add to PATH
+			"Include_test=0",            // Don't install test suite
+			"Include_tcltk=0",           // Don't install Tcl/Tk
+			"Include_launcher=1",        // Include py launcher
 			"InstallLauncherAllUsers=1", // Launcher for all users
-			"AssociateFiles=1",         // Associate .py files
-			"CompileAll=0",             // Don't compile all .py files (faster)
-			"SimpleInstall=1")          // Simple installation
+			"AssociateFiles=1",          // Associate .py files
+			"CompileAll=0",              // Don't compile all .py files (faster)
+			"SimpleInstall=1")           // Simple installation
 	}
-	
+
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	// Start the installation
 	fmt.Printf("Starting Python installation...\n")
 	start := time.Now()
-	
+
 	err := cmd.Run()
-	
+
 	duration := time.Since(start)
 	fmt.Printf("Installation completed in %v\n", duration.Round(time.Second))
-	
+
 	if err != nil {
 		if !useGUI {
 			// Only check for timeout in silent mode (when using context)
@@ -200,7 +200,7 @@ func WinSetupPython(installer string, useGUI bool) error {
 		fmt.Printf("Installation error: %s\n", err)
 		return err
 	}
-	
+
 	// Verify installation
 	fmt.Println("Verifying Python installation...")
 	verifyCmd := exec.Command("python", "--version")
@@ -210,7 +210,7 @@ func WinSetupPython(installer string, useGUI bool) error {
 	} else {
 		fmt.Printf("✓ Python installed successfully: %s", string(output))
 	}
-	
+
 	return nil
 }
 
@@ -220,16 +220,16 @@ func ensurePythonEmbeddableCache(installer, downloadURL string) error {
 	cacheDir := ".cache"
 	pythonCacheDir := filepath.Join(cacheDir, "python-embeddable")
 	cachedZipPath := filepath.Join(pythonCacheDir, installer)
-	
+
 	// Create cache directory if it doesn't exist
 	if err := os.MkdirAll(pythonCacheDir, 0755); err != nil {
 		return fmt.Errorf("failed to create Python cache directory: %w", err)
 	}
-	
+
 	// Check if Python ZIP is already cached
 	if _, err := os.Stat(cachedZipPath); os.IsNotExist(err) {
 		fmt.Printf("Downloading Python embeddable to cache: %s\n", downloadURL)
-		
+
 		// Download using the app.DownloadFile function
 		if err := app.DownloadFile(downloadURL, cachedZipPath); err != nil {
 			return fmt.Errorf("failed to download Python embeddable: %w", err)
@@ -238,25 +238,25 @@ func ensurePythonEmbeddableCache(installer, downloadURL string) error {
 	} else {
 		fmt.Printf("Python embeddable found in cache: %s\n", cachedZipPath)
 	}
-	
+
 	return nil
 }
 
 // Function to setup Python embeddable version
 func WinSetupPythonEmbeddable(zipFile string) error {
 	fmt.Printf("Setting up Python embeddable...\n")
-	
+
 	// Target directory
 	targetDir := "C:\\Python"
-	
+
 	// Create target directory
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		return fmt.Errorf("failed to create target directory %s: %w", targetDir, err)
 	}
-	
+
 	// Determine ZIP file path - prioritize sandbox cache, then local cache
 	var zipPath string
-	
+
 	// First check if ZIP exists in sandbox python-embeddable directory
 	sandboxZipPath := "C:\\Portunix\\python-embeddable\\" + filepath.Base(zipFile)
 	if _, err := os.Stat(sandboxZipPath); err == nil {
@@ -273,19 +273,19 @@ func WinSetupPythonEmbeddable(zipFile string) error {
 			zipPath = zipFile
 		}
 	}
-	
+
 	// Extract ZIP file
 	fmt.Printf("Extracting %s to %s...\n", zipPath, targetDir)
 	if err := extractZipFile(zipPath, targetDir); err != nil {
 		return fmt.Errorf("failed to extract ZIP file: %w", err)
 	}
-	
+
 	// Add to system PATH
 	fmt.Println("Adding Python to system PATH...")
 	if err := addToSystemPath(targetDir); err != nil {
 		return fmt.Errorf("failed to add to system PATH: %w", err)
 	}
-	
+
 	// Verify installation
 	fmt.Println("Verifying Python embeddable installation...")
 	verifyCmd := exec.Command("python", "--version")
@@ -295,7 +295,7 @@ func WinSetupPythonEmbeddable(zipFile string) error {
 	} else {
 		fmt.Printf("✓ Python embeddable installed successfully: %s", string(output))
 	}
-	
+
 	return nil
 }
 
@@ -361,13 +361,13 @@ func addToSystemPath(dir string) error {
 			Write-Host "%s is already in system PATH"
 		}
 	`, dir, dir, dir, dir)
-	
+
 	cmd := exec.Command("powershell", "-Command", psScript)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to update PATH: %w\nOutput: %s", err, string(output))
 	}
-	
+
 	fmt.Printf("PATH update result: %s\n", string(output))
 	return nil
 }

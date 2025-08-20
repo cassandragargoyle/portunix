@@ -10,16 +10,16 @@ import (
 
 // SystemInfo contains comprehensive system information
 type SystemInfo struct {
-	OS           string            `json:"os"`
-	Version      string            `json:"version"`
-	Build        string            `json:"build"`
-	Architecture string            `json:"architecture"`
-	Hostname     string            `json:"hostname"`
-	Variant      string            `json:"variant"`
-	Environment  []string          `json:"environment"`
-	WindowsInfo  *WindowsInfo      `json:"windows_info,omitempty"`
-	LinuxInfo    *LinuxInfo        `json:"linux_info,omitempty"`
-	Capabilities *Capabilities     `json:"capabilities"`
+	OS           string        `json:"os"`
+	Version      string        `json:"version"`
+	Build        string        `json:"build"`
+	Architecture string        `json:"architecture"`
+	Hostname     string        `json:"hostname"`
+	Variant      string        `json:"variant"`
+	Environment  []string      `json:"environment"`
+	WindowsInfo  *WindowsInfo  `json:"windows_info,omitempty"`
+	LinuxInfo    *LinuxInfo    `json:"linux_info,omitempty"`
+	Capabilities *Capabilities `json:"capabilities"`
 }
 
 // WindowsInfo contains Windows-specific information
@@ -30,7 +30,7 @@ type WindowsInfo struct {
 	BuildLab    string `json:"build_lab"`
 }
 
-// LinuxInfo contains Linux-specific information  
+// LinuxInfo contains Linux-specific information
 type LinuxInfo struct {
 	Distribution  string `json:"distribution"`
 	Codename      string `json:"codename"`
@@ -51,14 +51,14 @@ func GetSystemInfo() (*SystemInfo, error) {
 		Capabilities: &Capabilities{},
 		Environment:  []string{},
 	}
-	
+
 	// Get hostname
 	hostname, err := os.Hostname()
 	if err != nil {
 		hostname = "unknown"
 	}
 	info.Hostname = hostname
-	
+
 	// Detect OS and get specific information
 	switch runtime.GOOS {
 	case "windows":
@@ -72,17 +72,17 @@ func GetSystemInfo() (*SystemInfo, error) {
 		info.Version = "unknown"
 		info.Variant = "unknown"
 	}
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to get OS-specific info: %w", err)
 	}
-	
+
 	// Detect environment variants
 	detectEnvironment(info)
-	
+
 	// Check capabilities
 	checkCapabilities(info)
-	
+
 	return info, nil
 }
 
@@ -116,7 +116,7 @@ func CheckCondition(info *SystemInfo, condition string) bool {
 func getWindowsInfo(info *SystemInfo) error {
 	info.OS = "Windows"
 	info.WindowsInfo = &WindowsInfo{}
-	
+
 	// Get Windows version using wmic
 	if output, err := exec.Command("wmic", "os", "get", "Caption,Version,BuildNumber", "/format:csv").Output(); err == nil {
 		lines := strings.Split(string(output), "\n")
@@ -128,7 +128,7 @@ func getWindowsInfo(info *SystemInfo) error {
 					info.WindowsInfo.ProductName = strings.TrimSpace(parts[1])
 					info.Version = strings.TrimSpace(parts[3])
 					info.Build = strings.TrimSpace(parts[2])
-					
+
 					// Determine Windows edition from product name
 					if strings.Contains(info.WindowsInfo.ProductName, "Windows 11") {
 						info.Version = "11"
@@ -140,7 +140,7 @@ func getWindowsInfo(info *SystemInfo) error {
 			}
 		}
 	}
-	
+
 	// Fallback to ver command
 	if info.Version == "" {
 		if output, err := exec.Command("cmd", "/c", "ver").Output(); err == nil {
@@ -156,7 +156,7 @@ func getWindowsInfo(info *SystemInfo) error {
 								buildNum := strings.TrimPrefix(line, "BuildNumber=")
 								buildNum = strings.TrimSpace(buildNum)
 								info.Build = buildNum
-								
+
 								// Windows 11 starts from build 22000
 								if buildNum >= "22000" {
 									info.Version = "11"
@@ -171,7 +171,7 @@ func getWindowsInfo(info *SystemInfo) error {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -179,7 +179,7 @@ func getWindowsInfo(info *SystemInfo) error {
 func getLinuxInfo(info *SystemInfo) error {
 	info.OS = "Linux"
 	info.LinuxInfo = &LinuxInfo{}
-	
+
 	// Read /etc/os-release
 	if data, err := os.ReadFile("/etc/os-release"); err == nil {
 		lines := strings.Split(string(data), "\n")
@@ -194,24 +194,24 @@ func getLinuxInfo(info *SystemInfo) error {
 			}
 		}
 	}
-	
+
 	// Get kernel version
 	if output, err := exec.Command("uname", "-r").Output(); err == nil {
 		info.LinuxInfo.KernelVersion = strings.TrimSpace(string(output))
 	}
-	
+
 	return nil
 }
 
 // getMacOSInfo gets macOS-specific information
 func getMacOSInfo(info *SystemInfo) error {
 	info.OS = "macOS"
-	
+
 	// Get macOS version
 	if output, err := exec.Command("sw_vers", "-productVersion").Output(); err == nil {
 		info.Version = strings.TrimSpace(string(output))
 	}
-	
+
 	return nil
 }
 
@@ -224,7 +224,7 @@ func detectEnvironment(info *SystemInfo) {
 			info.Environment = append(info.Environment, "sandbox")
 			info.Variant = "Sandbox"
 		}
-		
+
 		// Check for specific sandbox registry keys or processes
 		if output, err := exec.Command("tasklist", "/FI", "IMAGENAME eq CExecSvc.exe", "/FO", "CSV", "/NH").Output(); err == nil {
 			if strings.Contains(string(output), "CExecSvc.exe") {
@@ -235,7 +235,7 @@ func detectEnvironment(info *SystemInfo) {
 			}
 		}
 	}
-	
+
 	// Check for Docker
 	if _, err := os.Stat("/.dockerenv"); err == nil {
 		info.Environment = append(info.Environment, "docker")
@@ -243,7 +243,7 @@ func detectEnvironment(info *SystemInfo) {
 			info.Variant = "Docker"
 		}
 	}
-	
+
 	// Check for WSL
 	if info.OS == "Linux" {
 		if _, err := os.Stat("/proc/version"); err == nil {
@@ -257,7 +257,7 @@ func detectEnvironment(info *SystemInfo) {
 			}
 		}
 	}
-	
+
 	// Check for VM (basic heuristics)
 	if info.OS == "Windows" {
 		// Check for common VM indicators
@@ -275,7 +275,7 @@ func detectEnvironment(info *SystemInfo) {
 			}
 		}
 	}
-	
+
 	// Set default variant if none detected
 	if info.Variant == "" {
 		info.Variant = "Physical"
@@ -290,12 +290,12 @@ func checkCapabilities(info *SystemInfo) {
 	} else if _, err := exec.LookPath("pwsh"); err == nil {
 		info.Capabilities.PowerShell = true
 	}
-	
+
 	// Check Docker availability
 	if _, err := exec.LookPath("docker"); err == nil {
 		info.Capabilities.Docker = true
 	}
-	
+
 	// Check admin privileges (platform-specific)
 	if info.OS == "Windows" {
 		// Check if running as administrator

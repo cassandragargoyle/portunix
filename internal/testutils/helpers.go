@@ -10,42 +10,42 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// CreateTempDir creates a temporary directory for testing
+// CreateTempDir creates a temporary directory for testing.
 func CreateTempDir(t *testing.T, prefix string) string {
 	t.Helper()
-	
+
 	tempDir, err := os.MkdirTemp("", prefix)
 	require.NoError(t, err, "Failed to create temp directory")
-	
+
 	// Cleanup on test completion
 	t.Cleanup(func() {
 		os.RemoveAll(tempDir)
 	})
-	
+
 	return tempDir
 }
 
-// CreateTempFile creates a temporary file with content for testing
+// CreateTempFile creates a temporary file with content for testing.
 func CreateTempFile(t *testing.T, dir, name, content string) string {
 	t.Helper()
-	
+
 	if dir == "" {
 		dir = CreateTempDir(t, "testfile")
 	}
-	
+
 	filePath := filepath.Join(dir, name)
-	err := os.WriteFile(filePath, []byte(content), 0644)
+	err := os.WriteFile(filePath, []byte(content), 0600)
 	require.NoError(t, err, "Failed to create temp file")
-	
+
 	return filePath
 }
 
-// SetupTestCache creates a test cache directory structure
+// SetupTestCache creates a test cache directory structure.
 func SetupTestCache(t *testing.T) string {
 	t.Helper()
-	
+
 	cacheDir := CreateTempDir(t, "portunix-test-cache")
-	
+
 	// Create subdirectories
 	subdirs := []string{
 		"docker",
@@ -54,16 +54,16 @@ func SetupTestCache(t *testing.T) string {
 		"openssh",
 		"notepadplusplus",
 	}
-	
+
 	for _, subdir := range subdirs {
 		err := os.MkdirAll(filepath.Join(cacheDir, subdir), 0755)
 		require.NoError(t, err, "Failed to create cache subdir %s", subdir)
 	}
-	
+
 	return cacheDir
 }
 
-// MockDockerfile creates a mock Dockerfile for testing
+// MockDockerfile creates a mock Dockerfile for testing.
 func MockDockerfile(baseImage string) string {
 	return `FROM ` + baseImage + `
 
@@ -89,13 +89,13 @@ func MockPackageJSON() string {
 // WaitForCondition waits for a condition to be true with timeout
 func WaitForCondition(t *testing.T, condition func() bool, timeout time.Duration, message string) {
 	t.Helper()
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	
+
 	ticker := time.NewTicker(100 * time.Millisecond)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -111,7 +111,7 @@ func WaitForCondition(t *testing.T, condition func() bool, timeout time.Duration
 // SkipIfNoDocker skips the test if Docker is not available
 func SkipIfNoDocker(t *testing.T) {
 	t.Helper()
-	
+
 	if !IsDockerAvailable() {
 		t.Skip("Docker is not available, skipping test")
 	}
@@ -120,9 +120,9 @@ func SkipIfNoDocker(t *testing.T) {
 // IsDockerAvailable checks if Docker is available for testing
 func IsDockerAvailable() bool {
 	// Try to run a simple Docker command
-	return os.Getenv("DOCKER_HOST") != "" || 
-		   fileExists("/var/run/docker.sock") ||
-		   fileExists("//./pipe/docker_engine") // Windows named pipe
+	return os.Getenv("DOCKER_HOST") != "" ||
+		fileExists("/var/run/docker.sock") ||
+		fileExists("//./pipe/docker_engine") // Windows named pipe
 }
 
 // fileExists checks if a file exists
@@ -160,16 +160,22 @@ func (l *TestLogger) Errorf(format string, args ...interface{}) {
 	l.t.Errorf("[ERROR] "+format, args...)
 }
 
-// AssertEventuallyEqual checks that a value eventually equals expected within timeout
-func AssertEventuallyEqual(t *testing.T, expected interface{}, actual func() interface{}, timeout time.Duration, msgAndArgs ...interface{}) {
+// AssertEventuallyEqual checks that a value eventually equals expected within timeout.
+func AssertEventuallyEqual(
+	t *testing.T,
+	expected interface{},
+	actual func() interface{},
+	timeout time.Duration,
+	msgAndArgs ...interface{},
+) {
 	t.Helper()
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
-	
+
 	ticker := time.NewTicker(50 * time.Millisecond)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -189,8 +195,8 @@ func AssertEventuallyEqual(t *testing.T, expected interface{}, actual func() int
 // MockSystemInfo creates a mock system info for testing
 func MockSystemInfo(os, version, distribution string) map[string]interface{} {
 	return map[string]interface{}{
-		"os":      os,
-		"version": version,
+		"os":           os,
+		"version":      version,
 		"distribution": distribution,
 		"architecture": "amd64",
 	}
@@ -199,14 +205,14 @@ func MockSystemInfo(os, version, distribution string) map[string]interface{} {
 // CreateTestFixture creates a test fixture file with given content
 func CreateTestFixture(t *testing.T, fixturePath, content string) {
 	t.Helper()
-	
+
 	dir := filepath.Dir(fixturePath)
 	err := os.MkdirAll(dir, 0755)
 	require.NoError(t, err, "Failed to create fixture directory")
-	
-	err = os.WriteFile(fixturePath, []byte(content), 0644)
+
+	err = os.WriteFile(fixturePath, []byte(content), 0600)
 	require.NoError(t, err, "Failed to create fixture file")
-	
+
 	t.Cleanup(func() {
 		os.Remove(fixturePath)
 	})
@@ -231,11 +237,11 @@ func FreePort() int {
 // SetEnvForTest sets an environment variable for the duration of the test
 func SetEnvForTest(t *testing.T, key, value string) {
 	t.Helper()
-	
+
 	oldValue := os.Getenv(key)
 	err := os.Setenv(key, value)
 	require.NoError(t, err, "Failed to set environment variable %s", key)
-	
+
 	t.Cleanup(func() {
 		if oldValue == "" {
 			os.Unsetenv(key)
