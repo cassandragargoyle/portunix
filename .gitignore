@@ -1,5 +1,4 @@
 *.msi
-.claude
 .tmp
 .cache
 portunix.exe
@@ -16,3 +15,4 @@ portunix
 # Test coverage files
 coverage.out
 coverage.html
+.claude/roles/current.md

@@ -100,11 +100,18 @@ Add comprehensive OS detection capabilities to Portunix that can intelligently i
 $ .\portunix.exe system info --short
 Windows 10.0.26100 Physical
 
+# Linux Host
+$ ./portunix system info --short
+Linux 25.04 Physical
+
 $ .\portunix.exe system check windows
 # Exit code: 0 (success)
 
 $ .\portunix.exe system check sandbox  
 # Exit code: 1 (not in sandbox)
+
+$ ./portunix system check windows
+# Exit code: 1 (not in windows)
 
 $ .\portunix.exe system info --json
 {
@@ -139,6 +146,6 @@ $ .\portunix.exe system info --json
 ---
 **Created:** 2025-01-18  
 **Implemented:** 2025-01-18  
-**Last Updated:** 2025-01-18  
+**Last Updated:** 2025-01-22  
 **Assigned:** @CassandraGargoyle  
 **Related Issues:** [#2](002-docker-management-command.md) (Docker Management Command)

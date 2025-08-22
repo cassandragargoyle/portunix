@@ -1,0 +1,83 @@
+# .goreleaser.yml
+# GoReleaser configuration for Portunix
+
+project_name: portunix
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - id: portunix
+    binary: portunix
+    main: ./main.go
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{.Version}}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+archives:
+  - id: binary-only
+    format: binary
+    name_template: "{{ .Binary }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+
+checksum:
+  name_template: 'checksums.txt'
+  algorithm: sha256
+  extra_files:
+    - glob: ./portunix-*
+      name_template: "{{ .ArtifactName }}.sha256"
+
+release:
+  github:
+    owner: cassandragargoyle
+    name: Portunix
+  
+  # Create individual checksum files for each binary
+  extra_files:
+    - glob: ./dist/*
+  
+  # Release notes
+  header: |
+    ## Portunix {{.Version}}
+    
+    Universal development environment management tool.
+  
+  footer: |
+    ## Installation
+    
+    Download the appropriate binary for your platform and run:
+    ```bash
+    # Linux/macOS
+    chmod +x portunix-*
+    sudo mv portunix-* /usr/local/bin/portunix
+    
+    # Windows
+    # Move portunix-*.exe to a directory in your PATH
+    ```
+    
+    ## Self-Update
+    
+    Once installed, you can update Portunix using:
+    ```bash
+    portunix update
+    ```
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'

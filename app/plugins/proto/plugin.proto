@@ -1,0 +1,275 @@
+syntax = "proto3";
+
+package portunix.plugins;
+
+option go_package = "portunix.cz/app/plugins/proto";
+
+// PluginService defines the main interface for plugin communication
+service PluginService {
+    // Initialize plugin with configuration
+    rpc Initialize(InitializeRequest) returns (InitializeResponse);
+    
+    // Execute a command on the plugin
+    rpc Execute(ExecuteRequest) returns (ExecuteResponse);
+    
+    // Get plugin information and capabilities
+    rpc GetInfo(GetInfoRequest) returns (GetInfoResponse);
+    
+    // Health check for plugin
+    rpc Health(HealthRequest) returns (HealthResponse);
+    
+    // Shutdown plugin gracefully
+    rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+    
+    // List available commands/tools provided by plugin
+    rpc ListCommands(ListCommandsRequest) returns (ListCommandsResponse);
+}
+
+// Initialize plugin
+message InitializeRequest {
+    string plugin_name = 1;
+    string version = 2;
+    map<string, string> config = 3;
+    map<string, string> environment = 4;
+    PluginPermissions permissions = 5;
+}
+
+message InitializeResponse {
+    bool success = 1;
+    string message = 2;
+    PluginInfo plugin_info = 3;
+}
+
+// Execute command
+message ExecuteRequest {
+    string command = 1;
+    repeated string args = 2;
+    map<string, string> options = 3;
+    map<string, string> environment = 4;
+    string working_directory = 5;
+}
+
+message ExecuteResponse {
+    bool success = 1;
+    string message = 2;
+    string output = 3;
+    string error = 4;
+    int32 exit_code = 5;
+    map<string, string> metadata = 6;
+}
+
+// Plugin information
+message GetInfoRequest {}
+
+message GetInfoResponse {
+    PluginInfo plugin_info = 1;
+}
+
+message PluginInfo {
+    string name = 1;
+    string version = 2;
+    string description = 3;
+    string author = 4;
+    string license = 5;
+    repeated string supported_os = 6;
+    repeated PluginCommand commands = 7;
+    PluginCapabilities capabilities = 8;
+    PluginPermissions required_permissions = 9;
+}
+
+message PluginCommand {
+    string name = 1;
+    string description = 2;
+    repeated string subcommands = 3;
+    repeated PluginParameter parameters = 4;
+    repeated string examples = 5;
+}
+
+message PluginParameter {
+    string name = 1;
+    string type = 2;
+    string description = 3;
+    bool required = 4;
+    string default_value = 5;
+}
+
+message PluginCapabilities {
+    bool filesystem_access = 1;
+    bool network_access = 2;
+    bool database_access = 3;
+    bool container_access = 4;
+    bool system_commands = 5;
+    repeated string mcp_tools = 6;
+}
+
+message PluginPermissions {
+    repeated string filesystem = 1;
+    repeated string network = 2;
+    repeated string database = 3;
+    repeated string system = 4;
+    string level = 5; // limited, standard, full
+}
+
+// Health check
+message HealthRequest {}
+
+message HealthResponse {
+    bool healthy = 1;
+    string status = 2;
+    string message = 3;
+    int64 uptime_seconds = 4;
+    map<string, string> metrics = 5;
+}
+
+// Shutdown
+message ShutdownRequest {
+    bool force = 1;
+    int32 timeout_seconds = 2;
+}
+
+message ShutdownResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// List commands
+message ListCommandsRequest {}
+
+message ListCommandsResponse {
+    repeated PluginCommand commands = 1;
+    PluginCapabilities capabilities = 2;
+}
+
+// Datastore Plugin Service - extends base plugin functionality for datastore operations
+service DatastorePluginService {
+    // Inherit base plugin functionality
+    rpc Initialize(InitializeRequest) returns (InitializeResponse);
+    rpc Health(HealthRequest) returns (HealthResponse);
+    rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+    
+    // Datastore-specific operations
+    rpc Store(StoreRequest) returns (StoreResponse);
+    rpc Retrieve(RetrieveRequest) returns (RetrieveResponse);
+    rpc Query(QueryRequest) returns (QueryResponse);
+    rpc Delete(DeleteRequest) returns (DeleteResponse);
+    rpc List(ListKeysRequest) returns (ListKeysResponse);
+    
+    // Management operations
+    rpc TestConnection(TestConnectionRequest) returns (TestConnectionResponse);
+    rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+}
+
+// Store operation
+message StoreRequest {
+    string key = 1;
+    bytes value = 2;                    // Serialized data
+    string content_type = 3;            // JSON, YAML, binary, etc.
+    map<string, string> metadata = 4;   // Additional metadata
+    map<string, string> config = 5;     // Route-specific config
+}
+
+message StoreResponse {
+    bool success = 1;
+    string message = 2;
+    map<string, string> result_metadata = 3;
+}
+
+// Retrieve operation
+message RetrieveRequest {
+    string key = 1;
+    map<string, string> filter = 2;
+    map<string, string> config = 3;
+}
+
+message RetrieveResponse {
+    bool success = 1;
+    string message = 2;
+    bytes value = 3;
+    string content_type = 4;
+    map<string, string> metadata = 5;
+}
+
+// Query operation
+message QueryRequest {
+    string collection = 1;
+    map<string, string> filter = 2;
+    map<string, string> sort = 3;
+    int32 limit = 4;
+    int32 offset = 5;
+    map<string, string> config = 6;
+}
+
+message QueryResponse {
+    bool success = 1;
+    string message = 2;
+    repeated QueryResult results = 3;
+    int32 total_count = 4;
+}
+
+message QueryResult {
+    string key = 1;
+    bytes value = 2;
+    string content_type = 3;
+    map<string, string> metadata = 4;
+}
+
+// Delete operation
+message DeleteRequest {
+    string key = 1;
+    map<string, string> config = 2;
+}
+
+message DeleteResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// List keys operation
+message ListKeysRequest {
+    string pattern = 1;
+    int32 limit = 2;
+    int32 offset = 3;
+    map<string, string> config = 4;
+}
+
+message ListKeysResponse {
+    bool success = 1;
+    string message = 2;
+    repeated string keys = 3;
+    int32 total_count = 4;
+}
+
+// Test connection
+message TestConnectionRequest {
+    map<string, string> config = 1;
+}
+
+message TestConnectionResponse {
+    bool success = 1;
+    string message = 2;
+    map<string, string> connection_info = 3;
+}
+
+// Get statistics
+message GetStatsRequest {}
+
+message GetStatsResponse {
+    bool success = 1;
+    string message = 2;
+    DatastoreStats stats = 3;
+}
+
+message DatastoreStats {
+    int64 total_keys = 1;
+    int64 total_size_bytes = 2;
+    map<string, int64> collections = 3;
+    PerformanceMetrics performance = 4;
+    int64 last_updated_timestamp = 5;
+}
+
+message PerformanceMetrics {
+    double average_read_time_ms = 1;
+    double average_write_time_ms = 2;
+    double operations_per_sec = 3;
+    double error_rate = 4;
+}
