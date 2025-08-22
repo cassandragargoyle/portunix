@@ -25,6 +25,7 @@ Available software packages:
   mvn           - Apache Maven build tool
   chocolatey    - Chocolatey package manager for Windows
   winget        - Windows Package Manager
+  claude-code   - Anthropic's official CLI for Claude AI assistant
   docker        - Docker Engine/Desktop with intelligent OS detection
   podman        - Podman container engine with rootless support
 
@@ -33,6 +34,7 @@ Package variants (use with --variant):
   python: embeddable, full (default: embeddable)
   vscode: user, system (default: user)
   mvn: 3.9.9, latest, apt (Linux only) (default: latest)
+  claude-code: npm, curl (default: npm)
 
 Python installation options:
   --gui         Use GUI installer instead of silent installation

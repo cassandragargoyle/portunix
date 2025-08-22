@@ -484,6 +484,61 @@
         }
       },
       "default_variant": "github"
+    },
+    "claude-code": {
+      "name": "Claude Code",
+      "description": "Anthropic's official CLI for Claude AI assistant",
+      "platforms": {
+        "windows": {
+          "type": "powershell",
+          "variants": {
+            "npm": {
+              "version": "latest",
+              "install_script": "Write-Host 'Checking for Node.js and npm...'; try { $nodeVersion = node --version 2>$null; $npmVersion = npm --version 2>$null; Write-Host \"✓ Node.js $nodeVersion and npm $npmVersion found\"; } catch { Write-Host '❌ Node.js/npm not found. Installing Node.js first...'; iwr -useb https://nodejs.org/dist/v20.11.0/node-v20.11.0-x64.msi -outfile node.msi; Start-Process msiexec.exe -Wait -ArgumentList '/I node.msi /quiet'; Remove-Item node.msi; }; Write-Host 'Installing Claude Code via npm...'; npm install -g @anthropic-ai/claude-code; Write-Host 'Installation completed!'",
+              "post_install": [
+                "claude --version"
+              ]
+            },
+            "curl": {
+              "version": "latest",
+              "install_script": "iwr -useb https://claude.ai/cli/install.sh | iex",
+              "post_install": [
+                "claude --version"
+              ]
+            }
+          },
+          "verification": {
+            "command": "claude --version",
+            "expected_exit_code": 0
+          }
+        },
+        "linux": {
+          "type": "apt",
+          "variants": {
+            "npm": {
+              "version": "latest",
+              "packages": ["nodejs", "npm"],
+              "post_install": [
+                "npm install -g @anthropic-ai/claude-code",
+                "claude --version"
+              ]
+            },
+            "curl": {
+              "version": "latest",
+              "packages": ["curl"],
+              "post_install": [
+                "curl -fsSL https://claude.ai/cli/install.sh | sh",
+                "claude --version"
+              ]
+            }
+          },
+          "verification": {
+            "command": "claude --version",
+            "expected_exit_code": 0
+          }
+        }
+      },
+      "default_variant": "npm"
     }
   },
   "presets": {
