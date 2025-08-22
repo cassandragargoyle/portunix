@@ -7,6 +7,8 @@ import (
 
 	"portunix.cz/app/install"
 	"portunix.cz/app/sandbox"
+	"portunix.cz/app/update"
+	appversion "portunix.cz/app/version"
 	"portunix.cz/cmd"
 )
 
@@ -22,11 +24,16 @@ var portunixSystemPSScript string
 //go:embed assets/install-packages.json
 var installPackagesConfig string
 
-const productName = "Portunix"
-const productVersion = "1.0.2"
 const trace = true
 
+// Version will be set at build time using ldflags
+var version = "v1.4.0"
+
 func main() {
+	// Set the version for update package and version package
+	update.Version = version
+	appversion.ProductVersion = version
+
 	// Set the embedded scripts in sandbox package
 	sandbox.InstallOpenSSHScript = installOpenSSHScript
 	sandbox.VSCodeInstallScript = vscodeInstallScript

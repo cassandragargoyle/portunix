@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"portunix.cz/app/system"
+	"portunix.cz/app/version"
 )
 
 // Standard MCP Protocol Handlers
@@ -22,8 +23,8 @@ func (s *Server) handleInitialize(params json.RawMessage) (interface{}, error) {
 			"tools": map[string]interface{}{},
 		},
 		"serverInfo": map[string]interface{}{
-			"name":    "portunix",
-			"version": "1.0.2",
+			"name":    version.ProductName,
+			"version": version.ProductVersion,
 		},
 	}, nil
 }
@@ -137,7 +138,7 @@ func (s *Server) handleGetSystemInfo(params json.RawMessage) (interface{}, error
 	}
 
 	return map[string]interface{}{
-		"portunix_version": "1.0.2",
+		"portunix_version": version.ProductVersion,
 		"raw_os":          runtime.GOOS,
 		"raw_arch":        runtime.GOARCH,
 		"system_info":     systemInfo,

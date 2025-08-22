@@ -4,11 +4,12 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"portunix.cz/app/version"
 )
 
 var rootCmd = &cobra.Command{
 	Use:     "portunix",
-	Version: "1.0.1",
+	Version: version.ProductVersion,
 	Short:   "Portunix is a universal tool for managing development environments.",
 	Long: `Portunix is a command-line interface (CLI) tool designed to simplify
 the management of development environments. It allows you to install software,
@@ -28,4 +29,7 @@ func Execute() {
 
 func init() {
 	// Here you will define your flags and configuration settings.
+	
+	// Customize version template to match our version command output
+	rootCmd.SetVersionTemplate("Portunix version {{.Version}}\n")
 }
