@@ -189,7 +189,6 @@ make lint
 ## 📚 Documentation
 
 ### User Guides
-- **[CLAUDE.md](CLAUDE.md)**: Development instructions and coding guidelines
 - **[TEST_GUIDE.md](TEST_GUIDE.md)**: Complete testing guide for developers
 - **[TESTING.md](TESTING.md)**: Testing architecture and standards
 
@@ -256,7 +255,7 @@ make status
 ```
 
 ### Guidelines
-1. Follow existing code conventions (see [CLAUDE.md](CLAUDE.md))
+1. Follow existing code conventions (see [TODO:](TODO:.md))
 2. Write tests for new features (see [TEST_GUIDE.md](TEST_GUIDE.md))
 3. Update documentation
 4. Run quality checks: `make lint`
