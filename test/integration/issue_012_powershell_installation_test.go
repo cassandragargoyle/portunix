@@ -8,10 +8,11 @@ import (
 	"time"
 )
 
-// TestPowerShellInstallation tests the PowerShell package installation workflow
+// TestPowerShellInstallation tests the PowerShell package installation workflow.
 func TestPowerShellInstallation(t *testing.T) {
+	const osWindows = "windows"
 	// Skip on Windows since PowerShell is already available
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == osWindows {
 		t.Skip("PowerShell is already available on Windows, skipping installation test")
 	}
 
@@ -31,7 +32,7 @@ func TestPowerShellInstallation(t *testing.T) {
 	})
 }
 
-// testPowerShellQuickInstall tests PowerShell installation using quick variant
+// testPowerShellQuickInstall tests PowerShell installation using quick variant.
 func testPowerShellQuickInstall(t *testing.T, portunixBin string) {
 	// Install PowerShell using the quick variant for Ubuntu 22.04+
 	cmd := exec.Command(portunixBin, "install", "powershell", "quick")
@@ -42,11 +43,11 @@ func testPowerShellQuickInstall(t *testing.T, portunixBin string) {
 	if err != nil {
 		// Check if PowerShell is already installed
 		if strings.Contains(string(output), "already installed") ||
-		   strings.Contains(string(output), "already exists") {
+			strings.Contains(string(output), "already exists") {
 			t.Log("PowerShell already installed, continuing...")
 			return
 		}
-		
+
 		// Check for common installation issues
 		outputStr := string(output)
 		if strings.Contains(outputStr, "Permission denied") {
@@ -55,7 +56,7 @@ func testPowerShellQuickInstall(t *testing.T, portunixBin string) {
 		if strings.Contains(outputStr, "network") || strings.Contains(outputStr, "download") {
 			t.Skip("Network issues during installation, skipping")
 		}
-		
+
 		t.Fatalf("Failed to install PowerShell: %v\nOutput: %s", err, output)
 	}
 
@@ -63,9 +64,9 @@ func testPowerShellQuickInstall(t *testing.T, portunixBin string) {
 	outputStr := string(output)
 	if len(strings.TrimSpace(outputStr)) == 0 {
 		t.Log("Empty installation output - PowerShell may already be installed or installed silently")
-	} else if !strings.Contains(outputStr, "successfully") && 
-	          !strings.Contains(outputStr, "installed") &&
-	          !strings.Contains(outputStr, "complete") {
+	} else if !strings.Contains(outputStr, "successfully") &&
+		!strings.Contains(outputStr, "installed") &&
+		!strings.Contains(outputStr, "complete") {
 		t.Logf("Installation output: %s", outputStr)
 	}
 }
@@ -85,7 +86,7 @@ func testPowerShellCommand(t *testing.T) {
 		// Try alternative command paths
 		cmd = exec.Command("powershell", "--version")
 		output, err = cmd.CombinedOutput()
-		
+
 		if err != nil {
 			t.Logf("PowerShell command not found in PATH, checking common locations...")
 			
@@ -166,7 +167,8 @@ func testPowerShellUninstall(t *testing.T, portunixBin string) {
 
 // TestPowerShellPresetsIntegration tests PowerShell as part of installation presets
 func TestPowerShellPresetsIntegration(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	const osWindows = "windows"
+	if runtime.GOOS == osWindows {
 		t.Skip("PowerShell preset testing not applicable on Windows")
 	}
 

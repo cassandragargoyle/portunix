@@ -24,9 +24,7 @@ var portunixSystemPSScript string
 //go:embed assets/install-packages.json
 var installPackagesConfig string
 
-const trace = true
-
-// Version will be set at build time using ldflags
+// Version will be set at build time using ldflags.
 var version = "dev"
 
 func main() {

@@ -13,10 +13,12 @@ import (
 	"time"
 )
 
+const osWindows = "windows"
+
 // TestPluginInstallation tests the basic plugin installation workflow
 func TestPluginInstallation(t *testing.T) {
 	// Skip if not on a supported platform
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == osWindows {
 		t.Skip("Plugin tests are currently not supported on Windows")
 	}
 
@@ -55,7 +57,7 @@ func getPortunixBinary(t *testing.T) string {
 	projectRoot := findProjectRoot()
 	portunixBin := filepath.Join(projectRoot, "portunix")
 	
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == osWindows {
 		portunixBin += ".exe"
 	}
 
@@ -78,7 +80,10 @@ func getPortunixBinary(t *testing.T) string {
 // findProjectRoot finds the project root directory
 func findProjectRoot() string {
 	// Start from current directory and traverse up
-	dir, _ := os.Getwd()
+	dir, err := os.Getwd()
+	if err != nil {
+		return "."
+	}
 	
 	for {
 		// Check if go.mod exists in current directory
@@ -303,7 +308,9 @@ func testPluginUninstall(t *testing.T, portunixBin string) {
 	}
 
 	// Send confirmation
-	io.WriteString(stdin, "y\n")
+	if _, err := io.WriteString(stdin, "y\n"); err != nil {
+		t.Logf("Failed to send confirmation: %v", err)
+	}
 	stdin.Close()
 
 	// Wait for completion
@@ -322,7 +329,10 @@ func testPluginUninstall(t *testing.T, portunixBin string) {
 
 	// Verify plugin is removed from list
 	cmd = exec.Command(portunixBin, "plugin", "list")
-	listOutput, _ := cmd.CombinedOutput()
+	listOutput, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Logf("Failed to list plugins after uninstall: %v", err)
+	}
 	
 	if strings.Contains(string(listOutput), "test-plugin") {
 		t.Error("test-plugin still appears in list after uninstall")
@@ -331,7 +341,7 @@ func testPluginUninstall(t *testing.T, portunixBin string) {
 
 // TestPluginValidation tests plugin validation
 func TestPluginValidation(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == osWindows {
 		t.Skip("Plugin tests are currently not supported on Windows")
 	}
 
@@ -349,18 +359,15 @@ func TestPluginValidation(t *testing.T) {
 		// Validation might fail if plugin doesn't meet all requirements
 		// Log as warning instead of failure
 		t.Logf("Warning: Plugin validation failed: %v", err)
-	} else {
-		// Check for validation success indicators
-		if strings.Contains(string(output), "valid") || 
-		   strings.Contains(string(output), "passed") {
-			t.Log("Plugin validation passed")
-		}
+	} else if strings.Contains(string(output), "valid") ||
+		strings.Contains(string(output), "passed") {
+		t.Log("Plugin validation passed")
 	}
 }
 
 // TestPluginCreate tests creating a new plugin from template
 func TestPluginCreate(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if runtime.GOOS == osWindows {
 		t.Skip("Plugin tests are currently not supported on Windows")
 	}
 

@@ -38,7 +38,12 @@ jobs:
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
       - name: Run linter
-        run: golangci-lint run ./... --timeout=5m
+        env:
+          GO111MODULE: on
+        run: |
+          # Run golangci-lint with our configured .golangci.yml
+          # The config already handles embed issues for CI environment
+          golangci-lint run ./... --timeout=5m --verbose
 
       - name: Run go vet
         run: go vet ./...
