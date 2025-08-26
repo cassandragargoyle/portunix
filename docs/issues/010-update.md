@@ -5,18 +5,26 @@
 **Labels:** enhancement, self-update, cross-platform  
 **Milestone:** v1.4.0  
 
-## Feature Request: Self-Update Command
+## Feature Request: Self-Update Command & Installation System
 
 ### Overview
-Implement a self-update mechanism that allows Portunix to automatically update itself to the latest version from GitHub releases. Users should be able to run `portunix update` to fetch and install the latest release, ensuring they always have access to the newest features and bug fixes.
+Implement a self-update mechanism that allows Portunix to automatically update itself to the latest version from GitHub releases. Additionally, provide installation scripts that utilize Portunix's built-in installation command for a seamless setup experience. Users should be able to run `portunix update` to fetch and install the latest release, ensuring they always have access to the newest features and bug fixes.
 
 ### Requirements
 
 #### 1. Command Line Interface
+**Update Commands:**
 - `portunix update` - Check for updates and install if available
 - `portunix update --check` - Only check for updates without installing
 - `portunix update --force` - Force update even if on latest version
 - `portunix --version` - Display current version information
+
+**Installation Commands:**
+- `portunix install` - Interactive installation wizard
+- `portunix install --silent` - Silent installation with defaults
+- `portunix install --path /usr/local/bin` - Install to specific location
+- `portunix install --create-config` - Create configuration files
+- `portunix install --add-to-path` - Add to system PATH
 
 #### 2. Update Capabilities
 **Version Management:**
@@ -102,18 +110,68 @@ Current version: v1.4.2
 ✓ Update completed successfully!
 ```
 
-#### 5. GitHub Release Structure
+#### 5. Installation System
+
+**Installation Scripts:**
+Each release archive will include an installation script:
+- **Windows:** `install.ps1` - PowerShell script
+- **Linux/macOS:** `install.sh` - Shell script
+
+**Installation Process:**
+1. User downloads and extracts the archive
+2. Runs the installation script (`./install.sh` or `.\install.ps1`)
+3. Script executes `portunix install` with appropriate parameters
+4. Portunix performs interactive or silent installation
+
+**Interactive Installation Flow:**
+```
+$ ./install.sh
+Welcome to Portunix Installation!
+Version: v1.4.2
+
+[1] Install to /usr/local/bin (recommended)
+[2] Install to ~/bin
+[3] Install to custom location
+[4] Cancel installation
+
+Please select [1-4]: 1
+
+✓ Checking permissions...
+✓ Creating backup of existing installation...
+✓ Installing portunix to /usr/local/bin...
+✓ Verifying installation...
+✓ Adding to PATH...
+
+Installation completed successfully!
+Run 'portunix --version' to verify.
+```
+
+**Silent Installation:**
+```bash
+# Linux/macOS
+./install.sh --silent
+
+# Windows
+.\install.ps1 -Silent
+```
+
+#### 6. GitHub Release Structure
 
 **Expected Release Assets:**
 ```
-portunix-v1.4.2-windows-amd64.exe
-portunix-v1.4.2-windows-amd64.exe.sha256
-portunix-v1.4.2-linux-amd64
-portunix-v1.4.2-linux-amd64.sha256
-portunix-v1.4.2-linux-arm64
-portunix-v1.4.2-linux-arm64.sha256
-portunix-v1.4.2-darwin-amd64
-portunix-v1.4.2-darwin-amd64.sha256
+portunix_1.4.2_windows_amd64.zip
+  ├── portunix.exe
+  └── install.ps1
+  
+portunix_1.4.2_linux_amd64.tar.gz
+  ├── portunix
+  └── install.sh
+  
+portunix_1.4.2_darwin_amd64.tar.gz
+  ├── portunix
+  └── install.sh
+  
+checksums_1.4.2.txt
 ```
 
 **Release Automation (GoReleaser):**
@@ -133,11 +191,22 @@ builds:
       - -s -w
 
 archives:
-  - format: binary
-    name_template: "{{ .Binary }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+  - id: default
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    files:
+      - src: scripts/install.sh
+        dst: install.sh
+        info:
+          mode: 0755
+      - src: scripts/install.ps1
+        dst: install.ps1
 
 checksum:
-  name_template: "checksums.txt"
+  name_template: "checksums_{{ .Version }}.txt"
 ```
 
 #### 6. Error Handling
@@ -173,14 +242,24 @@ Error: Checksum verification failed
 ```
 cmd/
 ├── update.go          # Update command implementation
+├── install.go         # Install command implementation
 └── version.go         # Version command implementation
 
 app/
-└── update/
-    ├── update.go      # Core update logic
-    ├── github.go      # GitHub API integration
-    ├── verify.go      # Checksum verification
-    └── update_test.go # Tests
+├── update/
+│   ├── update.go      # Core update logic
+│   ├── github.go      # GitHub API integration
+│   ├── verify.go      # Checksum verification
+│   └── update_test.go # Tests
+└── install/
+    ├── install.go     # Core installation logic
+    ├── interactive.go # Interactive installation wizard
+    ├── path.go        # PATH management
+    └── install_test.go # Tests
+
+scripts/
+├── install.sh         # Linux/macOS installation script
+└── install.ps1        # Windows installation script
 ```
 
 **Key Functions:**
@@ -196,6 +275,22 @@ func RestoreBackup(backupPath string) error
 // app/update/github.go
 func GetLatestRelease(owner, repo string) (*ReleaseInfo, error)
 func DownloadAsset(url string, dest string) error
+
+// app/install/install.go
+func InstallInteractive() error
+func InstallSilent(path string) error
+func InstallToPath(sourcePath, destPath string) error
+func VerifyInstallation(path string) error
+
+// app/install/interactive.go
+func PromptInstallLocation() (string, error)
+func PromptAddToPath() (bool, error)
+func ShowInstallationSummary(path string) error
+
+// app/install/path.go
+func AddToSystemPath(binPath string) error
+func IsInPath(binPath string) bool
+func GetDefaultInstallPath() string
 ```
 
 ### Benefits

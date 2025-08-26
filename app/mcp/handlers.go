@@ -76,6 +76,120 @@ func (s *Server) handleToolsList(params json.RawMessage) (interface{}, error) {
 				"description": "No parameters required",
 			},
 		},
+		{
+			"name":        "create_edge_infrastructure",
+			"description": "Create edge infrastructure configuration for VPS deployment with reverse proxy and VPN tunneling",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "Name for the edge infrastructure setup",
+					},
+					"domain": map[string]interface{}{
+						"type":        "string",
+						"description": "Primary domain name (e.g., example.com)",
+					},
+					"upstream_host": map[string]interface{}{
+						"type":        "string",
+						"description": "Home lab host IP address (e.g., 10.10.10.2)",
+					},
+					"upstream_port": map[string]interface{}{
+						"type":        "integer",
+						"description": "Home lab service port (e.g., 8080)",
+					},
+					"admin_email": map[string]interface{}{
+						"type":        "string",
+						"description": "Admin email for Let's Encrypt certificates",
+					},
+				},
+				"required": []string{"name", "domain", "upstream_host", "upstream_port", "admin_email"},
+			},
+		},
+		{
+			"name":        "configure_domain_proxy",
+			"description": "Add or update domain configuration in edge infrastructure",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"domain": map[string]interface{}{
+						"type":        "string",
+						"description": "Domain name to configure",
+					},
+					"upstream_host": map[string]interface{}{
+						"type":        "string",
+						"description": "Target host for reverse proxy",
+					},
+					"upstream_port": map[string]interface{}{
+						"type":        "integer",
+						"description": "Target port for reverse proxy",
+					},
+					"path": map[string]interface{}{
+						"type":        "string",
+						"description": "Optional path-based routing (e.g., /api)",
+					},
+				},
+				"required": []string{"domain", "upstream_host", "upstream_port"},
+			},
+		},
+		{
+			"name":        "setup_secure_tunnel",
+			"description": "Configure WireGuard VPN tunnel for secure connection to home lab",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"client_name": map[string]interface{}{
+						"type":        "string",
+						"description": "Name for the VPN client (e.g., home-lab)",
+					},
+					"client_ip": map[string]interface{}{
+						"type":        "string",
+						"description": "VPN IP for the client (e.g., 10.10.10.2)",
+					},
+					"public_key": map[string]interface{}{
+						"type":        "string",
+						"description": "WireGuard public key for the client",
+					},
+				},
+				"required": []string{"client_name", "client_ip"},
+			},
+		},
+		{
+			"name":        "deploy_edge_infrastructure",
+			"description": "Deploy the edge infrastructure to VPS with all configured services",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"config_path": map[string]interface{}{
+						"type":        "string",
+						"description": "Path to edge configuration directory (optional)",
+					},
+				},
+			},
+		},
+		{
+			"name":        "manage_certificates",
+			"description": "Manage TLS certificates for edge domains using Let's Encrypt",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"action": map[string]interface{}{
+						"type":        "string",
+						"description": "Action to perform: renew, status, or configure",
+						"enum":        []string{"renew", "status", "configure"},
+					},
+					"domain": map[string]interface{}{
+						"type":        "string",
+						"description": "Domain name for certificate management",
+					},
+					"email": map[string]interface{}{
+						"type":        "string",
+						"description": "Email for Let's Encrypt registration (for configure action)",
+					},
+				},
+				"required": []string{"action"},
+			},
+		},
 	}
 	
 	return map[string]interface{}{
@@ -109,6 +223,16 @@ func (s *Server) handleToolsCall(params json.RawMessage) (interface{}, error) {
 		}
 	case "detect_project_type":
 		result, err = s.handleDetectProjectType(nil)
+	case "create_edge_infrastructure":
+		result, err = s.handleCreateEdgeInfrastructure(request.Arguments)
+	case "configure_domain_proxy":
+		result, err = s.handleConfigureDomainProxy(request.Arguments)
+	case "setup_secure_tunnel":
+		result, err = s.handleSetupSecureTunnel(request.Arguments)
+	case "deploy_edge_infrastructure":
+		result, err = s.handleDeployEdgeInfrastructure(request.Arguments)
+	case "manage_certificates":
+		result, err = s.handleManageCertificates(request.Arguments)
 	default:
 		err = fmt.Errorf("unknown tool: %s", request.Name)
 	}

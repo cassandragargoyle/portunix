@@ -3,6 +3,10 @@
 
 project_name: portunix
 
+# Ať se snapshot NEoznačuje commitem (žádné -60b7fbf)
+snapshot:
+  name_template: "{{ .Version }}"
+
 before:
   hooks:
     - go mod tidy
@@ -28,21 +32,38 @@ builds:
       - CGO_ENABLED=0
 
 archives:
-  - id: binary-only
-    format: binary
-    name_template: "{{ .Binary }}-{{ .Version }}-{{ .Os }}-{{ .Arch }}"
+  - id: default
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{- tolower .Os }}_{{ .Arch }}"
+    # Windows -> .zip, ostatní -> .tar.gz
+    format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
+    wrap_in_directory: false
+    files:
+      - src: scripts/install.sh
+        dst: install.sh
+        strip_parent: true
+        info:
+          mode: 0755
+      - src: scripts/install.ps1
+        dst: install.ps1
+        strip_parent: true
+      - LICENSE*
+      - README*
+      # případně doplň např. shell completion:
+      # - "completions/*"
+ 
+dist: dist
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums_{{ .Version }}.txt"
   algorithm: sha256
-  extra_files:
-    - glob: ./portunix-*
-      name_template: "{{ .ArtifactName }}.sha256"
 
 release:
   github:
     owner: cassandragargoyle
-    name: Portunix
+    name: portunix
   
   # Create individual checksum files for each binary
   extra_files:
@@ -57,14 +78,32 @@ release:
   footer: |
     ## Installation
     
-    Download the appropriate binary for your platform and run:
-    ```bash
-    # Linux/macOS
-    chmod +x portunix-*
-    sudo mv portunix-* /usr/local/bin/portunix
+    Download and extract the appropriate archive for your platform, then run the installation script:
     
-    # Windows
-    # Move portunix-*.exe to a directory in your PATH
+    ### Linux/macOS
+    ```bash
+    # Download and extract
+    tar -xzf portunix_{{.Version}}_linux_amd64.tar.gz
+    cd portunix_{{.Version}}_linux_amd64
+    
+    # Interactive installation
+    ./install.sh
+    
+    # Or silent installation
+    ./install.sh --silent --add-to-path
+    ```
+    
+    ### Windows
+    ```powershell
+    # Download and extract
+    Expand-Archive portunix_{{.Version}}_windows_amd64.zip
+    cd portunix_{{.Version}}_windows_amd64
+    
+    # Interactive installation
+    .\install.ps1
+    
+    # Or silent installation
+    .\install.ps1 -Silent -AddToPath
     ```
     
     ## Self-Update

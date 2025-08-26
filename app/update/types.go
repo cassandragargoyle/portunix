@@ -47,16 +47,29 @@ func GetArch() string {
 
 // GetBinaryName returns the expected binary name for the current platform
 func GetBinaryName(version string) string {
-	name := fmt.Sprintf("portunix-%s-%s-%s", version, GetOS(), GetArch())
+	// Remove 'v' prefix from version for filename
+	version = strings.TrimPrefix(version, "v")
+	
+	// Format: portunix_1.4.0_linux_amd64.tar.gz
+	name := fmt.Sprintf("portunix_%s_%s_%s", version, GetOS(), GetArch())
+	
+	// Add appropriate archive extension
 	if runtime.GOOS == "windows" {
-		name += ".exe"
+		name += ".zip"
+	} else {
+		name += ".tar.gz"
 	}
+	
 	return name
 }
 
 // GetChecksumName returns the expected checksum file name
 func GetChecksumName(version string) string {
-	return GetBinaryName(version) + ".sha256"
+	// Remove 'v' prefix from version for filename
+	version = strings.TrimPrefix(version, "v")
+	
+	// Format: checksums_1.4.0.txt
+	return fmt.Sprintf("checksums_%s.txt", version)
 }
 
 // CompareVersions compares two semantic versions

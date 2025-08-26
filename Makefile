@@ -18,6 +18,18 @@ build-race: ## Build with race detection
 	@echo "🏃 Building with race detection..."
 	go build -race -o portunix .
 
+build-release: ## Build release version with proper version embedding
+	@echo "🎁 Building Portunix release..."
+	./build-with-version.sh
+
+build-version: ## Build with custom version (use VERSION=v1.6.0)
+	@if [ -z "$(VERSION)" ]; then \
+		echo "Usage: make build-version VERSION=v1.6.0"; \
+		exit 1; \
+	fi
+	@echo "🏷️  Building Portunix $(VERSION)..."
+	./build-with-version.sh $(VERSION)
+
 # Test targets
 test: ## Run all tests (unit + integration)
 	@echo "🧪 Running all tests..."

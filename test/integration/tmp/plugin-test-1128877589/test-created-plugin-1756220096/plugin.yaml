@@ -1,0 +1,41 @@
+# Plugin identification
+name: "/tmp/plugin-test-1128877589/test-created-plugin-1756220096"
+version: "1.0.0"
+description: "A Portunix plugin: /tmp/plugin-test-1128877589/test-created-plugin-1756220096"
+author: "Unknown"
+license: "MIT"
+
+# Plugin configuration
+plugin:
+  type: "grpc"
+  binary: ".//tmp/plugin-test-1128877589/test-created-plugin-1756220096"
+  port: 9001
+  health_check_interval: 30s
+  
+# Dependencies
+dependencies:
+  portunix_min_version: "v1.4.0"
+  os_support: ["linux", "windows", "darwin"]
+  
+# AI Integration
+ai_integration:
+  mcp_tools:
+    - name: "example_tool"
+      description: "Example MCP tool"
+  
+# Permissions
+permissions:
+  filesystem: ["read"]
+  network: ["outbound"]
+  database: []
+  system: []
+  level: "limited"
+  
+# Commands exposed to Portunix CLI
+commands:
+  - name: "help"
+    description: "Show help for /tmp/plugin-test-1128877589/test-created-plugin-1756220096 plugin"
+    subcommands: []
+    parameters: []
+    examples:
+      - "portunix /tmp/plugin-test-1128877589/test-created-plugin-1756220096 help"

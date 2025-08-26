@@ -14,6 +14,12 @@ This directory contains detailed documentation for GitHub issues, feature reques
 | [#6](006-configurable-datastore.md) | Configurable Datastore System | 📋 Open | High | enhancement, datastore, plugin-system, mongodb, postgresql, redis, enterprise |
 | [#7](007-virtual-development-disk.md) | Virtual Development Disk Management | 📋 Open | High | enhancement, virtual-disk, cross-platform, portability, development-environment |
 | [#10](010-update.md) | Self-Update Command - Automatic Binary Updates from GitHub | ✅ Implemented | High | enhancement, self-update, cross-platform |
+| [#11](011-powershell-linux-installation.md) | PowerShell Installation Support for Linux Distributions | 📋 Open | High | enhancement, powershell, linux, cross-platform, package-management, it-support |
+| [#12](012-powershell-linux-installation.md) | PowerShell Installation Support for Linux Distributions | ✅ Implemented | High | enhancement, powershell, linux, cross-platform |
+| [#13](013-database-management-plugin.md) | Database Management Plugin | 📋 Open | High | plugin, database, mcp, feature, installation |
+| [#14](014-wizard-framework.md) | Wizard Framework for Interactive CLI Installation | 📋 Open | High | enhancement, cli, wizard, framework, user-experience, core |
+| [#15](015-vps-edge-bastion-infrastructure.md) | VPS Edge/Bastion Infrastructure Management | ✅ Implemented | High | enhancement, infrastructure, edge-computing, containers, networking, security, cross-platform |
+| [#16](016-protoc-plugin-development-dependency.md) | Protocol Buffers Compiler (protoc) - Critical Plugin Development Dependency | ✅ Implemented | Critical | critical, plugin-system, development-tools, build-dependencies, developer-experience, cross-platform |
 
 ## Usage
 

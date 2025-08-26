@@ -1,0 +1,101 @@
+{
+  "issue012_powershell_testing": {
+    "supported_distributions": [
+      {
+        "name": "Ubuntu 22.04",
+        "image": "ubuntu:22.04",
+        "dockerfile": "ubuntu-22.04-minimal.dockerfile",
+        "expected_variant": "ubuntu",
+        "package_manager": "apt",
+        "test_timeout": "15m",
+        "ssh_enabled": true
+      },
+      {
+        "name": "Ubuntu 24.04", 
+        "image": "ubuntu:24.04",
+        "dockerfile": "ubuntu-24.04-minimal.dockerfile",
+        "expected_variant": "ubuntu",
+        "package_manager": "apt",
+        "test_timeout": "15m",
+        "ssh_enabled": true
+      },
+      {
+        "name": "Debian 11",
+        "image": "debian:11",
+        "dockerfile": "debian-bullseye-minimal.dockerfile", 
+        "expected_variant": "debian",
+        "package_manager": "apt",
+        "test_timeout": "15m",
+        "ssh_enabled": true
+      },
+      {
+        "name": "Debian 12",
+        "image": "debian:12",
+        "dockerfile": "debian-bookworm-minimal.dockerfile",
+        "expected_variant": "debian",
+        "package_manager": "apt", 
+        "test_timeout": "15m",
+        "ssh_enabled": true
+      },
+      {
+        "name": "Fedora 39",
+        "image": "fedora:39",
+        "dockerfile": "fedora-39-minimal.dockerfile",
+        "expected_variant": "fedora",
+        "package_manager": "dnf",
+        "test_timeout": "15m",
+        "ssh_enabled": true
+      },
+      {
+        "name": "Fedora 40",
+        "image": "fedora:40", 
+        "dockerfile": "fedora-40-minimal.dockerfile",
+        "expected_variant": "fedora",
+        "package_manager": "dnf",
+        "test_timeout": "15m",
+        "ssh_enabled": true
+      },
+      {
+        "name": "Rocky Linux 9",
+        "image": "rockylinux:9",
+        "dockerfile": "rocky-9-minimal.dockerfile",
+        "expected_variant": "rocky",
+        "package_manager": "dnf",
+        "test_timeout": "15m",
+        "ssh_enabled": true
+      },
+      {
+        "name": "Linux Mint 21",
+        "image": "linuxmintd/mint21-amd64",
+        "dockerfile": "mint-21-minimal.dockerfile",
+        "expected_variant": "mint",
+        "package_manager": "apt",
+        "test_timeout": "15m",
+        "ssh_enabled": true
+      }
+    ],
+    "test_settings": {
+      "default_timeout": "20m",
+      "parallel_execution": false,
+      "ssh_timeout": "30s",
+      "ssh_retries": 10,
+      "ssh_password": "testpass123",
+      "ssh_username": "root",
+      "verification_delay": "10s",
+      "cleanup_containers": true
+    },
+    "powershell_config": {
+      "target_version": "7.4.6",
+      "verification_command": "pwsh --version",
+      "installation_variants": [
+        "ubuntu",
+        "debian", 
+        "fedora",
+        "rocky",
+        "mint",
+        "snap"
+      ],
+      "fallback_variant": "snap"
+    }
+  }
+}
