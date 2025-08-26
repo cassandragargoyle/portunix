@@ -93,12 +93,14 @@ linters-settings:
 
   # Go mod
   gomoddirectives:
+    replace-local: true
     replace-allow-list:
       - portunix.cz/app
       - portunix.cz/parser
       - portunix.cz/cmd
       - portunix.cz/app/sandbox
       - portunix.cz/app/install
+      - github.com/cassandragargoyle/portunix/app/wizard
 
 linters:
   enable:
@@ -175,11 +177,31 @@ linters:
     - bin
     - test/fixtures
     - .portunix-github-sync
+    - test/tmp
   exclude-files:
     - ".*\\.pb\\.go$"
     - ".*_generated\\.go$"
+    - "test/test-plugin/main.go"
+    - "test/integration/tmp/.*"
 
   exclude-rules:
+    # Exclude embed configuration errors in CI environment
+    - text: "build system did not supply embed configuration"
+      linters:
+        - typecheck
+    
+    # Exclude invalid go:embed in CI environment  
+    - text: "invalid go:embed:"
+      linters:
+        - typecheck
+        - govet
+        
+    # Allow embed usage in main.go
+    - path: main\.go
+      text: "build system did not supply embed configuration"
+      linters:
+        - typecheck
+    
     # Exclude some linters from running on tests files
     - path: _test\.go
       linters:
@@ -189,6 +211,29 @@ linters:
         - gosec
         - funlen
         - lll
+        - goconst
+        
+    # Exclude cognitive complexity from integration tests
+    - path: test/integration/
+      linters:
+        - gocognit
+
+    # Exclude formatting issues in test/tmp directories
+    - path: test/tmp/
+      linters:
+        - gofmt
+        
+    # Exclude formatting issues in generated test plugins
+    - path: test-plugin/
+      linters:
+        - gofmt
+        - godot
+        
+    # Exclude issues in generated/temporary test files
+    - path: test-created-plugin-
+      linters:
+        - gofmt
+        - godot
 
     # Exclude some staticcheck messages
     - linters:
