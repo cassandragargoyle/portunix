@@ -8,6 +8,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	
+	"portunix.cz/app/system"
 )
 
 // DefaultInstallConfig holds the embedded default configuration
@@ -30,7 +32,7 @@ type PackageConfig struct {
 
 // PlatformConfig represents configuration for a specific platform (OS)
 type PlatformConfig struct {
-	Type         string                   `json:"type"` // msi, exe, zip, tar.gz, deb, apt, snap
+	Type         string                   `json:"type"` // msi, exe, zip, tar.gz, deb, apt, snap, repository, powershell
 	Variants     map[string]VariantConfig `json:"variants"`
 	InstallArgs  []string                 `json:"install_args,omitempty"`
 	Verification VerificationConfig       `json:"verification,omitempty"`
@@ -39,14 +41,22 @@ type PlatformConfig struct {
 
 // VariantConfig represents a specific variant of a package
 type VariantConfig struct {
-	Version       string            `json:"version"`
-	URLs          map[string]string `json:"urls,omitempty"`           // arch -> url
-	Packages      []string          `json:"packages,omitempty"`       // for apt/snap packages
-	InstallScript string            `json:"install_script,omitempty"` // for powershell/script installs
-	InstallPath   string            `json:"install_path,omitempty"`
-	ExtractTo     string            `json:"extract_to,omitempty"`
-	PostInstall   []string          `json:"post_install,omitempty"`
-	InstallArgs   []string          `json:"install_args,omitempty"`
+	Version                    string                  `json:"version"`
+	Type                       string                  `json:"type,omitempty"`                       // override platform type for this variant
+	URLs                       map[string]string       `json:"urls,omitempty"`                       // arch -> url
+	Packages                   []string                `json:"packages,omitempty"`                   // for apt/snap packages
+	InstallScript              string                  `json:"install_script,omitempty"`             // for powershell/script installs
+	InstallPath                string                  `json:"install_path,omitempty"`
+	ExtractTo                  string                  `json:"extract_to,omitempty"`
+	PostInstall                []string                `json:"post_install,omitempty"`
+	InstallArgs                []string                `json:"install_args,omitempty"`
+	Distributions              []string                `json:"distributions,omitempty"`               // supported Linux distributions
+	SupportedVersions          []string                `json:"supported_versions,omitempty"`          // legacy explicit version support
+	SupportedVersionRanges     []VersionRange          `json:"supported_version_ranges,omitempty"`    // new version range support
+	FallbackVariants           []string                `json:"fallback_variants,omitempty"`           // fallback variants to try
+	FallbackStrategy           FallbackStrategy        `json:"fallback_strategy,omitempty"`           // fallback strategy
+	VersionSupportPolicy       *VersionSupportPolicy   `json:"version_support_policy,omitempty"`      // version support policy
+	RepositorySetup            []string                `json:"repository_setup,omitempty"`            // commands to setup repository
 }
 
 // VerificationConfig represents how to verify installation
@@ -66,6 +76,13 @@ type PresetConfig struct {
 type PresetPackageConfig struct {
 	Name    string `json:"name"`
 	Variant string `json:"variant"`
+}
+
+// VersionSupportPolicy defines how version support is handled
+type VersionSupportPolicy struct {
+	ForwardCompatibility   bool   `json:"forward_compatibility"`     // Allow newer versions within range
+	TestingRequirement     string `json:"testing_requirement"`       // none_for_interim, explicit, etc.
+	MaintenanceSchedule    string `json:"maintenance_schedule"`      // quarterly, monthly, etc.
 }
 
 // LoadInstallConfig loads the installation configuration from embedded assets and user config
@@ -292,4 +309,102 @@ func (variant *VariantConfig) GetFileName() (string, error) {
 	}
 
 	return filename, nil
+}
+
+// GetLinuxDistribution returns the detected Linux distribution in lowercase
+func GetLinuxDistribution() (string, string, error) {
+	if runtime.GOOS != "linux" {
+		return "", "", fmt.Errorf("not a Linux system")
+	}
+	
+	sysInfo, err := system.GetSystemInfo()
+	if err != nil {
+		return "", "", err
+	}
+	
+	if sysInfo.LinuxInfo == nil {
+		return "", "", fmt.Errorf("failed to get Linux information")
+	}
+	
+	// Normalize distribution name to match our variants
+	distro := strings.ToLower(sysInfo.LinuxInfo.Distribution)
+	version := sysInfo.Version
+	
+	// Handle special cases and mappings
+	if strings.Contains(distro, "ubuntu") {
+		return "ubuntu", version, nil
+	} else if strings.Contains(distro, "kubuntu") {
+		return "kubuntu", version, nil
+	} else if strings.Contains(distro, "debian") {
+		return "debian", version, nil
+	} else if strings.Contains(distro, "fedora") {
+		return "fedora", version, nil
+	} else if strings.Contains(distro, "rocky") || strings.Contains(distro, "rocky linux") {
+		return "rocky", version, nil
+	} else if strings.Contains(distro, "centos") {
+		return "rocky", version, nil // Map CentOS to Rocky variant
+	} else if strings.Contains(distro, "mint") || strings.Contains(distro, "linux mint") {
+		return "mint", version, nil
+	} else if strings.Contains(distro, "elementary") {
+		return "elementary", version, nil
+	}
+	
+	// Return raw distribution name for unknown distributions
+	return distro, version, nil
+}
+
+// FindBestVariantForDistribution finds the best variant for current Linux distribution
+func (config *InstallConfig) FindBestVariantForDistribution(packageName string) (string, error) {
+	if runtime.GOOS != "linux" {
+		return "", fmt.Errorf("not a Linux system")
+	}
+	
+	pkg, exists := config.Packages[packageName]
+	if !exists {
+		return "", fmt.Errorf("package '%s' not found", packageName)
+	}
+	
+	platform, exists := pkg.Platforms["linux"]
+	if !exists {
+		return "", fmt.Errorf("package '%s' not supported on Linux", packageName)
+	}
+	
+	distro, version, err := GetLinuxDistribution()
+	if err != nil {
+		// Fallback to snap if available
+		if _, snapExists := platform.Variants["snap"]; snapExists {
+			return "snap", nil
+		}
+		return "", err
+	}
+	
+	// Look for exact distribution match
+	for variantName, variant := range platform.Variants {
+		// Check if this variant supports current distribution
+		if len(variant.Distributions) > 0 {
+			for _, supportedDistro := range variant.Distributions {
+				if supportedDistro == distro || supportedDistro == "universal" {
+					// Check version compatibility if specified (skip for universal)
+					if len(variant.SupportedVersions) > 0 && supportedDistro != "universal" {
+						for _, supportedVersion := range variant.SupportedVersions {
+							if supportedVersion == version {
+								return variantName, nil
+							}
+						}
+						// Version not in supported list, continue looking
+						continue
+					}
+					// No version restriction or universal, this variant works
+					return variantName, nil
+				}
+			}
+		}
+	}
+	
+	// Fallback to snap if no specific variant found
+	if _, snapExists := platform.Variants["snap"]; snapExists {
+		return "snap", nil
+	}
+	
+	return "", fmt.Errorf("no suitable variant found for %s %s", distro, version)
 }

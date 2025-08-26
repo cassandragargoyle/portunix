@@ -1,0 +1,170 @@
+wizard:
+  id: "dev-environment"
+  name: "Development Environment Setup"
+  version: "1.0"
+  description: "Set up a complete development environment"
+  
+  variables:
+    language: ""
+    ide: ""
+    project_name: ""
+    git_init: false
+    framework: ""
+    package_manager: ""
+  
+  pages:
+    - id: "welcome"
+      type: "info"
+      title: "Development Environment Setup"
+      content: |
+        🚀 Welcome to the Development Environment Setup Wizard!
+        
+        This wizard will help you set up a complete development environment
+        tailored to your programming language and preferences.
+        
+        We'll configure:
+        • Programming language and tools
+        • IDE/Editor
+        • Project initialization
+        • Version control
+      next:
+        page: "language_selection"
+    
+    - id: "language_selection"
+      type: "select"
+      title: "Choose Programming Language"
+      prompt: "Which programming language will you be using?"
+      options:
+        - value: "python"
+          label: "Python"
+          description: "Versatile language for web, data science, AI"
+        - value: "java"
+          label: "Java"
+          description: "Enterprise applications, Android development"
+        - value: "go"
+          label: "Go"
+          description: "System programming, microservices"
+        - value: "javascript"
+          label: "JavaScript/Node.js"
+          description: "Web development, full-stack applications"
+      variable: "language"
+      next:
+        page: "ide_selection"
+    
+    - id: "ide_selection"
+      type: "select"
+      title: "Choose Development Environment"
+      prompt: "Which IDE or editor would you prefer?"
+      options:
+        - value: "vscode"
+          label: "Visual Studio Code"
+          description: "Lightweight, extensible code editor"
+        - value: "intellij"
+          label: "IntelliJ IDEA"
+          description: "Full-featured IDE (especially good for Java)"
+        - value: "vim"
+          label: "Vim/Neovim"
+          description: "Terminal-based editor for power users"
+      variable: "ide"
+      next:
+        page: "project_setup"
+    
+    - id: "project_setup"
+      type: "input"
+      title: "Project Configuration"
+      prompt: "Enter your project name:"
+      variable: "project_name"
+      validate:
+        required: true
+        min_length: 2
+        pattern: "^[a-zA-Z][a-zA-Z0-9_-]*$"
+        message: "Project name must start with letter and contain only letters, numbers, hyphens, and underscores"
+      next:
+        page: "project_options"
+    
+    - id: "project_options"
+      type: "multi_select"
+      title: "Project Options"
+      prompt: "Select additional setup options:"
+      options:
+        - value: "git"
+          label: "Initialize Git repository"
+          variable: "git_init"
+        - value: "docker"
+          label: "Add Docker configuration"
+        - value: "testing"
+          label: "Set up testing framework"
+        - value: "linting"
+          label: "Configure code linting"
+      next:
+        condition: "language == python"
+        true: "python_framework"
+        false: "installation"
+    
+    - id: "python_framework"
+      type: "select"
+      title: "Python Framework"
+      prompt: "Choose a Python framework (optional):"
+      options:
+        - value: "none"
+          label: "None - Pure Python"
+        - value: "flask"
+          label: "Flask - Micro web framework"
+        - value: "django"
+          label: "Django - Full-featured web framework"
+        - value: "fastapi"
+          label: "FastAPI - Modern API framework"
+      variable: "framework"
+      next:
+        page: "installation"
+    
+    - id: "installation"
+      type: "progress"
+      title: "Setting Up Development Environment"
+      tasks:
+        - id: "install_language"
+          label: "Installing {{language}} runtime"
+          command: "portunix install {{language}}"
+          weight: 30
+        - id: "install_ide"
+          label: "Installing {{ide}}"
+          command: "portunix install {{ide}}"
+          weight: 25
+        - id: "create_project"
+          label: "Creating project {{project_name}}"
+          command: "mkdir -p ~/projects/{{project_name}}"
+          weight: 10
+        - id: "init_git"
+          label: "Initializing Git repository"
+          command: "cd ~/projects/{{project_name}} && git init"
+          condition: "git_init == true"
+          weight: 10
+        - id: "install_framework"
+          label: "Setting up {{framework}} framework"
+          command: "echo 'Installing {{framework}} for {{language}}'"
+          condition: "framework != none"
+          weight: 25
+      next:
+        page: "complete"
+    
+    - id: "complete"
+      type: "success"
+      title: "Development Environment Ready!"
+      content: |
+        🎉 Your {{language}} development environment is ready!
+        
+        📋 What was installed:
+        • {{language}} programming language
+        • {{ide}} editor/IDE
+        • Project: {{project_name}}
+        • Git repository: {{git_init}}
+        {{#if framework}}• Framework: {{framework}}{{/if}}
+        
+        🚀 Next Steps:
+        • Open your project: cd ~/projects/{{project_name}}
+        • Launch {{ide}}: {{ide}} ~/projects/{{project_name}}
+        • Start coding!
+        
+        📚 Helpful commands:
+        • Check versions: portunix system info
+        • Update tools: portunix update

@@ -16,3 +16,19 @@ portunix
 coverage.out
 coverage.html
 .claude/roles/current.md
+portunix.backup
+
+# Test results directory
+test/results/
+
+# Python test artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+test/venv/
+.claude/settings.local.json
+test/test-plugin/test-plugin

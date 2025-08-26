@@ -26,6 +26,7 @@ Available software packages:
   chocolatey    - Chocolatey package manager for Windows
   winget        - Windows Package Manager
   claude-code   - Anthropic's official CLI for Claude AI assistant
+  powershell    - Cross-platform PowerShell scripting environment
   docker        - Docker Engine/Desktop with intelligent OS detection
   podman        - Podman container engine with rootless support
 
@@ -35,6 +36,7 @@ Package variants (use with --variant):
   vscode: user, system (default: user)
   mvn: 3.9.9, latest, apt (Linux only) (default: latest)
   claude-code: npm, curl (default: npm)
+  powershell: latest (Windows), ubuntu, debian, fedora, rocky, mint, elementary, snap (Linux) (default: auto-detect)
 
 Python installation options:
   --gui         Use GUI installer instead of silent installation
@@ -50,13 +52,29 @@ Examples:
   portunix install mvn --variant 3.9.9
   portunix install chocolatey
   portunix install winget
+  portunix install powershell
+  portunix install powershell --variant ubuntu
   portunix install docker
   portunix install docker -y
   portunix install podman
   portunix install podman -y`,
 	DisableFlagParsing: true, // Allow passing flags to specific installers
 	Run: func(cmd *cobra.Command, args []string) {
-		// Check for help flags first
+		// Check for package-specific help: "install packagename --help"
+		if len(args) >= 2 {
+			packageName := args[0]
+			for _, arg := range args[1:] {
+				if arg == "--help" || arg == "-h" {
+					if err := install.ShowPackageHelp(packageName); err != nil {
+						fmt.Printf("Help not available for package '%s': %v\n", packageName, err)
+						fmt.Println("Use 'portunix install --help' for general installation help.")
+					}
+					return
+				}
+			}
+		}
+
+		// Check for general help flags
 		for _, arg := range args {
 			if arg == "--help" || arg == "-h" {
 				cmd.Help()

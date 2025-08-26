@@ -1,0 +1,60 @@
+# Multi-domain Caddy configuration for edge reverse proxy
+# Template variables: {{.Domains}}, {{.Services}}
+
+{{range .Domains}}
+# Domain: {{.Name}}
+{{.Name}} {
+    encode gzip zstd
+    
+    {{if .IsStatic}}
+    # Static file serving
+    root * {{.StaticPath}}
+    file_server
+    {{else}}
+    # Reverse proxy configuration
+    {{if .PathRouting}}
+    # Path-based routing
+    {{range .Paths}}
+    handle {{.Path}}* {
+        reverse_proxy {{.UpstreamHost}}:{{.UpstreamPort}} {
+            health_uri {{.HealthPath}}
+            health_interval 30s
+            health_timeout 10s
+        }
+    }
+    {{end}}
+    {{else}}
+    # Simple reverse proxy
+    reverse_proxy {{.UpstreamHost}}:{{.UpstreamPort}} {
+        health_uri /health
+        health_interval 30s
+        health_timeout 10s
+    }
+    {{end}}
+    {{end}}
+    
+    # Common headers for all domains
+    header {
+        Strict-Transport-Security max-age=31536000;
+        X-Frame-Options SAMEORIGIN
+        X-Content-Type-Options nosniff
+        X-XSS-Protection "1; mode=block"
+        -Server
+    }
+    
+    # Domain-specific logging
+    log {
+        output file /var/log/caddy/{{.Name}}.log {
+            roll_size 10MB
+            roll_keep 5
+        }
+        format json
+    }
+}
+
+{{end}}
+
+# Default catch-all for unknown domains
+:80, :443 {
+    respond "Domain not configured" 404
+}

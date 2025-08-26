@@ -1,0 +1,142 @@
+wizard:
+  id: "database-setup"
+  name: "Database Installation Wizard"
+  version: "1.0"
+  description: "Install and configure database systems"
+  
+  variables:
+    db_type: ""
+    db_name: "myapp"
+    enable_backup: false
+    sample_data: false
+    confirm_sample: false
+    db_port: ""
+  
+  pages:
+    - id: "welcome"
+      type: "info"
+      title: "Database Setup Wizard"
+      content: |
+        🔧 Welcome to the Database Installation Wizard!
+        
+        This wizard will help you install and configure a database system.
+        
+        We'll guide you through:
+        • Selecting database type
+        • Configuration options  
+        • Initial setup and sample data
+        
+        The entire process should take just a few minutes.
+      next:
+        page: "db_selection"
+    
+    - id: "db_selection"
+      type: "select"
+      title: "Choose Database Type"
+      prompt: "Which database would you like to install?"
+      options:
+        - value: "postgresql"
+          label: "PostgreSQL"
+          description: "Advanced open-source relational database"
+        - value: "mysql"
+          label: "MySQL"
+          description: "Popular open-source database for web applications"
+        - value: "mongodb"
+          label: "MongoDB"
+          description: "Document-oriented NoSQL database"
+        - value: "redis"
+          label: "Redis"
+          description: "In-memory data structure store"
+      variable: "db_type"
+      next:
+        page: "db_name"
+    
+    - id: "db_name"
+      type: "input"
+      title: "Database Configuration"
+      prompt: "Enter database name:"
+      variable: "db_name"
+      validate:
+        required: true
+        min_length: 3
+        pattern: "^[a-zA-Z][a-zA-Z0-9_]*$"
+        message: "Database name must start with letter and contain only letters, numbers, and underscores"
+      next:
+        page: "db_options"
+    
+    - id: "db_options"
+      type: "multi_select"
+      title: "Installation Options"
+      prompt: "Select additional options (use space to select, enter to continue):"
+      options:
+        - value: "backup"
+          label: "Enable automatic backups"
+          variable: "enable_backup"
+        - value: "monitoring"
+          label: "Install monitoring tools"
+        - value: "sample"
+          label: "Load sample data (500MB)"
+          variable: "sample_data"
+      next:
+        condition: "sample_data == true"
+        true: "sample_confirmation"
+        false: "installation"
+    
+    - id: "sample_confirmation"
+      type: "confirm"
+      title: "Confirm Sample Data"
+      prompt: "Sample data will download ~500MB and may take several minutes. Continue?"
+      variable: "confirm_sample"
+      next:
+        condition: "confirm_sample == true"
+        true: "installation"
+        false: "db_options"
+    
+    - id: "installation"
+      type: "progress"
+      title: "Installing {{db_type}} Database"
+      tasks:
+        - id: "download"
+          label: "Downloading {{db_type}} packages"
+          command: "portunix install {{db_type}}"
+          weight: 40
+        - id: "configure"
+          label: "Configuring database settings"
+          command: "echo 'Configuring {{db_type}} with database {{db_name}}'"
+          weight: 20
+        - id: "initialize"
+          label: "Initializing database {{db_name}}"
+          command: "echo 'Creating database {{db_name}}'"
+          weight: 20
+        - id: "sample_data"
+          label: "Loading sample data"
+          command: "echo 'Loading sample data for {{db_type}}'"
+          condition: "sample_data == true"
+          weight: 20
+        - id: "backup_setup"
+          label: "Setting up automatic backups"
+          command: "echo 'Configuring backups for {{db_name}}'"
+          condition: "enable_backup == true"
+          weight: 10
+      next:
+        page: "complete"
+    
+    - id: "complete"
+      type: "success"
+      title: "Installation Complete!"
+      content: |
+        ✅ {{db_type}} has been successfully installed and configured!
+        
+        📋 Configuration Summary:
+        • Database Type: {{db_type}}
+        • Database Name: {{db_name}}
+        • Automatic Backups: {{enable_backup}}
+        • Sample Data: {{sample_data}}
+        
+        🚀 Next Steps:
+        • Start the database: portunix db start {{db_type}}
+        • Connect to database: portunix db connect {{db_type}}
+        • View status: portunix db status {{db_type}}
+        
+        📚 For more information, see the documentation at:
+        https://github.com/cassandragargoyle/Portunix/docs/database-management

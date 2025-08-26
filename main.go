@@ -27,7 +27,7 @@ var installPackagesConfig string
 const trace = true
 
 // Version will be set at build time using ldflags
-var version = "v1.4.0"
+var version = "dev"
 
 func main() {
 	// Set the version for update package and version package

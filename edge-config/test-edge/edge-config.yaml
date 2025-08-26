@@ -1,0 +1,45 @@
+# Edge infrastructure configuration for test-edge
+# Generated on 2025-08-26 12:03:14
+
+edge:
+  name: "test-edge"
+  description: "Default edge infrastructure setup"
+  
+  server:
+    public_ip: "YOUR_VPS_PUBLIC_IP"
+    ssh_port: 22
+    admin_email: "admin@yourdomain.com"
+    
+  domains:
+    - name: "yourdomain.com"
+      type: "primary"
+      upstream:
+        host: "10.10.10.2"
+        port: 8080
+      tls:
+        email: "admin@yourdomain.com"
+        provider: "letsencrypt"
+
+  vpn:
+    type: "wireguard"
+    network: "10.10.10.0/24"
+    server_ip: "10.10.10.1"
+    port: 51820
+    clients: []
+
+  security:
+    firewall:
+      enabled: true
+      ssh_port: 22
+      allowed_ips: []
+    
+    fail2ban:
+      enabled: true
+      ban_time: 600
+      max_retry: 3
+      find_time: 600
+
+  containers:
+    runtime: "podman"
+    network: "edge-network"
+    auto_update: true
