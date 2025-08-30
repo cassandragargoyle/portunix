@@ -16,6 +16,7 @@ Universal development environment management tool with intelligent OS detection,
 - **🪟 Windows Sandbox Integration**: Isolated development environments on Windows
 - **🧠 Intelligent OS Detection**: Automatic platform detection and optimization
 - **⚡ Cross-Platform Support**: Native support for Windows, Linux, and macOS
+- **💻 VM Management**: QEMU/KVM virtualization with Windows 11 support and snapshots
 
 ### Docker Management (Issue #2)
 - **Intelligent Docker Installation**: OS-specific Docker installation with storage optimization
@@ -99,6 +100,91 @@ go build -o portunix .
 # Generate custom sandbox configuration
 ./portunix sandbox generate --enable-ssh
 ```
+
+### Virtual Machines (QEMU/KVM & VirtualBox)
+```bash
+# Install QEMU/KVM virtualization stack
+./portunix vm install-qemu
+
+# Check virtualization support
+./portunix vm check
+
+# Method 1: Using new VM commands (recommended for QEMU)
+./portunix vm create win11-vm \
+  --iso ~/Downloads/Win11.iso \
+  --disk-size 80G \
+  --ram 8G \
+  --cpus 4 \
+  --os windows11
+
+# Method 2: Using create vm command (supports both QEMU and VirtualBox)
+./portunix create vm \
+  --vmtype qemu \
+  --vmname ubuntu-dev \
+  --iso ~/Downloads/ubuntu-22.04.iso \
+  --basefolder ~/VMs
+
+# VirtualBox VM (requires VBox preprocessor)
+./portunix create vm \
+  --vmtype vbox \
+  --vmname win10-dev \
+  --iso ~/Downloads/Win10.iso \
+  --basefolder ~/VMs
+
+# VM lifecycle management
+./portunix vm start win11-vm
+./portunix vm list --all
+./portunix vm info win11-vm
+./portunix vm console win11-vm
+./portunix vm stop win11-vm
+
+# Snapshot management for trial software testing
+./portunix vm snapshot create win11-vm clean-install \
+  --description "Fresh Windows 11 after updates"
+./portunix vm snapshot list win11-vm
+./portunix vm snapshot revert win11-vm clean-install
+./portunix vm snapshot delete win11-vm old-snapshot
+```
+
+## 💻 VM Management (QEMU/KVM)
+
+### Core Features
+- **Dual VM Backend Support**: Both QEMU/KVM and VirtualBox support
+- **Cross-Platform Virtualization**: QEMU/KVM support for Linux hosts, VirtualBox for Windows/macOS
+- **Windows 11 Support**: Full Windows 11 support with TPM 2.0 and Secure Boot
+- **Snapshot Management**: Create, restore, and manage VM snapshots
+- **Trial Software Testing**: Perfect for testing 30-day trial software
+- **Multiple OS Support**: Windows, Linux, and custom OS installations
+- **Resource Configuration**: Flexible CPU, RAM, and disk configuration
+- **Unified Interface**: Two ways to create VMs - dedicated commands or unified create interface
+
+### Supported Guest Operating Systems
+- **Windows**: Windows 11, Windows 10, Windows Server 2022
+- **Linux**: Ubuntu, Debian, CentOS, Fedora, Arch, and more
+- **Custom**: Any OS that supports QEMU/KVM
+
+### VM Workflow
+
+#### QEMU/KVM (Linux)
+1. **Prerequisites Check**: Verify hardware virtualization support (Intel VT-x/AMD-V)
+2. **Installation**: `portunix vm install-qemu` - Install QEMU, KVM, libvirt, and management tools
+3. **VM Creation**: 
+   - Method 1: `portunix vm create` (advanced options)
+   - Method 2: `portunix create vm --vmtype qemu` (simple creation)
+4. **Snapshot Management**: Create restore points for easy rollback
+5. **Lifecycle Management**: Start, stop, monitor, and manage VMs
+
+#### VirtualBox (Windows/macOS/Linux)
+1. **Prerequisites**: VirtualBox installed and preprocessor configured
+2. **VM Creation**: `portunix create vm --vmtype vbox`
+3. **Management**: Through VirtualBox GUI or preprocessor commands
+
+### Use Cases
+- **Enterprise Software Trials**: Test software like Enterprise Architect repeatedly
+- **Development Environments**: Isolated development environments
+- **OS Testing**: Test different operating systems safely
+- **Security Research**: Isolated environment for security testing
+- **Cross-Platform Development**: Test applications on different OS versions
 
 ## 🐳 Docker Features
 
@@ -307,12 +393,13 @@ Usage:
 Available Commands:
   choco       Chocolatey package manager operations (Windows only)
   completion  Generate the autocompletion script for the specified shell
-  create      Creates a new resource.
+  create      Creates a new resource (including VMs with --vmtype)
   docker      Manages Docker containers and Docker installation.
   help        Help about any command
   install     Installs specified software.
   sandbox     Manages Windows Sandbox instances.
   unzip       Extracts a ZIP file.
+  vm          Manage virtual machines with QEMU/KVM (advanced)
   winget      Windows Package Manager operations and information
   wizard      Starts an interactive wizard.
 

@@ -39,7 +39,7 @@ Example:
 func init() {
 	createCmd.AddCommand(createVmCmd)
 
-	createVmCmd.Flags().String("vmtype", "vbox", "Type of the virtual machine (e.g., vbox)")
+	createVmCmd.Flags().String("vmtype", "vbox", "Type of the virtual machine (vbox, qemu)")
 	createVmCmd.Flags().String("vmname", "", "Name of the virtual machine")
 	createVmCmd.Flags().String("iso", "", "Path to the ISO file")
 	createVmCmd.Flags().String("basefolder", "", "Path to the base folder for the virtual machine")

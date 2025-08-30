@@ -5,9 +5,114 @@ This document defines the process for creating and managing issues in CassandraG
 
 ## Issue Creation Models
 
-### Model A: GitHub-First Issue Creation
+### Model A: Dual-Track Issue Management (Recommended for Portunix)
 
-**When to use**: For bugs, feature requests, or issues that can be discussed publicly from the start.
+**When to use**: For projects requiring both internal planning and public transparency while maintaining security and privacy control.
+
+**Overview**: This model maintains separate internal and public issue tracks with controlled synchronization.
+
+#### Internal Issues (`docs/issues/internal/`)
+- **Purpose**: Detailed technical planning, sensitive information, team discussions
+- **Numbering**: Sequential `001-feature.md`, `002-bug.md`, etc.
+- **Location**: `docs/issues/internal/XXX-title.md`
+- **Tracking**: Updated in `docs/issues/README.md`
+- **Content**: Can include:
+  - Sensitive technical details
+  - Internal architecture decisions
+  - Resource allocation discussions
+  - Private customer/security information
+  - Detailed implementation plans
+
+#### Public GitHub Issues
+- **Purpose**: Community engagement, public roadmap, external contributions
+- **Numbering**: GitHub automatic (#1, #2, #3...)
+- **Content**: Sanitized version of internal issues
+- **Visibility**: Full public access
+
+#### Issue Mapping (`docs/issues/public/mapping.json`)
+```json
+{
+  "description": "Mapping between internal issue numbers and public GitHub issue numbers",
+  "mappings": {
+    "PUB-001": {
+      "internal": "001",
+      "github_number": 1,
+      "title": "Cross-Platform OS Detection System",
+      "type": "feature",
+      "status": "closed",
+      "published": true,
+      "milestone": "v1.5.0"
+    }
+  }
+}
+```
+
+#### Workflow Process:
+1. **Create Internal Issue**
+   ```bash
+   # Create docs/issues/internal/018-new-feature.md
+   # Update docs/issues/README.md with status
+   ```
+
+2. **Team Review & Planning**
+   - Technical discussion in internal issue
+   - Architecture decisions documented
+   - Implementation strategy defined
+
+3. **Decide on Publication**
+   - Evaluate if issue should be public
+   - Sanitize content if needed
+   - Create GitHub issue with public-appropriate description
+
+4. **Update Mapping**
+   ```json
+   "PUB-018": {
+     "internal": "018", 
+     "github_number": 18,
+     "title": "New Feature Implementation",
+     "type": "feature",
+     "status": "open",
+     "published": true
+   }
+   ```
+
+5. **Synchronize Updates**
+   - Keep both tracks updated during development
+   - Close both when resolved
+   - Update mapping status accordingly
+
+#### Internal Issue Template:
+```markdown
+# [Internal] Feature Title
+
+**Status**: Planning | Development | Testing | Complete
+**Priority**: Low | Medium | High | Critical
+**Assigned**: Team Member
+**GitHub Issue**: #18 (if published)
+
+## Internal Context
+[Sensitive information, detailed technical notes, resource planning]
+
+## Technical Implementation
+[Detailed architecture, security considerations, performance notes]
+
+## Team Notes
+[Internal discussions, decisions, concerns]
+
+## Public Summary
+[What can be shared publicly - use for GitHub issue creation]
+```
+
+**Benefits of Dual-Track Model**:
+- **Security**: Sensitive info stays internal
+- **Transparency**: Public roadmap visible to community  
+- **Flexibility**: Not all internal planning needs to be public
+- **Traceability**: Clear mapping between internal and public discussions
+- **Team Efficiency**: Internal discussions without public noise
+
+### Model B: GitHub-First Issue Creation  
+
+**When to use**: For bugs, feature requests, or issues that can be discussed publicly from the start and don't require internal planning.
 
 **Process**:
 1. **Create GitHub Issue**
@@ -62,9 +167,11 @@ Labels: bug, powershell, fedora
 Milestone: v1.3.0
 ```
 
-### Model B: Team-First Issue Creation
+### Model C: Team-First Issue Creation (Legacy)
 
-**When to use**: For sensitive issues, internal planning, or when initial discussion is needed before public visibility.
+**When to use**: For sensitive issues, internal planning, or when initial discussion is needed before public visibility. 
+
+**Note**: For Portunix project, prefer Model A (Dual-Track) which provides better structure and traceability.
 
 **Process**:
 1. **Internal Team Discussion**
@@ -120,6 +227,47 @@ Based on team analysis, we need to improve how Portunix handles container failur
 Labels: enhancement, containers, error-handling
 Milestone: v1.4.0
 Assignee: developer-username
+```
+
+## Portunix-Specific Issue Management
+
+### File Structure
+```
+docs/
+├── issues/
+│   ├── README.md              # Issue index and status tracking
+│   ├── internal/              # Internal issue files
+│   │   ├── 001-feature.md     # Detailed internal discussions
+│   │   ├── 002-bug.md         # Technical analysis
+│   │   └── ...
+│   └── public/
+│       └── mapping.json       # Internal ↔ GitHub mapping
+```
+
+### Quick Reference Commands
+```bash
+# Create new internal issue
+touch docs/issues/internal/018-new-feature.md
+# Update issue index  
+vim docs/issues/README.md
+# Create GitHub issue (manual via GitHub UI)
+# Update mapping
+vim docs/issues/public/mapping.json
+```
+
+### Mapping JSON Schema
+```json
+{
+  "PUB-XXX": {
+    "internal": "XXX",           // Internal issue number
+    "github_number": N,          // GitHub issue #N
+    "title": "Issue Title",      // Brief title
+    "type": "feature|bug|enhancement",
+    "status": "open|closed",     // Current status
+    "published": true|false,     // Whether published to GitHub
+    "milestone": "v1.5.0"        // Optional milestone
+  }
+}
 ```
 
 ## Issue Numbering and References
@@ -293,4 +441,4 @@ Brief description of changes made
 **Note**: These guidelines should be adapted based on specific project requirements and team preferences. Regular review and updates ensure the process remains effective and relevant.
 
 *Created: 2025-08-23*
-*Last updated: 2025-08-23*
+*Last updated: 2025-08-29 - Added Dual-Track Issue Management (Model A) for Portunix project*

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Build script with version embedding and portunix.rc update
-VERSION=${1:-v1.5.0}
+VERSION=${1:-v1.5.2}
 
 # Remove 'v' prefix if present for version numbers
 VERSION_NUM=${VERSION#v}

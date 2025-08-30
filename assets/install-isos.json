@@ -1,0 +1,130 @@
+{
+  "version": "1.0",
+  "isos": {
+    "windows11": {
+      "name": "Windows 11",
+      "description": "Windows 11 installation ISO",
+      "platforms": {
+        "all": {
+          "type": "iso",
+          "variants": {
+            "latest": {
+              "version": "24H2", 
+              "urls": {
+                "direct": "https://www.microsoft.com/software-download/windows11"
+              },
+              "size": "5.4GB",
+              "description": "Windows 11 24H2 with automatic download from Microsoft page"
+            },
+            "media-tool": {
+              "version": "latest",
+              "urls": {
+                "x64": "https://go.microsoft.com/fwlink/?linkid=2156295"
+              },
+              "type": "exe",
+              "description": "Media Creation Tool for creating Windows 11 ISO"
+            }
+          }
+        }
+      }
+    },
+    "windows10": {
+      "name": "Windows 10", 
+      "description": "Windows 10 installation ISO",
+      "platforms": {
+        "all": {
+          "type": "iso",
+          "variants": {
+            "latest": {
+              "version": "22H2", 
+              "urls": {
+                "direct": "https://www.microsoft.com/software-download/windows10"
+              },
+              "size": "5.6GB",
+              "description": "Windows 10 22H2 with automatic download from Microsoft page"
+            },
+            "media-tool": {
+              "version": "latest",
+              "urls": {
+                "x64": "https://go.microsoft.com/fwlink/?LinkId=691209"
+              },
+              "type": "exe",
+              "description": "Media Creation Tool for creating Windows 10 ISO"
+            }
+          }
+        }
+      }
+    },
+    "ubuntu": {
+      "name": "Ubuntu",
+      "description": "Ubuntu Desktop LTS",
+      "platforms": {
+        "all": {
+          "type": "iso",
+          "variants": {
+            "22.04": {
+              "version": "22.04.3",
+              "urls": {
+                "x64": "https://releases.ubuntu.com/22.04.3/ubuntu-22.04.3-desktop-amd64.iso"
+              },
+              "size": "4.7GB",
+              "hash": {
+                "type": "sha256",
+                "value": "a4acfda10b18da50e2ec50ccaf860d7f20b389df8765611142305c0e911d16fd"
+              }
+            },
+            "20.04": {
+              "version": "20.04.6",
+              "urls": {
+                "x64": "https://releases.ubuntu.com/20.04.6/ubuntu-20.04.6-desktop-amd64.iso"
+              },
+              "size": "4.1GB"
+            }
+          }
+        }
+      }
+    },
+    "debian": {
+      "name": "Debian",
+      "description": "Debian stable netinstall",
+      "platforms": {
+        "all": {
+          "type": "iso",
+          "variants": {
+            "12": {
+              "version": "12.2.0",
+              "urls": {
+                "x64": "https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.2.0-amd64-netinst.iso"
+              },
+              "size": "628MB"
+            }
+          }
+        }
+      }
+    },
+    "fedora": {
+      "name": "Fedora",
+      "description": "Fedora Workstation",
+      "platforms": {
+        "all": {
+          "type": "iso",
+          "variants": {
+            "39": {
+              "version": "39",
+              "urls": {
+                "x64": "https://download.fedoraproject.org/pub/fedora/linux/releases/39/Workstation/x86_64/iso/Fedora-Workstation-Live-x86_64-39-1.5.iso"
+              },
+              "size": "2.1GB"
+            }
+          }
+        }
+      }
+    }
+  },
+  "download_settings": {
+    "cache_dir": ".cache/isos",
+    "verify_checksums": true,
+    "retry_attempts": 3,
+    "timeout_seconds": 3600
+  }
+}

@@ -1,0 +1,102 @@
+{
+  "description": "Mapping between internal issue numbers and public GitHub issue numbers",
+  "mappings": {
+    "PUB-001": {
+      "internal": "001",
+      "github_number": 1,
+      "title": "Cross-Platform Intelligent OS Detection System with Shell/PowerShell Integration",
+      "type": "feature",
+      "status": "closed",
+      "published": true,
+      "milestone": "v1.5.0"
+    },
+    "PUB-002": {
+      "internal": "002", 
+      "github_number": 2,
+      "title": "Docker Management Command - Similar to Sandbox Command",
+      "type": "feature",
+      "status": "closed",
+      "published": true
+    },
+    "PUB-003": {
+      "internal": "003",
+      "github_number": 3, 
+      "title": "Podman Management Command - Similar to Docker Command",
+      "type": "feature",
+      "status": "closed",
+      "published": true
+    },
+    "PUB-004": {
+      "internal": "004", 
+      "github_number": 4,
+      "title": "MCP Server for AI Assistant Integration",
+      "type": "feature",
+      "status": "open",
+      "published": true
+    },
+    "PUB-007": {
+      "internal": "007",
+      "github_number": 7,
+      "title": "System with gRPC Architecture",
+      "type": "feature",
+      "status": "open",
+      "published": true
+    },
+    "PUB-008": {
+      "internal": "008",
+      "github_number": 8,
+      "title": "Virtual Development Disk Management", 
+      "type": "feature",
+      "status": "open",
+      "published": true
+    },
+    "PUB-009": {
+      "internal": "009",
+      "github_number": 9,
+      "title": "Configurable Datastore System",
+      "type": "feature", 
+      "status": "open",
+      "published": true
+    },
+    "PUB-010": {
+      "internal": "010",
+      "github_number": 10,
+      "title": "Self-Update Command - Automatic Binary Updates from GitHub",
+      "type": "feature",
+      "status": "open",
+      "published": true
+    },
+    "PUB-012": {
+      "internal": "012",
+      "github_number": 12,
+      "title": "PowerShell Installation Support for Linux Distributions",
+      "type": "enhancement",
+      "status": "open",
+      "published": true
+    },
+    "PUB-013": {
+      "internal": "013",
+      "github_number": 13,
+      "title": "Database Management Plugin",
+      "type": "feature",
+      "status": "open",
+      "published": true
+    },
+    "PUB-014": {
+      "internal": "014",
+      "github_number": 14,
+      "title": "Wizard",
+      "type": "enhancement",
+      "status": "open",
+      "published": true
+    },
+    "PUB-015": {
+      "internal": "015",
+      "github_number": 15,
+      "title": "VPS Edge/Bastion Infrastructure Management",
+      "type": "feature",
+      "status": "open",
+      "published": true
+    }
+  }
+}
