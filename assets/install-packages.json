@@ -938,6 +938,73 @@
         }
       },
       "default_variant": "latest"
+    },
+    "qemu": {
+      "name": "QEMU/KVM",
+      "description": "QEMU virtualization stack with KVM and libvirt support",
+      "category": "virtualization",
+      "platforms": {
+        "linux": {
+          "type": "apt",
+          "variants": {
+            "default": {
+              "version": "latest",
+              "distributions": {
+                "apt": {
+                  "packages": ["qemu-system-x86", "qemu-utils", "libvirt-daemon-system", "libvirt-clients", "virt-manager", "bridge-utils", "cpu-checker", "ovmf", "swtpm", "swtpm-tools"],
+                  "post_install": [
+                    "sudo usermod -a -G libvirt $USER",
+                    "sudo usermod -a -G kvm $USER",
+                    "sudo systemctl enable libvirtd",
+                    "sudo systemctl start libvirtd"
+                  ]
+                },
+                "dnf": {
+                  "packages": ["qemu-kvm", "libvirt", "virt-manager", "virt-install", "bridge-utils", "edk2-ovmf", "swtpm", "swtpm-tools"],
+                  "post_install": [
+                    "sudo usermod -a -G libvirt $USER",
+                    "sudo usermod -a -G kvm $USER", 
+                    "sudo systemctl enable libvirtd",
+                    "sudo systemctl start libvirtd"
+                  ]
+                },
+                "yum": {
+                  "packages": ["qemu-kvm", "libvirt", "virt-manager", "virt-install", "bridge-utils", "edk2-ovmf", "swtpm", "swtpm-tools"],
+                  "post_install": [
+                    "sudo usermod -a -G libvirt $USER",
+                    "sudo usermod -a -G kvm $USER",
+                    "sudo systemctl enable libvirtd", 
+                    "sudo systemctl start libvirtd"
+                  ]
+                },
+                "pacman": {
+                  "packages": ["qemu-full", "libvirt", "virt-manager", "bridge-utils", "dnsmasq", "vde2", "ebtables", "edk2-ovmf", "swtpm"],
+                  "post_install": [
+                    "sudo usermod -a -G libvirt $USER",
+                    "sudo usermod -a -G kvm $USER",
+                    "sudo systemctl enable libvirtd.service",
+                    "sudo systemctl start libvirtd.service"
+                  ]
+                },
+                "zypper": {
+                  "packages": ["qemu-kvm", "libvirt", "virt-manager", "bridge-utils", "qemu-ovmf-x86_64", "swtpm"],
+                  "post_install": [
+                    "sudo usermod -a -G libvirt $USER",
+                    "sudo usermod -a -G kvm $USER",
+                    "sudo systemctl enable libvirtd",
+                    "sudo systemctl start libvirtd"
+                  ]
+                }
+              }
+            }
+          },
+          "verification": {
+            "command": "qemu-system-x86_64 --version",
+            "expected_exit_code": 0
+          }
+        }
+      },
+      "default_variant": "default"
     }
   },
   "presets": {

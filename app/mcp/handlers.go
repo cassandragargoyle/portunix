@@ -77,6 +77,118 @@ func (s *Server) handleToolsList(params json.RawMessage) (interface{}, error) {
 			},
 		},
 		{
+			"name":        "vm_list",
+			"description": "List all virtual machines managed by QEMU/KVM",
+			"inputSchema": map[string]interface{}{
+				"type":       "object",
+				"properties": map[string]interface{}{},
+				"description": "No parameters required",
+			},
+		},
+		{
+			"name":        "vm_create",
+			"description": "Create a new virtual machine with QEMU/KVM",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "VM name",
+					},
+					"os": map[string]interface{}{
+						"type":        "string",
+						"description": "OS type (windows11, windows10, ubuntu, debian)",
+					},
+					"ram": map[string]interface{}{
+						"type":        "string",
+						"description": "RAM size (e.g., 4G, 8G)",
+						"default":     "4G",
+					},
+					"disk": map[string]interface{}{
+						"type":        "string",
+						"description": "Disk size (e.g., 60G)",
+						"default":     "60G",
+					},
+					"cpus": map[string]interface{}{
+						"type":        "integer",
+						"description": "Number of CPU cores",
+						"default":     4,
+					},
+				},
+				"required": []string{"name", "os"},
+			},
+		},
+		{
+			"name":        "vm_start",
+			"description": "Start a virtual machine",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "VM name to start",
+					},
+				},
+				"required": []string{"name"},
+			},
+		},
+		{
+			"name":        "vm_stop",
+			"description": "Stop a virtual machine",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "VM name to stop",
+					},
+					"force": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Force shutdown if graceful shutdown fails",
+						"default":     false,
+					},
+				},
+				"required": []string{"name"},
+			},
+		},
+		{
+			"name":        "vm_snapshot",
+			"description": "Manage VM snapshots for backup and restore",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"vm": map[string]interface{}{
+						"type":        "string",
+						"description": "VM name",
+					},
+					"action": map[string]interface{}{
+						"type":        "string",
+						"description": "Action to perform (create, restore, list, delete)",
+						"enum":        []string{"create", "restore", "list", "delete"},
+					},
+					"snapshot": map[string]interface{}{
+						"type":        "string",
+						"description": "Snapshot name (for create/restore/delete)",
+					},
+				},
+				"required": []string{"vm", "action"},
+			},
+		},
+		{
+			"name":        "vm_info",
+			"description": "Get detailed information about a virtual machine",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "VM name",
+					},
+				},
+				"required": []string{"name"},
+			},
+		},
+		{
 			"name":        "create_edge_infrastructure",
 			"description": "Create edge infrastructure configuration for VPS deployment with reverse proxy and VPN tunneling",
 			"inputSchema": map[string]interface{}{
@@ -223,6 +335,34 @@ func (s *Server) handleToolsCall(params json.RawMessage) (interface{}, error) {
 		}
 	case "detect_project_type":
 		result, err = s.handleDetectProjectType(nil)
+	case "vm_list":
+		result, err = s.handleVMList()
+	case "vm_create":
+		result, err = s.handleVMCreate(request.Arguments)
+	case "vm_start":
+		if vmName, ok := request.Arguments["name"].(string); ok {
+			result, err = s.handleVMStart(vmName)
+		} else {
+			err = fmt.Errorf("name parameter required")
+		}
+	case "vm_stop":
+		if vmName, ok := request.Arguments["name"].(string); ok {
+			force := false
+			if f, ok := request.Arguments["force"].(bool); ok {
+				force = f
+			}
+			result, err = s.handleVMStop(vmName, force)
+		} else {
+			err = fmt.Errorf("name parameter required")
+		}
+	case "vm_snapshot":
+		result, err = s.handleVMSnapshot(request.Arguments)
+	case "vm_info":
+		if vmName, ok := request.Arguments["name"].(string); ok {
+			result, err = s.handleVMInfo(vmName)
+		} else {
+			err = fmt.Errorf("name parameter required")
+		}
 	case "create_edge_infrastructure":
 		result, err = s.handleCreateEdgeInfrastructure(request.Arguments)
 	case "configure_domain_proxy":

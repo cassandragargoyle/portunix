@@ -5,7 +5,7 @@ project_name: portunix
 
 # Ať se snapshot NEoznačuje commitem (žádné -60b7fbf)
 snapshot:
-  name_template: "{{ .Version }}"
+  name_template: "{{ incpatch .Version }}-snapshot"
 
 before:
   hooks:
@@ -26,7 +26,8 @@ builds:
       - goos: darwin
         goarch: arm64
     ldflags:
-      - -X main.version={{.Version}}
+      - -X main.version={{ .Version }}
+      - -X portunix.cz/app/version.ProductVersion={{ .Version }}
       - -s -w
     env:
       - CGO_ENABLED=0
