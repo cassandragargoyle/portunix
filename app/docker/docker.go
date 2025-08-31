@@ -8,6 +8,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -772,11 +774,128 @@ type PartitionInfo struct {
 }
 
 func analyzeWindowsStorage() ([]DriveInfo, error) {
-	// Placeholder implementation
-	return []DriveInfo{
-		{Letter: "D", FreeSpace: "850 GB", TotalSpace: "1 TB"},
-		{Letter: "C", FreeSpace: "125 GB", TotalSpace: "256 GB"},
-	}, nil
+	var drives []DriveInfo
+	
+	// Check common drive letters in order of preference (excluding A and B which are typically floppy drives)
+	driveLetters := []string{"C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
+	
+	for _, letter := range driveLetters {
+		drivePath := fmt.Sprintf("%s:\\", letter)
+		
+		// Check if drive exists by trying to stat the root directory
+		if _, err := os.Stat(drivePath); err == nil {
+			// Drive exists, get disk space information using PowerShell
+			freeSpace, totalSpace := getWindowsDiskSpace(letter)
+			
+			drives = append(drives, DriveInfo{
+				Letter:     letter,
+				FreeSpace:  freeSpace,
+				TotalSpace: totalSpace,
+			})
+		}
+	}
+	
+	if len(drives) == 0 {
+		return nil, fmt.Errorf("no accessible drives found")
+	}
+	
+	// Sort drives: non-system drives first (better for Docker data), then by free space (largest first)
+	sort.Slice(drives, func(i, j int) bool {
+		// Prioritize non-C drives for Docker storage
+		if drives[i].Letter != "C" && drives[j].Letter == "C" {
+			return true
+		}
+		if drives[i].Letter == "C" && drives[j].Letter != "C" {
+			return false
+		}
+		
+		// If both are C or both are non-C, sort by free space (descending)
+		return parseSpaceString(drives[i].FreeSpace) > parseSpaceString(drives[j].FreeSpace)
+	})
+	
+	return drives, nil
+}
+
+// getWindowsDiskSpace retrieves disk space information for a Windows drive using PowerShell
+func getWindowsDiskSpace(driveLetter string) (freeSpace, totalSpace string) {
+	// Default values in case PowerShell command fails
+	defaultFree := "Unknown"
+	defaultTotal := "Unknown"
+	
+	// PowerShell command to get disk space information
+	psCmd := fmt.Sprintf(`Get-WmiObject -Class Win32_LogicalDisk -Filter "DeviceID='%s:'" | Select-Object Size, FreeSpace`, driveLetter)
+	
+	cmd := exec.Command("powershell", "-Command", psCmd)
+	output, err := cmd.Output()
+	if err != nil {
+		return defaultFree, defaultTotal
+	}
+	
+	// Parse PowerShell output
+	lines := strings.Split(string(output), "\n")
+	if len(lines) >= 3 {
+		// Look for the data line (usually line 2, after headers)
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if strings.Contains(line, " ") {
+				fields := strings.Fields(line)
+				if len(fields) >= 2 {
+					// Try to parse as numbers (bytes)
+					if totalBytes, err := strconv.ParseInt(fields[0], 10, 64); err == nil {
+						if freeBytes, err := strconv.ParseInt(fields[1], 10, 64); err == nil {
+							return formatBytes(freeBytes), formatBytes(totalBytes)
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	return defaultFree, defaultTotal
+}
+
+// formatBytes converts bytes to human-readable format
+func formatBytes(bytes int64) string {
+	const unit = 1024
+	if bytes < unit {
+		return fmt.Sprintf("%d B", bytes)
+	}
+	div, exp := int64(unit), 0
+	for n := bytes / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+}
+
+// parseSpaceString converts space string back to bytes for sorting purposes
+func parseSpaceString(spaceStr string) int64 {
+	if spaceStr == "Unknown" {
+		return 0
+	}
+	
+	// Remove spaces and convert to uppercase
+	spaceStr = strings.ReplaceAll(strings.ToUpper(spaceStr), " ", "")
+	
+	// Extract number and unit
+	var value float64
+	var unit string
+	if n, err := fmt.Sscanf(spaceStr, "%f%s", &value, &unit); n == 2 && err == nil {
+		multiplier := int64(1)
+		switch unit {
+		case "KB":
+			multiplier = 1024
+		case "MB":
+			multiplier = 1024 * 1024
+		case "GB":
+			multiplier = 1024 * 1024 * 1024
+		case "TB":
+			multiplier = 1024 * 1024 * 1024 * 1024
+		}
+		return int64(value * float64(multiplier))
+	}
+	
+	return 0
 }
 
 func analyzeLinuxStorage() ([]PartitionInfo, error) {

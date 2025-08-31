@@ -26,6 +26,8 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#015](015-vps-edge-bastion-infrastructure.md) | PUB-005 | VPS Edge/Bastion Infrastructure | ✅ Implemented | High | Feature | infrastructure, edge-computing |
 | [#016](016-protoc-plugin-development-dependency.md) | - | Protocol Buffers Compiler (protoc) | ✅ Implemented | Critical | Bug Fix | critical, plugin-system, build |
 | [#017](017-qemu-kvm-windows-virtualization.md) | - | QEMU/KVM Windows 11 Virtualization with Snapshots | 📋 Open | High | Feature | virtualization, qemu, kvm, windows, snapshot |
+| [#019](019-docker-windows-install-issues.md) | - | Docker Installation Issues on Windows | 🔄 In Progress | High | Bug Fix | bug, docker, windows |
+| [#020](020-qemu-windows-clipboard-integration.md) | - | QEMU Windows VM Clipboard Integration | 📋 Open | Medium | Enhancement | enhancement, qemu, windows, clipboard, spice |
 
 ## Directory Structure
 

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 // CreateBackup creates a backup of the current binary
@@ -50,14 +51,27 @@ func RestoreBackup(backupPath string) error {
 	
 	// On Windows, we need to rename the files instead of overwriting
 	if runtime.GOOS == "windows" {
-		// Remove the current (broken) binary
+		// First, try to rename backup to a temp location
+		tempPath := execPath + ".restore"
+		if err := copyFile(backupPath, tempPath); err != nil {
+			return fmt.Errorf("failed to prepare restore: %w", err)
+		}
+		
+		// Try to remove the current (broken) binary
 		if err := os.Remove(execPath); err != nil {
+			// If we can't remove it, we don't have permission
+			os.Remove(tempPath)
 			return fmt.Errorf("failed to remove broken binary: %w", err)
 		}
-		// Rename backup to original
-		if err := os.Rename(backupPath, execPath); err != nil {
+		
+		// Rename temp to original location
+		if err := os.Rename(tempPath, execPath); err != nil {
+			os.Remove(tempPath)
 			return fmt.Errorf("failed to restore backup: %w", err)
 		}
+		
+		// Remove backup file
+		os.Remove(backupPath)
 	} else {
 		// On Unix-like systems, we can overwrite
 		if err := copyFile(backupPath, execPath); err != nil {
@@ -146,31 +160,72 @@ func applyUpdateUnix(execPath, newBinaryPath string) error {
 
 // applyUpdateWindows applies update on Windows
 func applyUpdateWindows(execPath, newBinaryPath string) error {
-	// On Windows, we create a batch script to replace the binary after the program exits
-	batchPath := execPath + ".update.bat"
+	// Try direct replacement first (works if we have admin rights)
+	tempPath := execPath + ".new"
 	
-	// Create batch script
-	script := fmt.Sprintf(`@echo off
-echo Finalizing update...
-ping 127.0.0.1 -n 2 > nul
-move /Y "%s" "%s"
-if %%errorlevel%% neq 0 (
-    echo Update failed!
-    pause
-    exit /b 1
-)
-echo Update completed successfully!
-del "%%~f0"
-`, newBinaryPath, execPath)
-	
-	if err := os.WriteFile(batchPath, []byte(script), 0644); err != nil {
-		return fmt.Errorf("failed to create update script: %w", err)
+	// Copy new binary to temporary location
+	if err := copyFile(newBinaryPath, tempPath); err != nil {
+		return fmt.Errorf("failed to copy new binary: %w", err)
 	}
 	
-	fmt.Println("\nUpdate prepared. Please run the following command to complete the update:")
-	fmt.Printf("  %s\n", batchPath)
-	fmt.Println("\nAlternatively, close this program and run the update script manually.")
+	// Set executable permissions
+	if err := os.Chmod(tempPath, 0755); err != nil {
+		os.Remove(tempPath)
+		return fmt.Errorf("failed to set permissions: %w", err)
+	}
 	
+	// Try to rename current binary to backup
+	backupPath := execPath + ".old"
+	if err := os.Rename(execPath, backupPath); err != nil {
+		// If we can't rename, we don't have permission - create PowerShell fallback
+		os.Remove(tempPath)
+		
+		// Create PowerShell update script as fallback
+		psScriptPath := execPath + ".update.ps1"
+		psScript := fmt.Sprintf(`# Portunix Update Fallback Script
+Write-Host "Finalizing Portunix update..." -ForegroundColor Cyan
+Write-Host "This may take a few seconds..." -ForegroundColor Yellow
+Start-Sleep -Seconds 2
+
+try {
+    # Remove old binary
+    if (Test-Path "%s") {
+        Remove-Item "%s" -Force
+    }
+    
+    # Move new binary to final location
+    Move-Item "%s" "%s" -Force
+    
+    Write-Host "✓ Update completed successfully!" -ForegroundColor Green
+    Write-Host "You can now run: portunix --version" -ForegroundColor Green
+    
+} catch {
+    Write-Error "Update failed: $_"
+    Write-Host "Please run this script as Administrator" -ForegroundColor Red
+}
+
+# Clean up
+Remove-Item $PSCommandPath -Force
+Read-Host "Press Enter to close"
+`, execPath, execPath, newBinaryPath, execPath)
+		
+		if err := os.WriteFile(psScriptPath, []byte(psScript), 0644); err == nil {
+			return fmt.Errorf("permission denied\n  Cannot write to %s\n  \n  Alternative: Run this PowerShell script as Administrator:\n  %s\n  \n  Or try running as administrator: Right-click cmd.exe -> Run as administrator", execPath, psScriptPath)
+		}
+		
+		return fmt.Errorf("permission denied\n  Cannot write to %s\n  Try running as administrator", execPath)
+	}
+	
+	// Rename new binary to original location
+	if err := os.Rename(tempPath, execPath); err != nil {
+		// If this fails, try to restore the backup
+		os.Rename(backupPath, execPath)
+		os.Remove(tempPath)
+		return fmt.Errorf("failed to install update: %w", err)
+	}
+	
+	// Remove backup on success
+	os.Remove(backupPath)
 	return nil
 }
 
@@ -183,6 +238,20 @@ func checkWritePermission(path string) error {
 	}
 	file.Close()
 	return nil
+}
+
+// IsPermissionError checks if an error is related to permissions
+func IsPermissionError(err error) bool {
+	if err == nil {
+		return false
+	}
+	
+	errStr := strings.ToLower(err.Error())
+	return strings.Contains(errStr, "permission denied") ||
+		strings.Contains(errStr, "access denied") ||
+		strings.Contains(errStr, "přístup byl odepřen") ||
+		strings.Contains(errStr, "cannot write") ||
+		strings.Contains(errStr, "administrator")
 }
 
 // copyFile copies a file from src to dst

@@ -32,6 +32,9 @@ func main() {
 	update.Version = version
 	appversion.ProductVersion = version
 
+	// Set the version for root command (for --version flag)
+	cmd.SetVersion()
+
 	// Set the embedded scripts in sandbox package
 	sandbox.InstallOpenSSHScript = installOpenSSHScript
 	sandbox.VSCodeInstallScript = vscodeInstallScript

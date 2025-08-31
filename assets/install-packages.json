@@ -951,7 +951,7 @@
               "version": "latest",
               "distributions": {
                 "apt": {
-                  "packages": ["qemu-system-x86", "qemu-utils", "libvirt-daemon-system", "libvirt-clients", "virt-manager", "bridge-utils", "cpu-checker", "ovmf", "swtpm", "swtpm-tools"],
+                  "packages": ["qemu-system-x86", "qemu-utils", "libvirt-daemon-system", "libvirt-clients", "virt-manager", "bridge-utils", "cpu-checker", "ovmf", "swtpm", "swtpm-tools", "spice-client-gtk", "virt-viewer"],
                   "post_install": [
                     "sudo usermod -a -G libvirt $USER",
                     "sudo usermod -a -G kvm $USER",
@@ -1061,5 +1061,36 @@
         {"name": "vscode", "variant": "stable"}
       ]
     }
+  },
+  "spice-guest-tools": {
+    "name": "SPICE Guest Tools",
+    "description": "SPICE guest tools for Windows VMs to enable clipboard sharing and enhanced display",
+    "category": "virtualization",
+    "platforms": {
+      "windows": {
+        "type": "direct_download",
+        "variants": {
+          "latest": {
+            "version": "0.141",
+            "url": "https://www.spice-space.org/download/windows/spice-guest-tools/spice-guest-tools-latest.exe",
+            "executable": "spice-guest-tools-latest.exe",
+            "args": ["/S"],
+            "requires_admin": true,
+            "notes": "Enables clipboard sharing between host and Windows VM"
+          }
+        }
+      },
+      "linux": {
+        "type": "iso_download",
+        "variants": {
+          "latest": {
+            "version": "0.141",
+            "url": "https://www.spice-space.org/download/windows/spice-guest-tools/spice-guest-tools-latest.exe",
+            "description": "Download SPICE tools for mounting in Windows VM"
+          }
+        }
+      }
+    },
+    "default_variant": "latest"
   }
 }
