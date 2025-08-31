@@ -97,6 +97,16 @@
       "type": "feature",
       "status": "open",
       "published": true
+    },
+    "PUB-019": {
+      "internal": "019",
+      "github_number": 19,
+      "title": "Docker Installation Issues on Windows",
+      "type": "bug",
+      "status": "in_progress",
+      "published": true,
+      "priority": "high",
+      "reporter": "@rjankovic"
     }
   }
 }

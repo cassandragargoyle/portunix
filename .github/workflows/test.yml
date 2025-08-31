@@ -37,6 +37,9 @@ jobs:
           go mod download
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
+      - name: Build project first (needed for go:embed)
+        run: go build -o portunix ./
+
       - name: Run linter
         env:
           GO111MODULE: on
@@ -46,7 +49,9 @@ jobs:
           golangci-lint run ./... --timeout=5m --verbose
 
       - name: Run go vet
-        run: go vet ./...
+        run: |
+          # go vet needs build context for go:embed
+          go vet ./...
 
       - name: Check formatting
         run: |
@@ -82,6 +87,9 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Build project first (needed for go:embed)
+        run: go build -o portunix ./
+        
       - name: Run unit tests
         run: |
           go test -tags=unit -race -coverprofile=unit-coverage.out -covermode=atomic ./...
@@ -136,6 +144,9 @@ jobs:
           docker pull ubuntu:22.04
           docker pull nginx:alpine
 
+      - name: Build project first (needed for go:embed)
+        run: go build -o portunix ./
+        
       - name: Run integration tests
         run: |
           go test -tags=integration -race -coverprofile=integration-coverage.out -covermode=atomic -timeout=10m ./...
@@ -284,6 +295,9 @@ jobs:
       - name: Install dependencies
         run: go mod download
 
+      - name: Build project first (needed for go:embed)
+        run: go build -o portunix ./
+        
       - name: Run all tests with coverage
         run: |
           go test -race -coverprofile=coverage.out -covermode=atomic ./...

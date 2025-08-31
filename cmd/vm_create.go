@@ -225,13 +225,22 @@ func runQEMUWindows11(name, diskPath, isoPath, tpmDir string) error {
 		"-boot", "menu=on",
 		"-device", "virtio-net,netdev=net0",
 		"-netdev", "user,id=net0",
-		"-vga", "qxl",
+		// SPICE display with enhanced QXL graphics
+		"-device", "qxl-vga,ram_size=67108864,vram_size=67108864,vgamem_mb=16",
 		"-device", "virtio-tablet",
 		"-device", "virtio-keyboard",
-		"-spice", "port=5900,disable-ticketing=on",
-		"-device", "virtio-serial",
+		"-spice", "port=5900,addr=127.0.0.1,disable-ticketing=on,image-compression=auto_glz,streaming-video=filter",
+		// SPICE agent for clipboard support
+		"-device", "virtio-serial-pci",
 		"-chardev", "spicevmc,id=spicechannel0,name=vdagent",
 		"-device", "virtserialport,chardev=spicechannel0,name=com.redhat.spice.0",
+		// USB redirection support
+		"-device", "ich9-usb-ehci1,id=usb",
+		"-device", "ich9-usb-uhci1,masterbus=usb.0,firstport=0,multifunction=on",
+		"-device", "ich9-usb-uhci2,masterbus=usb.0,firstport=2",
+		"-device", "ich9-usb-uhci3,masterbus=usb.0,firstport=4",
+		"-chardev", "spicevmc,name=usbredir,id=usbredirchardev1",
+		"-device", "usb-redir,chardev=usbredirchardev1,id=usbredirdev1",
 	}
 	
 	// Add UEFI support (required for Windows 11)
@@ -263,8 +272,16 @@ func runQEMUWindows11(name, diskPath, isoPath, tpmDir string) error {
 	}
 	
 	fmt.Printf("\n📝 QEMU command saved to: %s\n", scriptPath)
-	fmt.Println("\nStarting Windows 11 installation...")
-	fmt.Println("Note: You can connect to the VM using a SPICE client on port 5900")
+	fmt.Println("\n🚀 Starting Windows 11 VM with enhanced features:")
+	fmt.Println("  ✅ SPICE display with clipboard support enabled")
+	fmt.Println("  ✅ QXL graphics driver for better performance")
+	fmt.Println("  ✅ USB redirection support")
+	fmt.Println("\n📋 To enable clipboard sharing:")
+	fmt.Println("  1. Connect using: virt-viewer --connect spice://localhost:5900")
+	fmt.Println("  2. Install SPICE Guest Tools in Windows (run: portunix install spice-guest-tools)")
+	fmt.Println("\n⌨️  Alternative connections:")
+	fmt.Println("  - remote-viewer spice://localhost:5900")
+	fmt.Println("  - spicy -h localhost -p 5900")
 	
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = os.Stdout

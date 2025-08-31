@@ -122,11 +122,20 @@ func performUpdate(force bool) {
 	if err != nil {
 		fmt.Printf("Error: Failed to apply update\n  %v\n", err)
 		
+		// Check if it's a permission error and provide better guidance
+		if update.IsPermissionError(err) {
+			fmt.Println("\n💡 Solutions:")
+			fmt.Println("  1. Run as Administrator (Right-click cmd.exe -> Run as administrator)")
+			fmt.Println("  2. Or download and reinstall manually from GitHub releases")
+			fmt.Println("  3. Or move portunix to a user-writable location (like Documents)")
+		}
+		
 		// Try to restore backup
 		fmt.Println("Attempting to restore backup...")
 		if restoreErr := update.RestoreBackup(backupPath); restoreErr != nil {
 			fmt.Printf("Error: Failed to restore backup\n  %v\n", restoreErr)
 			fmt.Println("  Manual intervention may be required")
+			fmt.Println("  Your original portunix.exe should still work")
 		} else {
 			fmt.Println("✓ Backup restored successfully")
 		}
