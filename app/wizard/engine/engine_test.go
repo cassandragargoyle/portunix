@@ -10,11 +10,11 @@ import (
 
 func TestWizardEngine_LoadWizard(t *testing.T) {
 	engine := NewWizardEngine()
-	
+
 	// Create temporary wizard file
 	tempDir := t.TempDir()
 	wizardFile := filepath.Join(tempDir, "test-wizard.yaml")
-	
+
 	wizardContent := `wizard:
   id: "test-wizard"
   name: "Test Wizard"
@@ -37,35 +37,35 @@ func TestWizardEngine_LoadWizard(t *testing.T) {
       title: "Complete"
       content: "Test completed"
 `
-	
+
 	err := os.WriteFile(wizardFile, []byte(wizardContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create test wizard file: %v", err)
 	}
-	
+
 	// Test loading wizard
 	wizard, err := engine.LoadWizard(wizardFile)
 	if err != nil {
 		t.Fatalf("LoadWizard failed: %v", err)
 	}
-	
+
 	// Verify wizard properties
 	if wizard.ID != "test-wizard" {
 		t.Errorf("Expected wizard ID 'test-wizard', got '%s'", wizard.ID)
 	}
-	
+
 	if wizard.Name != "Test Wizard" {
 		t.Errorf("Expected wizard name 'Test Wizard', got '%s'", wizard.Name)
 	}
-	
+
 	if wizard.Version != "1.0" {
 		t.Errorf("Expected wizard version '1.0', got '%s'", wizard.Version)
 	}
-	
+
 	if len(wizard.Pages) != 2 {
 		t.Errorf("Expected 2 pages, got %d", len(wizard.Pages))
 	}
-	
+
 	// Test variables
 	if wizard.Variables["test_var"] != "default_value" {
 		t.Errorf("Expected test_var to be 'default_value', got '%v'", wizard.Variables["test_var"])
@@ -74,27 +74,27 @@ func TestWizardEngine_LoadWizard(t *testing.T) {
 
 func TestWizardEngine_LoadWizard_InvalidFile(t *testing.T) {
 	engine := NewWizardEngine()
-	
+
 	// Test non-existent file
 	_, err := engine.LoadWizard("non-existent-file.yaml")
 	if err == nil {
 		t.Error("Expected error for non-existent file, got nil")
 	}
-	
+
 	// Test invalid YAML
 	tempDir := t.TempDir()
 	invalidFile := filepath.Join(tempDir, "invalid.yaml")
-	
+
 	invalidContent := `invalid: yaml: content:
   - missing
     - indentation
 `
-	
+
 	err = os.WriteFile(invalidFile, []byte(invalidContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create invalid YAML file: %v", err)
 	}
-	
+
 	_, err = engine.LoadWizard(invalidFile)
 	if err == nil {
 		t.Error("Expected error for invalid YAML, got nil")
@@ -103,14 +103,14 @@ func TestWizardEngine_LoadWizard_InvalidFile(t *testing.T) {
 
 func TestWizardEngine_FindPage(t *testing.T) {
 	engine := NewWizardEngine()
-	
+
 	wizard := &wizard.Wizard{
 		Pages: []wizard.Page{
 			{ID: "page1", Title: "Page 1"},
 			{ID: "page2", Title: "Page 2"},
 		},
 	}
-	
+
 	// Test finding existing page
 	page := engine.findPage(wizard, "page1")
 	if page == nil {
@@ -118,7 +118,7 @@ func TestWizardEngine_FindPage(t *testing.T) {
 	} else if page.ID != "page1" {
 		t.Errorf("Expected page ID 'page1', got '%s'", page.ID)
 	}
-	
+
 	// Test finding non-existent page
 	page = engine.findPage(wizard, "non-existent")
 	if page != nil {
@@ -128,14 +128,14 @@ func TestWizardEngine_FindPage(t *testing.T) {
 
 func TestWizardEngine_EvaluateNavigation(t *testing.T) {
 	engine := NewWizardEngine()
-	
+
 	ctx := &wizard.WizardContext{
 		Variables: map[string]interface{}{
-			"choice": "option1",
+			"choice":         "option1",
 			"enable_feature": true,
 		},
 	}
-	
+
 	tests := []struct {
 		name     string
 		nav      *wizard.NavigationRule
@@ -172,7 +172,7 @@ func TestWizardEngine_EvaluateNavigation(t *testing.T) {
 			expected: "",
 		},
 	}
-	
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			result, err := engine.evaluateNavigation(test.nav, ctx)
@@ -188,11 +188,11 @@ func TestWizardEngine_EvaluateNavigation(t *testing.T) {
 
 func TestWizardEngine_Themes(t *testing.T) {
 	engine := NewWizardEngine()
-	
+
 	// Test default themes exist
 	themes := engine.ListThemes()
 	expectedThemes := []string{"default", "colorful", "minimal"}
-	
+
 	for _, expected := range expectedThemes {
 		found := false
 		for _, theme := range themes {
@@ -205,13 +205,13 @@ func TestWizardEngine_Themes(t *testing.T) {
 			t.Errorf("Expected theme '%s' not found in %v", expected, themes)
 		}
 	}
-	
+
 	// Test setting valid theme
 	err := engine.SetTheme("colorful")
 	if err != nil {
 		t.Errorf("SetTheme failed for valid theme: %v", err)
 	}
-	
+
 	// Test setting invalid theme
 	err = engine.SetTheme("non-existent")
 	if err == nil {

@@ -10,12 +10,12 @@ import (
 
 // SelectComponent implements single selection from a list
 type SelectComponent struct {
-	Title       string
-	Prompt      string
-	Options     []wizard.Option
-	Selected    string
-	Help        string
-	PageBreak   bool
+	Title     string
+	Prompt    string
+	Options   []wizard.Option
+	Selected  string
+	Help      string
+	PageBreak bool
 }
 
 // NewSelectComponent creates a new select component
@@ -37,7 +37,7 @@ func (s *SelectComponent) Render(ctx *wizard.WizardContext) error {
 	// Prepare options for survey
 	var optionLabels []string
 	optionMap := make(map[string]string)
-	
+
 	for _, opt := range s.Options {
 		label := opt.Label
 		if opt.Description != "" {

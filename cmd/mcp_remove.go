@@ -57,11 +57,11 @@ func removeMCPIntegration(force bool) error {
 		fmt.Print("3. Confirming removal... ")
 		fmt.Println("⚠️  CONFIRMATION REQUIRED")
 		fmt.Print("Are you sure you want to remove Portunix MCP integration? (y/N): ")
-		
+
 		var response string
 		fmt.Scanln(&response)
 		response = strings.ToLower(strings.TrimSpace(response))
-		
+
 		if response != "y" && response != "yes" {
 			fmt.Println("❌ CANCELLED")
 			fmt.Println("Removal cancelled by user.")

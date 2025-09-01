@@ -110,12 +110,12 @@ Post-Installation:
 			fmt.Println("   • Kubernetes integration")
 			fmt.Println("   Learn more: https://podman-desktop.io")
 			fmt.Println()
-			
+
 			reader := bufio.NewReader(os.Stdin)
 			fmt.Print("Install Podman Desktop? [y/N]: ")
 			response, _ := reader.ReadString('\n')
 			response = strings.TrimSpace(strings.ToLower(response))
-			
+
 			if response == "y" || response == "yes" {
 				withDesktop = true
 			}

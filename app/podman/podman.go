@@ -1522,7 +1522,7 @@ func installPodmanDesktopGUIWindows(autoAccept bool) error {
 		reader := bufio.NewReader(os.Stdin)
 		response, _ := reader.ReadString('\n')
 		response = strings.TrimSpace(strings.ToLower(response))
-		
+
 		if response == "n" || response == "no" {
 			fmt.Println("❌ Installation cancelled")
 			return fmt.Errorf("user cancelled installation")
@@ -1532,7 +1532,7 @@ func installPodmanDesktopGUIWindows(autoAccept bool) error {
 	// Download latest Podman Desktop
 	installerPath := filepath.Join(".cache", "PodmanDesktop-latest.exe")
 	downloadURL := "https://github.com/containers/podman-desktop/releases/latest/download/podman-desktop-1.21.0-setup-x64.exe"
-	
+
 	if err := downloadPodmanDesktopInstaller(downloadURL, installerPath); err != nil {
 		return fmt.Errorf("failed to download Podman Desktop: %w", err)
 	}
@@ -1561,7 +1561,7 @@ func installPodmanDesktopGUIWindows(autoAccept bool) error {
 func installPodmanDesktopGUILinux(autoAccept bool, osInfo *system.SystemInfo) error {
 	fmt.Println("\nInstalling Podman Desktop for Linux...")
 	fmt.Println("🖥️  Installing official GUI from Red Hat")
-	
+
 	// Determine installation method based on distro
 	distribution := strings.ToLower(osInfo.OS)
 	if osInfo.LinuxInfo != nil {
@@ -1569,7 +1569,7 @@ func installPodmanDesktopGUILinux(autoAccept bool, osInfo *system.SystemInfo) er
 	}
 
 	fmt.Printf("📦 Detected distribution: %s\n", distribution)
-	
+
 	switch distribution {
 	case "ubuntu", "debian":
 		return installPodmanDesktopUbuntu(autoAccept)
@@ -1585,13 +1585,13 @@ func installPodmanDesktopGUILinux(autoAccept bool, osInfo *system.SystemInfo) er
 func installPodmanDesktopGUIMacOS(autoAccept bool) error {
 	fmt.Println("\nInstalling Podman Desktop for macOS...")
 	fmt.Println("🖥️  Installing official GUI from Red Hat")
-	
+
 	if !autoAccept {
 		fmt.Print("Continue with Podman Desktop installation? [Y/n]: ")
 		reader := bufio.NewReader(os.Stdin)
 		response, _ := reader.ReadString('\n')
 		response = strings.TrimSpace(strings.ToLower(response))
-		
+
 		if response == "n" || response == "no" {
 			fmt.Println("❌ Installation cancelled")
 			return fmt.Errorf("user cancelled installation")
@@ -1604,7 +1604,7 @@ func installPodmanDesktopGUIMacOS(autoAccept bool) error {
 		cmd := exec.Command("brew", "install", "--cask", "podman-desktop")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		
+
 		if err := cmd.Run(); err != nil {
 			fmt.Println("⚠️  Homebrew installation failed, trying direct download...")
 			return installPodmanDesktopMacOSDirect(autoAccept)
@@ -1622,17 +1622,17 @@ func installPodmanDesktopGUIMacOS(autoAccept bool) error {
 
 func installPodmanDesktopUbuntu(autoAccept bool) error {
 	fmt.Println("📦 Installing Podman Desktop via system package...")
-	
+
 	// Add Podman Desktop repository if needed
 	fmt.Println("🔑 Adding Podman Desktop repository...")
-	
+
 	// For now, use AppImage as it's more universal
 	return installPodmanDesktopGenericLinux(autoAccept)
 }
 
 func installPodmanDesktopFedora(autoAccept bool) error {
 	fmt.Println("📦 Installing Podman Desktop via DNF...")
-	
+
 	// Check if podman-desktop package is available
 	cmd := exec.Command("dnf", "search", "podman-desktop")
 	if err := cmd.Run(); err != nil {
@@ -1644,7 +1644,7 @@ func installPodmanDesktopFedora(autoAccept bool) error {
 	installCmd := exec.Command("sudo", "dnf", "install", "-y", "podman-desktop")
 	installCmd.Stdout = os.Stdout
 	installCmd.Stderr = os.Stderr
-	
+
 	if err := installCmd.Run(); err != nil {
 		fmt.Println("⚠️  DNF installation failed, using AppImage...")
 		return installPodmanDesktopGenericLinux(autoAccept)
@@ -1656,7 +1656,7 @@ func installPodmanDesktopFedora(autoAccept bool) error {
 
 func installPodmanDesktopArch(autoAccept bool) error {
 	fmt.Println("📦 Installing Podman Desktop via AUR...")
-	
+
 	// Check if yay or paru is available
 	var aurHelper string
 	if _, err := exec.LookPath("yay"); err == nil {
@@ -1671,7 +1671,7 @@ func installPodmanDesktopArch(autoAccept bool) error {
 	cmd := exec.Command(aurHelper, "-S", "--noconfirm", "podman-desktop-bin")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	if err := cmd.Run(); err != nil {
 		fmt.Println("⚠️  AUR installation failed, using AppImage...")
 		return installPodmanDesktopGenericLinux(autoAccept)
@@ -1683,17 +1683,17 @@ func installPodmanDesktopArch(autoAccept bool) error {
 
 func installPodmanDesktopGenericLinux(autoAccept bool) error {
 	fmt.Println("📦 Installing Podman Desktop...")
-	
+
 	// Check available package managers and provide specific instructions
 	hasFlatpak := false
-	
+
 	if _, err := exec.LookPath("flatpak"); err == nil {
 		hasFlatpak = true
 	}
-	
+
 	fmt.Println("📋 Podman Desktop installation options:")
 	fmt.Println()
-	
+
 	if hasFlatpak {
 		fmt.Println("✅ Option 1 - Flatpak (recommended):")
 		fmt.Println("   flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo")
@@ -1707,62 +1707,62 @@ func installPodmanDesktopGenericLinux(autoAccept bool) error {
 		fmt.Println("   flatpak install flathub io.podman_desktop.PodmanDesktop")
 		fmt.Println()
 	}
-	
+
 	fmt.Println("📥 Option 2 - Download AppImage:")
 	fmt.Println("   wget https://github.com/containers/podman-desktop/releases/latest/download/podman-desktop-1.20.2.flatpak")
 	fmt.Println("   # Or browse: https://podman-desktop.io/downloads/linux")
 	fmt.Println()
-	
+
 	fmt.Println("🐳 Option 3 - Use Docker Desktop alternative:")
 	fmt.Println("   # Podman Desktop provides Docker Desktop-like experience")
 	fmt.Println("   # with better security (rootless containers)")
 	fmt.Println()
-	
+
 	if !autoAccept {
 		fmt.Print("Would you like to install Flatpak and proceed with automatic installation? [Y/n]: ")
 		reader := bufio.NewReader(os.Stdin)
 		response, _ := reader.ReadString('\n')
 		response = strings.TrimSpace(strings.ToLower(response))
-		
+
 		if response == "y" || response == "yes" || response == "" {
 			return installFlatpakAndPodmanDesktop(autoAccept)
 		}
 	}
-	
+
 	return fmt.Errorf("manual installation required - see options above")
 }
 
 func installPodmanDesktopFlatpak(autoAccept bool) error {
 	fmt.Println("📦 Installing Podman Desktop via Flatpak...")
-	
+
 	if !autoAccept {
 		fmt.Print("Continue with Flatpak installation? [Y/n]: ")
 		reader := bufio.NewReader(os.Stdin)
 		response, _ := reader.ReadString('\n')
 		response = strings.TrimSpace(strings.ToLower(response))
-		
+
 		if response == "n" || response == "no" {
 			return fmt.Errorf("user cancelled installation")
 		}
 	}
-	
+
 	// Add flathub repository if not exists
 	fmt.Println("🔑 Adding Flathub repository...")
 	addRepoCmd := exec.Command("flatpak", "remote-add", "--if-not-exists", "flathub", "https://flathub.org/repo/flathub.flatpakrepo")
 	addRepoCmd.Stdout = os.Stdout
 	addRepoCmd.Stderr = os.Stderr
 	addRepoCmd.Run() // Ignore errors - may already exist
-	
+
 	// Install Podman Desktop
 	fmt.Println("📦 Installing Podman Desktop...")
 	installCmd := exec.Command("flatpak", "install", "-y", "flathub", "io.podman_desktop.PodmanDesktop")
 	installCmd.Stdout = os.Stdout
 	installCmd.Stderr = os.Stderr
-	
+
 	if err := installCmd.Run(); err != nil {
 		return fmt.Errorf("flatpak installation failed: %w", err)
 	}
-	
+
 	// Create alias for easier launching
 	if err := createPodmanDesktopAlias(); err != nil {
 		fmt.Printf("⚠️  Could not create alias: %v\n", err)
@@ -1779,52 +1779,52 @@ func installPodmanDesktopFlatpak(autoAccept bool) error {
 	fmt.Println("   # Or find 'Podman Desktop' in your applications menu")
 	fmt.Println()
 	fmt.Println("🌐 Learn more at: https://podman-desktop.io")
-	
+
 	return nil
 }
 
 func installPodmanDesktopSnap(autoAccept bool) error {
 	fmt.Println("📦 Installing Podman Desktop via Snap...")
-	
+
 	if !autoAccept {
 		fmt.Print("Continue with Snap installation? [Y/n]: ")
 		reader := bufio.NewReader(os.Stdin)
 		response, _ := reader.ReadString('\n')
 		response = strings.TrimSpace(strings.ToLower(response))
-		
+
 		if response == "n" || response == "no" {
 			return fmt.Errorf("user cancelled installation")
 		}
 	}
-	
+
 	// Install Podman Desktop
 	fmt.Println("📦 Installing Podman Desktop...")
 	fmt.Println("🔐 This requires administrator privileges")
-	
+
 	installCmd := exec.Command("sudo", "snap", "install", "podman-desktop")
 	installCmd.Stdout = os.Stdout
 	installCmd.Stderr = os.Stderr
-	installCmd.Stdin = os.Stdin  // Allow sudo to read password from terminal
-	
+	installCmd.Stdin = os.Stdin // Allow sudo to read password from terminal
+
 	if err := installCmd.Run(); err != nil {
 		fmt.Println("⚠️  Snap installation failed. You can install manually:")
 		fmt.Println("   sudo snap install podman-desktop")
 		return fmt.Errorf("snap installation failed: %w", err)
 	}
-	
+
 	fmt.Println("✅ Podman Desktop installed successfully!")
 	fmt.Println("💡 Launch with: podman-desktop")
 	fmt.Println("🌐 Learn more at: https://podman-desktop.io")
-	
+
 	return nil
 }
 
 func installPodmanDesktopMacOSDirect(autoAccept bool) error {
 	fmt.Println("📦 Downloading Podman Desktop for macOS...")
-	
+
 	downloadURL := "https://github.com/containers/podman-desktop/releases/latest/download/podman-desktop-1.21.0-arm64.dmg"
 	dmgPath := filepath.Join(".cache", "PodmanDesktop.dmg")
-	
+
 	if err := downloadPodmanDesktopInstaller(downloadURL, dmgPath); err != nil {
 		return fmt.Errorf("failed to download Podman Desktop: %w", err)
 	}
@@ -1839,7 +1839,7 @@ func installPodmanDesktopMacOSDirect(autoAccept bool) error {
 
 func downloadPodmanDesktopInstaller(url, filePath string) error {
 	fmt.Printf("⬇️  Downloading from: %s\n", url)
-	
+
 	// Create cache directory
 	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
 		return err
@@ -1866,13 +1866,13 @@ func downloadPodmanDesktopInstaller(url, filePath string) error {
 
 	// Copy the response body to file with progress
 	fmt.Printf("📥 Downloading to: %s\n", filePath)
-	
+
 	// Get content length for progress
 	contentLength := resp.ContentLength
 	if contentLength > 0 {
 		fmt.Printf("📊 File size: %.2f MB\n", float64(contentLength)/(1024*1024))
 	}
-	
+
 	// Copy data
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
@@ -1886,26 +1886,26 @@ func downloadPodmanDesktopInstaller(url, filePath string) error {
 func installFlatpakAndPodmanDesktop(autoAccept bool) error {
 	fmt.Println("📦 Installing Flatpak first...")
 	fmt.Println("🔐 This requires administrator privileges")
-	
+
 	// Install Flatpak
 	installCmd := exec.Command("sudo", "apt", "install", "-y", "flatpak")
 	installCmd.Stdout = os.Stdout
 	installCmd.Stderr = os.Stderr
 	installCmd.Stdin = os.Stdin
-	
+
 	if err := installCmd.Run(); err != nil {
 		fmt.Println("⚠️  Failed to install Flatpak. Please install manually:")
 		fmt.Println("   sudo apt install flatpak")
 		return fmt.Errorf("flatpak installation failed: %w", err)
 	}
-	
+
 	// Add Flathub repository
 	fmt.Println("🔑 Adding Flathub repository...")
 	addRepoCmd := exec.Command("flatpak", "remote-add", "--if-not-exists", "flathub", "https://flathub.org/repo/flathub.flatpakrepo")
 	addRepoCmd.Stdout = os.Stdout
 	addRepoCmd.Stderr = os.Stderr
 	addRepoCmd.Run()
-	
+
 	// Now install Podman Desktop
 	return installPodmanDesktopFlatpak(true) // Use autoAccept since user already confirmed
 }
@@ -1918,7 +1918,7 @@ func createPodmanDesktopAlias() error {
 
 	bashrcPath := filepath.Join(homeDir, ".bashrc")
 	aliasLine := `alias podman-desktop="flatpak run io.podman_desktop.PodmanDesktop"`
-	
+
 	// Check if alias already exists
 	if content, err := os.ReadFile(bashrcPath); err == nil {
 		if strings.Contains(string(content), aliasLine) {
@@ -1926,21 +1926,21 @@ func createPodmanDesktopAlias() error {
 			return nil
 		}
 	}
-	
+
 	// Add alias to .bashrc
 	file, err := os.OpenFile(bashrcPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return fmt.Errorf("failed to open .bashrc: %w", err)
 	}
 	defer file.Close()
-	
+
 	// Add newlines and comment for clarity
 	aliasContent := fmt.Sprintf("\n# Podman Desktop alias (added by Portunix)\n%s\n", aliasLine)
-	
+
 	if _, err := file.WriteString(aliasContent); err != nil {
 		return fmt.Errorf("failed to write alias: %w", err)
 	}
-	
+
 	// Also try to add to .bash_aliases if it exists
 	bashAliasesPath := filepath.Join(homeDir, ".bash_aliases")
 	if _, err := os.Stat(bashAliasesPath); err == nil {
@@ -1950,7 +1950,7 @@ func createPodmanDesktopAlias() error {
 			aliasFile.WriteString(fmt.Sprintf("\n# Podman Desktop alias (added by Portunix)\n%s\n", aliasLine))
 		}
 	}
-	
+
 	return nil
 }
 
@@ -1958,7 +1958,7 @@ func createDesktopEntry(appImagePath string) {
 	homeDir, _ := os.UserHomeDir()
 	desktopDir := filepath.Join(homeDir, ".local", "share", "applications")
 	os.MkdirAll(desktopDir, 0755)
-	
+
 	desktopEntry := fmt.Sprintf(`[Desktop Entry]
 Name=Podman Desktop
 Comment=Container management GUI

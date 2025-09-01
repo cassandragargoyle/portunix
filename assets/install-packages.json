@@ -311,7 +311,8 @@
     },
     "chrome": {
       "name": "Google Chrome",
-      "description": "Google Chrome web browser",
+      "description": "Fast, secure web browser built for the modern web",
+      "category": "browsers",
       "platforms": {
         "windows": {
           "type": "msi",
@@ -322,26 +323,150 @@
                 "x64": "https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi",
                 "x86": "https://dl.google.com/chrome/install/googlechromestandaloneenterprise.msi"
               }
+            },
+            "beta": {
+              "version": "latest-beta",
+              "urls": {
+                "x64": "https://dl.google.com/chrome/install/beta/googlechromebetastandaloneenterprise64.msi",
+                "x86": "https://dl.google.com/chrome/install/beta/googlechromebetastandaloneenterprise.msi"
+              }
+            },
+            "dev": {
+              "version": "latest-dev",
+              "urls": {
+                "x64": "https://dl.google.com/chrome/install/dev/googlechromedevstandaloneenterprise64.msi",
+                "x86": "https://dl.google.com/chrome/install/dev/googlechromedevstandaloneenterprise.msi"
+              }
             }
           },
-          "install_args": ["/quiet"],
+          "install_args": ["/quiet", "/norestart"],
           "verification": {
             "command": "chrome --version",
             "expected_exit_code": 0
           }
         },
         "linux": {
-          "type": "deb",
+          "type": "repository",
           "variants": {
-            "stable": {
+            "ubuntu": {
               "version": "latest",
+              "distributions": ["ubuntu", "kubuntu", "lubuntu", "xubuntu"],
+              "supported_versions": ["20.04", "22.04", "24.04"],
+              "repository_setup": [
+                "wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg",
+                "echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main' | sudo tee /etc/apt/sources.list.d/google-chrome.list",
+                "sudo apt-get update"
+              ],
+              "packages": ["google-chrome-stable"],
+              "fallback_variants": ["deb-direct", "snap"],
+              "fallback_strategy": "auto_with_confirmation"
+            },
+            "debian": {
+              "version": "latest",
+              "distributions": ["debian"],
+              "supported_versions": ["11", "12"],
+              "repository_setup": [
+                "wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg",
+                "echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main' | sudo tee /etc/apt/sources.list.d/google-chrome.list",
+                "sudo apt-get update"
+              ],
+              "packages": ["google-chrome-stable"],
+              "fallback_variants": ["deb-direct", "snap"],
+              "fallback_strategy": "auto_with_confirmation"
+            },
+            "mint": {
+              "version": "latest",
+              "distributions": ["mint", "linuxmint"],
+              "supported_versions": ["21", "21.1", "21.2", "21.3"],
+              "repository_setup": [
+                "wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg",
+                "echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main' | sudo tee /etc/apt/sources.list.d/google-chrome.list",
+                "sudo apt-get update"
+              ],
+              "packages": ["google-chrome-stable"],
+              "fallback_variants": ["deb-direct", "snap"],
+              "fallback_strategy": "auto_with_confirmation"
+            },
+            "elementary": {
+              "version": "latest",
+              "distributions": ["elementary"],
+              "supported_versions": ["7.0", "7.1"],
+              "repository_setup": [
+                "wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg",
+                "echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main' | sudo tee /etc/apt/sources.list.d/google-chrome.list",
+                "sudo apt-get update"
+              ],
+              "packages": ["google-chrome-stable"],
+              "fallback_variants": ["deb-direct", "snap"],
+              "fallback_strategy": "auto_with_confirmation"
+            },
+            "fedora": {
+              "version": "latest",
+              "distributions": ["fedora"],
+              "supported_versions": ["38", "39", "40"],
+              "repository_setup": [
+                "sudo dnf install -y fedora-workstation-repositories",
+                "sudo dnf config-manager --set-enabled google-chrome",
+                "sudo rpm --import https://dl.google.com/linux/linux_signing_key.pub"
+              ],
+              "packages": ["google-chrome-stable"],
+              "fallback_variants": ["rpm-direct", "snap"],
+              "fallback_strategy": "auto_with_confirmation"
+            },
+            "rocky": {
+              "version": "latest",
+              "distributions": ["rocky", "almalinux", "centos"],
+              "supported_versions": ["8", "9"],
+              "repository_setup": [
+                "sudo dnf install -y dnf-plugins-core",
+                "sudo dnf config-manager --add-repo https://dl.google.com/linux/chrome/rpm/stable/x86_64",
+                "sudo rpm --import https://dl.google.com/linux/linux_signing_key.pub"
+              ],
+              "packages": ["google-chrome-stable"],
+              "fallback_variants": ["rpm-direct", "snap"],
+              "fallback_strategy": "auto_with_confirmation"
+            },
+            "deb-direct": {
+              "version": "latest",
+              "type": "deb",
+              "distributions": ["universal"],
               "urls": {
                 "x64": "https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb"
               }
+            },
+            "rpm-direct": {
+              "version": "latest",
+              "type": "rpm",
+              "distributions": ["universal"],
+              "urls": {
+                "x64": "https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm"
+              }
+            },
+            "snap": {
+              "version": "latest",
+              "type": "snap",
+              "distributions": ["universal"],
+              "packages": ["chromium"]
             }
           },
           "verification": {
-            "command": "google-chrome --version",
+            "command": "google-chrome --version || chromium --version",
+            "expected_exit_code": 0
+          }
+        },
+        "darwin": {
+          "type": "direct_download",
+          "variants": {
+            "stable": {
+              "version": "latest",
+              "url": "https://dl.google.com/chrome/mac/universal/stable/GGRO/googlechrome.dmg",
+              "extract": false,
+              "install_script": "hdiutil mount googlechrome.dmg && cp -r '/Volumes/Google Chrome/Google Chrome.app' /Applications/ && hdiutil unmount '/Volumes/Google Chrome'",
+              "requires_sudo": false
+            }
+          },
+          "verification": {
+            "command": "/Applications/Google\\ Chrome.app/Contents/MacOS/Google\\ Chrome --version",
             "expected_exit_code": 0
           }
         }
@@ -1005,6 +1130,173 @@
         }
       },
       "default_variant": "default"
+    },
+    "spice-guest-tools": {
+      "name": "SPICE Guest Tools",
+      "description": "SPICE guest tools for Windows VMs to enable clipboard sharing and enhanced display",
+      "category": "virtualization",
+      "platforms": {
+        "windows": {
+          "type": "direct_download",
+          "variants": {
+            "latest": {
+              "version": "0.141",
+              "url": "https://www.spice-space.org/download/windows/spice-guest-tools/spice-guest-tools-latest.exe",
+              "description": "Download SPICE tools for mounting in Windows VM"
+            }
+          }
+        }
+      },
+      "default_variant": "latest"
+    },
+    "act": {
+      "name": "Act",
+      "description": "Run GitHub Actions locally",
+      "category": "development",
+      "platforms": {
+        "linux": {
+          "type": "direct_download",
+          "variants": {
+            "latest": {
+              "version": "latest", 
+              "url": "https://github.com/nektos/act/releases/latest/download/act_Linux_x86_64.tar.gz",
+              "extract": true,
+              "binary": "act",
+              "install_path": "/usr/local/bin",
+              "requires_sudo": true
+            }
+          }
+        },
+        "windows": {
+          "type": "direct_download",
+          "variants": {
+            "latest": {
+              "version": "latest",
+              "url": "https://github.com/nektos/act/releases/latest/download/act_Windows_x86_64.zip",
+              "extract": true,
+              "binary": "act.exe",
+              "install_path": "C:\\Program Files\\Act",
+              "requires_admin": true
+            }
+          }
+        },
+        "darwin": {
+          "type": "direct_download",
+          "variants": {
+            "latest": {
+              "version": "latest",
+              "url": "https://github.com/nektos/act/releases/latest/download/act_Darwin_x86_64.tar.gz",
+              "extract": true,
+              "binary": "act",
+              "install_path": "/usr/local/bin",
+              "requires_sudo": true
+            }
+          }
+        }
+      },
+      "default_variant": "latest",
+      "post_install": [
+        "act --version",
+        "echo 'Act installed successfully. Docker is required to run workflows.'"
+      ]
+    },
+    "actionlint": {
+      "name": "Actionlint",
+      "description": "Static checker for GitHub Actions workflow files",
+      "category": "development",
+      "platforms": {
+        "linux": {
+          "type": "direct_download",
+          "variants": {
+            "latest": {
+              "version": "latest",
+              "url": "https://github.com/rhysd/actionlint/releases/latest/download/actionlint_1.7.4_linux_amd64.tar.gz",
+              "extract": true,
+              "binary": "actionlint",
+              "install_path": "/usr/local/bin",
+              "requires_sudo": true
+            }
+          }
+        },
+        "windows": {
+          "type": "direct_download",
+          "variants": {
+            "latest": {
+              "version": "latest",
+              "url": "https://github.com/rhysd/actionlint/releases/latest/download/actionlint_1.7.4_windows_amd64.zip",
+              "extract": true,
+              "binary": "actionlint.exe",
+              "install_path": "C:\\Program Files\\Actionlint",
+              "requires_admin": true
+            }
+          }
+        },
+        "darwin": {
+          "type": "direct_download",
+          "variants": {
+            "latest": {
+              "version": "latest",
+              "url": "https://github.com/rhysd/actionlint/releases/latest/download/actionlint_1.7.4_darwin_amd64.tar.gz",
+              "extract": true,
+              "binary": "actionlint",
+              "install_path": "/usr/local/bin",
+              "requires_sudo": true
+            }
+          }
+        }
+      },
+      "default_variant": "latest",
+      "post_install": [
+        "actionlint --version"
+      ]
+    },
+    "gh": {
+      "name": "GitHub CLI",
+      "description": "GitHub's official command line tool",
+      "category": "development",
+      "platforms": {
+        "linux": {
+          "type": "apt",
+          "variants": {
+            "latest": {
+              "version": "latest",
+              "distributions": {
+                "apt": {
+                  "repository": "deb [arch=amd64 signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main",
+                  "key_url": "https://cli.github.com/packages/githubcli-archive-keyring.gpg",
+                  "packages": ["gh"]
+                },
+                "dnf": {
+                  "repository": "https://cli.github.com/packages/rpm/gh-cli.repo",
+                  "packages": ["gh"]
+                }
+              }
+            }
+          }
+        },
+        "windows": {
+          "type": "winget",
+          "variants": {
+            "latest": {
+              "version": "latest",
+              "package_id": "GitHub.cli"
+            }
+          }
+        },
+        "darwin": {
+          "type": "brew",
+          "variants": {
+            "latest": {
+              "version": "latest",
+              "formula": "gh"
+            }
+          }
+        }
+      },
+      "default_variant": "latest",
+      "post_install": [
+        "gh --version"
+      ]
     }
   },
   "presets": {
@@ -1060,37 +1352,15 @@
         {"name": "protoc", "variant": "latest"},
         {"name": "vscode", "variant": "stable"}
       ]
-    }
-  },
-  "spice-guest-tools": {
-    "name": "SPICE Guest Tools",
-    "description": "SPICE guest tools for Windows VMs to enable clipboard sharing and enhanced display",
-    "category": "virtualization",
-    "platforms": {
-      "windows": {
-        "type": "direct_download",
-        "variants": {
-          "latest": {
-            "version": "0.141",
-            "url": "https://www.spice-space.org/download/windows/spice-guest-tools/spice-guest-tools-latest.exe",
-            "executable": "spice-guest-tools-latest.exe",
-            "args": ["/S"],
-            "requires_admin": true,
-            "notes": "Enables clipboard sharing between host and Windows VM"
-          }
-        }
-      },
-      "linux": {
-        "type": "iso_download",
-        "variants": {
-          "latest": {
-            "version": "0.141",
-            "url": "https://www.spice-space.org/download/windows/spice-guest-tools/spice-guest-tools-latest.exe",
-            "description": "Download SPICE tools for mounting in Windows VM"
-          }
-        }
-      }
     },
-    "default_variant": "latest"
+    "github-actions": {
+      "name": "GitHub Actions Development",
+      "description": "Tools for local GitHub Actions development and testing",
+      "packages": [
+        {"name": "act", "variant": "latest"},
+        {"name": "gh", "variant": "latest"},
+        {"name": "actionlint", "variant": "latest"}
+      ]
+    }
   }
 }

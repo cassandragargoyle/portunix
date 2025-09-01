@@ -1,3 +1,4 @@
+//go:build windows
 // +build windows
 
 package docker
@@ -73,7 +74,7 @@ func TestDockerDataRootConfiguration_Issue19(t *testing.T) {
 		// Test that the selected drive is actually used in configuration
 		selectedDrive := "C" // User selects C:
 		dataRoot := fmt.Sprintf("%s:\\docker-data", selectedDrive)
-		
+
 		// Verify the data root path is constructed correctly
 		if !strings.HasPrefix(dataRoot, selectedDrive) {
 			t.Errorf("Data root doesn't use selected drive. Got: %s, Want prefix: %s", dataRoot, selectedDrive)
@@ -83,12 +84,12 @@ func TestDockerDataRootConfiguration_Issue19(t *testing.T) {
 	t.Run("Should create valid Windows paths", func(t *testing.T) {
 		selectedDrive := "C"
 		dataRoot := fmt.Sprintf("%s:\\docker-data", selectedDrive)
-		
+
 		// Check for valid Windows path format
 		if !strings.Contains(dataRoot, ":\\") {
 			t.Errorf("Invalid Windows path format: %s", dataRoot)
 		}
-		
+
 		// Verify no forward slashes (Linux-style paths)
 		if strings.Contains(dataRoot, "/") {
 			t.Errorf("Data root contains Linux-style path separators: %s", dataRoot)
@@ -100,7 +101,7 @@ func TestDockerPathConfiguration_Issue19(t *testing.T) {
 	t.Run("Should add Docker to PATH", func(t *testing.T) {
 		// Check if Docker would be added to PATH correctly
 		dockerPath := `C:\Program Files\Docker\Docker\resources\bin`
-		
+
 		// This would be the actual implementation
 		// For now, we're testing the logic
 		currentPath := os.Getenv("PATH")
@@ -118,13 +119,13 @@ func TestCommandConsistency_Issue19(t *testing.T) {
 	t.Run("Both command variants should work identically", func(t *testing.T) {
 		// Test that both `portunix docker install` and `portunix install docker`
 		// produce the same results
-		
+
 		// This would test the actual command routing
 		// For unit test, we verify the function calls are consistent
-		
+
 		// Both should call the same underlying function
 		// InstallDocker(false) should be called in both cases
-		
+
 		// Mock test - actual implementation would test command routing
 		t.Log("Command consistency test placeholder - implement with integration test")
 	})
@@ -134,7 +135,7 @@ func TestCommandConsistency_Issue19(t *testing.T) {
 func mockGetWindowsDrives() ([]DriveInfo, error) {
 	// This should return actual drives, not hardcoded values
 	drives := []DriveInfo{}
-	
+
 	// Check common drive letters
 	for _, letter := range []string{"C", "D", "E", "F"} {
 		drivePath := fmt.Sprintf("%s:\\", letter)
@@ -147,10 +148,10 @@ func mockGetWindowsDrives() ([]DriveInfo, error) {
 			})
 		}
 	}
-	
+
 	// Sort by free space (largest first)
 	// In real implementation, sort by actual free space
-	
+
 	return drives, nil
 }
 
@@ -161,11 +162,11 @@ func TestWindowsDriveDetectionFix(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Drive detection failed: %v", err)
 		}
-		
+
 		if len(drives) == 0 {
 			t.Error("No drives detected")
 		}
-		
+
 		// All detected drives should be real
 		for _, drive := range drives {
 			drivePath := fmt.Sprintf("%s:\\", drive.Letter)
@@ -181,33 +182,33 @@ func TestDockerInstallationFlow_Issue19(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	
+
 	t.Run("Full installation flow should work on single-drive system", func(t *testing.T) {
 		// This would be an integration test
 		// 1. Detect drives (should find C: on single-drive system)
 		// 2. Configure Docker with correct path
 		// 3. Verify configuration is correct
 		// 4. Check PATH is updated
-		
+
 		drives, err := mockGetWindowsDrives()
 		if err != nil {
 			t.Fatalf("Drive detection failed: %v", err)
 		}
-		
+
 		// Should detect at least C: drive
 		if len(drives) == 0 {
 			t.Fatal("No drives detected on Windows system")
 		}
-		
+
 		// Select first available drive (should be C: on single-drive system)
 		selectedDrive := drives[0].Letter
 		dataRoot := fmt.Sprintf("%s:\\docker-data", selectedDrive)
-		
+
 		// Verify configuration would be correct
 		if selectedDrive != "C" && len(drives) == 1 {
 			t.Error("Single-drive system should default to C:")
 		}
-		
+
 		// Verify data root path is valid
 		if !strings.HasPrefix(dataRoot, selectedDrive) {
 			t.Errorf("Data root doesn't match selected drive: %s", dataRoot)

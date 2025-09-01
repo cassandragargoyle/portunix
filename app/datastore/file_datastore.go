@@ -15,13 +15,13 @@ import (
 
 // FileDatastore implements DatastoreInterface using local filesystem
 type FileDatastore struct {
-	basePath           string
-	format             string
-	createDirectories  bool
-	backupEnabled      bool
-	mu                 sync.RWMutex
-	stats              *Stats
-	startTime          time.Time
+	basePath          string
+	format            string
+	createDirectories bool
+	backupEnabled     bool
+	mu                sync.RWMutex
+	stats             *Stats
+	startTime         time.Time
 }
 
 // FileEntry represents a stored file entry with metadata
@@ -101,7 +101,7 @@ func (f *FileDatastore) Store(ctx context.Context, key string, value interface{}
 	defer f.mu.Unlock()
 
 	filePath := f.getFilePath(key)
-	
+
 	// Create directory if needed
 	if f.createDirectories {
 		if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
@@ -154,7 +154,7 @@ func (f *FileDatastore) Retrieve(ctx context.Context, key string, filter map[str
 	defer f.mu.RUnlock()
 
 	filePath := f.getFilePath(key)
-	
+
 	entry, err := f.loadEntry(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load entry: %w", err)
@@ -174,7 +174,7 @@ func (f *FileDatastore) Query(ctx context.Context, criteria QueryCriteria) ([]Qu
 	defer f.mu.RUnlock()
 
 	var results []QueryResult
-	
+
 	// Determine search path based on collection
 	searchPath := f.basePath
 	if criteria.Collection != "" {
@@ -208,7 +208,7 @@ func (f *FileDatastore) Query(ctx context.Context, criteria QueryCriteria) ([]Qu
 
 		// Convert file path back to key
 		key := f.pathToKey(path)
-		
+
 		results = append(results, QueryResult{
 			Key:      key,
 			Value:    entry.Value,
@@ -235,7 +235,7 @@ func (f *FileDatastore) Delete(ctx context.Context, key string) error {
 	defer f.mu.Unlock()
 
 	filePath := f.getFilePath(key)
-	
+
 	// Backup before deletion if enabled
 	if f.backupEnabled {
 		if err := f.backupFile(filePath); err != nil {
@@ -257,7 +257,7 @@ func (f *FileDatastore) List(ctx context.Context, pattern string) ([]string, err
 	defer f.mu.RUnlock()
 
 	var keys []string
-	
+
 	err := filepath.Walk(f.basePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return nil // Skip errors
@@ -309,10 +309,10 @@ func (f *FileDatastore) Health(ctx context.Context) (*HealthStatus, error) {
 		Uptime:    time.Since(f.startTime),
 		LastCheck: time.Now(),
 		Metrics: map[string]string{
-			"base_path":   f.basePath,
-			"format":      f.format,
-			"total_keys":  fmt.Sprintf("%d", f.stats.TotalKeys),
-			"total_size":  fmt.Sprintf("%d", f.stats.TotalSize),
+			"base_path":  f.basePath,
+			"format":     f.format,
+			"total_keys": fmt.Sprintf("%d", f.stats.TotalKeys),
+			"total_size": fmt.Sprintf("%d", f.stats.TotalSize),
 		},
 	}, nil
 }
@@ -336,26 +336,26 @@ func (f *FileDatastore) Close(ctx context.Context) error {
 func (f *FileDatastore) getFilePath(key string) string {
 	// Replace path separators in key to create safe file path
 	safePath := strings.ReplaceAll(key, "/", string(os.PathSeparator))
-	
+
 	// Add file extension based on format
 	ext := "." + f.format
 	if !strings.HasSuffix(safePath, ext) {
 		safePath += ext
 	}
-	
+
 	return filepath.Join(f.basePath, safePath)
 }
 
 func (f *FileDatastore) pathToKey(path string) string {
 	// Convert file path back to key
 	relPath, _ := filepath.Rel(f.basePath, path)
-	
+
 	// Remove file extension
 	ext := filepath.Ext(relPath)
 	if ext != "" {
 		relPath = strings.TrimSuffix(relPath, ext)
 	}
-	
+
 	// Convert path separators back to forward slashes
 	return strings.ReplaceAll(relPath, string(os.PathSeparator), "/")
 }
@@ -393,7 +393,7 @@ func (f *FileDatastore) loadEntry(filePath string) (*FileEntry, error) {
 
 	var entry FileEntry
 	ext := filepath.Ext(filePath)
-	
+
 	switch ext {
 	case ".json":
 		err = json.Unmarshal(data, &entry)
@@ -487,7 +487,7 @@ func (f *FileDatastore) backupFile(filePath string) error {
 	}
 
 	backupPath := filePath + ".backup." + time.Now().Format("20060102-150405")
-	
+
 	input, err := os.ReadFile(filePath)
 	if err != nil {
 		return err

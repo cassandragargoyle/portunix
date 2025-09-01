@@ -1,0 +1,1 @@
+ln -sfn tester.md .claude/roles/current.md 

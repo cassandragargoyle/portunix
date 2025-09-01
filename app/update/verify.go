@@ -25,17 +25,17 @@ func VerifyArchiveChecksum(archivePath string, checksumURL string, archiveName s
 	if err != nil {
 		return fmt.Errorf("failed to download checksum: %w", err)
 	}
-	
+
 	// Parse checksum file to find the right entry
 	lines := strings.Split(string(checksumData), "\n")
 	var expectedSum string
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		
+
 		// Format: "checksum  filename"
 		parts := strings.Fields(line)
 		if len(parts) >= 2 && parts[1] == archiveName {
@@ -43,22 +43,22 @@ func VerifyArchiveChecksum(archivePath string, checksumURL string, archiveName s
 			break
 		}
 	}
-	
+
 	if expectedSum == "" {
 		return fmt.Errorf("checksum not found for %s", archiveName)
 	}
-	
+
 	// Calculate actual checksum
 	actualSum, err := CalculateSHA256(archivePath)
 	if err != nil {
 		return fmt.Errorf("failed to calculate checksum: %w", err)
 	}
-	
+
 	// Compare checksums
 	if actualSum != expectedSum {
 		return fmt.Errorf("checksum mismatch: expected %s, got %s", expectedSum, actualSum)
 	}
-	
+
 	return nil
 }
 
@@ -69,12 +69,12 @@ func CalculateSHA256(filepath string) (string, error) {
 		return "", fmt.Errorf("failed to open file: %w", err)
 	}
 	defer file.Close()
-	
+
 	hash := sha256.New()
 	if _, err := io.Copy(hash, file); err != nil {
 		return "", fmt.Errorf("failed to hash file: %w", err)
 	}
-	
+
 	return hex.EncodeToString(hash.Sum(nil)), nil
 }
 
@@ -84,12 +84,12 @@ func GenerateChecksum(binaryPath string, outputPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to calculate checksum: %w", err)
 	}
-	
+
 	// Write checksum to file
 	content := fmt.Sprintf("%s  %s\n", checksum, binaryPath)
 	if err := os.WriteFile(outputPath, []byte(content), 0644); err != nil {
 		return fmt.Errorf("failed to write checksum file: %w", err)
 	}
-	
+
 	return nil
 }

@@ -2,8 +2,8 @@ package edge
 
 import (
 	"fmt"
-	"os"
 	"gopkg.in/yaml.v3"
+	"os"
 )
 
 // Config represents the edge infrastructure configuration
@@ -13,15 +13,15 @@ type Config struct {
 
 // EdgeConfig contains all edge infrastructure settings
 type EdgeConfig struct {
-	Name        string            `yaml:"name"`
-	Description string            `yaml:"description"`
-	Server      ServerConfig      `yaml:"server"`
-	Domains     []DomainConfig    `yaml:"domains"`
-	VPN         VPNConfig         `yaml:"vpn"`
-	Security    SecurityConfig    `yaml:"security"`
-	Containers  ContainerConfig   `yaml:"containers"`
-	Monitoring  MonitoringConfig  `yaml:"monitoring,omitempty"`
-	Backup      BackupConfig      `yaml:"backup,omitempty"`
+	Name        string           `yaml:"name"`
+	Description string           `yaml:"description"`
+	Server      ServerConfig     `yaml:"server"`
+	Domains     []DomainConfig   `yaml:"domains"`
+	VPN         VPNConfig        `yaml:"vpn"`
+	Security    SecurityConfig   `yaml:"security"`
+	Containers  ContainerConfig  `yaml:"containers"`
+	Monitoring  MonitoringConfig `yaml:"monitoring,omitempty"`
+	Backup      BackupConfig     `yaml:"backup,omitempty"`
 }
 
 // ServerConfig contains VPS server settings
@@ -33,12 +33,12 @@ type ServerConfig struct {
 
 // DomainConfig contains domain and routing settings
 type DomainConfig struct {
-	Name     string        `yaml:"name"`
-	Type     string        `yaml:"type"` // primary, additional
+	Name     string         `yaml:"name"`
+	Type     string         `yaml:"type"` // primary, additional
 	Upstream UpstreamConfig `yaml:"upstream"`
-	Static   *StaticConfig `yaml:"static,omitempty"`
-	TLS      TLSConfig     `yaml:"tls"`
-	Paths    []PathConfig  `yaml:"paths,omitempty"`
+	Static   *StaticConfig  `yaml:"static,omitempty"`
+	TLS      TLSConfig      `yaml:"tls"`
+	Paths    []PathConfig   `yaml:"paths,omitempty"`
 }
 
 // UpstreamConfig contains upstream service settings
@@ -94,9 +94,9 @@ type SecurityConfig struct {
 
 // FirewallConfig contains firewall settings
 type FirewallConfig struct {
-	Enabled    bool               `yaml:"enabled"`
-	SSHPort    int                `yaml:"ssh_port"`
-	AllowedIPs []AllowedIPConfig  `yaml:"allowed_ips,omitempty"`
+	Enabled    bool              `yaml:"enabled"`
+	SSHPort    int               `yaml:"ssh_port"`
+	AllowedIPs []AllowedIPConfig `yaml:"allowed_ips,omitempty"`
 }
 
 // AllowedIPConfig represents an allowed IP configuration
@@ -107,10 +107,10 @@ type AllowedIPConfig struct {
 
 // Fail2banConfig contains fail2ban settings
 type Fail2banConfig struct {
-	Enabled   bool `yaml:"enabled"`
-	BanTime   int  `yaml:"ban_time"`   // seconds
-	MaxRetry  int  `yaml:"max_retry"`
-	FindTime  int  `yaml:"find_time"`  // seconds
+	Enabled  bool `yaml:"enabled"`
+	BanTime  int  `yaml:"ban_time"` // seconds
+	MaxRetry int  `yaml:"max_retry"`
+	FindTime int  `yaml:"find_time"` // seconds
 }
 
 // SSLConfig contains SSL/TLS settings
@@ -122,10 +122,10 @@ type SSLConfig struct {
 
 // ContainerConfig contains container runtime settings
 type ContainerConfig struct {
-	Runtime    string                    `yaml:"runtime"`     // podman, docker
-	Network    string                    `yaml:"network"`
-	AutoUpdate bool                      `yaml:"auto_update"`
-	Services   map[string]ServiceConfig  `yaml:"services,omitempty"`
+	Runtime    string                   `yaml:"runtime"` // podman, docker
+	Network    string                   `yaml:"network"`
+	AutoUpdate bool                     `yaml:"auto_update"`
+	Services   map[string]ServiceConfig `yaml:"services,omitempty"`
 }
 
 // ServiceConfig contains individual service settings
@@ -148,9 +148,9 @@ type MonitoringConfig struct {
 
 // BackupConfig contains backup settings
 type BackupConfig struct {
-	Enabled      bool                     `yaml:"enabled"`
-	Schedule     string                   `yaml:"schedule"` // cron format
-	Retention    string                   `yaml:"retention"`
+	Enabled      bool                      `yaml:"enabled"`
+	Schedule     string                    `yaml:"schedule"` // cron format
+	Retention    string                    `yaml:"retention"`
 	Destinations []BackupDestinationConfig `yaml:"destinations"`
 }
 

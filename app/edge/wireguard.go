@@ -7,9 +7,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	
+
 	"strings"
-	
+
 	"golang.org/x/crypto/curve25519"
 )
 
@@ -25,7 +25,7 @@ func GenerateWireGuardKeyPair() (*WireGuardKeyPair, error) {
 	if _, err := exec.LookPath("wg"); err == nil {
 		return generateKeyPairWithWG()
 	}
-	
+
 	// Fallback to pure Go implementation
 	return generateKeyPairPureGo()
 }
@@ -39,7 +39,7 @@ func generateKeyPairWithWG() (*WireGuardKeyPair, error) {
 		return nil, fmt.Errorf("failed to generate private key: %w", err)
 	}
 	privateKey := string(privateKeyBytes[:len(privateKeyBytes)-1]) // Remove newline
-	
+
 	// Generate public key from private key
 	publicKeyCmd := exec.Command("wg", "pubkey")
 	publicKeyCmd.Stdin = strings.NewReader(privateKey)
@@ -48,7 +48,7 @@ func generateKeyPairWithWG() (*WireGuardKeyPair, error) {
 		return nil, fmt.Errorf("failed to generate public key: %w", err)
 	}
 	publicKey := string(publicKeyBytes[:len(publicKeyBytes)-1]) // Remove newline
-	
+
 	return &WireGuardKeyPair{
 		PrivateKey: privateKey,
 		PublicKey:  publicKey,
@@ -62,20 +62,20 @@ func generateKeyPairPureGo() (*WireGuardKeyPair, error) {
 	if _, err := rand.Read(privateKeyBytes[:]); err != nil {
 		return nil, fmt.Errorf("failed to generate random private key: %w", err)
 	}
-	
+
 	// Apply WireGuard key clamping
 	privateKeyBytes[0] &= 248
 	privateKeyBytes[31] &= 127
 	privateKeyBytes[31] |= 64
-	
+
 	// Generate public key using curve25519
 	var publicKeyBytes [32]byte
 	curve25519.ScalarBaseMult(&publicKeyBytes, &privateKeyBytes)
-	
+
 	// Encode keys to base64
 	privateKey := base64.StdEncoding.EncodeToString(privateKeyBytes[:])
 	publicKey := base64.StdEncoding.EncodeToString(publicKeyBytes[:])
-	
+
 	return &WireGuardKeyPair{
 		PrivateKey: privateKey,
 		PublicKey:  publicKey,
@@ -87,9 +87,9 @@ func (m *Manager) GenerateWireGuardConfig(config *Config, configPath string) err
 	// Generate server key pair if not exists
 	serverPrivateKeyFile := filepath.Join(configPath, "wireguard", "server_private.key")
 	serverPublicKeyFile := filepath.Join(configPath, "wireguard", "server_public.key")
-	
+
 	var serverKeyPair *WireGuardKeyPair
-	
+
 	// Check if keys already exist
 	if _, err := os.Stat(serverPrivateKeyFile); os.IsNotExist(err) {
 		// Generate new key pair
@@ -97,7 +97,7 @@ func (m *Manager) GenerateWireGuardConfig(config *Config, configPath string) err
 		if err != nil {
 			return fmt.Errorf("failed to generate server key pair: %w", err)
 		}
-		
+
 		// Save keys
 		if err := os.WriteFile(serverPrivateKeyFile, []byte(serverKeyPair.PrivateKey), 0600); err != nil {
 			return fmt.Errorf("failed to save server private key: %w", err)
@@ -105,7 +105,7 @@ func (m *Manager) GenerateWireGuardConfig(config *Config, configPath string) err
 		if err := os.WriteFile(serverPublicKeyFile, []byte(serverKeyPair.PublicKey), 0644); err != nil {
 			return fmt.Errorf("failed to save server public key: %w", err)
 		}
-		
+
 		fmt.Println("✅ Generated new WireGuard server key pair")
 	} else {
 		// Load existing keys
@@ -117,15 +117,15 @@ func (m *Manager) GenerateWireGuardConfig(config *Config, configPath string) err
 		if err != nil {
 			return fmt.Errorf("failed to read server public key: %w", err)
 		}
-		
+
 		serverKeyPair = &WireGuardKeyPair{
 			PrivateKey: string(privateKeyBytes),
 			PublicKey:  string(publicKeyBytes),
 		}
-		
+
 		fmt.Println("✅ Using existing WireGuard server key pair")
 	}
-	
+
 	// Generate configuration file with actual keys
 	serverConfig := fmt.Sprintf(`[Interface]
 PrivateKey = %s
@@ -148,17 +148,17 @@ PersistentKeepalive = %d
 
 `, client.Name, client.PublicKey, client.IP, client.PersistentKeepalive)
 	}
-	
+
 	// Save configuration
 	configFile := filepath.Join(configPath, "wireguard", "wg0.conf")
 	if err := os.WriteFile(configFile, []byte(serverConfig), 0600); err != nil {
 		return fmt.Errorf("failed to save WireGuard configuration: %w", err)
 	}
-	
+
 	fmt.Printf("📝 WireGuard configuration saved to %s\n", configFile)
 	fmt.Printf("🔑 Server Public Key: %s\n", serverKeyPair.PublicKey)
 	fmt.Println("\nShare this public key with clients for their configuration")
-	
+
 	return nil
 }
 
@@ -169,7 +169,7 @@ func (m *Manager) GenerateClientConfig(clientName, serverPublicKey, serverEndpoi
 	if err != nil {
 		return nil, "", fmt.Errorf("failed to generate client key pair: %w", err)
 	}
-	
+
 	// Generate client configuration
 	clientConfig := fmt.Sprintf(`[Interface]
 # Client: %s
@@ -184,6 +184,6 @@ Endpoint = %s
 AllowedIPs = 10.10.10.0/24, 192.168.0.0/16
 PersistentKeepalive = 25
 `, clientName, clientKeyPair.PrivateKey, serverPublicKey, serverEndpoint)
-	
+
 	return clientKeyPair, clientConfig, nil
 }

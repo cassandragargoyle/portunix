@@ -20,30 +20,30 @@ type Registry struct {
 
 // RegistryData represents the structure of the registry file
 type RegistryData struct {
-	Version    string                       `json:"version"`
-	LastUpdate time.Time                    `json:"last_update"`
-	Plugins    map[string]*RegistryPlugin   `json:"plugins"`
+	Version    string                     `json:"version"`
+	LastUpdate time.Time                  `json:"last_update"`
+	Plugins    map[string]*RegistryPlugin `json:"plugins"`
 }
 
 // RegistryPlugin represents a plugin entry in the registry
 type RegistryPlugin struct {
-	Name                string                    `json:"name"`
-	Version             string                    `json:"version"`
-	Description         string                    `json:"description"`
-	Author              string                    `json:"author"`
-	License             string                    `json:"license"`
-	InstallPath         string                    `json:"install_path"`
-	BinaryName          string                    `json:"binary_name"`
-	Port                int                       `json:"port"`
-	Status              plugins.PluginStatus      `json:"status"`
-	InstallTime         time.Time                 `json:"install_time"`
-	LastSeen            time.Time                 `json:"last_seen"`
-	SupportedOS         []string                  `json:"supported_os"`
-	Commands            []plugins.PluginCommand   `json:"commands"`
-	Capabilities        plugins.PluginCapabilities `json:"capabilities"`
-	RequiredPermissions plugins.PluginPermissions  `json:"required_permissions"`
+	Name                string                      `json:"name"`
+	Version             string                      `json:"version"`
+	Description         string                      `json:"description"`
+	Author              string                      `json:"author"`
+	License             string                      `json:"license"`
+	InstallPath         string                      `json:"install_path"`
+	BinaryName          string                      `json:"binary_name"`
+	Port                int                         `json:"port"`
+	Status              plugins.PluginStatus        `json:"status"`
+	InstallTime         time.Time                   `json:"install_time"`
+	LastSeen            time.Time                   `json:"last_seen"`
+	SupportedOS         []string                    `json:"supported_os"`
+	Commands            []plugins.PluginCommand     `json:"commands"`
+	Capabilities        plugins.PluginCapabilities  `json:"capabilities"`
+	RequiredPermissions plugins.PluginPermissions   `json:"required_permissions"`
 	AIIntegration       plugins.AIIntegrationConfig `json:"ai_integration"`
-	Enabled             bool                      `json:"enabled"`
+	Enabled             bool                        `json:"enabled"`
 }
 
 // NewRegistry creates a new plugin registry
@@ -358,7 +358,7 @@ func (r *Registry) GetRegistryStats() map[string]interface{} {
 
 	stats := make(map[string]interface{})
 	stats["total_plugins"] = len(r.data.Plugins)
-	
+
 	var enabled, running, stopped, failed int
 	for _, plugin := range r.data.Plugins {
 		if plugin.Enabled {
@@ -373,7 +373,7 @@ func (r *Registry) GetRegistryStats() map[string]interface{} {
 			failed++
 		}
 	}
-	
+
 	stats["enabled_plugins"] = enabled
 	stats["running_plugins"] = running
 	stats["stopped_plugins"] = stopped

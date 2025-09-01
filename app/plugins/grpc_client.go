@@ -189,10 +189,10 @@ func (p *GRPCPlugin) IsRunning() bool {
 // startPluginBinary starts the plugin binary process
 func (p *GRPCPlugin) startPluginBinary(ctx context.Context) error {
 	args := []string{"--port", strconv.Itoa(p.config.Port)}
-	
+
 	p.cmd = exec.CommandContext(ctx, p.config.BinaryPath, args...)
 	p.cmd.Dir = p.config.WorkingDir
-	
+
 	// Set environment variables
 	if p.config.Environment != nil {
 		for key, value := range p.config.Environment {
@@ -237,7 +237,7 @@ func (p *GRPCPlugin) stopPluginBinary() error {
 // connectGRPC establishes gRPC connection to the plugin
 func (p *GRPCPlugin) connectGRPC(ctx context.Context) error {
 	address := fmt.Sprintf("localhost:%d", p.config.Port)
-	
+
 	conn, err := grpc.DialContext(
 		ctx,
 		address,

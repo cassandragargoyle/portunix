@@ -19,7 +19,7 @@ func (m *Manager) getContainerStatus(containerName string) string {
 			return ""
 		}
 	}
-	
+
 	return strings.TrimSpace(string(output))
 }
 
@@ -52,7 +52,7 @@ func (m *Manager) showContainerLogs(containerName string, follow bool, tail int)
 		args = append(args, "--tail", fmt.Sprintf("%d", tail))
 	}
 	args = append(args, containerName)
-	
+
 	cmd := exec.Command("podman", args...)
 	if err := cmd.Run(); err != nil {
 		// Try with docker if podman fails

@@ -34,7 +34,7 @@ func getClaudePath() (string, error) {
 	// Common installation paths with environment expansion
 	commonPaths := []string{
 		"/usr/local/bin/claude",
-		"/usr/bin/claude", 
+		"/usr/bin/claude",
 		"/opt/homebrew/bin/claude",
 		os.ExpandEnv("$HOME/.local/bin/claude"),
 		os.ExpandEnv("$HOME/.nvm/versions/node/*/bin/claude"),
@@ -64,7 +64,7 @@ func getClaudePath() (string, error) {
 				}
 			}
 		}
-		
+
 		// Fallback to specific version
 		nvmPath := filepath.Join(home, ".nvm/versions/node/v22.17.1/bin/claude")
 		if info, err := os.Stat(nvmPath); err == nil && !info.IsDir() {
@@ -106,7 +106,7 @@ func contains(s, substr string) bool {
 
 // removeMCPServerFromClaudeCode removes Portunix MCP server from Claude Code
 func removeMCPServerFromClaudeCode() error {
-	// Find claude executable  
+	// Find claude executable
 	claudePath, err := getClaudePath()
 	if err != nil {
 		return fmt.Errorf("claude executable not found: %w", err)

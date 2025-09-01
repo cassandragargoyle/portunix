@@ -11,26 +11,26 @@ func TestSelectComponent_GetSetValue(t *testing.T) {
 		{Value: "option1", Label: "Option 1"},
 		{Value: "option2", Label: "Option 2"},
 	}
-	
+
 	comp := NewSelectComponent("Test Select", "Choose option:", options)
-	
+
 	// Test initial state
 	if comp.GetValue() != "" {
 		t.Errorf("Expected empty initial value, got '%v'", comp.GetValue())
 	}
-	
+
 	// Test setting value
 	comp.SetValue("option1")
 	if comp.GetValue() != "option1" {
 		t.Errorf("Expected 'option1', got '%v'", comp.GetValue())
 	}
-	
+
 	// Test validation
 	err := comp.Validate()
 	if err != nil {
 		t.Errorf("Validation should pass with selected value: %v", err)
 	}
-	
+
 	// Test validation with no selection
 	comp.SetValue("")
 	err = comp.Validate()
@@ -41,7 +41,7 @@ func TestSelectComponent_GetSetValue(t *testing.T) {
 
 func TestInputComponent_Validation(t *testing.T) {
 	comp := NewInputComponent("Test Input", "Enter value:")
-	
+
 	tests := []struct {
 		name       string
 		validation *wizard.ValidationRule
@@ -119,18 +119,18 @@ func TestInputComponent_Validation(t *testing.T) {
 			shouldFail: true,
 		},
 	}
-	
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			comp.Validation = test.validation
 			comp.SetValue(test.value)
-			
+
 			err := comp.Validate()
-			
+
 			if test.shouldFail && err == nil {
 				t.Error("Expected validation to fail, but it passed")
 			}
-			
+
 			if !test.shouldFail && err != nil {
 				t.Errorf("Expected validation to pass, but got error: %v", err)
 			}
@@ -140,18 +140,18 @@ func TestInputComponent_Validation(t *testing.T) {
 
 func TestConfirmComponent_GetSetValue(t *testing.T) {
 	comp := NewConfirmComponent("Test Confirm", "Continue?")
-	
+
 	// Test initial state
 	if comp.GetValue() != false {
 		t.Errorf("Expected false initial value, got '%v'", comp.GetValue())
 	}
-	
+
 	// Test setting value
 	comp.SetValue(true)
 	if comp.GetValue() != true {
 		t.Errorf("Expected true, got '%v'", comp.GetValue())
 	}
-	
+
 	// Test validation (should always pass)
 	err := comp.Validate()
 	if err != nil {
@@ -165,27 +165,27 @@ func TestMultiSelectComponent_GetSetValue(t *testing.T) {
 		{Value: "option2", Label: "Option 2"},
 		{Value: "option3", Label: "Option 3"},
 	}
-	
+
 	comp := NewMultiSelectComponent("Test MultiSelect", "Choose options:", options)
-	
+
 	// Test initial state
 	if comp.GetValue() == nil {
 		t.Error("Expected non-nil initial value")
 	}
-	
+
 	// Test setting values
 	testValues := []string{"option1", "option3"}
 	comp.SetValue(testValues)
-	
+
 	result := comp.GetValue().([]string)
 	if len(result) != 2 {
 		t.Errorf("Expected 2 selected values, got %d", len(result))
 	}
-	
+
 	if result[0] != "option1" || result[1] != "option3" {
 		t.Errorf("Expected ['option1', 'option3'], got %v", result)
 	}
-	
+
 	// Test validation (should always pass for multi-select)
 	err := comp.Validate()
 	if err != nil {
@@ -195,12 +195,12 @@ func TestMultiSelectComponent_GetSetValue(t *testing.T) {
 
 func TestEvaluateCondition(t *testing.T) {
 	variables := map[string]interface{}{
-		"str_var":  "hello",
-		"bool_var": true,
+		"str_var":   "hello",
+		"bool_var":  true,
 		"false_var": false,
-		"num_var":  42,
+		"num_var":   42,
 	}
-	
+
 	tests := []struct {
 		condition string
 		expected  bool
@@ -219,7 +219,7 @@ func TestEvaluateCondition(t *testing.T) {
 		{"", false},
 		{"invalid condition format", false},
 	}
-	
+
 	for _, test := range tests {
 		t.Run(test.condition, func(t *testing.T) {
 			result := EvaluateCondition(test.condition, variables)

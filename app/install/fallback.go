@@ -11,10 +11,10 @@ import (
 type FallbackStrategy string
 
 const (
-	FallbackAuto            FallbackStrategy = "auto"                // Automatic fallback without confirmation
-	FallbackAutoConfirm     FallbackStrategy = "auto_with_confirmation" // Automatic with user confirmation
-	FallbackManual          FallbackStrategy = "manual"             // Manual fallback only
-	FallbackDisabled        FallbackStrategy = "disabled"           // No fallback
+	FallbackAuto        FallbackStrategy = "auto"                   // Automatic fallback without confirmation
+	FallbackAutoConfirm FallbackStrategy = "auto_with_confirmation" // Automatic with user confirmation
+	FallbackManual      FallbackStrategy = "manual"                 // Manual fallback only
+	FallbackDisabled    FallbackStrategy = "disabled"               // No fallback
 )
 
 // FallbackManager handles the fallback chain execution
@@ -36,19 +36,19 @@ func (fb *FallbackManager) ExecuteFallback(packageName string, originalVariant s
 	fmt.Printf("Package: %s\n", packageName)
 	fmt.Printf("Variant: %s\n", originalVariant)
 	fmt.Printf("Reason: %s\n", reason)
-	
+
 	// If no fallback variants or fallback disabled, show manual instructions
 	if len(fallbackVariants) == 0 || strategy == FallbackDisabled {
 		return fb.showManualInstructions(packageName, originalVariant)
 	}
 
 	fmt.Println("\n✅ Alternative options:")
-	
+
 	// Show available fallback options
 	for i, variant := range fallbackVariants {
 		fmt.Printf("%d. Install via %s variant:\n", i+1, variant)
 		fmt.Printf("   ./portunix install %s --variant %s\n", packageName, variant)
-		
+
 		// Get variant description if available
 		if description := fb.getVariantDescription(packageName, variant, config); description != "" {
 			fmt.Printf("   %s\n", description)
@@ -73,7 +73,7 @@ func (fb *FallbackManager) ExecuteFallback(packageName string, originalVariant s
 			fmt.Printf("🔄 Automatically trying %s variant...\n", fallbackVariants[0])
 			return fb.attemptFallbackInstall(packageName, fallbackVariants[0])
 		}
-		
+
 	case FallbackAutoConfirm:
 		// Ask user for confirmation
 		if len(fallbackVariants) > 0 {
@@ -82,11 +82,11 @@ func (fb *FallbackManager) ExecuteFallback(packageName string, originalVariant s
 				return fb.attemptFallbackInstall(packageName, fallbackVariants[0])
 			}
 		}
-		
+
 	case FallbackManual:
 		// Just show options, no automatic execution
 		fmt.Println("Please choose one of the above options and run the command manually.")
-		
+
 	case FallbackDisabled:
 		// This case is handled above
 		break
@@ -103,7 +103,7 @@ func (fb *FallbackManager) attemptFallbackInstall(packageName, fallbackVariant s
 		fmt.Printf("❌ Fallback installation also failed: %v\n", err)
 		return err
 	}
-	
+
 	fmt.Printf("✅ Successfully installed %s using %s variant!\n", packageName, fallbackVariant)
 	return nil
 }
@@ -111,20 +111,20 @@ func (fb *FallbackManager) attemptFallbackInstall(packageName, fallbackVariant s
 // promptUserConfirmation prompts user for yes/no confirmation
 func (fb *FallbackManager) promptUserConfirmation(message string) bool {
 	fmt.Printf("%s [Y/n] ", message)
-	
+
 	reader := bufio.NewReader(os.Stdin)
 	response, err := reader.ReadString('\n')
 	if err != nil {
 		return false
 	}
-	
+
 	response = strings.TrimSpace(strings.ToLower(response))
-	
+
 	// Default to yes if empty response
 	if response == "" || response == "y" || response == "yes" {
 		return true
 	}
-	
+
 	return false
 }
 
@@ -141,27 +141,28 @@ func (fb *FallbackManager) getVariantDescription(packageName, variant string, co
 			"elementary": "(native APT repository for Elementary OS)",
 		},
 	}
-	
+
 	if packageDescriptions, exists := descriptions[packageName]; exists {
 		if description, exists := packageDescriptions[variant]; exists {
 			return description
 		}
 	}
-	
+
 	// Try to get description from config
 	if pkg, exists := config.Packages[packageName]; exists {
 		if platform, exists := pkg.Platforms["linux"]; exists {
 			if variantConfig, exists := platform.Variants[variant]; exists {
-				if len(variantConfig.Distributions) > 0 {
-					if variantConfig.Distributions[0] == "universal" {
+				distributionsList := variantConfig.GetDistributionsList()
+				if len(distributionsList) > 0 {
+					if distributionsList[0] == "universal" {
 						return "(universal compatibility)"
 					}
-					return fmt.Sprintf("(for %s)", strings.Join(variantConfig.Distributions, ", "))
+					return fmt.Sprintf("(for %s)", strings.Join(distributionsList, ", "))
 				}
 			}
 		}
 	}
-	
+
 	return ""
 }
 
@@ -176,7 +177,7 @@ func (fb *FallbackManager) getManualInstallationURL(packageName string) string {
 		"python":     "https://www.python.org/downloads/source/",
 		"go":         "https://golang.org/doc/install",
 	}
-	
+
 	return urls[packageName]
 }
 
@@ -185,19 +186,19 @@ func (fb *FallbackManager) showManualInstructions(packageName, variant string) e
 	fmt.Println("\n📖 Manual Installation Required")
 	fmt.Printf("Package: %s (variant: %s)\n", packageName, variant)
 	fmt.Println()
-	
+
 	if url := fb.getManualInstallationURL(packageName); url != "" {
 		fmt.Printf("Please follow the official documentation: %s\n", url)
 	} else {
 		fmt.Printf("Please consult the official documentation for %s installation.\n", packageName)
 	}
-	
+
 	fmt.Println()
 	fmt.Println("Common alternatives:")
 	fmt.Printf("• Check if package is available via system package manager\n")
 	fmt.Printf("• Download from official website\n")
 	fmt.Printf("• Use container/snap version if available\n")
-	
+
 	return fmt.Errorf("manual installation required - no automatic fallback available")
 }
 
@@ -206,12 +207,12 @@ func (fb *FallbackManager) ShouldTriggerFallback(err error, supportLevel Support
 	if err == nil {
 		return false
 	}
-	
+
 	// Always trigger fallback for unsupported versions
 	if supportLevel == Unsupported {
 		return true
 	}
-	
+
 	// Trigger fallback for common installation failures
 	errorString := err.Error()
 	triggerKeywords := []string{
@@ -222,13 +223,13 @@ func (fb *FallbackManager) ShouldTriggerFallback(err error, supportLevel Support
 		"failed to download",
 		"command not found",
 	}
-	
+
 	for _, keyword := range triggerKeywords {
 		if strings.Contains(strings.ToLower(errorString), keyword) {
 			return true
 		}
 	}
-	
+
 	return false
 }
 

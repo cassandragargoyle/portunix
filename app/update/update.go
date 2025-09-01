@@ -15,20 +15,20 @@ func CreateBackup() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to get executable path: %w", err)
 	}
-	
+
 	// Resolve symlinks
 	execPath, err = filepath.EvalSymlinks(execPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to resolve symlinks: %w", err)
 	}
-	
+
 	backupPath := execPath + ".backup"
-	
+
 	// Copy current binary to backup
 	if err := copyFile(execPath, backupPath); err != nil {
 		return "", fmt.Errorf("failed to create backup: %w", err)
 	}
-	
+
 	return backupPath, nil
 }
 
@@ -37,18 +37,18 @@ func RestoreBackup(backupPath string) error {
 	if backupPath == "" {
 		return fmt.Errorf("no backup path provided")
 	}
-	
+
 	execPath, err := os.Executable()
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
-	
+
 	// Resolve symlinks
 	execPath, err = filepath.EvalSymlinks(execPath)
 	if err != nil {
 		return fmt.Errorf("failed to resolve symlinks: %w", err)
 	}
-	
+
 	// On Windows, we need to rename the files instead of overwriting
 	if runtime.GOOS == "windows" {
 		// First, try to rename backup to a temp location
@@ -56,20 +56,20 @@ func RestoreBackup(backupPath string) error {
 		if err := copyFile(backupPath, tempPath); err != nil {
 			return fmt.Errorf("failed to prepare restore: %w", err)
 		}
-		
+
 		// Try to remove the current (broken) binary
 		if err := os.Remove(execPath); err != nil {
 			// If we can't remove it, we don't have permission
 			os.Remove(tempPath)
 			return fmt.Errorf("failed to remove broken binary: %w", err)
 		}
-		
+
 		// Rename temp to original location
 		if err := os.Rename(tempPath, execPath); err != nil {
 			os.Remove(tempPath)
 			return fmt.Errorf("failed to restore backup: %w", err)
 		}
-		
+
 		// Remove backup file
 		os.Remove(backupPath)
 	} else {
@@ -78,7 +78,7 @@ func RestoreBackup(backupPath string) error {
 			return fmt.Errorf("failed to restore backup: %w", err)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -88,13 +88,13 @@ func ApplyUpdate(newBinaryPath string) error {
 	if err != nil {
 		return fmt.Errorf("failed to get executable path: %w", err)
 	}
-	
+
 	// Resolve symlinks
 	execPath, err = filepath.EvalSymlinks(execPath)
 	if err != nil {
 		return fmt.Errorf("failed to resolve symlinks: %w", err)
 	}
-	
+
 	// Check if we have write permission
 	if err := checkWritePermission(execPath); err != nil {
 		if runtime.GOOS != "windows" {
@@ -102,12 +102,12 @@ func ApplyUpdate(newBinaryPath string) error {
 		}
 		return fmt.Errorf("permission denied\n  Cannot write to %s\n  Try running as administrator", execPath)
 	}
-	
+
 	// On Windows, we need special handling because we can't replace a running executable
 	if runtime.GOOS == "windows" {
 		return applyUpdateWindows(execPath, newBinaryPath)
 	}
-	
+
 	// On Unix-like systems, we can replace the file directly
 	return applyUpdateUnix(execPath, newBinaryPath)
 }
@@ -120,13 +120,13 @@ func applyUpdateUnix(execPath, newBinaryPath string) error {
 		return fmt.Errorf("failed to open new binary: %w", err)
 	}
 	defer newBinary.Close()
-	
+
 	// Get file info for permissions
 	info, err := newBinary.Stat()
 	if err != nil {
 		return fmt.Errorf("failed to stat new binary: %w", err)
 	}
-	
+
 	// Create temporary file in the same directory
 	dir := filepath.Dir(execPath)
 	tmpFile, err := os.CreateTemp(dir, ".portunix-update-*")
@@ -134,7 +134,7 @@ func applyUpdateUnix(execPath, newBinaryPath string) error {
 		return fmt.Errorf("failed to create temp file: %w", err)
 	}
 	tmpPath := tmpFile.Name()
-	
+
 	// Copy new binary to temp file
 	if _, err := io.Copy(tmpFile, newBinary); err != nil {
 		tmpFile.Close()
@@ -142,19 +142,19 @@ func applyUpdateUnix(execPath, newBinaryPath string) error {
 		return fmt.Errorf("failed to copy new binary: %w", err)
 	}
 	tmpFile.Close()
-	
+
 	// Set executable permissions
 	if err := os.Chmod(tmpPath, info.Mode()|0755); err != nil {
 		os.Remove(tmpPath)
 		return fmt.Errorf("failed to set permissions: %w", err)
 	}
-	
+
 	// Atomic rename
 	if err := os.Rename(tmpPath, execPath); err != nil {
 		os.Remove(tmpPath)
 		return fmt.Errorf("failed to replace binary: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -162,24 +162,24 @@ func applyUpdateUnix(execPath, newBinaryPath string) error {
 func applyUpdateWindows(execPath, newBinaryPath string) error {
 	// Try direct replacement first (works if we have admin rights)
 	tempPath := execPath + ".new"
-	
+
 	// Copy new binary to temporary location
 	if err := copyFile(newBinaryPath, tempPath); err != nil {
 		return fmt.Errorf("failed to copy new binary: %w", err)
 	}
-	
+
 	// Set executable permissions
 	if err := os.Chmod(tempPath, 0755); err != nil {
 		os.Remove(tempPath)
 		return fmt.Errorf("failed to set permissions: %w", err)
 	}
-	
+
 	// Try to rename current binary to backup
 	backupPath := execPath + ".old"
 	if err := os.Rename(execPath, backupPath); err != nil {
 		// If we can't rename, we don't have permission - create PowerShell fallback
 		os.Remove(tempPath)
-		
+
 		// Create PowerShell update script as fallback
 		psScriptPath := execPath + ".update.ps1"
 		psScript := fmt.Sprintf(`# Portunix Update Fallback Script
@@ -208,14 +208,14 @@ try {
 Remove-Item $PSCommandPath -Force
 Read-Host "Press Enter to close"
 `, execPath, execPath, newBinaryPath, execPath)
-		
+
 		if err := os.WriteFile(psScriptPath, []byte(psScript), 0644); err == nil {
 			return fmt.Errorf("permission denied\n  Cannot write to %s\n  \n  Alternative: Run this PowerShell script as Administrator:\n  %s\n  \n  Or try running as administrator: Right-click cmd.exe -> Run as administrator", execPath, psScriptPath)
 		}
-		
+
 		return fmt.Errorf("permission denied\n  Cannot write to %s\n  Try running as administrator", execPath)
 	}
-	
+
 	// Rename new binary to original location
 	if err := os.Rename(tempPath, execPath); err != nil {
 		// If this fails, try to restore the backup
@@ -223,7 +223,7 @@ Read-Host "Press Enter to close"
 		os.Remove(tempPath)
 		return fmt.Errorf("failed to install update: %w", err)
 	}
-	
+
 	// Remove backup on success
 	os.Remove(backupPath)
 	return nil
@@ -245,7 +245,7 @@ func IsPermissionError(err error) bool {
 	if err == nil {
 		return false
 	}
-	
+
 	errStr := strings.ToLower(err.Error())
 	return strings.Contains(errStr, "permission denied") ||
 		strings.Contains(errStr, "access denied") ||
@@ -261,19 +261,19 @@ func copyFile(src, dst string) error {
 		return err
 	}
 	defer source.Close()
-	
+
 	// Get source file info
 	info, err := source.Stat()
 	if err != nil {
 		return err
 	}
-	
+
 	destination, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, info.Mode())
 	if err != nil {
 		return err
 	}
 	defer destination.Close()
-	
+
 	_, err = io.Copy(destination, source)
 	return err
 }

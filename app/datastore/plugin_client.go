@@ -11,10 +11,10 @@ import (
 
 // PluginDatastore wraps a gRPC datastore plugin client to implement DatastoreInterface
 type PluginDatastore struct {
-	client      proto.DatastorePluginServiceClient
-	pluginName  string
-	pluginInfo  *DatastoreInfo
-	startTime   time.Time
+	client     proto.DatastorePluginServiceClient
+	pluginName string
+	pluginInfo *DatastoreInfo
+	startTime  time.Time
 }
 
 // NewPluginDatastore creates a new plugin datastore wrapper

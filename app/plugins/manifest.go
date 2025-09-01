@@ -41,7 +41,7 @@ func SaveManifest(manifest *PluginManifest, manifestPath string) error {
 
 	encoder := yaml.NewEncoder(file)
 	defer encoder.Close()
-	
+
 	return encoder.Encode(manifest)
 }
 
@@ -93,9 +93,9 @@ func ValidateManifest(manifest *PluginManifest) error {
 	if manifest.Permissions.Level == "" {
 		manifest.Permissions.Level = "limited" // Default
 	}
-	if manifest.Permissions.Level != "limited" && 
-	   manifest.Permissions.Level != "standard" && 
-	   manifest.Permissions.Level != "full" {
+	if manifest.Permissions.Level != "limited" &&
+		manifest.Permissions.Level != "standard" &&
+		manifest.Permissions.Level != "full" {
 		return fmt.Errorf("invalid permission level: %s (valid: limited, standard, full)", manifest.Permissions.Level)
 	}
 
@@ -178,7 +178,7 @@ func CreateDefaultManifest(name, description, author string) *PluginManifest {
 // GetManifestTemplate returns a template manifest as YAML string
 func GetManifestTemplate(name, description, author string) string {
 	_ = CreateDefaultManifest(name, description, author) // Future use
-	
+
 	return fmt.Sprintf(`# Plugin identification
 name: "%s"
 version: "1.0.0"

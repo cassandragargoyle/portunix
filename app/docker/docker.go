@@ -775,18 +775,18 @@ type PartitionInfo struct {
 
 func analyzeWindowsStorage() ([]DriveInfo, error) {
 	var drives []DriveInfo
-	
+
 	// Check common drive letters in order of preference (excluding A and B which are typically floppy drives)
 	driveLetters := []string{"C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"}
-	
+
 	for _, letter := range driveLetters {
 		drivePath := fmt.Sprintf("%s:\\", letter)
-		
+
 		// Check if drive exists by trying to stat the root directory
 		if _, err := os.Stat(drivePath); err == nil {
 			// Drive exists, get disk space information using PowerShell
 			freeSpace, totalSpace := getWindowsDiskSpace(letter)
-			
+
 			drives = append(drives, DriveInfo{
 				Letter:     letter,
 				FreeSpace:  freeSpace,
@@ -794,11 +794,11 @@ func analyzeWindowsStorage() ([]DriveInfo, error) {
 			})
 		}
 	}
-	
+
 	if len(drives) == 0 {
 		return nil, fmt.Errorf("no accessible drives found")
 	}
-	
+
 	// Sort drives: non-system drives first (better for Docker data), then by free space (largest first)
 	sort.Slice(drives, func(i, j int) bool {
 		// Prioritize non-C drives for Docker storage
@@ -808,11 +808,11 @@ func analyzeWindowsStorage() ([]DriveInfo, error) {
 		if drives[i].Letter == "C" && drives[j].Letter != "C" {
 			return false
 		}
-		
+
 		// If both are C or both are non-C, sort by free space (descending)
 		return parseSpaceString(drives[i].FreeSpace) > parseSpaceString(drives[j].FreeSpace)
 	})
-	
+
 	return drives, nil
 }
 
@@ -821,16 +821,16 @@ func getWindowsDiskSpace(driveLetter string) (freeSpace, totalSpace string) {
 	// Default values in case PowerShell command fails
 	defaultFree := "Unknown"
 	defaultTotal := "Unknown"
-	
+
 	// PowerShell command to get disk space information
 	psCmd := fmt.Sprintf(`Get-WmiObject -Class Win32_LogicalDisk -Filter "DeviceID='%s:'" | Select-Object Size, FreeSpace`, driveLetter)
-	
+
 	cmd := exec.Command("powershell", "-Command", psCmd)
 	output, err := cmd.Output()
 	if err != nil {
 		return defaultFree, defaultTotal
 	}
-	
+
 	// Parse PowerShell output
 	lines := strings.Split(string(output), "\n")
 	if len(lines) >= 3 {
@@ -850,7 +850,7 @@ func getWindowsDiskSpace(driveLetter string) (freeSpace, totalSpace string) {
 			}
 		}
 	}
-	
+
 	return defaultFree, defaultTotal
 }
 
@@ -873,10 +873,10 @@ func parseSpaceString(spaceStr string) int64 {
 	if spaceStr == "Unknown" {
 		return 0
 	}
-	
+
 	// Remove spaces and convert to uppercase
 	spaceStr = strings.ReplaceAll(strings.ToUpper(spaceStr), " ", "")
-	
+
 	// Extract number and unit
 	var value float64
 	var unit string
@@ -894,7 +894,7 @@ func parseSpaceString(spaceStr string) int64 {
 		}
 		return int64(value * float64(multiplier))
 	}
-	
+
 	return 0
 }
 

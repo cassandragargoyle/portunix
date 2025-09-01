@@ -72,21 +72,21 @@ var vmCheckCmd = &cobra.Command{
 	Long:  `Check if QEMU/KVM is properly installed and hardware virtualization is supported.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Checking QEMU/KVM installation...")
-		
+
 		// Check virtualization support
 		if err := checkVirtualizationSupport(); err != nil {
 			fmt.Printf("❌ Hardware virtualization: %v\n", err)
 		} else {
 			fmt.Println("✅ Hardware virtualization: Supported")
 		}
-		
+
 		// Check QEMU installation
 		if _, err := exec.LookPath("qemu-system-x86_64"); err != nil {
 			fmt.Println("❌ QEMU: Not installed")
 		} else {
 			fmt.Println("✅ QEMU: Installed")
 		}
-		
+
 		// Check libvirt
 		if _, err := exec.LookPath("virsh"); err != nil {
 			fmt.Println("❌ libvirt: Not installed")
@@ -100,14 +100,14 @@ var vmCheckCmd = &cobra.Command{
 				fmt.Println("❌ libvirtd service: Not running")
 			}
 		}
-		
+
 		// Check user groups
 		groupsCmd := exec.Command("groups")
 		if output, err := groupsCmd.Output(); err == nil {
 			groups := string(output)
 			hasLibvirt := strings.Contains(groups, "libvirt")
 			hasKvm := strings.Contains(groups, "kvm")
-			
+
 			if hasLibvirt {
 				fmt.Println("✅ User in libvirt group: Yes")
 			} else {
@@ -118,7 +118,7 @@ var vmCheckCmd = &cobra.Command{
 			} else {
 				fmt.Println("❌ User in kvm group: No")
 			}
-			
+
 			// Show help if user is not in groups
 			if !hasLibvirt || !hasKvm {
 				fmt.Println("\n💡 To fix group membership:")
@@ -137,20 +137,19 @@ func checkVirtualizationSupport() error {
 	if err != nil {
 		return fmt.Errorf("cannot read CPU information")
 	}
-	
+
 	cpuinfoStr := string(cpuinfo)
 	if !strings.Contains(cpuinfoStr, "vmx") && !strings.Contains(cpuinfoStr, "svm") {
 		return fmt.Errorf("CPU does not support hardware virtualization (Intel VT-x or AMD-V)")
 	}
-	
+
 	// Check if KVM module is loaded
 	if _, err := os.Stat("/dev/kvm"); os.IsNotExist(err) {
 		return fmt.Errorf("KVM module is not loaded. Enable virtualization in BIOS/UEFI")
 	}
-	
+
 	return nil
 }
-
 
 func init() {
 	vmCmd.AddCommand(vmInstallCmd)

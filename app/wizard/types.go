@@ -31,16 +31,16 @@ type Wizard struct {
 
 // Page represents a single page in the wizard
 type Page struct {
-	ID       string                 `yaml:"id"`
-	Type     PageType               `yaml:"type"`
-	Title    string                 `yaml:"title"`
-	Content  string                 `yaml:"content,omitempty"`
-	Prompt   string                 `yaml:"prompt,omitempty"`
-	Options  []Option               `yaml:"options,omitempty"`
-	Variable string                 `yaml:"variable,omitempty"`
-	Next     *NavigationRule        `yaml:"next,omitempty"`
-	Tasks    []Task                 `yaml:"tasks,omitempty"`
-	Validate *ValidationRule        `yaml:"validate,omitempty"`
+	ID       string          `yaml:"id"`
+	Type     PageType        `yaml:"type"`
+	Title    string          `yaml:"title"`
+	Content  string          `yaml:"content,omitempty"`
+	Prompt   string          `yaml:"prompt,omitempty"`
+	Options  []Option        `yaml:"options,omitempty"`
+	Variable string          `yaml:"variable,omitempty"`
+	Next     *NavigationRule `yaml:"next,omitempty"`
+	Tasks    []Task          `yaml:"tasks,omitempty"`
+	Validate *ValidationRule `yaml:"validate,omitempty"`
 }
 
 // Option represents a selectable option
@@ -55,7 +55,7 @@ type Option struct {
 type NavigationRule struct {
 	// Simple navigation - just a page ID
 	Page string `yaml:"page,omitempty"`
-	
+
 	// Conditional navigation
 	Condition string `yaml:"condition,omitempty"`
 	True      string `yaml:"true,omitempty"`

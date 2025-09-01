@@ -1,0 +1,1 @@
+ln -sfn architect.md .claude/roles/current.md 

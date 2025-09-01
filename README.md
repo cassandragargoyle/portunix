@@ -381,6 +381,18 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **Issues**: [GitHub Issues](https://github.com/cassandragargoyle/Portunix/issues)
 - **Documentation**: [docs/](docs/)
 
+## 🤝 External Partnerships & Collaboration
+
+### act - GitHub Actions Local Runner
+Portunix integrates with and contributes to the **[nektos/act](https://github.com/nektos/act)** project for local GitHub Actions testing.
+
+- **Project**: [nektos/act](https://github.com/nektos/act) - Run GitHub Actions locally 🚀
+- **Website**: [nektosact.com](https://nektosact.com/)
+- **Partnership**: CassandraGargoyle team collaborates on act development and integration
+- **Integration**: Portunix provides seamless act installation and GitHub Actions workflow testing capabilities
+
+The collaboration enhances both projects by providing better local development workflows and testing capabilities for GitHub Actions users.
+
 ---
 
 **🎯 Universal development environment management made simple.**

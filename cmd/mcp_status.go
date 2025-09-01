@@ -125,12 +125,12 @@ func isMCPServerRunningEnhanced(port int) (bool, string) {
 	if err == nil {
 		outputStr := string(output)
 		// Check for connection status indicators
-		if strings.Contains(outputStr, "✓") || strings.Contains(outputStr, "✅") || 
-		   strings.Contains(outputStr, "Connected") || strings.Contains(outputStr, "OK") {
+		if strings.Contains(outputStr, "✓") || strings.Contains(outputStr, "✅") ||
+			strings.Contains(outputStr, "Connected") || strings.Contains(outputStr, "OK") {
 			return true, ""
 		}
-		if strings.Contains(outputStr, "✗") || strings.Contains(outputStr, "❌") || 
-		   strings.Contains(outputStr, "Failed to connect") {
+		if strings.Contains(outputStr, "✗") || strings.Contains(outputStr, "❌") ||
+			strings.Contains(outputStr, "Failed to connect") {
 			// Server is configured but not responding - check if process is running
 			return checkPortAndProcess(port)
 		}
@@ -325,7 +325,7 @@ func outputBriefStatus(status *MCPStatus) error {
 	} else {
 		fmt.Println("❌ Portunix MCP: NOT READY (install Claude Code)")
 	}
-	
+
 	return nil
 }
 
@@ -343,13 +343,13 @@ func isPortAvailable(port int) bool {
 func findAvailablePorts(count int) []int {
 	var availablePorts []int
 	startPort := 3001
-	
+
 	for port := startPort; port < startPort+1000 && len(availablePorts) < count; port++ {
 		if isPortAvailable(port) {
 			availablePorts = append(availablePorts, port)
 		}
 	}
-	
+
 	return availablePorts
 }
 
@@ -401,21 +401,21 @@ func getConfiguredMCPPort() int {
 // getProcessUsingPort returns information about the process using the specified port
 func getProcessUsingPort(port int) *ProcessInfo {
 	// Try different methods in order of preference
-	
+
 	// Method 1: Try lsof first (most reliable)
 	if runtime.GOOS == "linux" {
 		if info := getProcessUsingPortLsof(port); info != nil {
 			return info
 		}
 	}
-	
+
 	// Method 2: Try ss command (modern replacement for netstat)
 	if runtime.GOOS == "linux" {
 		if info := getProcessUsingPortSS(port); info != nil {
 			return info
 		}
 	}
-	
+
 	// Method 3: Try netstat
 	var cmd *exec.Cmd
 	switch runtime.GOOS {
@@ -464,41 +464,41 @@ func parseProcessFromSS(line string) *ProcessInfo {
 	if !strings.Contains(line, "users:((") {
 		return nil
 	}
-	
+
 	// Find the users:((...)) part
 	usersStart := strings.Index(line, "users:((")
 	if usersStart == -1 {
 		return nil
 	}
-	
+
 	usersEnd := strings.Index(line[usersStart:], "))")
 	if usersEnd == -1 {
 		return nil
 	}
-	
-	usersPart := line[usersStart:usersStart+usersEnd+2]
+
+	usersPart := line[usersStart : usersStart+usersEnd+2]
 	// Extract content between users:((" and "))
 	start := strings.Index(usersPart, "((\"") + 3
 	end := strings.Index(usersPart, "\"))")
 	if start < 3 || end == -1 {
 		return nil
 	}
-	
+
 	processInfo := usersPart[start:end]
 	// Format: processname",pid=12345,fd=3
 	parts := strings.Split(processInfo, ",")
 	if len(parts) < 2 {
 		return nil
 	}
-	
+
 	processName := parts[0]
 	pidPart := parts[1]
-	
+
 	// Extract PID from "pid=12345"
 	if !strings.HasPrefix(pidPart, "pid=") {
 		return nil
 	}
-	
+
 	pidStr := strings.TrimPrefix(pidPart, "pid=")
 	if pid, err := strconv.Atoi(pidStr); err == nil {
 		cmdLine := getProcessCommandLine(pid)
@@ -508,13 +508,13 @@ func parseProcessFromSS(line string) *ProcessInfo {
 			CommandLine: cmdLine,
 		}
 	}
-	
+
 	return nil
 }
 
 func parseProcessFromNetstat(line, osType string) *ProcessInfo {
 	fields := strings.Fields(line)
-	
+
 	switch osType {
 	case "linux":
 		// Linux netstat format: ... LISTEN pid/processname
@@ -550,7 +550,7 @@ func parseProcessFromNetstat(line, osType string) *ProcessInfo {
 			}
 		}
 	}
-	
+
 	return nil
 }
 
@@ -600,7 +600,7 @@ func getWindowsProcessName(pid int) string {
 	if err != nil {
 		return fmt.Sprintf("PID:%d", pid)
 	}
-	
+
 	line := strings.TrimSpace(string(output))
 	if line != "" {
 		// Parse CSV format: "processname.exe","pid","sessionname","session#","memusage"
@@ -610,13 +610,13 @@ func getWindowsProcessName(pid int) string {
 			return processName
 		}
 	}
-	
+
 	return fmt.Sprintf("PID:%d", pid)
 }
 
 func getProcessCommandLine(pid int) string {
 	var cmd *exec.Cmd
-	
+
 	switch runtime.GOOS {
 	case "linux":
 		cmd = exec.Command("ps", "-p", strconv.Itoa(pid), "-o", "args=")
@@ -632,7 +632,7 @@ func getProcessCommandLine(pid int) string {
 	}
 
 	cmdLine := strings.TrimSpace(string(output))
-	
+
 	if runtime.GOOS == "windows" {
 		// Parse wmic output: CommandLine=actual_command_line
 		lines := strings.Split(cmdLine, "\n")
@@ -643,12 +643,12 @@ func getProcessCommandLine(pid int) string {
 		}
 		return ""
 	}
-	
+
 	// Truncate very long command lines
 	if len(cmdLine) > 100 {
 		cmdLine = cmdLine[:97] + "..."
 	}
-	
+
 	return cmdLine
 }
 

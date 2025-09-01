@@ -46,8 +46,8 @@ type MCPResponse struct {
 
 // MCPError represents an MCP error
 type MCPError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
+	Code    int         `json:"code"`
+	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
 }
 
@@ -80,20 +80,20 @@ func IsRunningFromClaudeCode() bool {
 			return true
 		}
 	}
-	
+
 	// Check for Claude-specific environment variables
 	parentCmd := os.Getenv("_")
 	if strings.Contains(parentCmd, "claude") {
 		fmt.Fprintf(os.Stderr, "DEBUG: Detected Claude in parent command\n")
 		return true
 	}
-	
+
 	// Check if we have no controlling terminal (daemon-like process)
 	if _, err := os.Readlink("/proc/self/fd/0"); err != nil {
 		fmt.Fprintf(os.Stderr, "DEBUG: No controlling terminal detected\n")
 		return true
 	}
-	
+
 	fmt.Fprintf(os.Stderr, "DEBUG: Not running from Claude Code\n")
 	return false
 }
@@ -101,7 +101,7 @@ func IsRunningFromClaudeCode() bool {
 // StartStdio starts the MCP server in stdio mode for Claude Code integration
 func (s *Server) StartStdio() error {
 	log.SetOutput(os.Stderr) // Redirect logs to stderr to keep stdout clean
-	
+
 	// Setup graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -118,7 +118,7 @@ func (s *Server) StartStdio() error {
 	fmt.Fprintf(os.Stderr, "Permission level: %s\n", s.Permissions)
 
 	scanner := bufio.NewScanner(os.Stdin)
-	
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -130,26 +130,26 @@ func (s *Server) StartStdio() error {
 				}
 				return nil // EOF
 			}
-			
+
 			line := scanner.Text()
 			if line == "" {
 				continue
 			}
-			
+
 			var request MCPRequest
 			if err := json.Unmarshal([]byte(line), &request); err != nil {
 				fmt.Fprintf(os.Stderr, "Error parsing JSON: %v\n", err)
 				continue
 			}
-			
+
 			response := s.processRequest(request)
-			
+
 			responseJSON, err := json.Marshal(response)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error marshaling response: %v\n", err)
 				continue
 			}
-			
+
 			fmt.Println(string(responseJSON))
 		}
 	}
@@ -175,10 +175,10 @@ func (s *Server) Start(daemon bool) error {
 		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 		<-sigChan
 		log.Println("Shutting down MCP server...")
-		
+
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer shutdownCancel()
-		
+
 		if err := server.Shutdown(shutdownCtx); err != nil {
 			log.Printf("Error during shutdown: %v", err)
 		}
@@ -218,7 +218,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 
 		response := s.processRequest(request)
-		
+
 		if err := conn.WriteJSON(response); err != nil {
 			log.Printf("Error writing JSON: %v", err)
 			break
@@ -278,7 +278,7 @@ func (s *Server) registerHandlers() {
 	s.handlers["ping"] = s.handlePing
 	s.handlers["tools/list"] = s.handleToolsList
 	s.handlers["tools/call"] = s.handleToolsCall
-	
+
 	// System information tools
 	s.handlers["mcp_get_system_info"] = s.handleGetSystemInfo
 	s.handlers["mcp_get_capabilities"] = s.handleGetCapabilities

@@ -32,12 +32,12 @@ type PowerShellSSHTestSuite struct {
 
 // SSHTestDistribution represents a distribution configured for SSH access
 type SSHTestDistribution struct {
-	Name              string
-	Image             string
-	ExpectedVariant   string
-	SetupCommands     []string
-	SSHSetupCommands  []string
-	VerificationCmd   string
+	Name             string
+	Image            string
+	ExpectedVariant  string
+	SetupCommands    []string
+	SSHSetupCommands []string
+	VerificationCmd  string
 }
 
 // GetSSHTestDistributions returns distributions configured with SSH servers
@@ -178,10 +178,10 @@ func (suite *PowerShellSSHTestSuite) setupContainerForSSH(container testcontaine
 	// Run setup commands
 	for i, cmd := range dist.SetupCommands {
 		suite.T().Logf("Running setup command %d/%d for %s: %s", i+1, len(dist.SetupCommands), dist.Name, cmd)
-		
+
 		exitCode, reader, err := container.Exec(suite.ctx, []string{"bash", "-c", cmd})
 		require.NoError(suite.T(), err, "Failed to execute setup command for %s: %s", dist.Name, cmd)
-		
+
 		if exitCode != 0 {
 			output := suite.readContainerOutput(reader)
 			suite.T().Fatalf("Setup command failed for %s with exit code %d: %s\nOutput: %s", dist.Name, exitCode, cmd, output)
@@ -191,10 +191,10 @@ func (suite *PowerShellSSHTestSuite) setupContainerForSSH(container testcontaine
 	// Run SSH-specific setup commands
 	for i, cmd := range dist.SSHSetupCommands {
 		suite.T().Logf("Running SSH setup command %d/%d for %s: %s", i+1, len(dist.SSHSetupCommands), dist.Name, cmd)
-		
+
 		exitCode, reader, err := container.Exec(suite.ctx, []string{"bash", "-c", cmd})
 		require.NoError(suite.T(), err, "Failed to execute SSH setup command for %s: %s", dist.Name, cmd)
-		
+
 		if exitCode != 0 {
 			output := suite.readContainerOutput(reader)
 			suite.T().Logf("SSH setup command warning for %s (exit code %d): %s\nOutput: %s", dist.Name, exitCode, cmd, output)
@@ -203,7 +203,7 @@ func (suite *PowerShellSSHTestSuite) setupContainerForSSH(container testcontaine
 
 	// Wait for SSH server to start
 	time.Sleep(5 * time.Second)
-	
+
 	suite.T().Logf("✓ SSH container setup completed for %s", dist.Name)
 }
 
@@ -343,7 +343,7 @@ func (suite *PowerShellSSHTestSuite) verifyPowerShellViaSSH(client *ssh.Client, 
 	// Verify output contains PowerShell version info
 	outputStr := string(output)
 	if strings.Contains(outputStr, "PowerShell") {
-		assert.Regexp(suite.T(), `\d+\.\d+\.\d+`, outputStr, 
+		assert.Regexp(suite.T(), `\d+\.\d+\.\d+`, outputStr,
 			"PowerShell version should be in format x.y.z for %s", dist.Name)
 		suite.T().Logf("✓ PowerShell verification completed successfully via SSH for %s", dist.Name)
 	} else {
@@ -406,7 +406,7 @@ func encodeBase64(data []byte) string {
 	// Simple base64 encoding
 	const base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 	var result strings.Builder
-	
+
 	for i := 0; i < len(data); i += 3 {
 		b1, b2, b3 := data[i], byte(0), byte(0)
 		if i+1 < len(data) {
@@ -415,7 +415,7 @@ func encodeBase64(data []byte) string {
 		if i+2 < len(data) {
 			b3 = data[i+2]
 		}
-		
+
 		result.WriteByte(base64Chars[(b1>>2)&0x3F])
 		result.WriteByte(base64Chars[((b1<<4)|(b2>>4))&0x3F])
 		if i+1 < len(data) {
@@ -428,12 +428,12 @@ func encodeBase64(data []byte) string {
 		} else {
 			result.WriteByte('=')
 		}
-		
+
 		// Add newlines every 76 characters for proper base64 format
 		if (i/3*4+4)%76 == 0 {
 			result.WriteByte('\n')
 		}
 	}
-	
+
 	return result.String()
 }

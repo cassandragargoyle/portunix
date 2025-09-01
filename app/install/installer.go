@@ -95,9 +95,9 @@ func InstallPackage(packageName, variant string) error {
 	fmt.Println("🚀 Starting installation...")
 
 	var installErr error
-	
+
 	// Use variant type if specified, otherwise use platform type (already determined above)
-	
+
 	switch installType {
 	case "msi", "exe":
 		installErr = installWindowsBinary(platform, variantConfig)
@@ -113,6 +113,8 @@ func InstallPackage(packageName, variant string) error {
 		installErr = installPowerShell(platform, variantConfig)
 	case "repository":
 		installErr = installRepository(platform, variantConfig)
+	case "direct_download":
+		installErr = installDirectDownload(platform, variantConfig)
 	default:
 		return fmt.Errorf("unsupported package type: %s", installType)
 	}
@@ -121,7 +123,7 @@ func InstallPackage(packageName, variant string) error {
 		// Check if we should trigger fallback
 		fallbackManager := NewFallbackManager()
 		versionMatcher := NewVersionMatcher()
-		
+
 		// Get current OS version for fallback decision
 		var currentVersion string
 		if runtime.GOOS == "linux" {
@@ -130,32 +132,32 @@ func InstallPackage(packageName, variant string) error {
 				currentVersion = version
 			}
 		}
-		
+
 		// Determine support level for better error handling
 		var supportLevel SupportLevel = Supported
 		if len(variantConfig.SupportedVersionRanges) > 0 && currentVersion != "" {
 			supportLevel = versionMatcher.IsVersionSupported(currentVersion, variantConfig.SupportedVersionRanges, variantConfig.SupportedVersions)
 		}
-		
+
 		// Try fallback if configured and appropriate
 		if fallbackManager.ShouldTriggerFallback(installErr, supportLevel) && len(variantConfig.FallbackVariants) > 0 {
 			fmt.Printf("\n🔄 Installation failed, trying fallback options...\n")
 			return fallbackManager.ExecuteFallback(packageName, variant, config, installErr.Error(), variantConfig.FallbackVariants, variantConfig.FallbackStrategy)
 		}
-		
+
 		// Enhanced error message
 		fmt.Println("\n❌ Installation FAILED!")
 		fmt.Printf("Package: %s\n", pkg.Name)
 		fmt.Printf("Variant: %s\n", variant)
 		fmt.Printf("Error: %v\n", installErr)
-		
+
 		// Provide suggestions based on the error
 		if len(variantConfig.FallbackVariants) > 0 {
 			fmt.Println("\n💡 Suggestions:")
 			fmt.Printf("Try alternative variants: %s\n", strings.Join(variantConfig.FallbackVariants, ", "))
 			fmt.Printf("Command: ./portunix install %s --variant %s\n", packageName, variantConfig.FallbackVariants[0])
 		}
-		
+
 		return installErr
 	}
 
@@ -582,22 +584,22 @@ func refreshPowerShellEnvironment() {
 // ensureRequiredTools checks and installs required tools for repository operations
 func ensureRequiredTools(distro string) error {
 	fmt.Println("🔍 Checking for required tools...")
-	
+
 	// Define required tools based on distribution
 	var requiredTools []string
 	var packageManager string
 	var installCmd []string
-	
+
 	switch distro {
 	case "ubuntu", "kubuntu", "debian", "mint", "elementary":
 		requiredTools = []string{"wget", "sudo", "lsb-release", "ca-certificates"}
 		packageManager = "apt-get"
-		
+
 		// First, check if we can run commands without sudo (in containers often running as root)
 		testCmd := exec.Command("id", "-u")
 		output, _ := testCmd.Output()
 		isRoot := strings.TrimSpace(string(output)) == "0"
-		
+
 		if isRoot {
 			// Running as root, no sudo needed
 			installCmd = []string{"apt-get", "install", "-y"}
@@ -605,28 +607,28 @@ func ensureRequiredTools(distro string) error {
 			// Not root, need sudo
 			installCmd = []string{"sudo", "apt-get", "install", "-y"}
 		}
-		
+
 	case "fedora", "rocky":
 		requiredTools = []string{"wget", "sudo", "ca-certificates"}
 		packageManager = "dnf"
-		
+
 		// Check if running as root
 		testCmd := exec.Command("id", "-u")
 		output, _ := testCmd.Output()
 		isRoot := strings.TrimSpace(string(output)) == "0"
-		
+
 		if isRoot {
 			installCmd = []string{"dnf", "install", "-y"}
 		} else {
 			installCmd = []string{"sudo", "dnf", "install", "-y"}
 		}
-		
+
 	default:
 		// Unknown distribution, skip tool check
 		fmt.Println("⚠️  Unknown distribution, skipping tool check")
 		return nil
 	}
-	
+
 	// Check which tools are missing
 	var missingTools []string
 	for _, tool := range requiredTools {
@@ -635,7 +637,7 @@ func ensureRequiredTools(distro string) error {
 		if tool == "lsb-release" {
 			checkTool = "lsb_release"
 		}
-		
+
 		// Check if tool exists
 		checkCmd := exec.Command("which", checkTool)
 		if err := checkCmd.Run(); err != nil {
@@ -643,16 +645,16 @@ func ensureRequiredTools(distro string) error {
 			missingTools = append(missingTools, tool)
 		}
 	}
-	
+
 	// If no tools missing, we're done
 	if len(missingTools) == 0 {
 		fmt.Println("✅ All required tools are already installed")
 		return nil
 	}
-	
+
 	// Install missing tools
 	fmt.Printf("📦 Installing missing tools: %s\n", strings.Join(missingTools, ", "))
-	
+
 	// Update package lists first (for apt-based systems)
 	if packageManager == "apt-get" {
 		fmt.Println("📋 Updating package lists...")
@@ -667,19 +669,19 @@ func ensureRequiredTools(distro string) error {
 			}
 		}
 	}
-	
+
 	// Install the missing tools
 	fullCmd := append(installCmd, missingTools...)
 	fmt.Printf("   Command: %s\n", strings.Join(fullCmd, " "))
-	
+
 	cmd := exec.Command(fullCmd[0], fullCmd[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("failed to install required tools: %w", err)
 	}
-	
+
 	fmt.Println("✅ Required tools installed successfully")
 	return nil
 }
@@ -697,16 +699,17 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 	}
 
 	fmt.Printf("Detected distribution: %s %s\n", distro, version)
-	
+
 	// Ensure required tools are installed before repository setup
 	if err := ensureRequiredTools(distro); err != nil {
 		return fmt.Errorf("failed to ensure required tools: %w", err)
 	}
 
 	// Check if this variant supports the current distribution
-	if len(variant.Distributions) > 0 {
+	distributionsList := variant.GetDistributionsList()
+	if len(distributionsList) > 0 {
 		supported := false
-		for _, supportedDistro := range variant.Distributions {
+		for _, supportedDistro := range distributionsList {
 			if supportedDistro == distro || supportedDistro == "universal" {
 				supported = true
 				break
@@ -719,18 +722,19 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 
 	// Enhanced version compatibility checking using new version matcher
 	versionMatcher := NewVersionMatcher()
-	
+
 	// Check version compatibility if specified (skip for universal distributions)
 	universalVariant := false
-	if len(variant.Distributions) > 0 {
-		for _, supportedDistro := range variant.Distributions {
+	distributionsList2 := variant.GetDistributionsList()
+	if len(distributionsList2) > 0 {
+		for _, supportedDistro := range distributionsList2 {
 			if supportedDistro == "universal" {
 				universalVariant = true
 				break
 			}
 		}
 	}
-	
+
 	if !universalVariant {
 		// Use new version range support if available
 		var supportLevel SupportLevel
@@ -746,21 +750,21 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 
 		// Show version support message
 		fmt.Printf("🔍 Version support: %s\n", versionMatcher.GetVersionSupportMessage(version, supportLevel))
-		
+
 		// Handle unsupported versions
 		if supportLevel == Unsupported {
 			fallbackErr := fmt.Errorf("%s version %s not supported for this variant", distro, version)
-			
+
 			// Try fallback if configured
 			if len(variant.FallbackVariants) > 0 {
 				fallbackManager := NewFallbackManager()
 				reason := fmt.Sprintf("%s %s not explicitly supported for this variant", distro, version)
 				return fallbackManager.ExecuteFallback("powershell", "ubuntu", nil, reason, variant.FallbackVariants, variant.FallbackStrategy)
 			}
-			
+
 			return fallbackErr
 		}
-		
+
 		// Show warning for experimental versions
 		if supportLevel == Experimental {
 			fmt.Printf("⚠️  WARNING: %s %s is newer than tested versions. Proceeding anyway...\n", distro, version)
@@ -771,7 +775,7 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 	if len(variant.RepositorySetup) > 0 {
 		fmt.Println("🔧 Setting up package repository...")
 		fmt.Println("════════════════════════════════════════════════")
-		
+
 		// Define step descriptions for common repository setup operations
 		stepDescriptions := map[int]string{
 			0: "Download Microsoft repository configuration package",
@@ -779,29 +783,29 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 			2: "Clean up temporary files",
 			3: "Update package lists with new repository",
 		}
-		
+
 		for i, cmdStr := range variant.RepositorySetup {
 			// Get step description if available
 			stepDesc := ""
 			if desc, ok := stepDescriptions[i]; ok {
 				stepDesc = desc
 			}
-			
+
 			fmt.Printf("\n📌 Step %d/%d", i+1, len(variant.RepositorySetup))
 			if stepDesc != "" {
 				fmt.Printf(": %s", stepDesc)
 			}
 			fmt.Println()
-			
+
 			// Resolve variables in command
 			resolvedCmd := ResolveVariables(cmdStr, map[string]string{
 				"distribution": distro,
 				"version":      version,
 			})
-			
+
 			// Show the command template and resolved command
 			fmt.Printf("   Template: %s\n", cmdStr)
-			
+
 			// Execute command and capture its actual output to show what it resolves to
 			// Use sh -c to properly evaluate shell substitutions like $(lsb_release -rs)
 			expandCmd := exec.Command("sh", "-c", fmt.Sprintf("echo %s", resolvedCmd))
@@ -809,10 +813,10 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 			if expandedOutput != nil && len(expandedOutput) > 0 {
 				fmt.Printf("   Expanded: %s", string(expandedOutput))
 			}
-			
+
 			fmt.Printf("   Executing: sh -c \"%s\"\n", resolvedCmd)
 			fmt.Println("   Output:")
-			
+
 			cmd := exec.Command("sh", "-c", resolvedCmd)
 			cmd.Stdout = os.Stdout
 			cmd.Stderr = os.Stderr
@@ -835,7 +839,7 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 	var installCmd []string
 	fmt.Println("\n📦 Installing packages...")
 	fmt.Println("════════════════════════════════════════════════")
-	
+
 	switch distro {
 	case "ubuntu", "kubuntu", "debian", "mint", "elementary":
 		// Update package list first
@@ -849,7 +853,7 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 		} else {
 			fmt.Println("   ✅ Package lists updated")
 		}
-		
+
 		installCmd = append([]string{"sudo", "apt-get", "install", "-y"}, variant.Packages...)
 	case "fedora":
 		installCmd = append([]string{"sudo", "dnf", "install", "-y"}, variant.Packages...)
@@ -863,7 +867,7 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 	fmt.Printf("   Command: %s\n", strings.Join(installCmd, " "))
 	fmt.Println("   Installation output:")
 	fmt.Println("   " + strings.Repeat("-", 40))
-	
+
 	cmd := exec.Command(installCmd[0], installCmd[1:]...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -872,7 +876,7 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 		fmt.Printf("   ❌ Package installation failed: %v\n", err)
 		return fmt.Errorf("package installation failed: %w", err)
 	}
-	
+
 	fmt.Println("   " + strings.Repeat("-", 40))
 	fmt.Println("   ✅ Packages installed successfully")
 	fmt.Println("════════════════════════════════════════════════")
@@ -891,5 +895,140 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 		}
 	}
 
+	return nil
+}
+
+
+// installDirectDownload installs a package by directly downloading from URL
+func installDirectDownload(platform *PlatformConfig, variant *VariantConfig) error {
+	// Get URL from variant (should be in URL field for direct_download type)
+	if variant.URL == "" {
+		return fmt.Errorf("URL not specified for direct_download package")
+	}
+
+	// Get filename from URL
+	filename := filepath.Base(variant.URL)
+	if filename == "" || filename == "." {
+		return fmt.Errorf("could not determine filename from URL: %s", variant.URL)
+	}
+
+	// Create cache directory
+	cacheDir := ".cache"
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return fmt.Errorf("failed to create cache directory: %w", err)
+	}
+
+	cachedFile := filepath.Join(cacheDir, filename)
+
+	// Download if not cached
+	if _, err := os.Stat(cachedFile); os.IsNotExist(err) {
+		fmt.Printf("Downloading %s...\n", filename)
+		if err := downloadFile(cachedFile, variant.URL); err != nil {
+			return fmt.Errorf("failed to download: %w", err)
+		}
+		fmt.Printf("✅ Downloaded: %s\n", cachedFile)
+	} else {
+		fmt.Printf("Using cached file: %s\n", cachedFile)
+	}
+
+	// Handle extraction if needed
+	if variant.Extract {
+		extractDir := filepath.Join(cacheDir, "extracted")
+		if err := os.MkdirAll(extractDir, 0755); err != nil {
+			return fmt.Errorf("failed to create extraction directory: %w", err)
+		}
+
+		fmt.Printf("Extracting %s...\n", filename)
+		if err := extractArchive(cachedFile, extractDir); err != nil {
+			return fmt.Errorf("failed to extract: %w", err)
+		}
+
+		// Find the binary file
+		binaryPath := filepath.Join(extractDir, variant.Binary)
+		if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
+			return fmt.Errorf("binary '%s' not found in extracted files", variant.Binary)
+		}
+
+		// Install to target path
+		targetPath := filepath.Join(variant.InstallPath, variant.Binary)
+		
+		// Create target directory
+		if err := os.MkdirAll(variant.InstallPath, 0755); err != nil {
+			return fmt.Errorf("failed to create install directory: %w", err)
+		}
+
+		// Copy binary to target (use sudo if required)
+		if variant.RequiresSudo {
+			fmt.Printf("Installing %s to %s (requires sudo)...\n", variant.Binary, targetPath)
+			cmd := exec.Command("sudo", "cp", binaryPath, targetPath)
+			if output, err := cmd.CombinedOutput(); err != nil {
+				return fmt.Errorf("failed to install binary: %w, output: %s", err, output)
+			}
+			
+			// Make executable
+			cmd = exec.Command("sudo", "chmod", "+x", targetPath)
+			if output, err := cmd.CombinedOutput(); err != nil {
+				return fmt.Errorf("failed to make binary executable: %w, output: %s", err, output)
+			}
+		} else {
+			fmt.Printf("Installing %s to %s...\n", variant.Binary, targetPath)
+			if err := copyFile(binaryPath, targetPath); err != nil {
+				return fmt.Errorf("failed to copy binary: %w", err)
+			}
+			
+			// Make executable
+			if err := os.Chmod(targetPath, 0755); err != nil {
+				return fmt.Errorf("failed to make binary executable: %w", err)
+			}
+		}
+
+		fmt.Printf("✅ Installed: %s\n", targetPath)
+	}
+
+	// Run post-install commands if specified
+	if len(variant.PostInstall) > 0 {
+		fmt.Println("Running post-install commands...")
+		for _, cmdStr := range variant.PostInstall {
+			fmt.Printf("Running: %s\n", cmdStr)
+			cmd := exec.Command("sh", "-c", cmdStr)
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+			if err := cmd.Run(); err != nil {
+				fmt.Printf("Warning: post-install command failed: %v\n", err)
+			}
+		}
+	}
+
+	return nil
+}
+
+
+// extractArchive extracts an archive to target directory
+func extractArchive(archivePath, targetDir string) error {
+	var cmd *exec.Cmd
+	
+	if strings.HasSuffix(archivePath, ".tar.gz") || strings.HasSuffix(archivePath, ".tgz") {
+		cmd = exec.Command("tar", "-xzf", archivePath, "-C", targetDir)
+	} else if strings.HasSuffix(archivePath, ".tar") {
+		cmd = exec.Command("tar", "-xf", archivePath, "-C", targetDir)
+	} else if strings.HasSuffix(archivePath, ".zip") {
+		cmd = exec.Command("unzip", "-q", archivePath, "-d", targetDir)
+	} else {
+		return fmt.Errorf("unsupported archive format: %s", archivePath)
+	}
+	
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("extraction failed: %w, output: %s", err, output)
+	}
+	
+	return nil
+}
+
+// copyFile copies a file from src to dst
+func copyFile(src, dst string) error {
+	cmd := exec.Command("cp", src, dst)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("copy failed: %w, output: %s", err, output)
+	}
 	return nil
 }

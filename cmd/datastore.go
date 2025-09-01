@@ -93,7 +93,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		key := args[0]
 		var value string
-		
+
 		if len(args) == 2 {
 			if args[1] == "-" {
 				// Read from stdin
@@ -239,18 +239,18 @@ func init() {
 
 	// Flags for various commands
 	datastoreConfigShowCmd.Flags().StringP("output", "o", "yaml", "Output format: yaml, json")
-	
+
 	datastoreStoreCmd.Flags().StringP("metadata", "m", "", "Metadata as JSON string")
-	
+
 	datastoreGetCmd.Flags().StringP("output", "o", "raw", "Output format: raw, json, yaml")
-	
+
 	datastoreQueryCmd.Flags().StringP("output", "o", "table", "Output format: table, json, yaml")
 	datastoreQueryCmd.Flags().StringP("filter", "f", "", "Filter criteria as JSON string")
 	datastoreQueryCmd.Flags().IntP("limit", "l", 0, "Limit number of results")
 	datastoreQueryCmd.Flags().IntP("offset", "s", 0, "Offset for pagination")
-	
+
 	datastoreDeleteCmd.Flags().BoolP("force", "f", false, "Force delete without confirmation")
-	
+
 	datastoreListCmd.Flags().StringP("output", "o", "table", "Output format: table, json, yaml")
 }
 
@@ -318,7 +318,7 @@ func editDatastoreConfig() error {
 	}
 
 	configPath := filepath.Join(homeDir, ".portunix", "datastore.yaml")
-	
+
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
 		editor = "nano" // Default editor
@@ -546,7 +546,7 @@ func outputQueryTable(results []datastore.QueryResult) error {
 	for _, result := range results {
 		valuePreview := fmt.Sprintf("%v", result.Value)
 		valuePreview = strings.ReplaceAll(valuePreview, "\n", " ")
-		
+
 		fmt.Printf("%-30s %-20s %-30s\n",
 			truncateString(result.Key, 30),
 			"data",

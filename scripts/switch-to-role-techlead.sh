@@ -1,0 +1,1 @@
+ln -sfn techlead.md .claude/roles/current.md 
