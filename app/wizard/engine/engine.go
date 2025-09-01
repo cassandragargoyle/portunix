@@ -12,7 +12,7 @@ import (
 
 // WizardEngine implements the main wizard execution engine
 type WizardEngine struct {
-	themes map[string]*wizard.Theme
+	themes  map[string]*wizard.Theme
 	wizards map[string]*wizard.Wizard
 }
 
@@ -153,35 +153,35 @@ func (e *WizardEngine) createComponent(page *wizard.Page) (wizard.Component, err
 	switch page.Type {
 	case wizard.PageTypeInfo:
 		return components.NewInfoComponent(page.Title, page.Content), nil
-		
+
 	case wizard.PageTypeSelect:
 		return components.NewSelectComponent(page.Title, page.Prompt, page.Options), nil
-		
+
 	case wizard.PageTypeMultiSelect:
 		return components.NewMultiSelectComponent(page.Title, page.Prompt, page.Options), nil
-		
+
 	case wizard.PageTypeInput:
 		comp := components.NewInputComponent(page.Title, page.Prompt)
 		comp.Validation = page.Validate
 		return comp, nil
-		
+
 	case wizard.PageTypePassword:
 		comp := components.NewPasswordComponent(page.Title, page.Prompt)
 		comp.Validation = page.Validate
 		return comp, nil
-		
+
 	case wizard.PageTypeConfirm:
 		return components.NewConfirmComponent(page.Title, page.Prompt), nil
-		
+
 	case wizard.PageTypeProgress:
 		return components.NewProgressComponent(page.Title, page.Tasks), nil
-		
+
 	case wizard.PageTypeSuccess:
 		return components.NewSuccessComponent(page.Title, page.Content), nil
-		
+
 	case wizard.PageTypeError:
 		return components.NewErrorComponent(page.Title, page.Content, nil), nil
-		
+
 	default:
 		return nil, fmt.Errorf("unknown page type: %s", page.Type)
 	}

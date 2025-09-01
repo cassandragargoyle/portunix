@@ -29,6 +29,10 @@ Available software packages:
   powershell    - Cross-platform PowerShell scripting environment
   docker        - Docker Engine/Desktop with intelligent OS detection
   podman        - Podman container engine with rootless support
+  spice-guest-tools - SPICE guest tools for Windows VMs (clipboard sharing)
+  act           - Run GitHub Actions locally using Docker containers
+  actionlint    - Static checker for GitHub Actions workflow files  
+  gh            - GitHub's official command line tool
 
 Package variants (use with --variant):
   java: 8, 11, 17, 21 (default: 21)
@@ -37,6 +41,7 @@ Package variants (use with --variant):
   mvn: 3.9.9, latest, apt (Linux only) (default: latest)
   claude-code: npm, curl (default: npm)
   powershell: latest (Windows), ubuntu, debian, fedora, rocky, mint, elementary, snap (Linux) (default: auto-detect)
+  chrome: stable, beta, dev (Windows), ubuntu, debian, fedora, rocky, mint, deb-direct, rpm-direct, snap (Linux) (default: auto-detect)
 
 Python installation options:
   --gui         Use GUI installer instead of silent installation
@@ -52,12 +57,19 @@ Examples:
   portunix install mvn --variant 3.9.9
   portunix install chocolatey
   portunix install winget
+  portunix install chrome
+  portunix install chrome --variant fedora
+  portunix install chrome --variant snap
   portunix install powershell
   portunix install powershell --variant ubuntu
   portunix install docker
   portunix install docker -y
   portunix install podman
-  portunix install podman -y`,
+  portunix install podman -y
+  portunix install act
+  portunix install gh
+  portunix install actionlint
+  portunix install github-actions`,
 	DisableFlagParsing: true, // Allow passing flags to specific installers
 	Run: func(cmd *cobra.Command, args []string) {
 		// Check for package-specific help: "install packagename --help"

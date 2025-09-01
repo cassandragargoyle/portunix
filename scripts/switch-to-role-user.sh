@@ -1,0 +1,1 @@
+ln -sfn user.md .claude/roles/current.md 

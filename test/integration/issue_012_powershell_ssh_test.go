@@ -18,12 +18,12 @@ import (
 )
 
 type SupportedDistribution struct {
-	Name                string
-	Image               string
-	ExpectedVariant     string
-	PreInstallCommands  []string
-	SSHSetupCommands    []string
-	VerificationCmd     string
+	Name               string
+	Image              string
+	ExpectedVariant    string
+	PreInstallCommands []string
+	SSHSetupCommands   []string
+	VerificationCmd    string
 }
 
 // TestIssue012_PowerShellInstallation_AllDistros tests PowerShell installation
@@ -76,7 +76,7 @@ func createTestDistributionConfig(image, variant string) SupportedDistribution {
 			"DEBIAN_FRONTEND=noninteractive apt-get install -y sudo wget curl lsb-release ca-certificates gnupg software-properties-common",
 		}
 	case strings.Contains(image, "debian"):
-		name = "Debian"  
+		name = "Debian"
 		preInstallCommands = []string{
 			"apt-get update",
 			"DEBIAN_FRONTEND=noninteractive apt-get install -y sudo wget curl lsb-release ca-certificates gnupg software-properties-common",
@@ -90,7 +90,7 @@ func createTestDistributionConfig(image, variant string) SupportedDistribution {
 	case strings.Contains(image, "rocky"):
 		name = "Rocky Linux"
 		preInstallCommands = []string{
-			"dnf update -y", 
+			"dnf update -y",
 			"dnf install -y sudo wget curl redhat-lsb-core ca-certificates gnupg",
 		}
 	case strings.Contains(image, "mint"):
@@ -105,12 +105,12 @@ func createTestDistributionConfig(image, variant string) SupportedDistribution {
 	}
 
 	return SupportedDistribution{
-		Name:                name,
-		Image:               image,
-		ExpectedVariant:     variant,
-		PreInstallCommands:  preInstallCommands,
-		SSHSetupCommands:    sshSetupCommands,
-		VerificationCmd:     "pwsh --version",
+		Name:               name,
+		Image:              image,
+		ExpectedVariant:    variant,
+		PreInstallCommands: preInstallCommands,
+		SSHSetupCommands:   sshSetupCommands,
+		VerificationCmd:    "pwsh --version",
 	}
 }
 
@@ -168,10 +168,10 @@ func setupContainerForSSH(t *testing.T, ctx context.Context, container testconta
 	// Run setup commands
 	for i, cmd := range dist.PreInstallCommands {
 		t.Logf("Running setup command %d/%d for %s: %s", i+1, len(dist.PreInstallCommands), dist.Name, cmd)
-		
+
 		exitCode, reader, err := container.Exec(ctx, []string{"bash", "-c", cmd})
 		require.NoError(t, err, "Failed to execute setup command for %s: %s", dist.Name, cmd)
-		
+
 		if exitCode != 0 {
 			output := readContainerOutput(reader)
 			t.Fatalf("Setup command failed for %s with exit code %d: %s\nOutput: %s", dist.Name, exitCode, cmd, output)
@@ -181,10 +181,10 @@ func setupContainerForSSH(t *testing.T, ctx context.Context, container testconta
 	// Run SSH-specific setup commands
 	for i, cmd := range dist.SSHSetupCommands {
 		t.Logf("Running SSH setup command %d/%d for %s: %s", i+1, len(dist.SSHSetupCommands), dist.Name, cmd)
-		
+
 		exitCode, reader, err := container.Exec(ctx, []string{"bash", "-c", cmd})
 		require.NoError(t, err, "Failed to execute SSH setup command for %s: %s", dist.Name, cmd)
-		
+
 		if exitCode != 0 {
 			output := readContainerOutput(reader)
 			t.Logf("SSH setup command warning for %s (exit code %d): %s\nOutput: %s", dist.Name, exitCode, cmd, output)
@@ -193,7 +193,7 @@ func setupContainerForSSH(t *testing.T, ctx context.Context, container testconta
 
 	// Wait for SSH server to start
 	time.Sleep(5 * time.Second)
-	
+
 	t.Logf("✓ SSH container setup completed for %s", dist.Name)
 }
 
@@ -328,7 +328,7 @@ func verifyPowerShellViaSSH(t *testing.T, client *ssh.Client, dist SupportedDist
 	// Verify output contains PowerShell version info
 	outputStr := string(output)
 	if strings.Contains(outputStr, "PowerShell") {
-		assert.Regexp(t, `\d+\.\d+\.\d+`, outputStr, 
+		assert.Regexp(t, `\d+\.\d+\.\d+`, outputStr,
 			"PowerShell version should be in format x.y.z for %s", dist.Name)
 		t.Logf("✓ PowerShell verification completed successfully via SSH for %s", dist.Name)
 	} else {
@@ -352,7 +352,7 @@ func encodeBase64(data []byte) string {
 	// Simple base64 encoding
 	const base64Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 	var result strings.Builder
-	
+
 	for i := 0; i < len(data); i += 3 {
 		b1, b2, b3 := data[i], byte(0), byte(0)
 		if i+1 < len(data) {
@@ -361,7 +361,7 @@ func encodeBase64(data []byte) string {
 		if i+2 < len(data) {
 			b3 = data[i+2]
 		}
-		
+
 		result.WriteByte(base64Chars[(b1>>2)&0x3F])
 		result.WriteByte(base64Chars[((b1<<4)|(b2>>4))&0x3F])
 		if i+1 < len(data) {
@@ -374,17 +374,17 @@ func encodeBase64(data []byte) string {
 		} else {
 			result.WriteByte('=')
 		}
-		
+
 		// Add newlines every 76 characters for proper base64 format
 		if (i/3*4+4)%76 == 0 {
 			result.WriteByte('\n')
 		}
 	}
-	
+
 	return result.String()
 }
 
-// Helper function to check Docker availability  
+// Helper function to check Docker availability
 func isDockerAvailable() bool {
 	ctx := context.Background()
 	_, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{

@@ -49,7 +49,7 @@ var pluginListCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		showAll, _ := cmd.Flags().GetBool("all")
 		outputFormat, _ := cmd.Flags().GetString("output")
-		
+
 		return listPlugins(showAll, outputFormat)
 	},
 }
@@ -178,7 +178,7 @@ Example:
 		author, _ := cmd.Flags().GetString("author")
 		description, _ := cmd.Flags().GetString("description")
 		outputDir, _ := cmd.Flags().GetString("output")
-		
+
 		return createPluginTemplate(pluginName, author, description, outputDir)
 	},
 }
@@ -279,14 +279,14 @@ func listPlugins(showAll bool, outputFormat string) error {
 // installPlugin installs a plugin
 func installPlugin(pluginPath string) error {
 	manifestPath := filepath.Join(pluginPath, "plugin.yaml")
-	
+
 	// Check if manifest exists
 	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
 		return fmt.Errorf("plugin.yaml not found in %s", pluginPath)
 	}
 
 	fmt.Printf("Installing plugin from %s...\n", pluginPath)
-	
+
 	if err := pluginManager.InstallPlugin(manifestPath); err != nil {
 		return fmt.Errorf("failed to install plugin: %w", err)
 	}
@@ -308,7 +308,7 @@ func uninstallPlugin(pluginName string, force bool) error {
 	}
 
 	fmt.Printf("Uninstalling plugin '%s'...\n", pluginName)
-	
+
 	if err := pluginManager.UninstallPlugin(pluginName); err != nil {
 		return fmt.Errorf("failed to uninstall plugin: %w", err)
 	}
@@ -320,7 +320,7 @@ func uninstallPlugin(pluginName string, force bool) error {
 // enablePlugin enables a plugin
 func enablePlugin(pluginName string) error {
 	fmt.Printf("Enabling plugin '%s'...\n", pluginName)
-	
+
 	if err := pluginManager.EnablePlugin(pluginName); err != nil {
 		return fmt.Errorf("failed to enable plugin: %w", err)
 	}
@@ -332,7 +332,7 @@ func enablePlugin(pluginName string) error {
 // disablePlugin disables a plugin
 func disablePlugin(pluginName string) error {
 	fmt.Printf("Disabling plugin '%s'...\n", pluginName)
-	
+
 	if err := pluginManager.DisablePlugin(pluginName); err != nil {
 		return fmt.Errorf("failed to disable plugin: %w", err)
 	}
@@ -344,7 +344,7 @@ func disablePlugin(pluginName string) error {
 // startPlugin starts a plugin
 func startPlugin(pluginName string) error {
 	fmt.Printf("Starting plugin '%s'...\n", pluginName)
-	
+
 	if err := pluginManager.StartPlugin(pluginName); err != nil {
 		return fmt.Errorf("failed to start plugin: %w", err)
 	}
@@ -356,7 +356,7 @@ func startPlugin(pluginName string) error {
 // stopPlugin stops a plugin
 func stopPlugin(pluginName string) error {
 	fmt.Printf("Stopping plugin '%s'...\n", pluginName)
-	
+
 	if err := pluginManager.StopPlugin(pluginName); err != nil {
 		return fmt.Errorf("failed to stop plugin: %w", err)
 	}
@@ -381,9 +381,9 @@ func showPluginInfo(pluginName string) error {
 	fmt.Printf("License:     %s\n", pluginInfo.License)
 	fmt.Printf("Status:      %s\n", pluginInfo.Status.String())
 	fmt.Printf("Last Seen:   %s\n", pluginInfo.LastSeen.Format(time.RFC3339))
-	
+
 	fmt.Printf("\nSupported OS: %s\n", strings.Join(pluginInfo.SupportedOS, ", "))
-	
+
 	fmt.Printf("\nCommands:\n")
 	for _, cmd := range pluginInfo.Commands {
 		fmt.Printf("  - %s: %s\n", cmd.Name, cmd.Description)
@@ -398,7 +398,7 @@ func showPluginInfo(pluginName string) error {
 	fmt.Printf("  Database Access:   %t\n", pluginInfo.Capabilities.DatabaseAccess)
 	fmt.Printf("  Container Access:  %t\n", pluginInfo.Capabilities.ContainerAccess)
 	fmt.Printf("  System Commands:   %t\n", pluginInfo.Capabilities.SystemCommands)
-	
+
 	if len(pluginInfo.Capabilities.MCPTools) > 0 {
 		fmt.Printf("  MCP Tools:         %s\n", strings.Join(pluginInfo.Capabilities.MCPTools, ", "))
 	}
@@ -415,7 +415,7 @@ func checkPluginHealth(pluginName string) error {
 
 	fmt.Printf("Plugin Health: %s\n", pluginName)
 	fmt.Printf("==============%s\n", strings.Repeat("=", len(pluginName)))
-	
+
 	status := "❌ Unhealthy"
 	if health.Healthy {
 		status = "✅ Healthy"
@@ -424,7 +424,7 @@ func checkPluginHealth(pluginName string) error {
 	fmt.Printf("Message:    %s\n", health.Message)
 	fmt.Printf("Uptime:     %d seconds\n", health.UptimeSeconds)
 	fmt.Printf("Last Check: %s\n", health.LastCheckTime.Format(time.RFC3339))
-	
+
 	if len(health.Metrics) > 0 {
 		fmt.Printf("\nMetrics:\n")
 		for key, value := range health.Metrics {
@@ -446,7 +446,7 @@ func createPluginTemplate(pluginName, author, description, outputDir string) err
 	}
 
 	pluginDir := filepath.Join(outputDir, pluginName)
-	
+
 	// Create plugin directory
 	if err := os.MkdirAll(pluginDir, 0755); err != nil {
 		return fmt.Errorf("failed to create plugin directory: %w", err)
@@ -455,7 +455,7 @@ func createPluginTemplate(pluginName, author, description, outputDir string) err
 	// Create plugin.yaml
 	manifestPath := filepath.Join(pluginDir, "plugin.yaml")
 	manifestContent := plugins.GetManifestTemplate(pluginName, description, author)
-	
+
 	if err := os.WriteFile(manifestPath, []byte(manifestContent), 0644); err != nil {
 		return fmt.Errorf("failed to create plugin.yaml: %w", err)
 	}
@@ -479,7 +479,7 @@ func createPluginTemplate(pluginName, author, description, outputDir string) err
 // validatePlugin validates a plugin
 func validatePlugin(pluginPath string) error {
 	manifestPath := filepath.Join(pluginPath, "plugin.yaml")
-	
+
 	manifest, err := plugins.LoadManifest(manifestPath)
 	if err != nil {
 		return fmt.Errorf("validation failed: %w", err)
@@ -512,7 +512,7 @@ func outputPluginTable(plugins []plugins.PluginInfo, showAll bool) error {
 	// Implementation for table output
 	fmt.Printf("%-20s %-10s %-15s %-30s\n", "NAME", "VERSION", "STATUS", "DESCRIPTION")
 	fmt.Printf("%-20s %-10s %-15s %-30s\n", "----", "-------", "------", "-----------")
-	
+
 	for _, plugin := range plugins {
 		fmt.Printf("%-20s %-10s %-15s %-30s\n",
 			plugin.Name,
@@ -520,7 +520,7 @@ func outputPluginTable(plugins []plugins.PluginInfo, showAll bool) error {
 			plugin.Status.String(),
 			truncateString(plugin.Description, 30))
 	}
-	
+
 	return nil
 }
 

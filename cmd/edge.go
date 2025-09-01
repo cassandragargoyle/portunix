@@ -165,7 +165,7 @@ Available presets:
 		}
 
 		fmt.Printf("Installing edge infrastructure packages (%s preset)...\n", preset)
-		
+
 		// Use existing install command
 		installArgs := []string{"install", preset}
 		return installCmd.RunE(cmd, installArgs)
@@ -175,7 +175,7 @@ Available presets:
 func init() {
 	// Add edge command to root
 	rootCmd.AddCommand(edgeCmd)
-	
+
 	// Add subcommands
 	edgeCmd.AddCommand(edgeInitCmd)
 	edgeCmd.AddCommand(edgeDeployCmd)
@@ -185,11 +185,11 @@ func init() {
 	edgeCmd.AddCommand(edgeLogsCmd)
 	edgeCmd.AddCommand(edgeConfigCmd)
 	edgeCmd.AddCommand(edgeInstallCmd)
-	
+
 	// Add config subcommands
 	edgeConfigCmd.AddCommand(edgeConfigAddDomainCmd)
 	edgeConfigCmd.AddCommand(edgeConfigAddClientCmd)
-	
+
 	// Add flags
 	edgeLogsCmd.Flags().BoolP("follow", "f", false, "Follow log output")
 	edgeLogsCmd.Flags().IntP("tail", "t", 100, "Number of lines to show from end of logs")

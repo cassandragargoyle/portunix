@@ -4,6 +4,7 @@ package main
 
 import (
 	_ "embed"
+	"fmt"
 
 	"portunix.cz/app/install"
 	"portunix.cz/app/sandbox"
@@ -42,6 +43,9 @@ func main() {
 
 	// Set the embedded install config
 	install.DefaultInstallConfig = installPackagesConfig
+	
+	// DEBUG: Check config loading
+	fmt.Printf("DEBUG: Config length: %d bytes\n", len(installPackagesConfig))
 
 	cmd.Execute()
 }

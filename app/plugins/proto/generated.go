@@ -22,14 +22,14 @@ type DatastorePluginServiceClient interface {
 	Initialize(ctx context.Context, req *InitializeRequest) (*InitializeResponse, error)
 	Health(ctx context.Context, req *HealthRequest) (*HealthResponse, error)
 	Shutdown(ctx context.Context, req *ShutdownRequest) (*ShutdownResponse, error)
-	
+
 	// Datastore operations
 	Store(ctx context.Context, req *StoreRequest) (*StoreResponse, error)
 	Retrieve(ctx context.Context, req *RetrieveRequest) (*RetrieveResponse, error)
 	Query(ctx context.Context, req *QueryRequest) (*QueryResponse, error)
 	Delete(ctx context.Context, req *DeleteRequest) (*DeleteResponse, error)
 	List(ctx context.Context, req *ListKeysRequest) (*ListKeysResponse, error)
-	
+
 	// Management operations
 	TestConnection(ctx context.Context, req *TestConnectionRequest) (*TestConnectionResponse, error)
 	GetStats(ctx context.Context, req *GetStatsRequest) (*GetStatsResponse, error)
@@ -69,11 +69,11 @@ type ExecuteResponse struct {
 type HealthRequest struct{}
 
 type HealthResponse struct {
-	Healthy        bool
-	Status         string
-	Message        string
-	UptimeSeconds  int64
-	Metrics        map[string]string
+	Healthy       bool
+	Status        string
+	Message       string
+	UptimeSeconds int64
+	Metrics       map[string]string
 }
 
 type ShutdownRequest struct {
@@ -239,11 +239,11 @@ type GetStatsResponse struct {
 }
 
 type DatastoreStats struct {
-	TotalKeys              int64
-	TotalSizeBytes         int64
-	Collections            map[string]int64
-	Performance            *PerformanceMetrics
-	LastUpdatedTimestamp   int64
+	TotalKeys            int64
+	TotalSizeBytes       int64
+	Collections          map[string]int64
+	Performance          *PerformanceMetrics
+	LastUpdatedTimestamp int64
 }
 
 type PerformanceMetrics struct {

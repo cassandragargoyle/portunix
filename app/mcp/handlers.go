@@ -39,8 +39,8 @@ func (s *Server) handleToolsList(params json.RawMessage) (interface{}, error) {
 			"name":        "get_system_info",
 			"description": "Get comprehensive system information including OS, version, architecture, hostname, and capabilities",
 			"inputSchema": map[string]interface{}{
-				"type":       "object",
-				"properties": map[string]interface{}{},
+				"type":        "object",
+				"properties":  map[string]interface{}{},
 				"description": "No parameters required",
 			},
 		},
@@ -48,8 +48,8 @@ func (s *Server) handleToolsList(params json.RawMessage) (interface{}, error) {
 			"name":        "list_packages",
 			"description": "List available packages for installation via Portunix package manager",
 			"inputSchema": map[string]interface{}{
-				"type":       "object",
-				"properties": map[string]interface{}{},
+				"type":        "object",
+				"properties":  map[string]interface{}{},
 				"description": "No parameters required",
 			},
 		},
@@ -71,8 +71,8 @@ func (s *Server) handleToolsList(params json.RawMessage) (interface{}, error) {
 			"name":        "detect_project_type",
 			"description": "Analyze current directory and detect project type and technologies",
 			"inputSchema": map[string]interface{}{
-				"type":       "object",
-				"properties": map[string]interface{}{},
+				"type":        "object",
+				"properties":  map[string]interface{}{},
 				"description": "No parameters required",
 			},
 		},
@@ -80,8 +80,8 @@ func (s *Server) handleToolsList(params json.RawMessage) (interface{}, error) {
 			"name":        "vm_list",
 			"description": "List all virtual machines managed by QEMU/KVM",
 			"inputSchema": map[string]interface{}{
-				"type":       "object",
-				"properties": map[string]interface{}{},
+				"type":        "object",
+				"properties":  map[string]interface{}{},
 				"description": "No parameters required",
 			},
 		},
@@ -303,7 +303,7 @@ func (s *Server) handleToolsList(params json.RawMessage) (interface{}, error) {
 			},
 		},
 	}
-	
+
 	return map[string]interface{}{
 		"tools": tools,
 	}, nil
@@ -314,14 +314,14 @@ func (s *Server) handleToolsCall(params json.RawMessage) (interface{}, error) {
 		Name      string                 `json:"name"`
 		Arguments map[string]interface{} `json:"arguments"`
 	}
-	
+
 	if err := json.Unmarshal(params, &request); err != nil {
 		return nil, fmt.Errorf("invalid tool call parameters: %w", err)
 	}
-	
+
 	var result interface{}
 	var err error
-	
+
 	switch request.Name {
 	case "get_system_info":
 		result, err = s.handleGetSystemInfo(nil)
@@ -376,11 +376,11 @@ func (s *Server) handleToolsCall(params json.RawMessage) (interface{}, error) {
 	default:
 		err = fmt.Errorf("unknown tool: %s", request.Name)
 	}
-	
+
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Return MCP-compliant tool response with formatted text
 	formattedText := formatResultAsText(result)
 	return map[string]interface{}{
@@ -403,9 +403,9 @@ func (s *Server) handleGetSystemInfo(params json.RawMessage) (interface{}, error
 
 	return map[string]interface{}{
 		"portunix_version": version.ProductVersion,
-		"raw_os":          runtime.GOOS,
-		"raw_arch":        runtime.GOARCH,
-		"system_info":     systemInfo,
+		"raw_os":           runtime.GOOS,
+		"raw_arch":         runtime.GOARCH,
+		"system_info":      systemInfo,
 	}, nil
 }
 
@@ -417,7 +417,7 @@ func (s *Server) handleGetCapabilities(params json.RawMessage) (interface{}, err
 
 	capabilities := []string{
 		"package_management",
-		"container_management", 
+		"container_management",
 		"environment_detection",
 		"project_analysis",
 		"system_information",
@@ -483,11 +483,11 @@ func (s *Server) handleGetEnvironment(params json.RawMessage) (interface{}, erro
 		"environment_variables": envMap,
 		"current_directory":     cwd,
 		"system_environment":    systemInfo.Environment,
-		"variant":              systemInfo.Variant,
-		"hostname":             systemInfo.Hostname,
-		"permissions":          s.Permissions,
-		"package_managers":     detectPackageManagers(),
-		"container_systems":    detectContainerSystems(),
+		"variant":               systemInfo.Variant,
+		"hostname":              systemInfo.Hostname,
+		"permissions":           s.Permissions,
+		"package_managers":      detectPackageManagers(),
+		"container_systems":     detectContainerSystems(),
 	}, nil
 }
 
@@ -516,16 +516,16 @@ func (s *Server) handleDetectProjectType(params json.RawMessage) (interface{}, e
 
 	// Detect project type based on files present
 	projectTypes := detectProjectType(projectPath)
-	
+
 	// Get additional project information
 	projectInfo := analyzeProjectStructure(projectPath)
 
 	return map[string]interface{}{
-		"path":            projectPath,
-		"detected_types":  projectTypes,
-		"primary_type":    getPrimaryProjectType(projectTypes),
-		"project_info":    projectInfo,
-		"confidence":      calculateConfidence(projectTypes),
+		"path":           projectPath,
+		"detected_types": projectTypes,
+		"primary_type":   getPrimaryProjectType(projectTypes),
+		"project_info":   projectInfo,
+		"confidence":     calculateConfidence(projectTypes),
 	}, nil
 }
 
@@ -568,11 +568,11 @@ func (s *Server) handleAnalyzeDependencies(params json.RawMessage) (interface{},
 	}
 
 	return map[string]interface{}{
-		"path":                projectPath,
-		"project_type":        projectType,
-		"deep_analysis":       req.Deep,
-		"dependencies":        dependencies,
-		"total_dependencies":  len(dependencies),
+		"path":               projectPath,
+		"project_type":       projectType,
+		"deep_analysis":      req.Deep,
+		"dependencies":       dependencies,
+		"total_dependencies": len(dependencies),
 		"analysis_timestamp": time.Now().UTC(),
 	}, nil
 }
@@ -625,12 +625,12 @@ func (s *Server) handleSuggestSetup(params json.RawMessage) (interface{}, error)
 	suggestions := generateSetupSuggestions(projectPath, projectType, context, systemInfo)
 
 	return map[string]interface{}{
-		"path":           projectPath,
-		"project_type":   projectType,
-		"context":        context,
-		"system_info":    systemInfo,
-		"suggestions":    suggestions,
-		"generated_at":   time.Now().UTC(),
+		"path":         projectPath,
+		"project_type": projectType,
+		"context":      context,
+		"system_info":  systemInfo,
+		"suggestions":  suggestions,
+		"generated_at": time.Now().UTC(),
 	}, nil
 }
 
@@ -690,10 +690,10 @@ func (s *Server) handleValidateEnvironment(params json.RawMessage) (interface{},
 func (s *Server) handleListAvailablePackages(params json.RawMessage) (interface{}, error) {
 	// Parse parameters
 	var req struct {
-		Manager    string `json:"manager,omitempty"`    // specific package manager
-		Category   string `json:"category,omitempty"`   // "development", "system", "all"
+		Manager    string `json:"manager,omitempty"`     // specific package manager
+		Category   string `json:"category,omitempty"`    // "development", "system", "all"
 		SearchTerm string `json:"search_term,omitempty"` // search for specific packages
-		Limit      int    `json:"limit,omitempty"`      // limit results
+		Limit      int    `json:"limit,omitempty"`       // limit results
 	}
 	if len(params) > 0 {
 		if err := json.Unmarshal(params, &req); err != nil {
@@ -750,7 +750,7 @@ func (s *Server) handleListAvailablePackages(params json.RawMessage) (interface{
 			"packages": packages,
 			"count":    len(packages),
 		}
-		
+
 		// Convert packages to []interface{}
 		for _, pkg := range packages {
 			allPackages = append(allPackages, pkg)
@@ -773,7 +773,7 @@ func (s *Server) handleInstallPackage(params json.RawMessage) (interface{}, erro
 	if s.Permissions == "limited" {
 		return nil, fmt.Errorf("package installation requires higher permissions")
 	}
-	
+
 	// Parse parameters
 	var req struct {
 		Package string `json:"package"`
@@ -837,11 +837,11 @@ func (s *Server) handleInstallPackage(params json.RawMessage) (interface{}, erro
 	// If dry run, just return what would be done
 	if req.DryRun {
 		return map[string]interface{}{
-			"status":     "dry_run",
-			"package":    req.Package,
-			"manager":    managerToUse,
-			"version":    req.Version,
-			"would_install": !installed,
+			"status":          "dry_run",
+			"package":         req.Package,
+			"manager":         managerToUse,
+			"version":         req.Version,
+			"would_install":   !installed,
 			"current_version": currentVersion,
 		}, nil
 	}
@@ -917,7 +917,7 @@ func (s *Server) handleUpdatePackages(params json.RawMessage) (interface{}, erro
 	if s.Permissions == "limited" {
 		return nil, fmt.Errorf("package updates require higher permissions")
 	}
-	
+
 	// Parse parameters
 	var req struct {
 		Manager  string   `json:"manager,omitempty"`  // specific package manager
@@ -1036,14 +1036,14 @@ func (s *Server) handleListContainers(params json.RawMessage) (interface{}, erro
 			errors[system] = err.Error()
 			continue
 		}
-		
+
 		// Add system info to each container
 		for _, container := range containers {
 			if containerMap, ok := container.(map[string]interface{}); ok {
 				containerMap["container_system"] = system
 			}
 		}
-		
+
 		allContainers = append(allContainers, containers...)
 	}
 
@@ -1069,7 +1069,7 @@ func (s *Server) handleManageContainer(params json.RawMessage) (interface{}, err
 	// Parse parameters
 	var req struct {
 		ContainerID string `json:"container_id"`
-		Action      string `json:"action"`      // "start", "stop", "restart", "pause", "unpause"
+		Action      string `json:"action"`           // "start", "stop", "restart", "pause", "unpause"
 		System      string `json:"system,omitempty"` // "docker", "podman", etc.
 		Force       bool   `json:"force,omitempty"`  // force stop/kill
 	}
@@ -1298,7 +1298,7 @@ func (s *Server) handleValidateCommand(params json.RawMessage) (interface{}, err
 
 func (s *Server) handleGetPermissions(params json.RawMessage) (interface{}, error) {
 	return map[string]interface{}{
-		"current_level": s.Permissions,
+		"current_level":    s.Permissions,
 		"available_levels": []string{"limited", "standard", "full"},
 		"description": map[string]string{
 			"limited":  "Read-only operations, basic system info",
@@ -1311,13 +1311,13 @@ func (s *Server) handleGetPermissions(params json.RawMessage) (interface{}, erro
 func (s *Server) handleAuditLog(params json.RawMessage) (interface{}, error) {
 	// Parse parameters
 	var req struct {
-		Action    string `json:"action,omitempty"`    // "view", "clear", "export"
+		Action    string `json:"action,omitempty"`     // "view", "clear", "export"
 		StartDate string `json:"start_date,omitempty"` // ISO date string
 		EndDate   string `json:"end_date,omitempty"`   // ISO date string
-		Level     string `json:"level,omitempty"`     // "info", "warning", "error", "all"
-		Category  string `json:"category,omitempty"`  // "package", "container", "system", "security"
-		Limit     int    `json:"limit,omitempty"`     // max entries to return
-		Format    string `json:"format,omitempty"`    // "json", "text", "csv"
+		Level     string `json:"level,omitempty"`      // "info", "warning", "error", "all"
+		Category  string `json:"category,omitempty"`   // "package", "container", "system", "security"
+		Limit     int    `json:"limit,omitempty"`      // max entries to return
+		Format    string `json:"format,omitempty"`     // "json", "text", "csv"
 	}
 	if len(params) > 0 {
 		if err := json.Unmarshal(params, &req); err != nil {
@@ -1470,12 +1470,12 @@ func (s *Server) handleSetupCICD(params json.RawMessage) (interface{}, error) {
 	var req struct {
 		ProjectPath string   `json:"project_path,omitempty"` // project directory
 		ProjectType string   `json:"project_type,omitempty"` // project type
-		Platform    string   `json:"platform,omitempty"`    // "github", "gitlab", "azure", "jenkins"
-		Workflows   []string `json:"workflows,omitempty"`   // workflow types
-		Features    []string `json:"features,omitempty"`    // CI/CD features
-		Environment string   `json:"environment,omitempty"` // target environment
-		Registry    string   `json:"registry,omitempty"`    // container registry
-		Deploy      bool     `json:"deploy,omitempty"`      // include deployment
+		Platform    string   `json:"platform,omitempty"`     // "github", "gitlab", "azure", "jenkins"
+		Workflows   []string `json:"workflows,omitempty"`    // workflow types
+		Features    []string `json:"features,omitempty"`     // CI/CD features
+		Environment string   `json:"environment,omitempty"`  // target environment
+		Registry    string   `json:"registry,omitempty"`     // container registry
+		Deploy      bool     `json:"deploy,omitempty"`       // include deployment
 	}
 	if len(params) > 0 {
 		if err := json.Unmarshal(params, &req); err != nil {
@@ -1541,15 +1541,15 @@ func (s *Server) handleSetupCICD(params json.RawMessage) (interface{}, error) {
 	}
 
 	return map[string]interface{}{
-		"status":          "success",
-		"project_path":    projectPath,
-		"project_type":    projectType,
-		"platform":        platform,
-		"workflows":       workflows,
-		"features":        req.Features,
-		"configuration":   cicdConfig,
-		"files_created":   filesCreated,
-		"created_at":      time.Now().UTC(),
+		"status":        "success",
+		"project_path":  projectPath,
+		"project_type":  projectType,
+		"platform":      platform,
+		"workflows":     workflows,
+		"features":      req.Features,
+		"configuration": cicdConfig,
+		"files_created": filesCreated,
+		"created_at":    time.Now().UTC(),
 	}, nil
 }
 
@@ -1560,9 +1560,9 @@ func (s *Server) handleDeployEnvironment(params json.RawMessage) (interface{}, e
 
 	// Parse parameters
 	var req struct {
-		ProjectPath   string            `json:"project_path,omitempty"`   // project directory
-		ProjectType   string            `json:"project_type,omitempty"`   // project type
-		Environment   string            `json:"environment"`              // target environment (required)
+		ProjectPath   string            `json:"project_path,omitempty"`  // project directory
+		ProjectType   string            `json:"project_type,omitempty"`  // project type
+		Environment   string            `json:"environment"`             // target environment (required)
 		Platform      string            `json:"platform,omitempty"`      // deployment platform
 		Configuration map[string]string `json:"configuration,omitempty"` // deployment config
 		Secrets       map[string]string `json:"secrets,omitempty"`       // environment secrets
@@ -1691,17 +1691,17 @@ func detectPackageManagers() []string {
 
 	// Check for common package managers
 	packageManagers := map[string]string{
-		"apt":        "apt",
-		"yum":        "yum", 
-		"dnf":        "dnf",
-		"pacman":     "pacman",
-		"zypper":     "zypper",
-		"brew":       "brew",
-		"choco":      "choco",
-		"winget":     "winget",
-		"scoop":      "scoop",
-		"snap":       "snap",
-		"flatpak":    "flatpak",
+		"apt":     "apt",
+		"yum":     "yum",
+		"dnf":     "dnf",
+		"pacman":  "pacman",
+		"zypper":  "zypper",
+		"brew":    "brew",
+		"choco":   "choco",
+		"winget":  "winget",
+		"scoop":   "scoop",
+		"snap":    "snap",
+		"flatpak": "flatpak",
 	}
 
 	for manager, command := range packageManagers {
@@ -1718,9 +1718,9 @@ func detectContainerSystems() []string {
 
 	// Check for container systems
 	containerSystems := map[string]string{
-		"docker":  "docker",
-		"podman":  "podman",
-		"nerdctl": "nerdctl",
+		"docker":     "docker",
+		"podman":     "podman",
+		"nerdctl":    "nerdctl",
 		"containerd": "ctr",
 	}
 
@@ -1742,7 +1742,7 @@ func checkPackageInstalled(packageName, manager string) (bool, string, error) {
 		if err != nil {
 			return false, "", nil // Package not found
 		}
-		
+
 		status := string(output)
 		if strings.Contains(status, "install ok installed") {
 			parts := strings.Fields(status)
@@ -1760,7 +1760,7 @@ func checkPackageInstalled(packageName, manager string) (bool, string, error) {
 		if err != nil {
 			return false, "", nil
 		}
-		
+
 		version := strings.TrimSpace(string(output))
 		return true, version, nil
 
@@ -1771,7 +1771,7 @@ func checkPackageInstalled(packageName, manager string) (bool, string, error) {
 		if err != nil {
 			return false, "", nil
 		}
-		
+
 		parts := strings.Fields(string(output))
 		if len(parts) >= 2 {
 			return true, parts[1], nil
@@ -1785,7 +1785,7 @@ func checkPackageInstalled(packageName, manager string) (bool, string, error) {
 		if err != nil {
 			return false, "", nil
 		}
-		
+
 		version := strings.TrimSpace(string(output))
 		if version != "" {
 			parts := strings.Fields(version)
@@ -1803,7 +1803,7 @@ func checkPackageInstalled(packageName, manager string) (bool, string, error) {
 		if err != nil {
 			return false, "", nil
 		}
-		
+
 		if strings.Contains(string(output), packageName) {
 			lines := strings.Split(string(output), "\n")
 			for _, line := range lines {
@@ -1825,7 +1825,7 @@ func checkPackageInstalled(packageName, manager string) (bool, string, error) {
 		if err != nil {
 			return false, "", nil
 		}
-		
+
 		if strings.Contains(string(output), packageName) {
 			return true, "unknown", nil // winget doesn't easily provide version in list
 		}
@@ -1838,7 +1838,7 @@ func checkPackageInstalled(packageName, manager string) (bool, string, error) {
 		if err != nil {
 			return false, "", nil
 		}
-		
+
 		lines := strings.Split(string(output), "\n")
 		for _, line := range lines {
 			if strings.HasPrefix(line, packageName) {
@@ -1858,7 +1858,7 @@ func checkPackageInstalled(packageName, manager string) (bool, string, error) {
 		if err != nil {
 			return false, "", nil
 		}
-		
+
 		if strings.Contains(string(output), packageName) {
 			return true, "unknown", nil
 		}
@@ -1884,11 +1884,11 @@ func detectProjectType(projectPath string) []ProjectType {
 	// Define project type indicators
 	projectIndicators := map[string]map[string]float64{
 		"go": {
-			"go.mod":      1.0,
-			"go.sum":      0.8,
-			"main.go":     0.9,
-			"*.go":        0.7,
-			"Makefile":    0.3,
+			"go.mod":   1.0,
+			"go.sum":   0.8,
+			"main.go":  0.9,
+			"*.go":     0.7,
+			"Makefile": 0.3,
 		},
 		"node": {
 			"package.json":      1.0,
@@ -1916,17 +1916,17 @@ func detectProjectType(projectPath string) []ProjectType {
 			"src/main/java": 0.8,
 		},
 		"rust": {
-			"Cargo.toml": 1.0,
-			"Cargo.lock": 0.8,
+			"Cargo.toml":  1.0,
+			"Cargo.lock":  0.8,
 			"src/main.rs": 0.9,
-			"*.rs":       0.7,
+			"*.rs":        0.7,
 		},
 		"dotnet": {
-			"*.csproj":    1.0,
-			"*.sln":       0.9,
-			"*.cs":        0.6,
-			"bin":         0.3,
-			"obj":         0.3,
+			"*.csproj": 1.0,
+			"*.sln":    0.9,
+			"*.cs":     0.6,
+			"bin":      0.3,
+			"obj":      0.3,
 		},
 		"php": {
 			"composer.json": 0.9,
@@ -1935,16 +1935,16 @@ func detectProjectType(projectPath string) []ProjectType {
 			"vendor":        0.4,
 		},
 		"ruby": {
-			"Gemfile":     0.9,
-			"Gemfile.lock": 0.8,
-			"*.rb":        0.6,
+			"Gemfile":               0.9,
+			"Gemfile.lock":          0.8,
+			"*.rb":                  0.6,
 			"config/application.rb": 0.8,
 		},
 		"docker": {
-			"Dockerfile":       1.0,
-			"docker-compose.yml": 0.9,
+			"Dockerfile":          1.0,
+			"docker-compose.yml":  0.9,
 			"docker-compose.yaml": 0.9,
-			".dockerignore":    0.7,
+			".dockerignore":       0.7,
 		},
 	}
 
@@ -1986,7 +1986,7 @@ func checkFileExists(basePath, pattern string) bool {
 		matches, err := filepath.Glob(filepath.Join(basePath, pattern))
 		return err == nil && len(matches) > 0
 	}
-	
+
 	// Check regular file/directory
 	_, err := os.Stat(filepath.Join(basePath, pattern))
 	return err == nil
@@ -2071,7 +2071,7 @@ func analyzeProjectStructure(projectPath string) map[string]interface{} {
 
 func listContainersForSystem(system string, includeAll bool) ([]interface{}, error) {
 	var cmd *exec.Cmd
-	
+
 	switch system {
 	case "docker":
 		if includeAll {
@@ -2110,7 +2110,7 @@ func parseContainerOutput(output, system string) []interface{} {
 	}
 
 	containers := []interface{}{}
-	
+
 	// Skip header line
 	for _, line := range lines[1:] {
 		line = strings.TrimSpace(line)
@@ -2214,7 +2214,7 @@ func isValidPackageName(packageName string) bool {
 func installPackageWithManager(packageName, manager, version string) (map[string]interface{}, error) {
 	var cmd *exec.Cmd
 	packageSpec := packageName
-	
+
 	// Add version if specified
 	if version != "" {
 		switch manager {
@@ -2286,7 +2286,7 @@ func installPackageWithManager(packageName, manager, version string) (map[string
 
 	// Verify installation
 	installed, installedVersion, checkErr := checkPackageInstalled(packageName, manager)
-	
+
 	result := map[string]interface{}{
 		"status":            "success",
 		"package":           packageName,
@@ -2307,7 +2307,7 @@ func installPackageWithManager(packageName, manager, version string) (map[string
 
 type CommandValidation struct {
 	Safe            bool     `json:"safe"`
-	RiskLevel       string   `json:"risk_level"`       // "low", "medium", "high", "critical"
+	RiskLevel       string   `json:"risk_level"` // "low", "medium", "high", "critical"
 	Reasoning       string   `json:"reasoning"`
 	Warnings        []string `json:"warnings"`
 	Recommendations []string `json:"recommendations"`
@@ -2362,8 +2362,8 @@ func validateCommand(command string, args []string, context, permissions string)
 		// Check if current permission level allows this command
 		if !isPermissionSufficient(permissions, safeCommand.MinPermission) {
 			validation.Safe = false
-			validation.Warnings = append(validation.Warnings, 
-				fmt.Sprintf("Command requires '%s' permission level, current level is '%s'", 
+			validation.Warnings = append(validation.Warnings,
+				fmt.Sprintf("Command requires '%s' permission level, current level is '%s'",
 					safeCommand.MinPermission, permissions))
 		}
 
@@ -2372,7 +2372,7 @@ func validateCommand(command string, args []string, context, permissions string)
 			contextValidation := validateCommandContext(command, args, context)
 			validation.Warnings = append(validation.Warnings, contextValidation.Warnings...)
 			validation.Recommendations = append(validation.Recommendations, contextValidation.Recommendations...)
-			
+
 			if !contextValidation.Safe {
 				validation.Safe = false
 				validation.RiskLevel = "high"
@@ -2385,7 +2385,7 @@ func validateCommand(command string, args []string, context, permissions string)
 	// Command not in whitelist - analyze further
 	validation.Reasoning = "Command not in approved whitelist"
 	validation.Warnings = append(validation.Warnings, "Unknown command - exercise caution")
-	validation.Recommendations = append(validation.Recommendations, 
+	validation.Recommendations = append(validation.Recommendations,
 		"Verify command safety before execution",
 		"Consider using approved alternatives")
 
@@ -2436,15 +2436,15 @@ func getSafeCommands() map[string]SafeCommand {
 		"uname":  {"Display system information", "low", "limited"},
 
 		// Package managers (standard permission)
-		"apt":        {"APT package manager", "medium", "standard"},
-		"yum":        {"YUM package manager", "medium", "standard"},
-		"dnf":        {"DNF package manager", "medium", "standard"},
-		"pacman":     {"Pacman package manager", "medium", "standard"},
-		"brew":       {"Homebrew package manager", "medium", "standard"},
-		"choco":      {"Chocolatey package manager", "medium", "standard"},
-		"winget":     {"Windows Package Manager", "medium", "standard"},
-		"snap":       {"Snap package manager", "medium", "standard"},
-		"flatpak":    {"Flatpak package manager", "medium", "standard"},
+		"apt":     {"APT package manager", "medium", "standard"},
+		"yum":     {"YUM package manager", "medium", "standard"},
+		"dnf":     {"DNF package manager", "medium", "standard"},
+		"pacman":  {"Pacman package manager", "medium", "standard"},
+		"brew":    {"Homebrew package manager", "medium", "standard"},
+		"choco":   {"Chocolatey package manager", "medium", "standard"},
+		"winget":  {"Windows Package Manager", "medium", "standard"},
+		"snap":    {"Snap package manager", "medium", "standard"},
+		"flatpak": {"Flatpak package manager", "medium", "standard"},
 
 		// Container commands (standard permission)
 		"docker":  {"Docker container management", "medium", "standard"},
@@ -2499,21 +2499,21 @@ func validateCommandContext(command string, args []string, context string) Comma
 	case "package_install":
 		if !isPackageManagerCommand(command) {
 			validation.Safe = false
-			validation.Warnings = append(validation.Warnings, 
+			validation.Warnings = append(validation.Warnings,
 				"Command is not a recognized package manager for package installation")
 		}
 
 	case "container_run":
 		if !isContainerCommand(command) {
 			validation.Safe = false
-			validation.Warnings = append(validation.Warnings, 
+			validation.Warnings = append(validation.Warnings,
 				"Command is not a recognized container management tool")
 		}
 
 	case "development":
 		if isDangerous := containsDangerousDevPattern(strings.Join(append([]string{command}, args...), " ")); isDangerous {
 			validation.Safe = false
-			validation.Warnings = append(validation.Warnings, 
+			validation.Warnings = append(validation.Warnings,
 				"Command contains patterns that may be dangerous in development context")
 		}
 	}
@@ -2539,7 +2539,7 @@ func isReadOnlyCommand(command string) bool {
 
 func isPackageManagerCommand(command string) bool {
 	packageManagers := []string{
-		"apt", "yum", "dnf", "pacman", "brew", "choco", "winget", 
+		"apt", "yum", "dnf", "pacman", "brew", "choco", "winget",
 		"snap", "flatpak", "pip", "npm", "yarn", "cargo",
 	}
 
@@ -2567,7 +2567,7 @@ func isContainerCommand(command string) bool {
 func containsDangerousDevPattern(command string) bool {
 	// Check for patterns that might be dangerous even in development
 	dangerousPatterns := []string{
-		"rm -rf /", "del /f /q C:\\", "format C:", 
+		"rm -rf /", "del /f /q C:\\", "format C:",
 		"chmod 777 /", "chown root", "sudo rm",
 	}
 
@@ -2584,7 +2584,7 @@ func containsDangerousDevPattern(command string) bool {
 
 func containerExists(containerID, system string) bool {
 	var cmd *exec.Cmd
-	
+
 	switch system {
 	case "docker":
 		cmd = exec.Command("docker", "inspect", containerID)
@@ -2602,7 +2602,7 @@ func containerExists(containerID, system string) bool {
 
 func executeContainerAction(containerID, action, system string, force bool) (map[string]interface{}, error) {
 	var cmd *exec.Cmd
-	
+
 	switch system {
 	case "docker":
 		cmd = buildDockerCommand(containerID, action, force)
@@ -2632,7 +2632,7 @@ func executeContainerAction(containerID, action, system string, force bool) (map
 	}
 
 	result["status"] = "success"
-	
+
 	// Add action-specific result information
 	switch action {
 	case "start":
@@ -2720,7 +2720,7 @@ func buildNerdctlCommand(containerID, action string, force bool) *exec.Cmd {
 
 func getDetailedContainerInfo(containerID, system string) (map[string]interface{}, error) {
 	var cmd *exec.Cmd
-	
+
 	switch system {
 	case "docker":
 		cmd = exec.Command("docker", "inspect", containerID)
@@ -2831,14 +2831,14 @@ func extractPorts(containerData map[string]interface{}) []map[string]interface{}
 				portInfo := map[string]interface{}{
 					"container_port": containerPort,
 				}
-				
+
 				if bindings, ok := hostBindings.([]interface{}); ok && len(bindings) > 0 {
 					if binding, ok := bindings[0].(map[string]interface{}); ok {
 						portInfo["host_ip"] = binding["HostIp"]
 						portInfo["host_port"] = binding["HostPort"]
 					}
 				}
-				
+
 				ports = append(ports, portInfo)
 			}
 		}
@@ -2872,8 +2872,8 @@ func extractEnvironment(containerData map[string]interface{}) map[string]string 
 type Dependency struct {
 	Name        string `json:"name"`
 	Version     string `json:"version"`
-	Type        string `json:"type"`        // "direct", "dev", "peer", "optional"
-	Source      string `json:"source"`      // file where found
+	Type        string `json:"type"`   // "direct", "dev", "peer", "optional"
+	Source      string `json:"source"` // file where found
 	Description string `json:"description,omitempty"`
 	Homepage    string `json:"homepage,omitempty"`
 	License     string `json:"license,omitempty"`
@@ -2951,7 +2951,7 @@ func parseGoMod(goModPath string) ([]Dependency, error) {
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		if strings.HasPrefix(line, "require") {
 			if strings.Contains(line, "(") {
 				inRequireBlock = true
@@ -2981,7 +2981,7 @@ func parseGoRequireLine(line string) Dependency {
 	// Remove "require" prefix and clean up
 	line = strings.TrimPrefix(line, "require")
 	line = strings.TrimSpace(line)
-	
+
 	parts := strings.Fields(line)
 	if len(parts) >= 2 {
 		return Dependency{
@@ -2997,13 +2997,13 @@ func parseGoRequireLine(line string) Dependency {
 func parseGoListOutput(output string) []Dependency {
 	var dependencies []Dependency
 	lines := strings.Split(output, "\n")
-	
+
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
-		
+
 		parts := strings.Fields(line)
 		if len(parts) >= 2 {
 			dependencies = append(dependencies, Dependency{
@@ -3014,7 +3014,7 @@ func parseGoListOutput(output string) []Dependency {
 			})
 		}
 	}
-	
+
 	return dependencies
 }
 
@@ -3175,23 +3175,23 @@ func parsePyprojectToml(pyprojectPath string) ([]Dependency, error) {
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
-		if strings.Contains(line, "[tool.poetry.dependencies]") || 
-		   strings.Contains(line, "dependencies = [") {
+
+		if strings.Contains(line, "[tool.poetry.dependencies]") ||
+			strings.Contains(line, "dependencies = [") {
 			inDependencies = true
 			continue
 		}
-		
+
 		if inDependencies && strings.HasPrefix(line, "[") {
 			inDependencies = false
 		}
-		
+
 		if inDependencies && strings.Contains(line, "=") {
 			parts := strings.SplitN(line, "=", 2)
 			if len(parts) == 2 {
 				name := strings.TrimSpace(parts[0])
 				version := strings.Trim(strings.TrimSpace(parts[1]), "\"'")
-				
+
 				dependencies = append(dependencies, Dependency{
 					Name:    name,
 					Version: version,
@@ -3208,7 +3208,7 @@ func parsePyprojectToml(pyprojectPath string) ([]Dependency, error) {
 // Simplified implementations for other project types
 func analyzeJavaDependencies(projectPath string, deep bool) ([]Dependency, error) {
 	var dependencies []Dependency
-	
+
 	// Check pom.xml (Maven)
 	pomPath := filepath.Join(projectPath, "pom.xml")
 	if _, err := os.Stat(pomPath); err == nil {
@@ -3224,7 +3224,7 @@ func analyzeJavaDependencies(projectPath string, deep bool) ([]Dependency, error
 			})
 		}
 	}
-	
+
 	return dependencies, nil
 }
 
@@ -3246,22 +3246,22 @@ func analyzeRustDependencies(projectPath string, deep bool) ([]Dependency, error
 
 	for _, line := range lines {
 		line = strings.TrimSpace(line)
-		
+
 		if line == "[dependencies]" {
 			inDependencies = true
 			continue
 		}
-		
+
 		if inDependencies && strings.HasPrefix(line, "[") {
 			inDependencies = false
 		}
-		
+
 		if inDependencies && strings.Contains(line, "=") {
 			parts := strings.SplitN(line, "=", 2)
 			if len(parts) == 2 {
 				name := strings.TrimSpace(parts[0])
 				version := strings.Trim(strings.TrimSpace(parts[1]), "\"'")
-				
+
 				dependencies = append(dependencies, Dependency{
 					Name:    name,
 					Version: version,
@@ -3341,7 +3341,7 @@ func analyzeRubyDependencies(projectPath string, deep bool) ([]Dependency, error
 				if len(parts) >= 4 {
 					version = parts[3]
 				}
-				
+
 				dependencies = append(dependencies, Dependency{
 					Name:    name,
 					Version: version,
@@ -3360,8 +3360,8 @@ func analyzeGenericDependencies(projectPath string, deep bool) ([]Dependency, er
 	var dependencies []Dependency
 
 	dependencyFiles := map[string]string{
-		"package.json":      "node",
-		"requirements.txt":  "python",
+		"package.json":     "node",
+		"requirements.txt": "python",
 		"go.mod":           "go",
 		"Cargo.toml":       "rust",
 		"composer.json":    "php",
@@ -3385,8 +3385,8 @@ func analyzeGenericDependencies(projectPath string, deep bool) ([]Dependency, er
 // Setup suggestions functions
 
 type SetupSuggestion struct {
-	Category    string   `json:"category"`    // "tools", "environment", "dependencies", "configuration"
-	Priority    string   `json:"priority"`    // "critical", "high", "medium", "low" 
+	Category    string   `json:"category"` // "tools", "environment", "dependencies", "configuration"
+	Priority    string   `json:"priority"` // "critical", "high", "medium", "low"
 	Title       string   `json:"title"`
 	Description string   `json:"description"`
 	Commands    []string `json:"commands,omitempty"`
@@ -3400,13 +3400,13 @@ func generateSetupSuggestions(projectPath, projectType, context string, systemIn
 
 	// Add project-specific suggestions
 	suggestions = append(suggestions, getProjectTypeSuggestions(projectType, context, systemInfo)...)
-	
+
 	// Add system-specific suggestions
 	suggestions = append(suggestions, getSystemSpecificSuggestions(systemInfo, context)...)
-	
+
 	// Add development tools suggestions
 	suggestions = append(suggestions, getDevelopmentToolsSuggestions(projectType, systemInfo)...)
-	
+
 	// Add container suggestions if applicable
 	suggestions = append(suggestions, getContainerSuggestions(projectPath, projectType, systemInfo)...)
 
@@ -3431,7 +3431,7 @@ func getProjectTypeSuggestions(projectType, context string, systemInfo *system.S
 		if context == "development" {
 			suggestions = append(suggestions, SetupSuggestion{
 				Category:    "tools",
-				Priority:    "high", 
+				Priority:    "high",
 				Title:       "Install Go development tools",
 				Description: "Enhanced Go development experience with language server and tools",
 				Commands:    []string{"go install golang.org/x/tools/gopls@latest", "go install github.com/go-delve/delve/cmd/dlv@latest"},
@@ -3757,7 +3757,7 @@ func validateTools(projectType string) []ValidationResult {
 
 func validateDependencies(projectPath, projectType string) []ValidationResult {
 	var results []ValidationResult
-	
+
 	// This is a simplified validation - in practice you'd check specific dependency files
 	switch projectType {
 	case "go":
@@ -3779,7 +3779,7 @@ func validateDependencies(projectPath, projectType string) []ValidationResult {
 
 func validatePermissions() []ValidationResult {
 	var results []ValidationResult
-	
+
 	// Check if we can write to current directory
 	testFile := ".portunix_test"
 	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
@@ -4077,10 +4077,10 @@ func createSandboxByType(sandboxType string, req interface{}, systemInfo *system
 func createDockerSandbox(req interface{}, systemInfo *system.SystemInfo) (map[string]interface{}, error) {
 	// Simplified Docker sandbox creation
 	return map[string]interface{}{
-		"status":        "created",
-		"sandbox_type":  "docker",
-		"container_id":  "mock-container-id",
-		"message":       "Docker sandbox created successfully",
+		"status":       "created",
+		"sandbox_type": "docker",
+		"container_id": "mock-container-id",
+		"message":      "Docker sandbox created successfully",
 	}, nil
 }
 
@@ -4219,9 +4219,9 @@ func getDefaultWorkflows(projectType string) []string {
 func generateCICDConfiguration(projectPath, projectType, platform string, workflows []string, req interface{}) (map[string]interface{}, error) {
 	// Simplified CI/CD configuration generation
 	config := map[string]interface{}{
-		"platform":   platform,
-		"workflows":  workflows,
-		"generated":  true,
+		"platform":  platform,
+		"workflows": workflows,
+		"generated": true,
 	}
 
 	return config, nil
@@ -4282,10 +4282,10 @@ func prepareDeploymentConfiguration(projectPath, projectType, environment, platf
 func executeDeployment(projectPath, projectType, environment, platform string, config map[string]interface{}) (map[string]interface{}, error) {
 	// Simplified deployment execution
 	result := map[string]interface{}{
-		"status":    "deployed",
-		"url":       "https://example.com", // mock URL
-		"platform":  platform,
-		"deployed":  true,
+		"status":   "deployed",
+		"url":      "https://example.com", // mock URL
+		"platform": platform,
+		"deployed": true,
 	}
 
 	return result, nil
@@ -4295,16 +4295,16 @@ func executeDeployment(projectPath, projectType, environment, platform string, c
 func (s *Server) handleInstallPackageWithName(packageName string) (interface{}, error) {
 	// Create a JSON request for the package installation
 	params := map[string]interface{}{
-		"package": packageName,
+		"package":      packageName,
 		"auto_install": true,
 	}
-	
+
 	// Convert to JSON and call the existing handler
 	jsonParams, err := json.Marshal(params)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal parameters: %w", err)
 	}
-	
+
 	return s.handleInstallPackage(jsonParams)
 }
 
@@ -4336,7 +4336,7 @@ func formatResultAsText(result interface{}) string {
 						if variant, ok := systemInfo["variant"].(string); ok {
 							text += fmt.Sprintf("\n• Variant: %s", variant)
 						}
-						
+
 						// Linux specific info
 						if linuxInfo, ok := systemInfo["linux_info"].(map[string]interface{}); ok {
 							if distro, ok := linuxInfo["distribution"].(string); ok {
@@ -4349,13 +4349,13 @@ func formatResultAsText(result interface{}) string {
 								text += fmt.Sprintf("\n• Kernel: %s", kernel)
 							}
 						}
-						
+
 						return text
 					}
 				}
 			}
 		}
-		
+
 		// Format package list
 		if packages, ok := v["packages"].([]interface{}); ok {
 			text := "📦 Available Packages:\n"
@@ -4376,14 +4376,14 @@ func formatResultAsText(result interface{}) string {
 			}
 			return text
 		}
-		
+
 		// Default JSON formatting for other results
 		jsonBytes, err := json.MarshalIndent(v, "", "  ")
 		if err != nil {
 			return fmt.Sprintf("Error formatting result: %v", err)
 		}
 		return string(jsonBytes)
-		
+
 	case string:
 		return v
 	default:

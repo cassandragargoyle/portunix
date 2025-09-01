@@ -48,7 +48,7 @@ func configureMCPIntegration(port int, permissions string, force bool, autoInsta
 	fmt.Print("1. Checking Claude Code installation... ")
 	if !isClaudeCodeInstalled() {
 		fmt.Println("❌ NOT FOUND")
-		
+
 		if autoInstall {
 			fmt.Println("🚀 Auto-installing Claude Code using Portunix package installer...")
 			if err := install.InstallPackage("claude-code", "npm"); err != nil {
@@ -62,11 +62,11 @@ func configureMCPIntegration(port int, permissions string, force bool, autoInsta
 			fmt.Println("✅ Claude Code installed successfully!")
 		} else {
 			fmt.Print("Claude Code is not installed. Would you like to install it now? (y/N): ")
-			
+
 			var response string
 			fmt.Scanln(&response)
 			response = strings.ToLower(strings.TrimSpace(response))
-			
+
 			if response == "y" || response == "yes" {
 				fmt.Println("🚀 Installing Claude Code using Portunix package installer...")
 				if err := install.InstallPackage("claude-code", "npm"); err != nil {
@@ -158,7 +158,6 @@ func configureMCPIntegration(port int, permissions string, force bool, autoInsta
 	return nil
 }
 
-
 func getCurrentExecutablePath() (string, error) {
 	// First try to get the actual executable path
 	if exe, err := os.Executable(); err == nil {
@@ -186,7 +185,6 @@ func getCurrentExecutablePath() (string, error) {
 	return "", fmt.Errorf("could not locate portunix executable")
 }
 
-
 func addMCPServerToClaudeCode(portunixPath string, port int, permissions string) error {
 	// First, find the claude executable
 	claudePath, err := getClaudePath()
@@ -201,7 +199,6 @@ func addMCPServerToClaudeCode(portunixPath string, port int, permissions string)
 		portunixPath,
 		"mcp-server",
 	}
-
 
 	cmd := exec.Command(claudePath, args...)
 	if output, err := cmd.CombinedOutput(); err != nil {
@@ -244,7 +241,6 @@ func verifyMCPConfiguration() error {
 
 	return nil
 }
-
 
 func init() {
 	mcpCmd.AddCommand(mcpConfigureCmd)

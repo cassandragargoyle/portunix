@@ -77,6 +77,9 @@ func Install(arguments []string) {
 	// Try to install using new system
 	if err := InstallPackage(packageName, variant); err == nil {
 		return // Success with new system
+	} else {
+		fmt.Printf("Error installing package '%s': %v\n", packageName, err)
+		return // Show error and exit instead of falling back
 	}
 
 	// Fall back to old system
@@ -128,6 +131,8 @@ func ShowPackageHelp(packageName string) error {
 		return showDockerHelp()
 	case "podman":
 		return showPodmanHelp()
+	case "chrome":
+		return showChromeHelp()
 	default:
 		return fmt.Errorf("package '%s' does not have specific help available", packageName)
 	}
@@ -178,7 +183,7 @@ func showPowerShellHelp() error {
 	fmt.Println("Description:")
 	fmt.Println("  Install Microsoft PowerShell on Linux distributions")
 	fmt.Println()
-	
+
 	if runtime.GOOS == "linux" {
 		fmt.Println("Available variants for Linux:")
 		fmt.Println("  ubuntu      - Install via Microsoft APT repository (Ubuntu/Kubuntu)")
@@ -196,7 +201,7 @@ func showPowerShellHelp() error {
 		fmt.Println("Available variants for Windows:")
 		fmt.Println("  latest      - Install latest PowerShell version (default)")
 	}
-	
+
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  portunix install powershell")
@@ -206,7 +211,7 @@ func showPowerShellHelp() error {
 	fmt.Println("Flags:")
 	fmt.Println("  --variant string   Specify installation variant")
 	fmt.Println("  -h, --help         help for powershell")
-	
+
 	return nil
 }
 
@@ -224,7 +229,7 @@ func showJavaHelp() error {
 	fmt.Println("  portunix install java")
 	fmt.Println("  portunix install java --variant 17")
 	fmt.Println("  portunix install java 11")
-	
+
 	return nil
 }
 
@@ -247,7 +252,7 @@ func showPythonHelp() error {
 	fmt.Println("  portunix install python")
 	fmt.Println("  portunix install python --embeddable")
 	fmt.Println("  portunix install python --gui")
-	
+
 	return nil
 }
 
@@ -265,7 +270,7 @@ func showVSCodeHelp() error {
 	fmt.Println("Examples:")
 	fmt.Println("  portunix install vscode")
 	fmt.Println("  portunix install vscode --variant system")
-	
+
 	return nil
 }
 
@@ -285,7 +290,7 @@ func showDockerHelp() error {
 	fmt.Println("Examples:")
 	fmt.Println("  portunix install docker")
 	fmt.Println("  portunix install docker -y")
-	
+
 	return nil
 }
 
@@ -305,6 +310,58 @@ func showPodmanHelp() error {
 	fmt.Println("Examples:")
 	fmt.Println("  portunix install podman")
 	fmt.Println("  portunix install podman -y")
+
+	return nil
+}
+
+// showChromeHelp displays Chrome-specific installation help
+func showChromeHelp() error {
+	fmt.Println("Google Chrome Installation Help")
+	fmt.Println()
+	fmt.Println("Usage:")
+	fmt.Println("  portunix install chrome [flags]")
+	fmt.Println()
+	fmt.Println("Description:")
+	fmt.Println("  Install Google Chrome web browser with automatic repository configuration")
+	fmt.Println()
 	
+	if runtime.GOOS == "linux" {
+		fmt.Println("Available variants for Linux:")
+		fmt.Println("  ubuntu      - Official APT repository (Ubuntu/Kubuntu/Lubuntu/Xubuntu)")
+		fmt.Println("  debian      - Official APT repository (Debian 11/12)")
+		fmt.Println("  mint        - Official APT repository (Linux Mint 21.x)")
+		fmt.Println("  elementary  - Official APT repository (Elementary OS 7.x)")
+		fmt.Println("  fedora      - Official DNF repository (Fedora 38/39/40)")
+		fmt.Println("  rocky       - Official DNF repository (Rocky/AlmaLinux/CentOS 8/9)")
+		fmt.Println("  deb-direct  - Direct .deb download (universal fallback)")
+		fmt.Println("  rpm-direct  - Direct .rpm download (universal fallback)")
+		fmt.Println("  snap        - Chromium via Snap (open-source alternative)")
+		fmt.Println()
+		fmt.Println("Auto-detection:")
+		fmt.Println("  If no variant is specified, Portunix will automatically detect")
+		fmt.Println("  your Linux distribution and choose the best installation method.")
+	} else if runtime.GOOS == "windows" {
+		fmt.Println("Available variants for Windows:")
+		fmt.Println("  stable      - Stable release channel (default)")
+		fmt.Println("  beta        - Beta testing channel")
+		fmt.Println("  dev         - Developer channel")
+	} else if runtime.GOOS == "darwin" {
+		fmt.Println("Available variants for macOS:")
+		fmt.Println("  stable      - Stable release channel (default)")
+	}
+	
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  portunix install chrome")
+	fmt.Println("  portunix install chrome --variant ubuntu")
+	fmt.Println("  portunix install chrome --variant snap")
+	fmt.Println()
+	fmt.Println("Flags:")
+	fmt.Println("  --variant string   Specify installation variant")
+	fmt.Println("  -h, --help         help for chrome")
+	fmt.Println()
+	fmt.Println("Note: Chrome requires acceptance of Google's Terms of Service.")
+	fmt.Println("      Consider 'chromium' via snap for an open-source alternative.")
+
 	return nil
 }

@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	checkOnly bool
+	checkOnly   bool
 	forceUpdate bool
 )
 
@@ -39,7 +39,7 @@ func init() {
 
 func checkForUpdate() {
 	fmt.Println("Checking for updates...")
-	
+
 	release, err := update.CheckForUpdate()
 	if err != nil {
 		fmt.Printf("Error: Unable to check for updates\n  %v\n", err)
@@ -58,7 +58,7 @@ func checkForUpdate() {
 
 func performUpdate(force bool) {
 	fmt.Println("Checking for updates...")
-	
+
 	release, err := update.CheckForUpdate()
 	if err != nil {
 		fmt.Printf("Error: Unable to check for updates\n  %v\n", err)
@@ -121,7 +121,7 @@ func performUpdate(force bool) {
 	err = update.ApplyUpdate(tmpFile)
 	if err != nil {
 		fmt.Printf("Error: Failed to apply update\n  %v\n", err)
-		
+
 		// Check if it's a permission error and provide better guidance
 		if update.IsPermissionError(err) {
 			fmt.Println("\n💡 Solutions:")
@@ -129,7 +129,7 @@ func performUpdate(force bool) {
 			fmt.Println("  2. Or download and reinstall manually from GitHub releases")
 			fmt.Println("  3. Or move portunix to a user-writable location (like Documents)")
 		}
-		
+
 		// Try to restore backup
 		fmt.Println("Attempting to restore backup...")
 		if restoreErr := update.RestoreBackup(backupPath); restoreErr != nil {
@@ -144,7 +144,7 @@ func performUpdate(force bool) {
 
 	// Clean up backup on success
 	os.Remove(backupPath)
-	
+
 	fmt.Println("✓ Update completed successfully!")
 	if !force {
 		fmt.Printf("\nPortunix has been updated from %s to %s\n", appversion.ProductVersion, release.Version)

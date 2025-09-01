@@ -84,7 +84,7 @@ func (p *ProgressComponent) Render(ctx *wizard.WizardContext) error {
 		// Execute command
 		cmd := expandVariables(task.Command, ctx.Variables)
 		err := executeCommand(cmd)
-		
+
 		s.Stop()
 
 		if err != nil {

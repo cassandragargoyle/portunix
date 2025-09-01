@@ -89,7 +89,7 @@ func testPowerShellCommand(t *testing.T) {
 
 		if err != nil {
 			t.Logf("PowerShell command not found in PATH, checking common locations...")
-			
+
 			// Common PowerShell installation paths on Linux
 			commonPaths := []string{
 				"/usr/bin/pwsh",
@@ -97,7 +97,7 @@ func testPowerShellCommand(t *testing.T) {
 				"/opt/microsoft/powershell/7/pwsh",
 				"/snap/bin/pwsh",
 			}
-			
+
 			for _, path := range commonPaths {
 				cmd = exec.Command(path, "--version")
 				output, err = cmd.CombinedOutput()
@@ -106,7 +106,7 @@ func testPowerShellCommand(t *testing.T) {
 					break
 				}
 			}
-			
+
 			if err != nil {
 				t.Errorf("PowerShell command not available after installation: %v", err)
 				return
@@ -123,12 +123,12 @@ func testPowerShellCommand(t *testing.T) {
 	// Test a simple PowerShell command
 	cmd = exec.Command("pwsh", "-c", "Write-Host 'Hello from PowerShell'")
 	output, err = cmd.CombinedOutput()
-	
+
 	if err != nil {
 		// Try alternative command
 		cmd = exec.Command("powershell", "-c", "Write-Host 'Hello from PowerShell'")
 		output, err = cmd.CombinedOutput()
-		
+
 		if err != nil {
 			t.Logf("Warning: PowerShell command execution failed: %v", err)
 			return
@@ -154,11 +154,11 @@ func testPowerShellUninstall(t *testing.T, portunixBin string) {
 	if err != nil {
 		// Check if uninstall command exists
 		if strings.Contains(string(output), "unknown command") ||
-		   strings.Contains(string(output), "not implemented") {
+			strings.Contains(string(output), "not implemented") {
 			t.Log("Uninstall command not implemented, skipping cleanup")
 			return
 		}
-		
+
 		t.Logf("PowerShell uninstall failed (this is optional): %v", err)
 	} else {
 		t.Log("PowerShell uninstalled successfully")
@@ -182,17 +182,17 @@ func TestPowerShellPresetsIntegration(t *testing.T) {
 		t.Skip("Cannot test preset integration, install help not available")
 	}
 
-	t.Logf("Install help shows PowerShell is available: %v", 
+	t.Logf("Install help shows PowerShell is available: %v",
 		strings.Contains(string(output), "powershell"))
 
 	// Check if PowerShell variants are documented
 	if strings.Contains(string(output), "powershell") {
 		t.Log("PowerShell package detected in install system")
-		
+
 		// Check for variant information
 		if strings.Contains(string(output), "ubuntu") ||
-		   strings.Contains(string(output), "debian") ||
-		   strings.Contains(string(output), "snap") {
+			strings.Contains(string(output), "debian") ||
+			strings.Contains(string(output), "snap") {
 			t.Log("PowerShell Linux variants are documented")
 		}
 	}
@@ -203,9 +203,9 @@ func TestPowerShellPresetsIntegration(t *testing.T) {
 		// Note: This test verifies the preset system works, not that PowerShell is in plugin-dev
 		cmd := exec.Command(portunixBin, "install", "preset", "--help")
 		output, err := cmd.CombinedOutput()
-		
+
 		t.Logf("Preset help output: %s", output)
-		
+
 		if err != nil {
 			t.Log("Preset command may not be implemented yet, this is expected")
 		}

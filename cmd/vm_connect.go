@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"io/ioutil"
 
 	"github.com/spf13/cobra"
 )
@@ -28,7 +28,7 @@ This command will:
 	Args: cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		vmName := args[0]
-		
+
 		if err := connectToVM(vmName); err != nil {
 			fmt.Printf("\n❌ Failed to connect to VM: %v\n", err)
 			os.Exit(1)
@@ -38,14 +38,14 @@ This command will:
 
 func init() {
 	vmCmd.AddCommand(vmConnectCmd)
-	
+
 	vmConnectCmd.Flags().IntVar(&connectPort, "port", 0, "SPICE port (default: auto-detect)")
 	vmConnectCmd.Flags().StringVar(&connectViewer, "viewer", "auto", "Viewer to use: virt-viewer, remote-viewer, spicy, or auto")
 }
 
 func connectToVM(vmName string) error {
 	fmt.Printf("\n🔍 Looking for VM '%s'...\n", vmName)
-	
+
 	// Auto-detect SPICE port if not specified
 	port := connectPort
 	if port == 0 {
@@ -59,7 +59,7 @@ func connectToVM(vmName string) error {
 			fmt.Printf("✅ Detected SPICE port: %d\n", port)
 		}
 	}
-	
+
 	// Find available viewer
 	viewer := connectViewer
 	if viewer == "auto" {
@@ -68,13 +68,13 @@ func connectToVM(vmName string) error {
 			return fmt.Errorf("no SPICE viewer found. Please install virt-viewer or spicy")
 		}
 	}
-	
+
 	fmt.Printf("🚀 Connecting with %s to port %d...\n", viewer, port)
-	
+
 	// Build connection command
 	var connectCmd *exec.Cmd
 	spiceURL := fmt.Sprintf("spice://localhost:%d", port)
-	
+
 	switch viewer {
 	case "virt-viewer":
 		connectCmd = exec.Command("virt-viewer", "--connect", spiceURL)
@@ -85,12 +85,12 @@ func connectToVM(vmName string) error {
 	default:
 		return fmt.Errorf("unknown viewer: %s", viewer)
 	}
-	
+
 	// Start viewer
 	if err := connectCmd.Start(); err != nil {
 		return fmt.Errorf("failed to start %s: %w", viewer, err)
 	}
-	
+
 	fmt.Println("\n✅ SPICE viewer launched!")
 	fmt.Println("\n📋 Clipboard support:")
 	fmt.Println("  • If SPICE Guest Tools are installed in Windows, clipboard will work automatically")
@@ -99,7 +99,7 @@ func connectToVM(vmName string) error {
 	fmt.Println("  • Ctrl+Alt+F: Toggle fullscreen")
 	fmt.Println("  • Ctrl+Alt+G: Release mouse grab")
 	fmt.Println("  • View menu: USB device redirection")
-	
+
 	return nil
 }
 
@@ -107,7 +107,7 @@ func detectSPICEPort(vmName string) (int, error) {
 	// Try to read from VM run script
 	vmDir := filepath.Join(getVMBaseDir(), vmName)
 	runScript := filepath.Join(vmDir, fmt.Sprintf("run-%s.sh", vmName))
-	
+
 	if content, err := ioutil.ReadFile(runScript); err == nil {
 		// Look for -spice port=XXXX
 		scriptStr := string(content)
@@ -127,7 +127,7 @@ func detectSPICEPort(vmName string) (int, error) {
 			}
 		}
 	}
-	
+
 	// Try to detect from running QEMU processes
 	psCmd := exec.Command("ps", "aux")
 	output, err := psCmd.Output()
@@ -150,20 +150,20 @@ func detectSPICEPort(vmName string) (int, error) {
 			}
 		}
 	}
-	
+
 	return 0, fmt.Errorf("could not detect SPICE port")
 }
 
 func findAvailableViewer() string {
 	// Check for viewers in order of preference
 	viewers := []string{"virt-viewer", "remote-viewer", "spicy"}
-	
+
 	for _, viewer := range viewers {
 		if _, err := exec.LookPath(viewer); err == nil {
 			return viewer
 		}
 	}
-	
+
 	return ""
 }
 

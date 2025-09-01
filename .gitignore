@@ -32,3 +32,4 @@ htmlcov/
 test/venv/
 .claude/settings.local.json
 test/test-plugin/test-plugin
+__debug_bin*

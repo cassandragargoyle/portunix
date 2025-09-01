@@ -26,28 +26,28 @@ Available OS types:
 		if len(args) > 0 {
 			osType = args[0]
 		}
-		
+
 		variant, _ := cmd.Flags().GetString("variant")
 		if variant == "" {
 			variant = "latest"
 		}
-		
+
 		outputDir, _ := cmd.Flags().GetString("output")
 		// If no output specified, use cache directory
-		
+
 		fmt.Printf("Downloading %s ISO (variant: %s)...\n", osType, variant)
-		
+
 		// Use the install system to download ISO
 		installer := &install.ISOInstaller{
 			OSType:    osType,
 			Variant:   variant,
 			OutputDir: outputDir,
 		}
-		
+
 		isoPath, err := installer.Download()
 		if err != nil {
 			fmt.Printf("Error downloading ISO: %v\n", err)
-			
+
 			// Special handling for Windows ISOs
 			if osType == "windows11" || osType == "windows10" {
 				fmt.Println("\n📋 Manual Download Instructions:")
@@ -59,7 +59,7 @@ Available OS types:
 			}
 			os.Exit(1)
 		}
-		
+
 		fmt.Printf("\n✅ ISO downloaded successfully: %s\n", isoPath)
 		fmt.Printf("\nTo create VM:\n  portunix vm create %s-vm --iso %s\n", osType, isoPath)
 	},
@@ -67,7 +67,7 @@ Available OS types:
 
 func init() {
 	installCmd.AddCommand(installISOCmd)
-	
+
 	installISOCmd.Flags().String("variant", "latest", "ISO variant (e.g., latest, 22.04, media-tool)")
 	installISOCmd.Flags().StringP("output", "o", "", "Output directory for ISO file")
 }

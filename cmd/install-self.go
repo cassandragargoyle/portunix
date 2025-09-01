@@ -9,10 +9,10 @@ import (
 )
 
 var (
-	selfInstallSilent      bool
-	selfInstallPath        string
+	selfInstallSilent       bool
+	selfInstallPath         string
 	selfInstallCreateConfig bool
-	selfInstallAddToPath   bool
+	selfInstallAddToPath    bool
 )
 
 var installSelfCmd = &cobra.Command{
@@ -60,11 +60,11 @@ Examples:
 				AddToPath:    selfInstallAddToPath,
 				Silent:       true,
 			}
-			
+
 			if selfInstallPath == "" {
 				options.TargetPath = selfinstall.GetDefaultInstallPath()
 			}
-			
+
 			return selfinstall.InstallSilent(options)
 		} else {
 			// Interactive installation
@@ -78,6 +78,6 @@ func init() {
 	installSelfCmd.Flags().StringVar(&selfInstallPath, "path", "", "Installation path")
 	installSelfCmd.Flags().BoolVar(&selfInstallCreateConfig, "create-config", false, "Create configuration files")
 	installSelfCmd.Flags().BoolVar(&selfInstallAddToPath, "add-to-path", false, "Add to system PATH")
-	
+
 	rootCmd.AddCommand(installSelfCmd)
 }

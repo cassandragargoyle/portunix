@@ -28,6 +28,8 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#017](017-qemu-kvm-windows-virtualization.md) | - | QEMU/KVM Windows 11 Virtualization with Snapshots | 📋 Open | High | Feature | virtualization, qemu, kvm, windows, snapshot |
 | [#019](019-docker-windows-install-issues.md) | - | Docker Installation Issues on Windows | 🔄 In Progress | High | Bug Fix | bug, docker, windows |
 | [#020](020-qemu-windows-clipboard-integration.md) | - | QEMU Windows VM Clipboard Integration | 📋 Open | Medium | Enhancement | enhancement, qemu, windows, clipboard, spice |
+| [#021](021-github-actions-local-testing.md) | - | GitHub Actions Local Testing Support with Act | 📋 Open | Medium | Feature | feature, github-actions, act, ci-cd, testing |
+| [#022](022-google-chrome-installation.md) | - | Google Chrome Installation Implementation | ✅ Implemented | Medium | Feature | enhancement, package-management, cross-platform |
 
 ## Directory Structure
 

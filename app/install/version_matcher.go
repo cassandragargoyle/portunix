@@ -35,7 +35,7 @@ func (s SupportLevel) String() string {
 type VersionRange struct {
 	Min        string `json:"min"`
 	Max        string `json:"max"`
-	Type       string `json:"type"` // lts_and_interim, lts_only, etc.
+	Type       string `json:"type"`                 // lts_and_interim, lts_only, etc.
 	Confidence string `json:"confidence,omitempty"` // high, medium, low
 }
 
@@ -106,7 +106,7 @@ func (vm *VersionMatcher) isUbuntuStyleVersion(version string) bool {
 	if len(parts) != 2 {
 		return false
 	}
-	
+
 	// Check if both parts are numeric
 	for _, part := range parts {
 		if _, err := strconv.Atoi(part); err != nil {
@@ -121,7 +121,7 @@ func (vm *VersionMatcher) isUbuntuStyleVersion(version string) bool {
 func (vm *VersionMatcher) compareUbuntuVersions(v1, v2 string) int {
 	parts1 := strings.Split(v1, ".")
 	parts2 := strings.Split(v2, ".")
-	
+
 	if len(parts1) != 2 || len(parts2) != 2 {
 		// Fallback to string comparison
 		if v1 < v2 {
@@ -131,22 +131,22 @@ func (vm *VersionMatcher) compareUbuntuVersions(v1, v2 string) int {
 		}
 		return 0
 	}
-	
+
 	// Compare major version first
 	major1, _ := strconv.Atoi(parts1[0])
 	major2, _ := strconv.Atoi(parts2[0])
-	
+
 	if major1 != major2 {
 		if major1 < major2 {
 			return -1
 		}
 		return 1
 	}
-	
+
 	// Compare minor version
 	minor1, _ := strconv.Atoi(parts1[1])
 	minor2, _ := strconv.Atoi(parts2[1])
-	
+
 	if minor1 < minor2 {
 		return -1
 	} else if minor1 > minor2 {

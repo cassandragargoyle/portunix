@@ -27,11 +27,11 @@ type PowerShellIntegrationTestSuite struct {
 
 // SupportedDistribution represents a Linux distribution for testing
 type SupportedDistribution struct {
-	Name              string
-	Image             string
-	ExpectedVariant   string
+	Name               string
+	Image              string
+	ExpectedVariant    string
 	PreInstallCommands []string
-	VerificationCmd   string
+	VerificationCmd    string
 }
 
 // GetSupportedDistributions returns all distributions we support for PowerShell
@@ -49,7 +49,7 @@ func GetSupportedDistributions() []SupportedDistribution {
 		},
 		{
 			Name:            "Ubuntu 24.04",
-			Image:           "ubuntu:24.04", 
+			Image:           "ubuntu:24.04",
 			ExpectedVariant: "ubuntu",
 			PreInstallCommands: []string{
 				"apt-get update",
@@ -70,7 +70,7 @@ func GetSupportedDistributions() []SupportedDistribution {
 		{
 			Name:            "Debian 12",
 			Image:           "debian:12",
-			ExpectedVariant: "debian", 
+			ExpectedVariant: "debian",
 			PreInstallCommands: []string{
 				"apt-get update",
 				"apt-get install -y sudo wget curl lsb-release",
@@ -92,7 +92,7 @@ func GetSupportedDistributions() []SupportedDistribution {
 			Image:           "fedora:40",
 			ExpectedVariant: "fedora",
 			PreInstallCommands: []string{
-				"dnf update -y", 
+				"dnf update -y",
 				"dnf install -y sudo curl",
 			},
 			VerificationCmd: "pwsh --version",
@@ -161,7 +161,7 @@ func (suite *PowerShellIntegrationTestSuite) testPowerShellInstallationForDistri
 	container := suite.createContainerForDistribution(dist)
 	suite.container = container
 
-	// Setup container with prerequisites  
+	// Setup container with prerequisites
 	suite.setupContainerPrerequisites(container, dist)
 
 	// Copy portunix binary to container
@@ -176,8 +176,8 @@ func (suite *PowerShellIntegrationTestSuite) testPowerShellInstallationForDistri
 
 func (suite *PowerShellIntegrationTestSuite) createContainerForDistribution(dist SupportedDistribution) testcontainers.Container {
 	req := testcontainers.ContainerRequest{
-		Image: dist.Image,
-		Cmd:   []string{"sleep", "1800"}, // Keep container running for 30 minutes
+		Image:      dist.Image,
+		Cmd:        []string{"sleep", "1800"}, // Keep container running for 30 minutes
 		WaitingFor: wait.ForLog("").WithStartupTimeout(60 * time.Second),
 	}
 
@@ -198,15 +198,15 @@ func (suite *PowerShellIntegrationTestSuite) createContainerForDistribution(dist
 func (suite *PowerShellIntegrationTestSuite) setupContainerPrerequisites(container testcontainers.Container, dist SupportedDistribution) {
 	for i, cmd := range dist.PreInstallCommands {
 		suite.T().Logf("Running prerequisite command %d/%d for %s: %s", i+1, len(dist.PreInstallCommands), dist.Name, cmd)
-		
+
 		exitCode, reader, err := container.Exec(suite.ctx, []string{"sh", "-c", cmd})
 		require.NoError(suite.T(), err, "Failed to execute prerequisite command for %s: %s", dist.Name, cmd)
-		
+
 		if exitCode != 0 {
 			output := suite.readOutput(reader)
 			suite.T().Fatalf("Prerequisite command failed for %s with exit code %d: %s\nOutput: %s", dist.Name, exitCode, cmd, output)
 		}
-		
+
 		suite.T().Logf("✓ Prerequisite completed for %s: %s", dist.Name, cmd)
 	}
 }
@@ -228,14 +228,14 @@ func (suite *PowerShellIntegrationTestSuite) copyPortunixToContainer(container t
 	// Copy portunix binary to container
 	err = container.CopyFileToContainer(suite.ctx, "./portunix", "/usr/local/bin/portunix", 0755)
 	require.NoError(suite.T(), err, "Failed to copy portunix binary to container")
-	
+
 	suite.T().Logf("✓ Portunix binary copied to container")
 
 	// Verify binary is executable
 	exitCode, reader, err := container.Exec(suite.ctx, []string{"chmod", "+x", "/usr/local/bin/portunix"})
 	require.NoError(suite.T(), err, "Failed to make portunix executable")
 	require.Equal(suite.T(), 0, exitCode, "Failed to chmod portunix binary")
-	
+
 	if reader != nil {
 		output := suite.readOutput(reader)
 		suite.T().Logf("Chmod output: %s", output)
@@ -252,18 +252,18 @@ func (suite *PowerShellIntegrationTestSuite) installPowerShellInContainer(contai
 	}
 
 	suite.T().Logf("Executing: %s", installCmd)
-	
+
 	// Execute PowerShell installation with extended timeout
 	ctx, cancel := context.WithTimeout(suite.ctx, 10*time.Minute)
 	defer cancel()
 
 	exitCode, reader, err := container.Exec(ctx, []string{"sh", "-c", installCmd})
-	
+
 	output := suite.readOutput(reader)
 	suite.T().Logf("Installation output for %s:\n%s", dist.Name, output)
 
 	require.NoError(suite.T(), err, "Failed to execute PowerShell installation command for %s", dist.Name)
-	
+
 	if exitCode != 0 {
 		suite.T().Fatalf("PowerShell installation failed for %s with exit code %d\nOutput:\n%s", dist.Name, exitCode, output)
 	}
@@ -279,32 +279,32 @@ func (suite *PowerShellIntegrationTestSuite) verifyPowerShellInstallation(contai
 
 	// Run verification command
 	exitCode, reader, err := container.Exec(suite.ctx, []string{"sh", "-c", dist.VerificationCmd})
-	
+
 	output := suite.readOutput(reader)
 	suite.T().Logf("Verification output for %s:\n%s", dist.Name, output)
 
 	require.NoError(suite.T(), err, "Failed to execute verification command for %s", dist.Name)
-	
+
 	if exitCode != 0 {
 		// For snap, also try alternative verification
 		if dist.ExpectedVariant == "snap" {
 			suite.T().Logf("Snap verification failed, trying alternative: /snap/bin/powershell --version")
 			exitCode2, reader2, err2 := container.Exec(suite.ctx, []string{"sh", "-c", "/snap/bin/powershell --version"})
 			output2 := suite.readOutput(reader2)
-			
+
 			if err2 == nil && exitCode2 == 0 {
 				suite.T().Logf("Alternative verification succeeded for %s:\n%s", dist.Name, output2)
 				assert.Contains(suite.T(), output2, "PowerShell", "PowerShell version output should contain 'PowerShell'")
 				return
 			}
 		}
-		
+
 		suite.T().Fatalf("PowerShell verification failed for %s with exit code %d\nOutput:\n%s", dist.Name, exitCode, output)
 	}
 
 	// Verify output contains PowerShell version info
 	if dist.ExpectedVariant == "snap" {
-		assert.True(suite.T(), strings.Contains(output, "powershell") || strings.Contains(output, "PowerShell"), 
+		assert.True(suite.T(), strings.Contains(output, "powershell") || strings.Contains(output, "PowerShell"),
 			"Snap list should show powershell package for %s", dist.Name)
 	} else {
 		assert.Contains(suite.T(), output, "PowerShell", "PowerShell version output should contain 'PowerShell' for %s", dist.Name)
@@ -345,20 +345,20 @@ func (suite *PowerShellIntegrationTestSuite) TestVariantAutoDetection_Ubuntu() {
 
 	// Test auto-detection by not specifying variant
 	suite.T().Logf("Testing auto-detection for Ubuntu...")
-	
+
 	installCmd := "/usr/local/bin/portunix install powershell"
 	suite.T().Logf("Executing: %s", installCmd)
-	
+
 	ctx, cancel := context.WithTimeout(suite.ctx, 10*time.Minute)
 	defer cancel()
 
 	exitCode, reader, err := container.Exec(ctx, []string{"sh", "-c", installCmd})
-	
+
 	output := suite.readOutput(reader)
 	suite.T().Logf("Auto-detection output:\n%s", output)
 
 	require.NoError(suite.T(), err, "Failed to execute auto-detection test")
-	
+
 	// Should either succeed with Ubuntu variant or fallback to snap
 	if exitCode == 0 {
 		suite.T().Logf("✓ Auto-detection succeeded")
@@ -384,7 +384,7 @@ func (suite *PowerShellIntegrationTestSuite) TestUnsupportedDistribution_Alpine(
 	require.NoError(suite.T(), err)
 	suite.container = container
 
-	// Setup basic prerequisites  
+	// Setup basic prerequisites
 	exitCode, _, err := container.Exec(suite.ctx, []string{"sh", "-c", "apk update && apk add --no-cache curl"})
 	require.NoError(suite.T(), err)
 	require.Equal(suite.T(), 0, exitCode)
@@ -394,17 +394,17 @@ func (suite *PowerShellIntegrationTestSuite) TestUnsupportedDistribution_Alpine(
 	// Try to install PowerShell - should fallback to snap or fail gracefully
 	installCmd := "/usr/local/bin/portunix install powershell"
 	exitCode, reader, err := container.Exec(suite.ctx, []string{"sh", "-c", installCmd})
-	
+
 	output := suite.readOutput(reader)
 	suite.T().Logf("Alpine installation attempt output:\n%s", output)
 
 	require.NoError(suite.T(), err, "Command execution should not error")
-	
+
 	// Alpine is not in our supported list, so it should either:
 	// 1. Try snap and fail (expected)
 	// 2. Show appropriate error message
 	if exitCode != 0 {
-		assert.Contains(suite.T(), output, "no suitable variant found", 
+		assert.Contains(suite.T(), output, "no suitable variant found",
 			"Should show appropriate error for unsupported distribution")
 	}
 }
@@ -432,22 +432,22 @@ func (suite *PowerShellIntegrationTestSuite) TestInstallationPerformance_Ubuntu(
 
 	// Measure installation time
 	start := time.Now()
-	
+
 	installCmd := "/usr/local/bin/portunix install powershell --variant ubuntu"
 	ctx, cancel := context.WithTimeout(suite.ctx, 15*time.Minute)
 	defer cancel()
 
 	exitCode, reader, err := container.Exec(ctx, []string{"sh", "-c", installCmd})
 	installationTime := time.Since(start)
-	
+
 	output := suite.readOutput(reader)
 	suite.T().Logf("Performance test output:\n%s", output)
 
 	require.NoError(suite.T(), err)
-	
+
 	// Installation should complete within reasonable time (15 minutes max)
 	maxInstallTime := 15 * time.Minute
-	assert.Less(suite.T(), installationTime, maxInstallTime, 
+	assert.Less(suite.T(), installationTime, maxInstallTime,
 		"PowerShell installation should complete within %v, took %v", maxInstallTime, installationTime)
 
 	if exitCode == 0 {
@@ -457,7 +457,7 @@ func (suite *PowerShellIntegrationTestSuite) TestInstallationPerformance_Ubuntu(
 	}
 }
 
-// Helper function to check Docker availability  
+// Helper function to check Docker availability
 func isDockerAvailable() bool {
 	ctx := context.Background()
 	_, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{

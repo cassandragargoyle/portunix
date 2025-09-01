@@ -56,7 +56,7 @@ func getPortunixBinary(t *testing.T) string {
 	// First try to find the binary in the project root
 	projectRoot := findProjectRoot()
 	portunixBin := filepath.Join(projectRoot, "portunix")
-	
+
 	if runtime.GOOS == osWindows {
 		portunixBin += ".exe"
 	}
@@ -84,13 +84,13 @@ func findProjectRoot() string {
 	if err != nil {
 		return "."
 	}
-	
+
 	for {
 		// Check if go.mod exists in current directory
 		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
 			return dir
 		}
-		
+
 		// Move to parent directory
 		parent := filepath.Dir(dir)
 		if parent == dir {
@@ -99,7 +99,7 @@ func findProjectRoot() string {
 		}
 		dir = parent
 	}
-	
+
 	// Fallback to relative path
 	return "../.."
 }
@@ -117,7 +117,7 @@ func testBuildPlugin(t *testing.T) {
 	// Build the plugin
 	cmd := exec.Command("go", "build", "-o", "test-plugin")
 	cmd.Dir = pluginDir
-	
+
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("Failed to build test plugin: %v\nOutput: %s", err, output)
@@ -146,8 +146,8 @@ func testPluginInstall(t *testing.T, portunixBin string) {
 	}
 
 	// Verify installation succeeded
-	if !strings.Contains(string(output), "successfully") && 
-	   !strings.Contains(string(output), "installed") {
+	if !strings.Contains(string(output), "successfully") &&
+		!strings.Contains(string(output), "installed") {
 		t.Errorf("Installation output doesn't indicate success: %s", output)
 	}
 }
@@ -200,14 +200,14 @@ func testPluginLifecycle(t *testing.T, portunixBin string) {
 	t.Run("Enable", func(t *testing.T) {
 		cmd := exec.Command(portunixBin, "plugin", "enable", "test-plugin")
 		output, err := cmd.CombinedOutput()
-		
+
 		t.Logf("Enable output: %s", output)
-		
+
 		if err != nil {
 			// Check for common error messages
 			outputStr := string(output)
 			if strings.Contains(outputStr, "already enabled") ||
-			   strings.Contains(outputStr, "not enabled") {
+				strings.Contains(outputStr, "not enabled") {
 				// Plugin system might have issues with enable/disable state
 				t.Log("Plugin enable state issue (expected for basic implementation)")
 				return
@@ -220,13 +220,13 @@ func testPluginLifecycle(t *testing.T, portunixBin string) {
 	t.Run("Start", func(t *testing.T) {
 		cmd := exec.Command(portunixBin, "plugin", "start", "test-plugin")
 		output, err := cmd.CombinedOutput()
-		
+
 		t.Logf("Start output: %s", output)
-		
+
 		if err != nil {
 			outputStr := string(output)
 			if strings.Contains(outputStr, "already running") ||
-			   strings.Contains(outputStr, "not enabled") {
+				strings.Contains(outputStr, "not enabled") {
 				t.Log("Plugin start state issue (expected for basic implementation)")
 				return
 			}
@@ -238,12 +238,12 @@ func testPluginLifecycle(t *testing.T, portunixBin string) {
 	t.Run("Health", func(t *testing.T) {
 		// Give the plugin time to start
 		time.Sleep(2 * time.Second)
-		
+
 		cmd := exec.Command(portunixBin, "plugin", "health", "test-plugin")
 		output, err := cmd.CombinedOutput()
-		
+
 		t.Logf("Health check output: %s", output)
-		
+
 		// Health check might fail if plugin doesn't implement health endpoint
 		// or if plugin isn't properly enabled
 		if err != nil {
@@ -255,13 +255,13 @@ func testPluginLifecycle(t *testing.T, portunixBin string) {
 	t.Run("Stop", func(t *testing.T) {
 		cmd := exec.Command(portunixBin, "plugin", "stop", "test-plugin")
 		output, err := cmd.CombinedOutput()
-		
+
 		t.Logf("Stop output: %s", output)
-		
+
 		if err != nil {
 			outputStr := string(output)
 			if strings.Contains(outputStr, "not running") ||
-			   strings.Contains(outputStr, "not enabled") {
+				strings.Contains(outputStr, "not enabled") {
 				t.Log("Plugin stop state issue (expected for basic implementation)")
 				return
 			}
@@ -273,13 +273,13 @@ func testPluginLifecycle(t *testing.T, portunixBin string) {
 	t.Run("Disable", func(t *testing.T) {
 		cmd := exec.Command(portunixBin, "plugin", "disable", "test-plugin")
 		output, err := cmd.CombinedOutput()
-		
+
 		t.Logf("Disable output: %s", output)
-		
+
 		if err != nil {
 			outputStr := string(output)
 			if strings.Contains(outputStr, "already disabled") ||
-			   strings.Contains(outputStr, "not enabled") {
+				strings.Contains(outputStr, "not enabled") {
 				t.Log("Plugin disable state issue (expected for basic implementation)")
 				return
 			}
@@ -291,7 +291,7 @@ func testPluginLifecycle(t *testing.T, portunixBin string) {
 // testPluginUninstall tests plugin uninstallation
 func testPluginUninstall(t *testing.T, portunixBin string) {
 	cmd := exec.Command(portunixBin, "plugin", "uninstall", "test-plugin")
-	
+
 	// Create stdin pipe for confirmation
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -302,7 +302,7 @@ func testPluginUninstall(t *testing.T, portunixBin string) {
 	output := &bytes.Buffer{}
 	cmd.Stdout = output
 	cmd.Stderr = output
-	
+
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
 	}
@@ -315,7 +315,7 @@ func testPluginUninstall(t *testing.T, portunixBin string) {
 
 	// Wait for completion
 	err = cmd.Wait()
-	
+
 	t.Logf("Uninstall output: %s", output.String())
 
 	if err != nil {
@@ -333,7 +333,7 @@ func testPluginUninstall(t *testing.T, portunixBin string) {
 	if err != nil {
 		t.Logf("Failed to list plugins after uninstall: %v", err)
 	}
-	
+
 	if strings.Contains(string(listOutput), "test-plugin") {
 		t.Error("test-plugin still appears in list after uninstall")
 	}
@@ -372,7 +372,7 @@ func TestPluginCreate(t *testing.T) {
 	}
 
 	portunixBin := getPortunixBinary(t)
-	
+
 	// Create temporary directory for new plugin
 	tmpDir, err := os.MkdirTemp("", "plugin-test-*")
 	if err != nil {
@@ -385,7 +385,7 @@ func TestPluginCreate(t *testing.T) {
 
 	// Test plugin creation
 	cmd := exec.Command(portunixBin, "plugin", "create", pluginName)
-	cmd.Dir = tmpDir  // Set working directory
+	cmd.Dir = tmpDir // Set working directory
 	output, err := cmd.CombinedOutput()
 
 	t.Logf("Plugin create output: %s", output)
@@ -417,13 +417,13 @@ func TestPluginCreate(t *testing.T) {
 	// Verify plugin structure was created
 	expectedFiles := []string{
 		"plugin.yaml",
-		"main.go", 
+		"main.go",
 		"README.md",
 	}
 
 	// Check both possible locations
 	pathsToCheck := []string{actualPath, pluginPath, filepath.Join(tmpDir, pluginName)}
-	
+
 	var foundPath string
 	for _, checkPath := range pathsToCheck {
 		if _, err := os.Stat(checkPath); err == nil {
@@ -431,7 +431,7 @@ func TestPluginCreate(t *testing.T) {
 			break
 		}
 	}
-	
+
 	if foundPath == "" {
 		t.Fatalf("Plugin directory not created at any expected location")
 	}

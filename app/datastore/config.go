@@ -11,9 +11,9 @@ import (
 
 // Config represents the complete datastore configuration
 type Config struct {
-	DefaultPlugin string                    `yaml:"default_plugin"`
-	Routes        []RouteConfig             `yaml:"routes"`
-	Plugins       map[string]PluginConfig   `yaml:"plugins"`
+	DefaultPlugin string                  `yaml:"default_plugin"`
+	Routes        []RouteConfig           `yaml:"routes"`
+	Plugins       map[string]PluginConfig `yaml:"plugins"`
 }
 
 // RouteConfig defines routing rules for data storage
@@ -27,8 +27,8 @@ type RouteConfig struct {
 // PluginConfig contains plugin-specific configuration
 type PluginConfig struct {
 	ConnectionString string                 `yaml:"connection_string,omitempty"`
-	Auth            AuthConfig             `yaml:"auth,omitempty"`
-	Settings        map[string]interface{} `yaml:"settings,omitempty"`
+	Auth             AuthConfig             `yaml:"auth,omitempty"`
+	Settings         map[string]interface{} `yaml:"settings,omitempty"`
 }
 
 // AuthConfig contains authentication configuration
@@ -181,7 +181,7 @@ func (c *Config) FindRoute(key string) *RouteConfig {
 func matchPattern(pattern, key string) bool {
 	// Simple pattern matching for now
 	// TODO: Implement more sophisticated pattern matching (regex, glob, etc.)
-	
+
 	if pattern == "*" {
 		return true
 	}
@@ -243,7 +243,7 @@ func ValidateConfig(config *Config) error {
 		if route.Plugin == "" {
 			return fmt.Errorf("route %d: plugin cannot be empty", i)
 		}
-		
+
 		// Check if plugin exists
 		if _, exists := config.Plugins[route.Plugin]; !exists {
 			return fmt.Errorf("route %d: plugin '%s' not found in plugins configuration", i, route.Plugin)

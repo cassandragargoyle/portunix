@@ -9,60 +9,60 @@ import (
 type Plugin interface {
 	// Initialize plugin with configuration
 	Initialize(ctx context.Context, config PluginConfig) error
-	
+
 	// Start plugin service
 	Start(ctx context.Context) error
-	
+
 	// Stop plugin service
 	Stop(ctx context.Context) error
-	
+
 	// Execute a command
 	Execute(ctx context.Context, request ExecuteRequest) (*ExecuteResponse, error)
-	
+
 	// Get plugin information
 	GetInfo() PluginInfo
-	
+
 	// Health check
 	Health(ctx context.Context) PluginHealth
-	
+
 	// Check if plugin is running
 	IsRunning() bool
 }
 
 // PluginConfig holds configuration for a plugin
 type PluginConfig struct {
-	Name            string            `json:"name"`
-	Version         string            `json:"version"`
-	BinaryPath      string            `json:"binary_path"`
-	Port            int               `json:"port"`
-	HealthInterval  time.Duration     `json:"health_check_interval"`
-	Environment     map[string]string `json:"environment"`
-	Permissions     PluginPermissions `json:"permissions"`
-	WorkingDir      string            `json:"working_directory"`
+	Name           string            `json:"name"`
+	Version        string            `json:"version"`
+	BinaryPath     string            `json:"binary_path"`
+	Port           int               `json:"port"`
+	HealthInterval time.Duration     `json:"health_check_interval"`
+	Environment    map[string]string `json:"environment"`
+	Permissions    PluginPermissions `json:"permissions"`
+	WorkingDir     string            `json:"working_directory"`
 }
 
 // PluginInfo contains metadata about a plugin
 type PluginInfo struct {
-	Name                string              `json:"name"`
-	Version             string              `json:"version"`
-	Description         string              `json:"description"`
-	Author              string              `json:"author"`
-	License             string              `json:"license"`
-	SupportedOS         []string            `json:"supported_os"`
-	Commands            []PluginCommand     `json:"commands"`
-	Capabilities        PluginCapabilities  `json:"capabilities"`
-	RequiredPermissions PluginPermissions   `json:"required_permissions"`
-	Status              PluginStatus        `json:"status"`
-	LastSeen            time.Time           `json:"last_seen"`
+	Name                string             `json:"name"`
+	Version             string             `json:"version"`
+	Description         string             `json:"description"`
+	Author              string             `json:"author"`
+	License             string             `json:"license"`
+	SupportedOS         []string           `json:"supported_os"`
+	Commands            []PluginCommand    `json:"commands"`
+	Capabilities        PluginCapabilities `json:"capabilities"`
+	RequiredPermissions PluginPermissions  `json:"required_permissions"`
+	Status              PluginStatus       `json:"status"`
+	LastSeen            time.Time          `json:"last_seen"`
 }
 
 // PluginCommand represents a command provided by a plugin
 type PluginCommand struct {
-	Name         string            `json:"name"`
-	Description  string            `json:"description"`
-	Subcommands  []string          `json:"subcommands"`
-	Parameters   []PluginParameter `json:"parameters"`
-	Examples     []string          `json:"examples"`
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Subcommands []string          `json:"subcommands"`
+	Parameters  []PluginParameter `json:"parameters"`
+	Examples    []string          `json:"examples"`
 }
 
 // PluginParameter represents a parameter for a plugin command
@@ -124,12 +124,12 @@ func (s PluginStatus) String() string {
 
 // PluginHealth represents the health status of a plugin
 type PluginHealth struct {
-	Healthy        bool              `json:"healthy"`
-	Status         string            `json:"status"`
-	Message        string            `json:"message"`
-	UptimeSeconds  int64             `json:"uptime_seconds"`
-	Metrics        map[string]string `json:"metrics"`
-	LastCheckTime  time.Time         `json:"last_check_time"`
+	Healthy       bool              `json:"healthy"`
+	Status        string            `json:"status"`
+	Message       string            `json:"message"`
+	UptimeSeconds int64             `json:"uptime_seconds"`
+	Metrics       map[string]string `json:"metrics"`
+	LastCheckTime time.Time         `json:"last_check_time"`
 }
 
 // ExecuteRequest represents a request to execute a command
@@ -153,16 +153,16 @@ type ExecuteResponse struct {
 
 // PluginManifest represents the plugin.yaml manifest file
 type PluginManifest struct {
-	Name         string               `yaml:"name"`
-	Version      string               `yaml:"version"`
-	Description  string               `yaml:"description"`
-	Author       string               `yaml:"author"`
-	License      string               `yaml:"license"`
-	Plugin       PluginBinaryConfig   `yaml:"plugin"`
-	Dependencies PluginDependencies   `yaml:"dependencies"`
-	AIIntegration AIIntegrationConfig  `yaml:"ai_integration"`
-	Permissions  PluginPermissions    `yaml:"permissions"`
-	Commands     []PluginCommand      `yaml:"commands"`
+	Name          string              `yaml:"name"`
+	Version       string              `yaml:"version"`
+	Description   string              `yaml:"description"`
+	Author        string              `yaml:"author"`
+	License       string              `yaml:"license"`
+	Plugin        PluginBinaryConfig  `yaml:"plugin"`
+	Dependencies  PluginDependencies  `yaml:"dependencies"`
+	AIIntegration AIIntegrationConfig `yaml:"ai_integration"`
+	Permissions   PluginPermissions   `yaml:"permissions"`
+	Commands      []PluginCommand     `yaml:"commands"`
 }
 
 // PluginBinaryConfig holds binary-specific configuration

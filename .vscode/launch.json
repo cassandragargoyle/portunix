@@ -91,6 +91,43 @@
             "args": [
                 "install vscodeextension"
             ]
+        },
+        {
+            "name": "🐛 DEBUG Install Act",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "main.go",
+            "args": [
+                "install",
+                "act"
+            ],
+            "console": "integratedTerminal",
+            "showLog": true,
+            "trace": "verbose"
+        },
+        {
+            "name": "🐛 DEBUG Install Help",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "main.go",
+            "args": [
+                "install",
+                "--help"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "🐛 DEBUG Version",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "main.go",
+            "args": [
+                "--version"
+            ],
+            "console": "integratedTerminal"
         }
     ]
 }

@@ -149,7 +149,7 @@ func (m *Manager) Store(ctx context.Context, key string, value interface{}, meta
 	}
 	metadata["route_name"] = route.Name
 	metadata["plugin"] = route.Plugin
-	
+
 	// Add route-specific config to metadata
 	for k, v := range route.Config {
 		metadata["route_"+k] = v
@@ -177,10 +177,10 @@ func (m *Manager) Retrieve(ctx context.Context, key string, filter map[string]in
 func (m *Manager) Query(ctx context.Context, criteria QueryCriteria) ([]QueryResult, error) {
 	// Determine which datastores to query based on criteria
 	var results []QueryResult
-	
+
 	// For now, query all datastores that match the collection pattern
 	// TODO: Optimize to only query relevant datastores
-	
+
 	pluginsToQuery := make(map[string]bool)
 	for _, route := range m.config.Routes {
 		if criteria.Collection == "" || matchPattern(route.Pattern, criteria.Collection) {
@@ -224,7 +224,7 @@ func (m *Manager) Delete(ctx context.Context, key string) error {
 // List lists keys matching a pattern across appropriate datastores
 func (m *Manager) List(ctx context.Context, pattern string) ([]string, error) {
 	var allKeys []string
-	
+
 	// Find all plugins that could contain keys matching the pattern
 	pluginsToSearch := make(map[string]bool)
 	for _, route := range m.config.Routes {
@@ -256,7 +256,7 @@ func (m *Manager) Health(ctx context.Context) (map[string]*HealthStatus, error) 
 	defer m.mu.RUnlock()
 
 	healthMap := make(map[string]*HealthStatus)
-	
+
 	for pluginName, datastore := range m.datastores {
 		health, err := datastore.Health(ctx)
 		if err != nil {
@@ -280,7 +280,7 @@ func (m *Manager) Stats(ctx context.Context) (map[string]*Stats, error) {
 	defer m.mu.RUnlock()
 
 	statsMap := make(map[string]*Stats)
-	
+
 	for pluginName, datastore := range m.datastores {
 		stats, err := datastore.Stats(ctx)
 		if err != nil {
@@ -295,7 +295,7 @@ func (m *Manager) Stats(ctx context.Context) (map[string]*Stats, error) {
 // GetDatastoreInfo returns information about available datastores
 func (m *Manager) GetDatastoreInfo(ctx context.Context) (map[string]*DatastoreInfo, error) {
 	info := make(map[string]*DatastoreInfo)
-	
+
 	// For now, only file datastore is supported
 	info["file-plugin"] = &DatastoreInfo{
 		Name:        "File Datastore",

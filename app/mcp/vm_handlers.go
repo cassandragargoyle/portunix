@@ -52,19 +52,19 @@ func (s *Server) handleVMList() (interface{}, error) {
 	// Parse virsh output
 	lines := strings.Split(string(output), "\n")
 	var vms []map[string]interface{}
-	
+
 	for i, line := range lines {
 		if i < 2 || strings.TrimSpace(line) == "" {
 			continue // Skip header lines
 		}
-		
+
 		fields := strings.Fields(line)
 		if len(fields) >= 3 {
 			status := "shut off"
 			if len(fields) > 3 {
 				status = strings.Join(fields[2:], " ")
 			}
-			
+
 			vms = append(vms, map[string]interface{}{
 				"id":     fields[0],
 				"name":   fields[1],
@@ -196,7 +196,7 @@ func (s *Server) handleVMStop(vmName string, force bool) (interface{}, error) {
 
 	cmd := exec.Command("virsh", shutdownCmd, vmName)
 	output, err := cmd.CombinedOutput()
-	
+
 	if err == nil {
 		return map[string]interface{}{
 			"success": true,
@@ -317,7 +317,7 @@ func (s *Server) handleVMSnapshot(args map[string]interface{}) (interface{}, err
 		// Parse snapshot list
 		lines := strings.Split(string(output), "\n")
 		var snapshots []map[string]interface{}
-		
+
 		for _, line := range lines {
 			fields := strings.Fields(line)
 			if len(fields) >= 2 && !strings.Contains(line, "Name") && !strings.Contains(line, "---") {
@@ -396,7 +396,7 @@ func (s *Server) handleVMInfo(vmName string) (interface{}, error) {
 	if diskInfo, err := os.Stat(diskPath); err == nil {
 		info["disk_path"] = diskPath
 		info["disk_size"] = diskInfo.Size()
-		
+
 		// Get disk details using qemu-img
 		cmd = exec.Command("qemu-img", "info", diskPath, "--output=json")
 		if output, err := cmd.Output(); err == nil {
@@ -419,7 +419,7 @@ func (s *Server) handleVMInfo(vmName string) (interface{}, error) {
 			}
 		}
 	}
-	
+
 	if _, ok := info["state"]; !ok {
 		info["state"] = "shut off"
 	}

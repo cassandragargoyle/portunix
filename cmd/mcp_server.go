@@ -33,7 +33,7 @@ Examples:
 		}
 
 		server := mcp.NewServer(port, permissions, config)
-		
+
 		if stdio {
 			fmt.Fprintf(os.Stderr, "Starting MCP Server in stdio mode\n")
 			fmt.Fprintf(os.Stderr, "Permission level: %s\n", permissions)

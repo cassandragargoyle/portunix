@@ -26,7 +26,7 @@ func main() {
 	}
 
 	server := grpc.NewServer()
-	
+
 	// Register your plugin service
 	// pb.RegisterPluginServiceServer(server, &YourPluginService{})
 

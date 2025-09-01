@@ -20,25 +20,25 @@ type Options struct {
 // InstallSilent performs silent installation with provided options
 func InstallSilent(options Options) error {
 	fmt.Printf("Installing Portunix to %s...\n", options.TargetPath)
-	
+
 	// Create target directory if it doesn't exist
 	targetDir := filepath.Dir(options.TargetPath)
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
 		return fmt.Errorf("failed to create target directory: %w", err)
 	}
-	
+
 	// Copy binary to target location
 	if err := copyFile(options.SourcePath, options.TargetPath); err != nil {
 		return fmt.Errorf("failed to copy binary: %w", err)
 	}
-	
+
 	// Make executable on Unix systems
 	if runtime.GOOS != "windows" {
 		if err := os.Chmod(options.TargetPath, 0755); err != nil {
 			return fmt.Errorf("failed to set executable permissions: %w", err)
 		}
 	}
-	
+
 	// Add to PATH if requested
 	if options.AddToPath {
 		if err := AddToSystemPath(targetDir); err != nil {
@@ -48,7 +48,7 @@ func InstallSilent(options Options) error {
 			fmt.Println("✓ Added to system PATH")
 		}
 	}
-	
+
 	// Create config if requested
 	if options.CreateConfig {
 		if err := createDefaultConfig(); err != nil {
@@ -57,15 +57,15 @@ func InstallSilent(options Options) error {
 			fmt.Println("✓ Created default configuration")
 		}
 	}
-	
+
 	// Verify installation
 	if err := VerifyInstallation(options.TargetPath); err != nil {
 		return fmt.Errorf("installation verification failed: %w", err)
 	}
-	
+
 	fmt.Println("\n✓ Installation completed successfully!")
 	fmt.Printf("  Run '%s --version' to verify\n", filepath.Base(options.TargetPath))
-	
+
 	return nil
 }
 
@@ -73,18 +73,18 @@ func InstallSilent(options Options) error {
 func InstallInteractive(sourcePath string) error {
 	fmt.Println("Welcome to Portunix Installation!")
 	fmt.Printf("Version: %s\n\n", getVersion())
-	
+
 	// Prompt for installation location
 	targetPath, err := PromptInstallLocation()
 	if err != nil {
 		return fmt.Errorf("installation cancelled: %w", err)
 	}
-	
+
 	if targetPath == "" {
 		fmt.Println("Installation cancelled.")
 		return nil
 	}
-	
+
 	// Check if target exists
 	if _, err := os.Stat(targetPath); err == nil {
 		backup, err := PromptBackup(targetPath)
@@ -99,22 +99,22 @@ func InstallInteractive(sourcePath string) error {
 			fmt.Printf("✓ Created backup at %s\n", backupPath)
 		}
 	}
-	
+
 	// Copy binary
 	fmt.Printf("Installing to %s...\n", targetPath)
 	if err := copyFile(sourcePath, targetPath); err != nil {
 		return fmt.Errorf("failed to copy binary: %w", err)
 	}
-	
+
 	// Make executable on Unix systems
 	if runtime.GOOS != "windows" {
 		if err := os.Chmod(targetPath, 0755); err != nil {
 			return fmt.Errorf("failed to set executable permissions: %w", err)
 		}
 	}
-	
+
 	fmt.Println("✓ Binary installed successfully")
-	
+
 	// Prompt for PATH addition
 	addPath, err := PromptAddToPath()
 	if err != nil {
@@ -128,7 +128,7 @@ func InstallInteractive(sourcePath string) error {
 			fmt.Println("✓ Added to system PATH")
 		}
 	}
-	
+
 	// Prompt for config creation
 	createConfig, err := PromptCreateConfig()
 	if err != nil {
@@ -140,17 +140,17 @@ func InstallInteractive(sourcePath string) error {
 			fmt.Println("✓ Created default configuration")
 		}
 	}
-	
+
 	// Verify installation
 	if err := VerifyInstallation(targetPath); err != nil {
 		fmt.Printf("⚠ Warning: Installation verification failed: %v\n", err)
 	} else {
 		fmt.Println("✓ Installation verified")
 	}
-	
+
 	// Show summary
 	ShowInstallationSummary(targetPath)
-	
+
 	return nil
 }
 
@@ -160,18 +160,18 @@ func VerifyInstallation(path string) error {
 	if err != nil {
 		return fmt.Errorf("binary not found at %s", path)
 	}
-	
+
 	if info.IsDir() {
 		return fmt.Errorf("%s is a directory, not a file", path)
 	}
-	
+
 	// Check if executable on Unix
 	if runtime.GOOS != "windows" {
 		if info.Mode()&0111 == 0 {
 			return fmt.Errorf("binary at %s is not executable", path)
 		}
 	}
-	
+
 	return nil
 }
 
@@ -205,30 +205,30 @@ func copyFile(src, dst string) error {
 		return err
 	}
 	defer sourceFile.Close()
-	
+
 	// Create destination directory if needed
 	dstDir := filepath.Dir(dst)
 	if err := os.MkdirAll(dstDir, 0755); err != nil {
 		return err
 	}
-	
+
 	destFile, err := os.Create(dst)
 	if err != nil {
 		return err
 	}
 	defer destFile.Close()
-	
+
 	_, err = io.Copy(destFile, sourceFile)
 	if err != nil {
 		return err
 	}
-	
+
 	// Copy file permissions
 	sourceInfo, err := os.Stat(src)
 	if err != nil {
 		return err
 	}
-	
+
 	return os.Chmod(dst, sourceInfo.Mode())
 }
 
@@ -250,18 +250,18 @@ func createDefaultConfig() error {
 	if err != nil {
 		return err
 	}
-	
+
 	if err := os.MkdirAll(configDir, 0755); err != nil {
 		return err
 	}
-	
+
 	configFile := filepath.Join(configDir, "config.yaml")
-	
+
 	// Check if config already exists
 	if _, err := os.Stat(configFile); err == nil {
 		return nil // Config already exists
 	}
-	
+
 	// Create default config
 	defaultConfig := `# Portunix Configuration
 # Generated during installation
@@ -271,7 +271,7 @@ verbose: false
 auto_update: true
 update_channel: stable
 `
-	
+
 	return os.WriteFile(configFile, []byte(defaultConfig), 0644)
 }
 

@@ -13,11 +13,11 @@ type DatastoreInterface interface {
 	Query(ctx context.Context, criteria QueryCriteria) ([]QueryResult, error)
 	Delete(ctx context.Context, key string) error
 	List(ctx context.Context, pattern string) ([]string, error)
-	
+
 	// Management operations
 	Health(ctx context.Context) (*HealthStatus, error)
 	Stats(ctx context.Context) (*Stats, error)
-	
+
 	// Plugin lifecycle
 	Initialize(ctx context.Context, config map[string]interface{}) error
 	Close(ctx context.Context) error
@@ -51,11 +51,11 @@ type HealthStatus struct {
 
 // Stats represents statistics about a datastore
 type Stats struct {
-	TotalKeys      int64             `json:"total_keys"`
-	TotalSize      int64             `json:"total_size_bytes"`
-	Collections    map[string]int64  `json:"collections,omitempty"`
-	Performance    *PerformanceStats `json:"performance,omitempty"`
-	LastUpdated    time.Time         `json:"last_updated"`
+	TotalKeys   int64             `json:"total_keys"`
+	TotalSize   int64             `json:"total_size_bytes"`
+	Collections map[string]int64  `json:"collections,omitempty"`
+	Performance *PerformanceStats `json:"performance,omitempty"`
+	LastUpdated time.Time         `json:"last_updated"`
 }
 
 // PerformanceStats contains performance metrics
@@ -70,12 +70,12 @@ type PerformanceStats struct {
 type DatastoreType string
 
 const (
-	DatastoreTypeFile        DatastoreType = "file"
-	DatastoreTypeMongoDB     DatastoreType = "mongodb"
-	DatastoreTypePostgreSQL  DatastoreType = "postgresql"
-	DatastoreTypeRedis       DatastoreType = "redis"
-	DatastoreTypeElastic     DatastoreType = "elasticsearch"
-	DatastoreTypeSQLite      DatastoreType = "sqlite"
+	DatastoreTypeFile       DatastoreType = "file"
+	DatastoreTypeMongoDB    DatastoreType = "mongodb"
+	DatastoreTypePostgreSQL DatastoreType = "postgresql"
+	DatastoreTypeRedis      DatastoreType = "redis"
+	DatastoreTypeElastic    DatastoreType = "elasticsearch"
+	DatastoreTypeSQLite     DatastoreType = "sqlite"
 )
 
 // DatastoreCapabilities defines what operations a datastore supports

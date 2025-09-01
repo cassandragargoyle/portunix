@@ -13,22 +13,22 @@ import (
 
 // Manager handles plugin lifecycle and registry
 type Manager struct {
-	plugins       map[string]plugins.Plugin
-	registry      *Registry
-	config        ManagerConfig
-	healthTicker  *time.Ticker
-	ctx           context.Context
-	cancel        context.CancelFunc
-	mutex         sync.RWMutex
+	plugins      map[string]plugins.Plugin
+	registry     *Registry
+	config       ManagerConfig
+	healthTicker *time.Ticker
+	ctx          context.Context
+	cancel       context.CancelFunc
+	mutex        sync.RWMutex
 }
 
 // ManagerConfig holds configuration for the plugin manager
 type ManagerConfig struct {
-	PluginsDir         string        `json:"plugins_dir"`
-	RegistryFile       string        `json:"registry_file"`
+	PluginsDir          string        `json:"plugins_dir"`
+	RegistryFile        string        `json:"registry_file"`
 	HealthCheckInterval time.Duration `json:"health_check_interval"`
-	DefaultPort        int           `json:"default_port"`
-	PortRange          PortRange     `json:"port_range"`
+	DefaultPort         int           `json:"default_port"`
+	PortRange           PortRange     `json:"port_range"`
 }
 
 // PortRange defines the range of ports available for plugins
@@ -40,7 +40,7 @@ type PortRange struct {
 // NewManager creates a new plugin manager
 func NewManager(config ManagerConfig) (*Manager, error) {
 	ctx, cancel := context.WithCancel(context.Background())
-	
+
 	registry, err := NewRegistry(config.RegistryFile)
 	if err != nil {
 		cancel()
@@ -142,11 +142,11 @@ func (m *Manager) EnablePlugin(name string) error {
 
 	// Create plugin configuration
 	config := plugins.PluginConfig{
-		Name:       registryData.Name,
-		Version:    registryData.Version,
-		BinaryPath: filepath.Join(registryData.InstallPath, registryData.BinaryName),
-		Port:       m.assignPort(),
-		WorkingDir: registryData.InstallPath,
+		Name:        registryData.Name,
+		Version:     registryData.Version,
+		BinaryPath:  filepath.Join(registryData.InstallPath, registryData.BinaryName),
+		Port:        m.assignPort(),
+		WorkingDir:  registryData.InstallPath,
 		Environment: make(map[string]string),
 		Permissions: registryData.RequiredPermissions,
 	}
@@ -357,7 +357,7 @@ func (m *Manager) validatePlugin(manifest *plugins.PluginManifest) error {
 // copyPluginFiles copies plugin files from source to destination
 func (m *Manager) copyPluginFiles(manifestPath, destDir string) error {
 	sourceDir := filepath.Dir(manifestPath)
-	
+
 	// Create destination directory
 	if err := os.MkdirAll(destDir, 0755); err != nil {
 		return fmt.Errorf("failed to create plugin directory: %w", err)
@@ -434,7 +434,7 @@ func (m *Manager) performHealthChecks() {
 	for name, plugin := range m.plugins {
 		if plugin.IsRunning() {
 			health := plugin.Health(m.ctx)
-			
+
 			// Update registry with health status
 			if !health.Healthy {
 				m.registry.UpdatePluginStatus(name, plugins.PluginStatusFailed)
