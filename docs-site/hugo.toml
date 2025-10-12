@@ -1,0 +1,73 @@
+baseURL = 'https://cassandragargoyle.github.io/Portunix/'
+languageCode = 'en-us'
+title = 'Portunix Documentation'
+theme = 'hugo-book'
+
+# (Optional) Theme color scheme
+# Available values: light, dark, auto
+# Default: auto
+[params]
+  BookTheme = 'light'
+
+  # (Optional) Set source repository location.
+  # Used for 'Edit this page' links
+  BookRepo = 'https://github.com/cassandragargoyle/Portunix'
+
+  # (Optional) Specify branch for repository above
+  BookRepoBranch = 'main'
+
+  # (Optional) Configure path to repository 'Edit' link
+  BookRepoPath = ''
+
+  # (Optional) Configure edit link prefix
+  BookEditPath = 'edit/main/'
+
+  # (Optional) Configure date format used in various places in the theme
+  BookDateFormat = 'January 2, 2006'
+
+  # (Optional) Enable search feature
+  BookSearch = true
+
+  # (Optional) Set Google Analytics if you use it to track your website.
+  BookGoogleAnalytics = ''
+
+  # (Optional) Provide logos for dark/light mode
+  BookLogo = ''
+
+  # (Optional) Set description in header
+  description = 'Universal development environment management tool'
+  version = 'latest'
+
+  # (Optional) Enable comments template on pages
+  # By default partials/docs/comments.html includes Disqus template
+  # See https://gohugo.io/content-management/comments/#configure-disqus
+  # Can be overriden by same param in page frontmatter
+  BookComments = false
+
+  # (Optional) Set path to section to render as menu
+  # When not set, renders menu from data/_index.md files
+  BookSection = 'docs'
+
+  # (Optional) This value is duplicate of $BookSection
+  # Use it when you want to use different path to menu data
+  BookMenuBundle = '/menu'
+
+  # (Optional) Collapse menu by default
+  BookCollapseSection = false
+
+  # (Optional) Hide table of contents on page
+  BookToC = true
+
+  # (Optional) If you have analytics, enable it
+  # googleAnalytics = ''
+
+[menu]
+# [[menu.before]]
+[[menu.after]]
+  name = "GitHub"
+  url = "https://github.com/cassandragargoyle/Portunix"
+  weight = 10
+[[menu.after]]
+  name = "Releases"
+  url = "https://github.com/cassandragargoyle/Portunix/releases"
+  weight = 20

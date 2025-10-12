@@ -3,7 +3,7 @@
 # Generate individual SHA256 checksum files for release binaries
 # Usage: ./generate-checksums.sh [version]
 
-VERSION=${1:-v1.4.0}
+VERSION=${1:-v1.5.7}
 DIST_DIR="dist"
 
 echo "Generating checksums for version $VERSION..."

@@ -42,6 +42,7 @@ This document provides an overview of features available in the Portunix core an
 - **Visual Studio Code**: Microsoft's source code editor (stable/insider builds)
 - **Apache Maven**: Build automation tool for Java projects (3.9.9)
 - **Claude Code**: Anthropic's official CLI for Claude AI assistant
+- **GitHub CLI**: Official command line tool for GitHub - manage repos, issues, PRs from the terminal
 
 **Package Managers:**
 - **Chocolatey**: Windows package manager

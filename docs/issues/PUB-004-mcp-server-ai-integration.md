@@ -13,11 +13,11 @@ Implement Model Context Protocol (MCP) server functionality to enable AI assista
 ### Core Command Structure
 ```bash
 # Basic MCP server startup
-portunix mcp-server
+portunix mcp serve
 
 # Advanced options
-portunix mcp-server --port 3001 --permissions limited
-portunix mcp-server --daemon --config ~/.portunix/mcp.json
+portunix mcp serve --port 3001 --permissions limited
+portunix mcp serve --daemon --config ~/.portunix/mcp.json
 ```
 
 ### MCP Server Functionality

@@ -1,0 +1,83 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "vscode",
+    "displayName": "Visual Studio Code",
+    "description": "Source code editor from Microsoft",
+    "category": "development/editors",
+    "homepage": "https://code.visualstudio.com/",
+    "documentation": "https://code.visualstudio.com/docs/",
+    "license": "Microsoft Software License",
+    "maintainer": "Microsoft"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "exe",
+        "variants": {
+          "user": {
+            "version": "latest",
+            "urls": {
+              "x64": "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user",
+              "x86": "https://code.visualstudio.com/sha/download?build=stable&os=win32-user"
+            },
+            "installArgs": ["/verysilent", "/mergetasks=!runcode"]
+          },
+          "system": {
+            "version": "latest",
+            "urls": {
+              "x64": "https://code.visualstudio.com/sha/download?build=stable&os=win32-x64",
+              "x86": "https://code.visualstudio.com/sha/download?build=stable&os=win32"
+            },
+            "installArgs": ["/verysilent", "/mergetasks=!runcode"]
+          }
+        },
+        "verification": {
+          "command": "code --version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "deb",
+        "variants": {
+          "stable": {
+            "version": "latest",
+            "urls": {
+              "x64": "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64",
+              "arm64": "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-arm64"
+            },
+            "postInstall": [
+              "sudo dpkg -i ${downloaded_file}",
+              "sudo apt-get install -f"
+            ]
+          },
+          "snap": {
+            "version": "latest",
+            "packages": ["code"],
+            "type": "snap",
+            "installArgs": ["--classic"]
+          }
+        },
+        "verification": {
+          "command": "code --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "official": {
+        "type": "direct",
+        "url": "https://code.visualstudio.com/Download",
+        "apiEndpoint": "https://code.visualstudio.com/updates",
+        "pattern": "stable builds"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check https://code.visualstudio.com/updates for latest stable release information. Use Microsoft's direct download URLs with build=stable parameter. Verify download endpoints: win32-x64-user, win32-x64, linux-deb-x64, linux-deb-arm64. Check update API if available.",
+      "urlResolution": "For Windows user: https://code.visualstudio.com/sha/download?build=stable&os=win32-x64-user. For Linux: https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64",
+      "updateGuidance": "Research VS Code installation variants: 'user' for per-user installation (no admin required), 'system' for system-wide installation, 'stable' for .deb package on Linux, 'snap' for snap package installation. Verify silent installation arguments and PATH configuration."
+    }
+  }
+}

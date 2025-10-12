@@ -1,0 +1,109 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "hugo",
+    "displayName": "Hugo Static Site Generator",
+    "description": "Fast and flexible static site generator built with Go",
+    "category": "development/tools",
+    "homepage": "https://gohugo.io/",
+    "documentation": "https://gohugo.io/documentation/",
+    "license": "Apache-2.0",
+    "maintainer": "Hugo Authors"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "zip",
+        "variants": {
+          "standard": {
+            "version": "0.150.1",
+            "urls": {
+              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_0.150.1_windows-amd64.zip",
+              "arm64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_0.150.1_windows-arm64.zip"
+            },
+            "extractTo": "C:/Portunix/bin/hugo",
+            "postInstall": [
+              "setx PATH \"%PATH%;C:\\Portunix\\bin\\hugo\" /m"
+            ]
+          },
+          "extended": {
+            "version": "0.150.1",
+            "urls": {
+              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_extended_0.150.1_windows-amd64.zip",
+              "arm64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_extended_0.150.1_windows-arm64.zip"
+            },
+            "extractTo": "C:/Portunix/bin/hugo",
+            "postInstall": [
+              "setx PATH \"%PATH%;C:\\Portunix\\bin\\hugo\" /m"
+            ]
+          }
+        },
+        "verification": {
+          "command": "hugo version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "tar.gz",
+        "variants": {
+          "standard": {
+            "version": "0.150.1",
+            "urls": {
+              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_0.150.1_linux-amd64.tar.gz",
+              "arm64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_0.150.1_linux-arm64.tar.gz"
+            },
+            "extractTo": "/usr/local/bin",
+            "postInstall": [
+              "${sudo_prefix}chmod +x ${actual_extract_to}/hugo"
+            ]
+          },
+          "extended": {
+            "version": "0.150.1",
+            "urls": {
+              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_extended_0.150.1_linux-amd64.tar.gz",
+              "arm64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_extended_0.150.1_linux-arm64.tar.gz"
+            },
+            "extractTo": "/usr/local/bin",
+            "postInstall": [
+              "${sudo_prefix}chmod +x ${actual_extract_to}/hugo"
+            ]
+          },
+          "apt": {
+            "version": "latest",
+            "packages": ["hugo"]
+          },
+          "snap": {
+            "version": "latest",
+            "packages": ["hugo"],
+            "installArgs": ["--channel=extended"]
+          }
+        },
+        "verification": {
+          "command": "hugo version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "github": {
+        "type": "github",
+        "url": "https://github.com/gohugoio/hugo",
+        "apiEndpoint": "https://api.github.com/repos/gohugoio/hugo/releases/latest",
+        "pattern": "hugo_{version}_{os}-{arch}"
+      }
+    },
+    "verification": {
+      "checksumType": "sha256",
+      "checksumUrl": "https://github.com/gohugoio/hugo/releases/latest"
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check GitHub API for Hugo releases at https://api.github.com/repos/gohugoio/hugo/releases/latest. Parse version tag and verify both standard and extended builds are available for multiple platforms.",
+      "urlResolution": "For standard: hugo_{version}_{os}-{arch}.{ext}. For extended: hugo_extended_{version}_{os}-{arch}.{ext}",
+      "updateGuidance": "Monitor Hugo releases for new versions. Hugo follows semantic versioning. Extended version includes additional features like Sass/SCSS processing. Verify binary compatibility across platforms."
+    },
+    "dependencies": [],
+    "templates": ["zip-archive", "tar-archive"]
+  }
+}

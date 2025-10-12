@@ -67,13 +67,21 @@ validate_version() {
 
 check_dependencies() {
     print_step "Checking dependencies..."
-    
+
     if ! command -v go >/dev/null 2>&1; then
         print_error "Go is not installed or not in PATH"
         exit 1
     fi
-    
-    if ! command -v goreleaser >/dev/null 2>&1; then
+
+    # Check for goreleaser in common locations
+    GORELEASER_CMD=""
+    if command -v goreleaser >/dev/null 2>&1; then
+        GORELEASER_CMD="goreleaser"
+    elif [ -x "$(go env GOPATH)/bin/goreleaser" ]; then
+        GORELEASER_CMD="$(go env GOPATH)/bin/goreleaser"
+    elif [ -x "$HOME/go/bin/goreleaser" ]; then
+        GORELEASER_CMD="$HOME/go/bin/goreleaser"
+    else
         print_error "GoReleaser is not installed"
         echo "Install with: go install github.com/goreleaser/goreleaser@latest"
         exit 1
@@ -90,7 +98,7 @@ check_dependencies() {
     fi
     
     print_info "✓ Go: $(go version | cut -d' ' -f3)"
-    print_info "✓ GoReleaser: $(goreleaser --version | head -n1)"
+    print_info "✓ GoReleaser: $($GORELEASER_CMD --version | head -n1)"
     print_info "✓ Git repository detected"
     print_info "✓ GoReleaser config found"
     echo
@@ -128,7 +136,7 @@ run_goreleaser() {
     git tag "$VERSION"
     
     # Run GoReleaser with the tag for proper version embedding
-    if goreleaser release --clean --skip-validate --skip-publish; then
+    if $GORELEASER_CMD release --clean --skip-validate --skip-publish; then
         print_info "✓ GoReleaser completed successfully"
         
         # Remove temporary tag after successful build
@@ -254,9 +262,9 @@ cd portunix_${VERSION#v}_darwin_arm64
 # Install development environment
 portunix install default
 
-# Manage Docker containers
-portunix docker run ubuntu
-portunix docker ssh container-name
+# Manage containers
+portunix container run ubuntu
+portunix container ssh container-name
 
 # Configure MCP server
 portunix mcp configure
@@ -341,6 +349,23 @@ main() {
     show_summary
     
     echo -e "${GREEN}✅ Release $VERSION ready for publication!${NC}"
+
+    # Generate documentation site (unless disabled)
+    if [ "${AUTO_DOCS:-true}" != "false" ]; then
+        echo
+        print_step "Generating documentation site..."
+        if [ -x "./scripts/post-release-docs.py" ]; then
+            python3 ./scripts/post-release-docs.py "$VERSION" --build-only || {
+                print_warning "Documentation generation failed (non-blocking)"
+                echo "You can manually regenerate documentation with:"
+                echo "  python3 ./scripts/post-release-docs.py $VERSION"
+            }
+        else
+            print_warning "post-release-docs.py not found or not executable"
+            echo "Install Hugo and run:"
+            echo "  python3 ./scripts/post-release-docs.py $VERSION"
+        fi
+    fi
 }
 
 # Run main function

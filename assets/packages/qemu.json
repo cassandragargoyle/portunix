@@ -1,0 +1,53 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "qemu",
+    "displayName": "QEMU",
+    "description": "Generic and open source machine emulator and virtualizer",
+    "category": "infrastructure/virtualization",
+    "homepage": "https://www.qemu.org/",
+    "documentation": "https://www.qemu.org/docs/",
+    "license": "GPL-2.0",
+    "maintainer": "QEMU Project"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "apt": {
+            "version": "latest",
+            "packages": ["qemu-system-x86", "qemu-utils"]
+          },
+          "dnf": {
+            "version": "latest",
+            "packages": ["qemu-system-x86", "qemu-img"]
+          }
+        },
+        "verification": {
+          "command": "qemu-system-x86_64 --version",
+          "expectedExitCode": 0
+        }
+      },
+      "windows": {
+        "type": "script",
+        "variants": {
+          "latest": {
+            "version": "latest",
+            "installScript": "$url = 'https://qemu.weilnetz.de/w64/'; Write-Host 'Please download QEMU from $url manually'",
+            "postInstall": ["echo 'QEMU installation requires manual setup on Windows'"]
+          }
+        }
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check QEMU official website and package repositories for latest versions.",
+      "urlResolution": "Install via package managers on Linux, manual download for Windows",
+      "updateGuidance": "Monitor QEMU releases for new versions and security updates. Essential virtualization tool."
+    },
+    "dependencies": [],
+    "templates": ["apt-package"]
+  }
+}

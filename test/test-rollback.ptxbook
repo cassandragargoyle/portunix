@@ -1,0 +1,27 @@
+apiVersion: portunix.ai/v1
+kind: Playbook
+metadata:
+  name: "rollback-test"
+  description: "Test rollback functionality"
+
+spec:
+  variables:
+    enable_logging: true
+
+  rollback:
+    enabled: true
+    preserve_logs: true
+    timeout: "5m"
+    on_failure:
+      - type: "command"
+        command: "echo 'Rollback: Cleaning up test environment'"
+        description: "Clean up test files"
+      - type: "command"
+        command: "echo 'Rollback: Sending notification'"
+        description: "Send rollback notification"
+        when: "enable_logging"
+
+  portunix:
+    packages:
+      - name: "python"
+        variant: "3.13"

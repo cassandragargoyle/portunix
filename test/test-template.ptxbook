@@ -1,0 +1,25 @@
+apiVersion: portunix.ai/v1
+kind: Playbook
+metadata:
+  name: "template-test"
+  description: "Test variable templating"
+
+spec:
+  variables:
+    java_version: "17"
+    node_version: "20"
+    editor: "vscode"
+    environment: "development"
+
+  environment:
+    project_name: "test-project"
+
+  portunix:
+    packages:
+      - name: "java"
+        variant: "{{ java_version }}"
+        vars:
+          custom_flag: "{{ environment }}"
+      - name: "nodejs"
+        variant: "{{ node_version }}"
+        when: "project_name == 'test-project'"

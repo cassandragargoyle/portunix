@@ -1,7 +1,6 @@
 *.msi
 .tmp
 .cache
-portunix.exe
 dist
 bin
 
@@ -33,3 +32,43 @@ test/venv/
 .claude/settings.local.json
 test/test-plugin/test-plugin
 __debug_bin*
+.claude/settings.local.json
+
+# Portunix
+portunix.exe
+/portunix
+
+# Portunix config
+portunix-config.yaml
+test/unit/.portunix/config.yaml
+
+# Portunix helpers
+/ptx-container
+ptx-container.exe
+
+/ptx-mcp
+ptx-mcp.exe
+
+/ptx-ansible
+ptx-ansible.exe
+
+/ptx-virt
+ptx-virt.exe
+src/helpers/ptx-virt/ptx-virt
+
+/ptx-prompting
+ptx-prompting.exe
+
+# Documentation site generated files
+docs-site/public/
+docs-site/resources/
+docs-site/.hugo_build.lock
+.claude/settings.local.json
+src/helpers/ptx-container/ptx-container
+src/helpers/ptx-container/ptx-container
+
+# Generated paybooks
+generated-playbooks
+
+# Hugo
+.hugo_build.lock

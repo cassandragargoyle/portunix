@@ -73,6 +73,13 @@ This document defines common terminology, abbreviations, and technical terms use
 - **Self-deployment** - Automatic copying and setup of Portunix in virtual environments
 - **VM Environment** - Isolated virtual machine environment for testing and development
 
+### Security & Access Control (Portunix)
+- **RBAC Roles** - Predefined permission sets: `admin` (full access), `developer` (dev environments), `operator` (production), `auditor` (read-only)
+- **Permissions** - Granular access controls: `playbook:execute`, `env:local`, `env:container`, `env:virt`, `secret:read`, `secret:write`
+- **Environment Isolation** - RBAC-enforced separation between local, container, and virtualization environments
+- **Access Request** - RBAC validation request containing user, permission, resource, and environment context
+- **Audit Trail** - Comprehensive logging of all RBAC decisions and playbook executions for compliance
+
 ## Technical Terms by Category
 
 ### Programming Languages
@@ -182,6 +189,7 @@ This document defines common terminology, abbreviations, and technical terms use
 ### Security
 - **JWT** - JSON Web Token
 - **OAuth** - Open Authorization
+- **RBAC** - Role-Based Access Control: Security model that restricts system access based on user roles and permissions. In Portunix playbook system, controls who can execute, read, write, or delete playbooks in different environments (local, container, virt)
 - **SAML** - Security Assertion Markup Language
 - **2FA/MFA** - Two-Factor/Multi-Factor Authentication
 - **PKI** - Public Key Infrastructure

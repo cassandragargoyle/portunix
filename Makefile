@@ -1,7 +1,7 @@
 # Portunix Testing and Build Automation
 # Modern testing infrastructure with Go best practices
 
-.PHONY: help build test test-unit test-integration test-e2e test-coverage lint fmt clean setup-test deps
+.PHONY: help build build-helpers build-all test test-unit test-integration test-e2e test-coverage lint fmt clean setup-test deps
 
 # Default target
 help: ## Show this help message
@@ -10,9 +10,21 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Build targets
-build: ## Build the Portunix binary
+build: build-main build-helpers ## Build main binary and all helpers (default)
+	@echo "🎉 All binaries built successfully"
+
+build-main: ## Build only the main Portunix binary
 	@echo "📦 Building Portunix..."
 	go build -o portunix .
+
+build-helpers: ## Build all helper binaries
+	@echo "🔧 Building helper binaries..."
+	@cd src/helpers/ptx-container && go build -o ../../../ptx-container .
+	@cd src/helpers/ptx-mcp && go build -o ../../../ptx-mcp .
+	@cd src/helpers/ptx-virt && go build -o ../../../ptx-virt .
+	@cd src/helpers/ptx-ansible && go build -o ../../../ptx-ansible .
+	@cd src/helpers/ptx-prompting && go build -o ../../../ptx-prompting .
+	@echo "✅ Helper binaries built: ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-prompting"
 
 build-race: ## Build with race detection
 	@echo "🏃 Building with race detection..."
@@ -142,7 +154,7 @@ test-performance: ## Run performance tests
 # Clean up
 clean: ## Clean build artifacts and test files
 	@echo "🧹 Cleaning up..."
-	rm -f portunix
+	rm -f portunix ptx-container ptx-mcp ptx-virt ptx-ansible ptx-prompting
 	rm -f coverage.out coverage.html
 	rm -rf test/tmp/
 	go clean -testcache

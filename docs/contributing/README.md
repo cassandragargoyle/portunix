@@ -49,6 +49,9 @@ File naming standards and conventions for CassandraGargoyle projects.
 ### [Git Workflow](GIT-WORKFLOW.md)
 Git workflow guidelines including branch naming, commit messages, and PR process.
 
+### [Gitea Internal Methodology](GITEA-INTERNAL-METHODOLOGY.md)
+Internal development methodology for self-hosted Gitea instance, including branch conventions and publishing workflows.
+
 ### Code Style Guidelines
 Language-specific coding standards and conventions:
 - [Go Code Style](CODE-STYLE-GO.md) - Guidelines for Go development

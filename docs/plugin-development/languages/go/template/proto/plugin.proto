@@ -1,0 +1,113 @@
+syntax = "proto3";
+
+package go_plugin_template;
+
+option go_package = "go-plugin-template/proto";
+
+// Core Plugin Service
+service PluginService {
+    // Required methods for all plugins
+    rpc GetInfo(GetInfoRequest) returns (GetInfoResponse);
+    rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+    rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+    
+    // Optional methods for tool plugins
+    rpc Execute(ExecuteRequest) returns (ExecuteResponse);
+    
+    // Optional methods for MCP plugins
+    rpc ListTools(ListToolsRequest) returns (ListToolsResponse);
+    rpc CallTool(CallToolRequest) returns (CallToolResponse);
+}
+
+// Plugin Information
+message PluginInfo {
+    string name = 1;
+    string version = 2;
+    string description = 3;
+    repeated string capabilities = 4;
+}
+
+// Plugin Info Request/Response
+message GetInfoRequest {}
+
+message GetInfoResponse {
+    PluginInfo info = 1;
+}
+
+// Health Check Request/Response
+message HealthCheckRequest {
+    string service = 1;
+}
+
+message HealthCheckResponse {
+    enum Status {
+        UNKNOWN = 0;
+        SERVING = 1;
+        NOT_SERVING = 2;
+        SERVICE_UNKNOWN = 3;
+    }
+    Status status = 1;
+}
+
+// Execute Request/Response (for tool plugins)
+message ExecuteRequest {
+    string command = 1;
+    repeated string args = 2;
+}
+
+message ExecuteResponse {
+    enum Status {
+        SUCCESS = 0;
+        ERROR = 1;
+        TIMEOUT = 2;
+    }
+    string result = 1;
+    Status status = 2;
+    string error_message = 3;
+}
+
+// MCP Tool Definition
+message MCPTool {
+    string name = 1;
+    string description = 2;
+    string schema = 3; // JSON schema for tool parameters
+}
+
+// MCP List Tools Request/Response
+message ListToolsRequest {}
+
+message ListToolsResponse {
+    repeated MCPTool tools = 1;
+}
+
+// MCP Call Tool Request/Response
+message CallToolRequest {
+    string tool_name = 1;
+    string arguments = 2; // JSON-encoded arguments
+}
+
+message CallToolResponse {
+    enum Status {
+        SUCCESS = 0;
+        ERROR = 1;
+        NOT_FOUND = 2;
+        INVALID_ARGS = 3;
+    }
+    string result = 1;
+    Status status = 2;
+    string error_message = 3;
+}
+
+// Shutdown Request/Response
+message ShutdownRequest {
+    bool force = 1;
+}
+
+message ShutdownResponse {
+    enum Status {
+        SUCCESS = 0;
+        ERROR = 1;
+    }
+    Status status = 1;
+    string message = 2;
+}

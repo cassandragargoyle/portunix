@@ -1,0 +1,272 @@
+apiVersion: portunix.ai/v1
+kind: Playbook
+name: "Windows 11 Enterprise Architect Development VM"
+description: "Automated setup of Windows 11 VM optimized for Enterprise Architect plugin development with PUML to EA conversion tools"
+version: "1.0"
+
+metadata:
+  name: "windows11-ea-development-vm"
+  author: "Claude Code Assistant"
+  created: "2025-09-24"
+  environment: "development"
+  tags: ["windows", "virtualization", "enterprise-architect", "development", "vm"]
+
+spec:
+  portunix:
+    variables:
+      vm_name: "ea-dev-win11"
+      vm_ram: "8G"
+      vm_cpu: "4"
+      vm_disk: "80G"
+      iso_name: "windows-11-22h2.iso"
+      rdp_port: "13389"
+      ssh_port: "12222"
+      developer_user: "developer"
+      workspace_dir: "C:\\workspace"
+
+    environments:
+      development:
+        vm_ram: "8G"
+        vm_cpu: "4"
+      production:
+        vm_ram: "12G"
+        vm_cpu: "6"
+
+    prerequisites:
+      - name: "portunix"
+        version: ">=1.7.0"
+
+    tasks:
+      # Phase 1: Environment Setup
+      - name: "Verify Portunix virtualization support"
+        command: "portunix virt check"
+        register: virt_check
+
+      - name: "Download Windows 11 ISO"
+        command: "portunix virt iso download windows-11-22h2"
+        register: iso_download
+
+      - name: "Verify ISO availability"
+        command: "portunix virt iso list"
+
+      # Phase 2: VM Creation
+      - name: "Create Windows 11 VM with EA development configuration"
+        command: >
+          portunix virt create {{ vm_name }}
+          --iso {{ iso_name }}
+          --ram {{ vm_ram }}
+          --cpu {{ vm_cpu }}
+          --disk {{ vm_disk }}
+          --os-type windows
+          --os-variant win11
+          --firmware uefi
+          --tpm 2.0
+          --network nat
+        register: vm_creation
+
+      - name: "Start VM for Windows installation"
+        command: "portunix virt start {{ vm_name }}"
+
+      - name: "Display VM console information"
+        debug:
+          msg: |
+            VM created successfully. Manual steps required:
+            1. Connect to VM console: portunix virt console {{ vm_name }} --vnc
+            2. Follow Windows 11 installation wizard
+            3. Create user account: {{ developer_user }}
+            4. Complete initial Windows setup
+            5. Install Windows updates
+            6. Enable RDP access in Windows settings
+
+      - name: "Wait for Windows installation completion"
+        pause:
+          prompt: "Press Enter after completing Windows 11 installation and enabling RDP"
+
+      - name: "Create clean Windows installation snapshot"
+        command: "portunix virt snapshot create {{ vm_name }} --name 'clean-windows-install'"
+
+      # Phase 3: Network and RDP Setup
+      - name: "Setup RDP port forwarding"
+        command: >
+          portunix virt network forward {{ vm_name }}
+          --host-port {{ rdp_port }}
+          --guest-port 3389
+          --protocol tcp
+
+      - name: "Setup SSH port forwarding (optional)"
+        command: >
+          portunix virt network forward {{ vm_name }}
+          --host-port {{ ssh_port }}
+          --guest-port 22
+          --protocol tcp
+        ignore_errors: true
+
+      - name: "Display RDP connection information"
+        debug:
+          msg: "RDP access available at localhost:{{ rdp_port }}"
+
+      # Phase 4: Transfer Portunix to VM and Install Development Tools
+      - name: "Create Portunix directory in VM"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "mkdir C:\\portunix"
+
+      - name: "Transfer Portunix binary to VM"
+        copy:
+          src: "./portunix"
+          dest: "C:\\portunix\\portunix.exe"
+          mode: "0755"
+
+      - name: "Verify Portunix binary in VM"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "C:\\portunix\\portunix.exe --version"
+        register: portunix_version
+
+      - name: "Install default development environment"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "C:\\portunix\\portunix.exe install default"
+        register: default_install
+
+      - name: "Install additional development tools"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "C:\\portunix\\portunix.exe install git vscode powershell"
+        ignore_errors: true
+
+      - name: "Install Java for Enterprise Architect"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "C:\\portunix\\portunix.exe install java --variant 17"
+        ignore_errors: true
+
+      # Phase 5: Development Environment Configuration
+      - name: "Configure Git global settings"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "git config --global user.name 'EA Developer'"
+
+      - name: "Configure Git email"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "git config --global user.email '{{ developer_user }}@localhost'"
+
+      - name: "Create workspace directory"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "mkdir {{ workspace_dir }}"
+
+      - name: "Install default development environment using Portunix"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "C:\\portunix\\portunix.exe install default"
+
+      - name: "Create development tools snapshot"
+        command: "portunix virt snapshot create {{ vm_name }} --name 'dev-tools-installed'"
+
+      # Phase 6: Enterprise Architect Preparation
+      - name: "Create EA plugins directory"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "mkdir 'C:\\Program Files\\Sparx Systems\\EA\\Plugins'"
+        ignore_errors: true
+
+      - name: "Create EA plugin development workspace"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "mkdir {{ workspace_dir }}\\ea-plugins"
+
+      - name: "Display Enterprise Architect installation instructions"
+        debug:
+          msg: |
+            Enterprise Architect installation (manual step required):
+            1. Download EA trial from: https://sparxsystems.com/products/ea/trial/request.html
+            2. Connect via RDP to localhost:{{ rdp_port }}
+            3. Transfer EA installer to VM
+            4. Run installer as administrator
+            5. Follow installation wizard
+            6. Enter license key if available
+
+      - name: "Pause for Enterprise Architect installation"
+        pause:
+          prompt: "Press Enter after installing Enterprise Architect"
+
+      # Phase 7: Project Setup
+      - name: "Clone portunix-enterprise-architect repository"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "git clone https://github.com/CassandraGargoyle/portunix-enterprise-architect.git {{ workspace_dir }}\\portunix-enterprise-architect"
+
+      - name: "Create EA plugin project template"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "dotnet new classlib -n EAPortunixPlugin -o {{ workspace_dir }}\\ea-plugins\\EAPortunixPlugin"
+
+      - name: "Install EA Interop NuGet package"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "cd {{ workspace_dir }}\\ea-plugins\\EAPortunixPlugin && dotnet add package Interop.EA"
+
+      # Phase 8: VS Code Extensions
+      - name: "Install VS Code extensions via Portunix"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "C:\\portunix\\portunix.exe install claude-code"
+
+      - name: "Install C# extension for VS Code"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "code --install-extension ms-dotnettools.csharp"
+
+      - name: "Install Git extension for VS Code"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "code --install-extension eamodio.gitlens"
+
+      - name: "Install PlantUML extension for VS Code"
+        command: >
+          portunix virt exec {{ vm_name }}
+          "code --install-extension jebbs.plantuml"
+
+      # Phase 9: Final Configuration
+      - name: "Create final development snapshot"
+        command: "portunix virt snapshot create {{ vm_name }} --name 'ea-development-ready'"
+
+      - name: "Display setup completion information"
+        debug:
+          msg: |
+            🎉 Windows 11 Enterprise Architect Development VM Setup Complete!
+
+            VM Details:
+            - Name: {{ vm_name }}
+            - RAM: {{ vm_ram }}
+            - CPU: {{ vm_cpu }}
+            - Disk: {{ vm_disk }}
+
+            Access Information:
+            - RDP: localhost:{{ rdp_port }}
+            - SSH: localhost:{{ ssh_port }} (if configured)
+
+            Snapshots Created:
+            - clean-windows-install: Clean Windows 11 installation
+            - dev-tools-installed: Development tools installed
+            - ea-development-ready: Complete development environment
+
+            Development Workspace:
+            - Main workspace: {{ workspace_dir }}
+            - EA plugins: {{ workspace_dir }}\\ea-plugins
+            - Project repository: {{ workspace_dir }}\\portunix-enterprise-architect
+
+            Next Steps:
+            1. Connect via RDP to localhost:{{ rdp_port }}
+            2. Open VS Code and navigate to {{ workspace_dir }}\\ea-plugins
+            3. Start developing EA plugins for PUML to EA conversion
+            4. Use snapshots for quick environment reset
+
+            Management Commands:
+            - Start VM: portunix virt start {{ vm_name }}
+            - Stop VM: portunix virt stop {{ vm_name }} --graceful
+            - VM Status: portunix virt status {{ vm_name }}
+            - List snapshots: portunix virt snapshot list {{ vm_name }}
+            - Restore snapshot: portunix virt snapshot restore {{ vm_name }} --name [snapshot-name]

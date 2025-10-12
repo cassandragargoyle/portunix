@@ -1,1 +1,2 @@
-ln -sfn techlead.md .claude/roles/current.md 
+ln -sfn techlead.md .claude/roles/current.md
+echo "🚀  Switched to role: TECHLEAD"
