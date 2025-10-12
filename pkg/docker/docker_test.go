@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
-	"portunix.cz/app/system"
+	"portunix.ai/app/system"
 )
 
 // MockDockerClient for testing

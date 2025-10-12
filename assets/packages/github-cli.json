@@ -1,0 +1,53 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "github-cli",
+    "displayName": "GitHub CLI (Alternative)",
+    "description": "Alternative GitHub command line interface",
+    "category": "development/tools",
+    "homepage": "https://cli.github.com/",
+    "documentation": "https://cli.github.com/manual/",
+    "license": "MIT",
+    "maintainer": "GitHub"
+  },
+  "spec": {
+    "hasVariants": false,
+    "platforms": {
+      "windows": {
+        "type": "winget",
+        "variants": {
+          "latest": {
+            "version": "latest",
+            "packageId": "GitHub.cli",
+            "installScript": "winget install GitHub.cli"
+          }
+        },
+        "verification": {
+          "command": "gh --version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "apt": {
+            "version": "latest",
+            "packages": ["gh"]
+          }
+        },
+        "verification": {
+          "command": "gh --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check GitHub CLI releases. This is an alternative package entry.",
+      "urlResolution": "Install via package managers",
+      "updateGuidance": "Monitor GitHub CLI updates. Alternative to gh package."
+    },
+    "dependencies": [],
+    "templates": ["winget-package", "apt-package"]
+  }
+}

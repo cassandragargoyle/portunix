@@ -13,8 +13,9 @@ Universal development environment management tool with intelligent OS detection,
 ### Core Capabilities
 - **🔧 Universal Installation System**: Install development tools across Windows, Linux, and macOS
 - **🐳 Docker Management**: Complete Docker container lifecycle management with SSH support
+- **🔐 Certificate Management**: Automatic CA certificate installation and HTTPS connectivity verification
 - **🪟 Windows Sandbox Integration**: Isolated development environments on Windows
-- **🧠 Intelligent OS Detection**: Automatic platform detection and optimization
+- **🧠 Intelligent OS Detection**: Automatic platform detection and optimization with certificate bundle detection
 - **⚡ Cross-Platform Support**: Native support for Windows, Linux, and macOS
 - **💻 VM Management**: QEMU/KVM virtualization with Windows 11 support and snapshots
 
@@ -25,6 +26,13 @@ Universal development environment management tool with intelligent OS detection,
 - **Package Manager Detection**: Automatic detection of apt-get, yum, dnf, apk
 - **Cache Directory Mounting**: Persistent storage for downloads and packages
 - **Flexible Base Images**: Choose from various Linux distributions
+
+### Certificate Management (Issue #30) 
+- **Automatic CA Certificate Setup**: Installs CA certificates in containers before software installation
+- **HTTPS Connectivity Verification**: Tests HTTPS connections after certificate installation
+- **Multi-Distribution Support**: Works with apt, yum, dnf, apk, pacman, zypper package managers  
+- **System Certificate Detection**: Shows certificate bundle status in system information
+- **Standalone Certificate Installation**: `portunix install ca-certificates` command
 
 ### Installation Types
 - **`default`**: Python + Java + VSCode (recommended)
@@ -68,6 +76,12 @@ go build -o portunix .
 
 # Install other software
 ./portunix install python java vscode
+
+# Install CA certificates for HTTPS connectivity
+./portunix install ca-certificates
+
+# Show system information with certificate status
+./portunix system info
 ```
 
 ### Docker Container Management
@@ -280,8 +294,6 @@ make lint
 
 ### Issue Tracking
 - **[Issues Documentation](docs/issues/README.md)**: GitHub issues mirror and tracking
-- **[Issue #1](docs/issues/001-cross-platform-os-detection.md)**: Cross-Platform OS Detection ✅ Implemented
-- **[Issue #2](docs/issues/002-docker-management-command.md)**: Docker Management Command ✅ Implemented
 
 ### Examples
 ```bash

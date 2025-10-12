@@ -3,7 +3,7 @@
 # Switch to Decision Maker role
 ln -sfn decision-maker.md  .claude/roles/current.md 
 
-echo "✅ Switched to Decision Maker role"
+echo "⚖️ Switched to Decision Maker role"
 echo "📋 Role: Architectural decisions and component placement"
 echo ""
 echo "Key responsibilities:"

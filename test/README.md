@@ -142,3 +142,8 @@ Each language is chosen for its strengths:
 - **Python**: Better for complex scenarios, container management, SSH
 - **Go**: Fast unit tests, internal package testing
 - **Bash**: Simple CLI verification and smoke tests
+
+## Unit tests
+
+example:
+go test -tags unit ./test/unit/ -run TestContainerParamsTestSuite -v

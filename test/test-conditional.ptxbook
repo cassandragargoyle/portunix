@@ -1,0 +1,28 @@
+apiVersion: portunix.ai/v1
+kind: Playbook
+metadata:
+  name: "conditional-test"
+  description: "Test conditional execution"
+
+spec:
+  variables:
+    install_java: true
+    install_node: false
+    environment: "test"
+
+  portunix:
+    packages:
+      - name: "python"
+        variant: "3.13"
+      - name: "java"
+        variant: "17"
+        when: "install_java"
+      - name: "nodejs"
+        variant: "20"
+        when: "install_node"
+      - name: "vscode"
+        variant: "stable"
+        when: "environment == 'development'"
+      - name: "docker"
+        variant: "latest"
+        when: "os == 'linux'"

@@ -1,0 +1,74 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "act",
+    "displayName": "Act",
+    "description": "Run your GitHub Actions locally",
+    "category": "development/tools",
+    "homepage": "https://github.com/nektos/act",
+    "documentation": "https://github.com/nektos/act#readme",
+    "license": "MIT",
+    "maintainer": "nektos"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "zip",
+        "variants": {
+          "latest": {
+            "version": "0.2.68",
+            "urls": {
+              "x64": "https://github.com/nektos/act/releases/download/v0.2.68/act_Windows_x86_64.zip",
+              "arm64": "https://github.com/nektos/act/releases/download/v0.2.68/act_Windows_arm64.zip"
+            },
+            "extractTo": "C:/Program Files/act",
+            "postInstall": [
+              "setx PATH \"%PATH%;C:\\Program Files\\act\" /m"
+            ]
+          }
+        },
+        "verification": {
+          "command": "act --version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "tar.gz",
+        "variants": {
+          "latest": {
+            "version": "0.2.68",
+            "urls": {
+              "x64": "https://github.com/nektos/act/releases/download/v0.2.68/act_Linux_x86_64.tar.gz",
+              "arm64": "https://github.com/nektos/act/releases/download/v0.2.68/act_Linux_arm64.tar.gz"
+            },
+            "extractTo": "/usr/local/bin",
+            "postInstall": [
+              "sudo chmod +x /usr/local/bin/act"
+            ]
+          }
+        },
+        "verification": {
+          "command": "act --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "github": {
+        "type": "github",
+        "url": "https://github.com/nektos/act",
+        "apiEndpoint": "https://api.github.com/repos/nektos/act/releases/latest",
+        "pattern": "act_{os}_{arch}"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check GitHub API for act releases at https://api.github.com/repos/nektos/act/releases/latest. Parse version tag and verify binary packages for Windows, Linux, and macOS.",
+      "urlResolution": "act_{os}_{arch}.{ext} where os=Windows/Linux/Darwin, arch=x86_64/arm64",
+      "updateGuidance": "Monitor act releases for new versions. Act follows semantic versioning. Verify Docker compatibility and GitHub Actions feature support."
+    },
+    "dependencies": [],
+    "templates": ["zip-archive", "tar-archive"]
+  }
+}

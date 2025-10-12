@@ -100,7 +100,7 @@ linters-settings:
       - portunix.cz/cmd
       - portunix.cz/app/sandbox
       - portunix.cz/app/install
-      - github.com/cassandragargoyle/portunix/app/wizard
+      - portunix.ai/app/wizard
 
 linters:
   enable:

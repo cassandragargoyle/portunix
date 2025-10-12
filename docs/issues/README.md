@@ -13,8 +13,8 @@ We use a dual numbering system to separate internal development tracking from pu
 | Internal | Public | Title | Status | Priority | Type | Labels |
 |----------|--------|-------|--------|----------|------|--------|
 | [#001](001-cross-platform-os-detection.md) | PUB-001 | Cross-Platform Intelligent OS Detection System | ✅ Implemented | High | Feature | enhancement, cross-platform, powershell |
-| [#002](002-docker-management-command.md) | - | Docker Management Command | 📋 Open | High | Feature | enhancement, docker, cross-platform |
-| [#003](003-podman-management-command.md) | - | Podman Management Command | 📋 Open | High | Feature | enhancement, podman, cross-platform |
+| [#002](002-docker-management-command.md) | - | Docker Management Command | ✅ Implemented | High | Feature | enhancement, docker, cross-platform |
+| [#003](003-podman-management-command.md) | - | Podman Management Command | ✅ Implemented | High | Feature | enhancement, podman, cross-platform |
 | [#004](004-mcp-server-ai-integration.md) | PUB-002 | MCP Server for AI Assistant Integration | ✅ Implemented | High | Feature | enhancement, mcp, ai-integration |
 | [#007](007-plugin-system-grpc.md) | - | Plugin System with gRPC Architecture | 📋 Open | High | Feature | enhancement, plugin-system, grpc |
 | [#008](008-virtual-development-disk.md) | - | Virtual Development Disk Management | 📋 Open | High | Feature | enhancement, virtual-disk, cross-platform |
@@ -28,8 +28,82 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#017](017-qemu-kvm-windows-virtualization.md) | - | QEMU/KVM Windows 11 Virtualization with Snapshots | 📋 Open | High | Feature | virtualization, qemu, kvm, windows, snapshot |
 | [#019](019-docker-windows-install-issues.md) | - | Docker Installation Issues on Windows | 🔄 In Progress | High | Bug Fix | bug, docker, windows |
 | [#020](020-qemu-windows-clipboard-integration.md) | - | QEMU Windows VM Clipboard Integration | 📋 Open | Medium | Enhancement | enhancement, qemu, windows, clipboard, spice |
-| [#021](021-github-actions-local-testing.md) | - | GitHub Actions Local Testing Support with Act | 📋 Open | Medium | Feature | feature, github-actions, act, ci-cd, testing |
+| [#021](021-github-actions-local-testing.md) | - | GitHub Actions Local Testing Support with Act | ✅ Implemented | Medium | Feature | feature, github-actions, act, ci-cd, testing |
 | [#022](022-google-chrome-installation.md) | - | Google Chrome Installation Implementation | ✅ Implemented | Medium | Feature | enhancement, package-management, cross-platform |
+| [#023](023-arch-linux-distribution-support.md) | - | Arch Linux Distribution Support Integration | 📋 Open | Medium | Feature | enhancement, package-management, linux, arch-linux, aur |
+| [#024](024-plugin-registration-system.md) | - | Plugin Registration and Discovery System | 📋 Ready for Implementation | High | Enhancement | plugin-system, grpc, cli, mcp, discovery, dependency-management |
+| [#025](025-github-integration-core.md) | - | GitHub Integration for Portunix Core | 📋 Open | High | Enhancement | github, git, api-integration, core-enhancement |
+| [#026](026-github-cli-installation.md) | - | GitHub CLI (gh) Installation Support | ✅ Implemented | Medium | Feature | enhancement, package-management, github, cli, cross-platform |
+| [#027](027-container-lifecycle-cleanup-guarantees.md) | - | Container Lifecycle Management with Cleanup Guarantees | 📋 Open | High | Enhancement | docker, lifecycle-management, cleanup, resource-management, testing |
+| [#028](028-universal-container-parameters-support.md) | - | Universal Container Parameters Support | ✅ Implemented | High | Enhancement | docker, podman, volume-mounting, cli, container-runtime |
+| [#029](029-universal-container-command.md) | - | Universal Container Command Implementation | ✅ Implemented | High | Enhancement | container, docker, podman, configuration, universal-interface |
+| [#030](030-container-tls-certificate-verification-failure.md) | - | Container TLS Certificate Verification Failure | ✅ Implemented | High | Bug Fix | container, docker, podman, tls, certificates, networking, go-installation |
+| [#031](031-universal-container-exec-command.md) | - | Universal Container Exec Command | ✅ Implemented | High | Enhancement | container, docker, podman, universal-interface, cli, execution |
+| [#032](032-universal-container-management-commands.md) | - | Universal Container Management Commands | 📋 Open | High | Enhancement | container, docker, podman, universal-interface, cli, management |
+| [#033](033-mcp-plugin-development-guide-ai-agents.md) | - | MCP Server Plugin Development Guide for AI Agents | 📋 Open | High | Enhancement | mcp, ai-integration, plugin-system, documentation, claude-code |
+| [#034](034-mcp-server-installation-wizard.md) | - | MCP Server Command Restructuring + Interactive Wizard | 📋 Open | High | Enhancement | mcp, ai-integration, wizard, command-restructure, user-experience, safety |
+| [#057](057-virtualbox-detection-windows-false-negative.md) | - | VirtualBox Detection False Negative on Windows | ✅ Implemented | High | Bug Fix | bug, virtualization, windows, virtualbox, detection |
+| [#035](035-ai-assistant-installation-support.md) | - | AI Assistant Installation Support | 📋 Open | High | Enhancement | package-management, ai-integration, installation, cross-platform, mcp |
+| [#036](036-default-stdio-mode-for-mcp.md) | - | Default stdio Mode for MCP When No Parameters Provided | ✅ Implemented | High | Enhancement | enhancement, mcp, ai-integration, cli, breaking-change |
+| [#037](037-revert-default-stdio-mcp-implement-mcp-serve.md) | - | Revert Default stdio Mode and Implement MCP Serve Command | ✅ Implemented | High | Enhancement | enhancement, mcp, ai-integration, cli, breaking-change, command-restructure |
+| [#038](038-container-run-shorthand-flag-parsing-failure.md) | - | Container Run Command Shorthand Flag Parsing Failure | ✅ Implemented | High | Bug Fix | bug, container, cli, flag-parsing, critical |
+| [#039](039-container-runtime-capability-detection.md) | - | Container Runtime Capability Detection | ✅ Implemented | High | Enhancement | enhancement, container, docker, podman, testing, cli |
+| [#040](040-migrate-module-name-from-portunix-cz-to-portunix-ai.md) | - | Migrate Go Module Name from portunix.cz to portunix.ai | ✅ Implemented | Medium | Refactoring | refactoring, branding, module-management, breaking-change, internal |
+| [#041](041-nodejs-npm-installation-support.md) | - | Node.js/npm Installation Support | ✅ Implemented | High | Feature | enhancement, package-management, nodejs, npm, prerequisites |
+| [#042](042-improve-container-help-clarity.md) | - | Improve Container Command Help Clarity and Recommendations | ✅ Implemented | Medium | Enhancement | enhancement, container, help, user-experience, best-practices |
+| [#043](043-container-rm-command-alias.md) | - | Add Container RM Command Alias for Better Docker/Podman Compatibility | ✅ Implemented | Low | Enhancement | enhancement, container, usability, docker-compatibility, command-alias |
+| [#044](044-container-cp-command-missing.md) | - | Container CP Command Missing from Portunix Container System | ✅ Implemented | High | Bug/Enhancement | bug, enhancement, container, core-functionality, testing-blocker |
+| [#045](045-nodejs-installation-critical-fixes.md) | - | Node.js Installation Critical Fixes | ✅ Implemented | Critical | Bug Fix | critical, bug-fix, nodejs, container, installation |
+| [#046](046-nodejs-installation-fedora-package-manager-detection.md) | - | Node.js Installation Fails on Fedora Due to Incorrect Package Manager Detection | ✅ Implemented | High | Bug Fix | bug, nodejs, fedora, package-manager |
+| [#047](047-nodejs-archlinux-package-manager-detection.md) | - | Node.js Installation Fails on Arch Linux Due to Incorrect Package Manager Detection | ✅ Implemented | High | Bug Fix | bug, nodejs, arch-linux, package-manager, container, cross-platform |
+| [#048](048-system-info-enhanced-container-detection.md) | - | System Info Enhanced Container Detection | ✅ Implemented | Medium | Enhancement | enhancement, container, system-info, user-experience, docker, podman |
+| [#049](049-qemu-full-support-implementation.md) | - | Full QEMU/KVM Support Implementation in Portunix | ✅ Implemented | Critical | Feature | enhancement, virtualization, qemu, kvm, testing, infrastructure, critical |
+| [#050](050-multi-level-help-system.md) | - | Multi-Level Help System | ✅ Implemented | Medium | Enhancement | enhancement, help, ux, ai-integration, cli |
+| [#051](051-git-dispatcher-python-distribution-architecture.md) | - | Git-like Dispatcher with Python Distribution Architecture | 🔄 In Progress (Phase 2 Complete) | High | Architecture | architecture, dispatcher, helper-binaries, version-1.6 |
+| [#052](052-logging-system-implementation.md) | - | Logging System Implementation | ✅ Implemented | Critical | Enhancement | enhancement, logging, architecture, mcp, critical |
+| [#053](053-fix-module-path-naming-inconsistencies.md) | - | Fix Module Path Naming Inconsistencies | ✅ Implemented | High | Bug Fix | refactoring, module-management, consistency, architecture |
+| [#054](054-guid-generation-module.md) | - | GUID Generation Module for Portunix Core | ✅ Implemented | Medium | Enhancement | enhancement, core, utilities, cli |
+| [#055](055-vm-management-requirements-enterprise-architect.md) | - | VM Management Requirements for Enterprise Architect | ✅ Implemented | Critical | Feature | virtualization, vm-management, windows, critical, qemu, enterprise |
+| [#056](056-ansible-infrastructure-as-code-integration.md) | - | Ansible Infrastructure as Code Integration | ✅ Implemented | High | Feature | enhancement, infrastructure-as-code, ansible, helper-binary, multi-environment |
+| [#058](058-virt-list-vm-info-access-denied.md) | - | VirtualBox VM Information Access Denied | 🔄 Open | High | Bug Fix | bug, virtualization, windows, virtualbox, permissions |
+| [#059](059-playbook-help-command-not-working.md) | - | Playbook Help Command Not Working | ✅ Implemented | High | Bug Fix | bug, playbook, help, cli, ansible, user-experience |
+| [#060](060-backend-version-display-enhancement.md) | - | Backend Version Display Enhancement | ✅ Implemented | Medium | Enhancement | enhancement, system-info, virtualization, docker, podman, user-experience |
+| [#061](061-virt-snapshot-list-empty-names.md) | - | Virtual Machine Snapshot List Shows Empty Names | ✅ Implemented | High | Bug Fix | bug, virtualization, snapshot-management, virtualbox, qemu, data-parsing |
+| [#062](062-ansible-installation-issues.md) | - | Ansible Installation Issues - Platform Detection and Pip Support | 📋 Open | High | Bug Fix | critical, bug, installation, platform-detection, pip-support, ansible, prerequisite-resolution |
+| [#063](063-ansible-galaxy-collections-support.md) | - | Ansible Galaxy Collections Installation Support | ✅ Implemented | High | Enhancement | enhancement, ansible, galaxy, collections, automation, package-management, infrastructure-as-code |
+| [#064](064-vscode-installation-filename-issue.md) | - | Visual Studio Code Installation Filename Issue | ✅ Implemented | High | Bug Fix | critical, bug, installation, download, filename-resolution, vscode, windows, exe-installer |
+| [#065](065-terraform-installation-support.md) | - | Terraform Installation Support | 📋 Open | High | Enhancement | enhancement, package-management, terraform, hashicorp, infrastructure-as-code, multi-platform, devops |
+| [#066](066-double-commander-installation-support.md) | - | Double Commander Installation Support | 📋 Open | Medium | Enhancement | enhancement, package-management, double-commander, file-manager, sourceforge, cross-platform, gui-application |
+| [#067](067-disk-image-files-helper.md) | - | Disk Image Files Helper for Multiple Formats | 📋 Open | High | Enhancement | enhancement, virtualization, disk-management, cross-platform, vdi, vmdk, vhd, qcow2, image-processing |
+| [#068](068-main-binary-ptx-virt-helper-integration.md) | - | Main Binary ptx-virt Helper Integration | 📋 Open | High | Enhancement | enhancement, virtualization, dispatcher, helper-binary, integration, consistency |
+| [#069](069-container-command-help-display-incorrect-usage.md) | - | Container Command Help Display Shows Incorrect Usage | ✅ Implemented | Medium | Bug Fix | bug, container-management, help-system, user-experience, helper-integration |
+| [#078](078-github-cli-installation.md) | - | GitHub CLI Installation Support | 🔄 In Progress | Medium | Feature | enhancement, package-management, github-cli, developer-tools, cross-platform |
+| [#079](079-custom-installation-methods-cli-parameter.md) | - | Enhanced Package Installation with Custom URLs and Methods | 📋 Open | High | Enhancement | enhancement, package-management, installation, custom-methods, advanced-cli |
+| [#070](070-ansible-pipx-installation-support.md) | - | Ansible pipx Installation Support | ✅ Implemented | High | Enhancement | enhancement, package-management, ansible, pipx, cross-platform, installation |
+| [#071](071-container-exec-command-implementation.md) | - | Container Exec Command Implementation | ✅ Implemented | High | Bug Fix / Enhancement | bug, enhancement, container-management, core-functionality, exec, helper-binary |
+| [#072](072-cache-architecture-pip-pattern.md) | - | Cache Architecture Redesign Based on pip Pattern | 📋 Open | High | Enhancement | enhancement, cache-system, performance, architecture, cross-platform, pip-pattern |
+| [#073](073-ptx-prompting-helper-implementation.md) | - | PTX-Prompting Helper Implementation | 📋 Open | High | Feature | enhancement, helper-system, ai-integration, template-system |
+| [#074](074-post-release-documentation-automation.md) | - | Post-Release Documentation Automation and Static Site Generation | ✅ Implemented | High | Feature | enhancement, documentation, automation, release-process, github-pages, static-site |
+| [#075](075-implement-hugo-installation-support.md) | - | Implement Hugo Installation Support | ✅ Implemented | High | Enhancement | enhancement, package-management, hugo, documentation, static-site-generator |
+| [#076](076-container-run-help-command-not-working.md) | - | Container Run Help Command Not Working | ✅ Implemented | High | Bug Fix | bug, container-management, help-system, user-experience, cli |
+| [#077](077-container-run-in-container-help-flag-parsing.md) | - | Container Run-in-Container Help Flag Parsing | ✅ Implemented | High | Bug Fix | bug, container-management, help-system, flag-parsing, cli |
+| [#080](080-package-metadata-url-tracking-implementation.md) | - | Package Metadata URL Tracking Implementation | 📋 Open | Medium | Enhancement | enhancement, package-management, metadata, documentation, maintenance |
+| [#081](081-ai-prompts-package-discovery-implementation.md) | - | AI Prompts for Package Discovery Implementation | 📋 Open | Medium | Enhancement | enhancement, package-management, ai-integration, metadata, maintenance |
+| [#082](082-package-registry-architecture-implementation.md) | - | Package Registry Architecture Implementation | ✅ Implemented | Critical | Architecture | architecture, package-management, ai-integration, critical, migration |
+| [#083](083-hugo-registry-installation-fix.md) | - | Hugo Registry Installation Fix | ✅ Implemented | High | Bug Fix | bug, package-management, registry, hugo |
+| [#084](084-container-list-command-implementation.md) | - | Container List Command Implementation | ✅ Implemented | High | Feature | container, docker, podman, cli |
+| [#085](085-hugo-installation-permission-fix.md) | - | Hugo Installation Permission Fix | ✅ Implemented | High | Bug Fix | bug, installation, permissions, hugo, linux, architecture |
+| [#086](086-package-registry-automatic-discovery.md) | - | Package Registry Automatic Discovery System | ✅ Implemented | Critical | Architecture | critical, architecture, package-registry, discovery, testing-blocker, scalability |
+| [#087](087-assets-embedding-architecture-critical.md) | - | Assets Embedding Architecture - Critical Binary Distribution Fix | ✅ Implemented | Critical | Architecture | critical, architecture, assets-embedding, binary-distribution, container-compatibility |
+| [#088](088-virtualbox-kvm-conflict-detection.md) | - | VirtualBox/KVM Conflict Detection and Resolution | ✅ Implemented | High | Enhancement | enhancement, virtualization, virtualbox, kvm, user-experience, virt-check, conflict-resolution |
+| [#089](089-qemu-kvm-adapter-implementation.md) | - | QEMU/KVM Adapter Implementation for virt check | ✅ Implemented | High | Bug Fix | bug, virtualization, qemu, kvm, ptx-virt, detection, adapter |
+| [#090](090-libvirt-daemon-detection-and-fix.md) | - | Libvirt Daemon Detection and Auto-Fix | ✅ Implemented | High | Bug Fix | bug, virtualization, qemu, kvm, libvirt, virt-manager, daemon-management |
+| [#091](091-libvirt-dependency-failed-fix.md) | - | Libvirt Dependency Failed - Root Cause Analysis and Fix | ✅ Implemented | High | Bug Fix | bug, virtualization, libvirt, systemd, dependencies, virt-manager |
+| [#092](092-libvirt-package-installation-support.md) | - | Libvirt Package Installation Support | ✅ Implemented | High | Enhancement | enhancement, package-management, libvirt, virtualization, refactoring |
+| [#093](093-spice-server-client-installation.md) | - | Spice Server and Client Installation Support | 📋 Open | High | Enhancement | enhancement, package-management, virtualization, spice, qemu, kvm, clipboard |
+| [#094](094-container-rm-subcommand-not-recognized.md) | - | Container 'rm' Subcommand Not Recognized | ✅ Implemented | Medium | Bug Fix | bug, container, cli, command-parsing |
+| [#095](095-container-exec-returns-helper-version.md) | - | Container exec Returns Helper Version Instead of Executing Command | ✅ Implemented | High | Bug Fix | bug, container, cli, ptx-container, critical |
+| [#096](096-container-start-stop-help-flag-bug.md) | - | Container Start/Stop Commands Misinterpret --help Flag as Container Name | ✅ Implemented | Medium | Bug Fix | bug, container, help-system, user-experience, cli |
 
 ## Directory Structure
 

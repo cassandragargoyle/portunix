@@ -3,7 +3,7 @@ package docker
 import (
 	"context"
 
-	"portunix.cz/app/system"
+	"portunix.ai/app/system"
 )
 
 //go:generate mockgen -source=interfaces.go -destination=../../test/mocks/docker_mock.go

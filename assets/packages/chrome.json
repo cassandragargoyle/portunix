@@ -1,0 +1,100 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "chrome",
+    "displayName": "Google Chrome",
+    "description": "Fast, secure web browser built for the modern web",
+    "category": "system/browsers",
+    "homepage": "https://www.google.com/chrome/",
+    "documentation": "https://support.google.com/chrome/",
+    "license": "Freeware",
+    "maintainer": "Google"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "msi",
+        "variants": {
+          "stable": {
+            "version": "latest",
+            "urls": {
+              "x64": "https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi",
+              "x86": "https://dl.google.com/chrome/install/googlechromestandaloneenterprise.msi"
+            }
+          },
+          "beta": {
+            "version": "latest-beta",
+            "urls": {
+              "x64": "https://dl.google.com/chrome/install/beta/googlechromebetastandaloneenterprise64.msi",
+              "x86": "https://dl.google.com/chrome/install/beta/googlechromebetastandaloneenterprise.msi"
+            }
+          },
+          "dev": {
+            "version": "latest-dev",
+            "urls": {
+              "x64": "https://dl.google.com/chrome/install/dev/googlechromedevstandaloneenterprise64.msi",
+              "x86": "https://dl.google.com/chrome/install/dev/googlechromedevstandaloneenterprise.msi"
+            }
+          }
+        },
+        "installArgs": ["/quiet", "/norestart"],
+        "verification": {
+          "command": "chrome --version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "repository",
+        "variants": {
+          "ubuntu": {
+            "version": "latest",
+            "distributions": ["ubuntu", "kubuntu", "lubuntu", "xubuntu"],
+            "supportedVersions": ["20.04", "22.04", "24.04"],
+            "repositorySetup": [
+              "wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo gpg --dearmor -o /usr/share/keyrings/google-chrome.gpg",
+              "echo 'deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] https://dl.google.com/linux/chrome/deb/ stable main' | sudo tee /etc/apt/sources.list.d/google-chrome.list",
+              "sudo apt-get update"
+            ],
+            "packages": ["google-chrome-stable"]
+          },
+          "fedora": {
+            "version": "latest",
+            "type": "dnf",
+            "distributions": ["fedora", "rocky", "almalinux"],
+            "repositorySetup": [
+              "sudo dnf install -y dnf-plugins-core",
+              "sudo dnf config-manager --set-enabled google-chrome",
+              "sudo rpm --import https://dl.google.com/linux/linux_signing_key.pub"
+            ],
+            "packages": ["google-chrome-stable"]
+          },
+          "snap": {
+            "version": "latest",
+            "type": "snap",
+            "packages": ["chromium"],
+            "installArgs": []
+          }
+        },
+        "verification": {
+          "command": "google-chrome --version || chromium --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "official": {
+        "type": "direct",
+        "url": "https://www.google.com/chrome/",
+        "apiEndpoint": "https://chromereleases.googleblog.com/",
+        "pattern": "latest releases"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check https://chromereleases.googleblog.com/ for latest Chrome release information. Monitor stable, beta, and dev channel updates. For enterprise MSI installers, URLs remain consistent with latest versions automatically served.",
+      "urlResolution": "For Windows: https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi (stable). For Linux: Use repository-based installation with official Google repositories.",
+      "updateGuidance": "Chrome updates automatically through enterprise installers. For Linux, repository-based installation ensures automatic updates through system package manager. Monitor release channels: stable (recommended), beta (preview), dev (cutting edge)."
+    }
+  }
+}

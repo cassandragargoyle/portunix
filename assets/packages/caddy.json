@@ -1,0 +1,82 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "caddy",
+    "displayName": "Caddy Web Server",
+    "description": "Fast, multi-platform web server with automatic HTTPS",
+    "category": "infrastructure/web-servers",
+    "homepage": "https://caddyserver.com/",
+    "documentation": "https://caddyserver.com/docs/",
+    "license": "Apache-2.0",
+    "maintainer": "Caddy Server"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "zip",
+        "variants": {
+          "latest": {
+            "version": "2.7.6",
+            "urls": {
+              "x64": "https://github.com/caddyserver/caddy/releases/download/v2.7.6/caddy_2.7.6_windows_amd64.zip"
+            },
+            "extractTo": "C:/Program Files/Caddy",
+            "postInstall": [
+              "setx PATH \"%PATH%;C:\\Program Files\\Caddy\" /m"
+            ]
+          }
+        },
+        "verification": {
+          "command": "caddy version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "tar.gz",
+        "variants": {
+          "latest": {
+            "version": "2.7.6",
+            "urls": {
+              "x64": "https://github.com/caddyserver/caddy/releases/download/v2.7.6/caddy_2.7.6_linux_amd64.tar.gz",
+              "arm64": "https://github.com/caddyserver/caddy/releases/download/v2.7.6/caddy_2.7.6_linux_arm64.tar.gz"
+            },
+            "extractTo": "/usr/local/bin",
+            "postInstall": [
+              "sudo chmod +x /usr/local/bin/caddy"
+            ]
+          },
+          "apt": {
+            "version": "latest",
+            "repositorySetup": [
+              "curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg",
+              "curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list",
+              "sudo apt update"
+            ],
+            "packages": ["caddy"]
+          }
+        },
+        "verification": {
+          "command": "caddy version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "github": {
+        "type": "github",
+        "url": "https://github.com/caddyserver/caddy",
+        "apiEndpoint": "https://api.github.com/repos/caddyserver/caddy/releases/latest",
+        "pattern": "caddy_{version}_{os}_{arch}"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check GitHub API for Caddy releases at https://api.github.com/repos/caddyserver/caddy/releases/latest. Parse version tag and verify binary packages.",
+      "urlResolution": "caddy_{version}_{os}_{arch}.{ext}",
+      "updateGuidance": "Monitor Caddy releases for new versions and security updates. Popular modern web server."
+    },
+    "dependencies": [],
+    "templates": ["zip-archive", "tar-archive"]
+  }
+}

@@ -1,9 +1,9 @@
 # .goreleaser.yml
-# GoReleaser configuration for Portunix
+# GoReleaser configuration for Portunix with helper binaries
 
 project_name: portunix
 
-# Ať se snapshot NEoznačuje commitem (žádné -60b7fbf)
+# Do not include commit hash in snapshot name (no -60b7fbf)
 snapshot:
   name_template: "{{ incpatch .Version }}-snapshot"
 
@@ -12,6 +12,12 @@ before:
     - go mod tidy
 
 builds:
+  # Build configurations:
+  # - Single file helpers: Use main: ./src/helpers/xxx/main.go
+  # - Multi-file helpers with shared module: Use main: ./ + dir: ./src/helpers/xxx/
+  # - Multi-file helpers with separate module: Use main: ./ + dir: ./src/helpers/xxx/
+
+  # Main portunix binary
   - id: portunix
     binary: portunix
     main: ./main.go
@@ -32,6 +38,88 @@ builds:
     env:
       - CGO_ENABLED=0
 
+  # Helper binary: ptx-container (single file)
+  - id: ptx-container
+    binary: ptx-container
+    main: ./src/helpers/ptx-container/main.go
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-mcp (single file)
+  - id: ptx-mcp
+    binary: ptx-mcp
+    main: ./src/helpers/ptx-mcp/main.go
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-virt (multi-file package, shared module)
+  - id: ptx-virt
+    binary: ptx-virt
+    main: ./
+    dir: ./src/helpers/ptx-virt/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-ansible (multi-file package, separate module)
+  - id: ptx-ansible
+    binary: ptx-ansible
+    main: ./
+    dir: ./src/helpers/ptx-ansible/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
 archives:
   - id: default
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{- tolower .Os }}_{{ .Arch }}"
@@ -41,18 +129,20 @@ archives:
       - goos: windows
         format: zip
     wrap_in_directory: false
+    builds:
+      - portunix
+      - ptx-container
+      - ptx-mcp
+      - ptx-virt
+      - ptx-ansible
     files:
       - src: scripts/install.sh
         dst: install.sh
-        strip_parent: true
-        info:
-          mode: 0755
       - src: scripts/install.ps1
         dst: install.ps1
-        strip_parent: true
       - LICENSE*
       - README*
-      # případně doplň např. shell completion:
+      # Optionally add e.g. shell completion:
       # - "completions/*"
  
 dist: dist
@@ -73,42 +163,61 @@ release:
   # Release notes
   header: |
     ## Portunix {{.Version}}
-    
-    Universal development environment management tool.
-  
+
+    Universal development environment management tool with Git-like dispatcher architecture.
+
+    **This release includes:**
+    - Main portunix binary (dispatcher)
+    - ptx-container helper (Docker/Podman management)
+    - ptx-mcp helper (MCP server functionality)
+    - ptx-virt helper (Virtualization management)
+    - ptx-ansible helper (Infrastructure as Code with Ansible)
+
   footer: |
     ## Installation
-    
-    Download and extract the appropriate archive for your platform, then run the installation script:
-    
+
+    Download and extract the appropriate archive for your platform, then run the installation script.
+    The archive contains all necessary binaries (portunix, ptx-container, ptx-mcp, ptx-virt, ptx-ansible).
+
     ### Linux/macOS
     ```bash
     # Download and extract
     tar -xzf portunix_{{.Version}}_linux_amd64.tar.gz
     cd portunix_{{.Version}}_linux_amd64
-    
+
     # Interactive installation
     ./install.sh
-    
+
     # Or silent installation
     ./install.sh --silent --add-to-path
     ```
-    
+
     ### Windows
     ```powershell
     # Download and extract
     Expand-Archive portunix_{{.Version}}_windows_amd64.zip
     cd portunix_{{.Version}}_windows_amd64
-    
+
     # Interactive installation
     .\install.ps1
-    
+
     # Or silent installation
     .\install.ps1 -Silent -AddToPath
     ```
-    
+
+    ## Architecture Notes
+
+    Starting with this version, Portunix uses a Git-like dispatcher architecture:
+    - **portunix**: Main dispatcher that routes commands to helper binaries
+    - **ptx-container**: Handles container, docker, and podman commands
+    - **ptx-mcp**: Handles MCP server operations
+    - **ptx-virt**: Handles virtualization and VM management
+    - **ptx-ansible**: Handles Infrastructure as Code with Ansible integration
+
+    All binaries are installed together and work seamlessly. The user interface remains unchanged.
+
     ## Self-Update
-    
+
     Once installed, you can update Portunix using:
     ```bash
     portunix update

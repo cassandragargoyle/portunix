@@ -1,0 +1,110 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "nodejs",
+    "displayName": "Node.js JavaScript Runtime",
+    "description": "JavaScript runtime built on Chrome's V8 engine with npm package manager",
+    "category": "development/languages",
+    "homepage": "https://nodejs.org/",
+    "documentation": "https://nodejs.org/docs/",
+    "license": "MIT",
+    "maintainer": "Node.js Foundation"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "msi",
+        "variants": {
+          "18": {
+            "version": "18.20.6",
+            "urls": {
+              "x64": "https://nodejs.org/dist/v18.20.6/node-v18.20.6-x64.msi",
+              "x86": "https://nodejs.org/dist/v18.20.6/node-v18.20.6-x86.msi"
+            },
+            "installPath": "${ProgramFiles}/nodejs"
+          },
+          "20": {
+            "version": "20.18.1",
+            "urls": {
+              "x64": "https://nodejs.org/dist/v20.18.1/node-v20.18.1-x64.msi",
+              "x86": "https://nodejs.org/dist/v20.18.1/node-v20.18.1-x86.msi"
+            },
+            "installPath": "${ProgramFiles}/nodejs"
+          },
+          "latest": {
+            "version": "23.5.0",
+            "urls": {
+              "x64": "https://nodejs.org/dist/v23.5.0/node-v23.5.0-x64.msi",
+              "x86": "https://nodejs.org/dist/v23.5.0/node-v23.5.0-x86.msi"
+            },
+            "installPath": "${ProgramFiles}/nodejs"
+          }
+        },
+        "installArgs": ["/quiet", "ADDLOCAL=ALL"],
+        "verification": {
+          "command": "node --version && npm --version",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "${install_path}"
+        }
+      },
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "apt": {
+            "version": "latest",
+            "type": "apt",
+            "packages": ["nodejs", "npm"],
+            "distributions": ["ubuntu", "debian", "mint", "elementary"],
+            "postInstall": [
+              "${sudo_prefix}ln -sf /usr/bin/node /usr/local/bin/node || true",
+              "${sudo_prefix}ln -sf /usr/bin/npm /usr/local/bin/npm || true"
+            ]
+          },
+          "dnf": {
+            "version": "latest",
+            "type": "dnf",
+            "packages": ["nodejs", "npm"],
+            "distributions": ["fedora", "rocky", "almalinux", "centos"],
+            "postInstall": [
+              "${sudo_prefix}ln -sf /usr/bin/node /usr/local/bin/node || true",
+              "${sudo_prefix}ln -sf /usr/bin/npm /usr/local/bin/npm || true"
+            ]
+          },
+          "pacman": {
+            "version": "latest",
+            "type": "pacman",
+            "packages": ["nodejs", "npm"],
+            "postInstall": [
+              "${sudo_prefix}ln -sf /usr/bin/node /usr/local/bin/node || true",
+              "${sudo_prefix}ln -sf /usr/bin/npm /usr/local/bin/npm || true"
+            ]
+          }
+        },
+        "verification": {
+          "command": "node --version && npm --version",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "/usr/local/bin"
+        }
+      }
+    },
+    "sources": {
+      "official": {
+        "type": "direct",
+        "url": "https://nodejs.org/",
+        "apiEndpoint": "https://nodejs.org/dist/",
+        "pattern": "latest/"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check https://nodejs.org/dist/ for available versions. Parse version directories (v{version}). For latest releases, use https://nodejs.org/dist/latest/ API. Verify download assets include node-v{version}-{os}-{arch}.{ext} format. Check both LTS and current release lines.",
+      "urlResolution": "For Windows: https://nodejs.org/dist/v{version}/node-v{version}-{arch}.msi. For Linux: Use system package managers (apt, dnf, pacman) for distribution packages.",
+      "updateGuidance": "Research Node.js version variants: LTS versions (18.x, 20.x) for production stability, 'latest' for current features. Verify installation paths (/Program Files/nodejs on Windows, /usr/local/nodejs-{version} on Linux). Check npm and npx inclusion in all variants."
+    }
+  }
+}
