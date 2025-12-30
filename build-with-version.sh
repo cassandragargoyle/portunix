@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Build script with version embedding and portunix.rc update for all binaries
-VERSION=${1:-v1.7.5}
+VERSION=${1:-v1.9.0}
 
 # Remove 'v' prefix if present for version numbers
 VERSION_NUM=${VERSION#v}
@@ -77,8 +77,29 @@ go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-prompting .
 PROMPTING_BUILD=$?
 cd ../../..
 
+# Build ptx-aiops
+echo "Building ptx-aiops..."
+cd src/helpers/ptx-aiops
+go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-aiops .
+AIOPS_BUILD=$?
+cd ../../..
+
+# Build ptx-make
+echo "Building ptx-make..."
+cd src/helpers/ptx-make
+go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-make .
+MAKE_BUILD=$?
+cd ../../..
+
+# Build ptx-pft
+echo "Building ptx-pft..."
+cd src/helpers/ptx-pft
+go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-pft .
+PFT_BUILD=$?
+cd ../../..
+
 # Check all builds
-if [ $CONTAINER_BUILD -ne 0 ] || [ $MCP_BUILD -ne 0 ] || [ $VIRT_BUILD -ne 0 ] || [ $ANSIBLE_BUILD -ne 0 ] || [ $PROMPTING_BUILD -ne 0 ]; then
+if [ $CONTAINER_BUILD -ne 0 ] || [ $MCP_BUILD -ne 0 ] || [ $VIRT_BUILD -ne 0 ] || [ $ANSIBLE_BUILD -ne 0 ] || [ $PROMPTING_BUILD -ne 0 ] || [ $AIOPS_BUILD -ne 0 ] || [ $MAKE_BUILD -ne 0 ] || [ $PFT_BUILD -ne 0 ]; then
     echo "Helper binary build failed!"
     exit 1
 fi
@@ -93,3 +114,6 @@ echo "Helper binaries:"
 ./ptx-virt --version
 ./ptx-ansible --version
 ./ptx-prompting --version
+./ptx-aiops --version
+./ptx-make --version
+./ptx-pft --version

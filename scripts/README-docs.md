@@ -140,6 +140,27 @@ python3 scripts/post-release-docs.py v1.5.0
 
 ---
 
+## 🖥️ Lokální server pro dokumentaci
+
+Pro rychlé zobrazení dokumentace lokálně:
+
+```bash
+# Linux/macOS
+./scripts/docs-serve.sh
+
+# Windows CMD
+scripts\docs-serve.cmd
+
+# Windows PowerShell
+.\scripts\docs-serve.ps1
+```
+
+**Parametry:**
+- Bez parametrů: Hugo server na `http://localhost:1313` (hot-reload)
+- `--static` / `-Static`: Python HTTP server na `http://localhost:8080` (pouze `public/`)
+
+---
+
 ## 📡 GitHub Pages URL
 
 Po úspěšném publikování bude dokumentace dostupná na:

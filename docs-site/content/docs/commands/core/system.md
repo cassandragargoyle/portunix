@@ -37,7 +37,60 @@ Use "portunix system [command] --help" for more information about a command.
 
 ## Subcommands
 
-- **check**: Check specific system conditions
-- **dispatcher**: Display dispatcher and helper binary information
-- **info**: Display detailed system information
+| Subcommand | Description |
+|------------|-------------|
+| [check](#check) | Check specific system conditions |
+| [dispatcher](#dispatcher) | Display dispatcher and helper binary information |
+| [info](#info) | Display detailed system information |
+
+### check
+
+Check specific system conditions
+
+```
+Usage:
+  portunix system check [condition] [flags]
+
+Flags:
+  -h, --help   help for check
+
+Global Flags:
+      --help-ai       Show machine-readable help in JSON format
+      --help-expert   Show extended help with all options and examples
+```
+
+### dispatcher
+
+Display dispatcher and helper binary information
+
+```
+Usage:
+  portunix system dispatcher [flags]
+
+Flags:
+  -h, --help   help for dispatcher
+  -j, --json   Output as JSON
+
+Global Flags:
+      --help-ai       Show machine-readable help in JSON format
+      --help-expert   Show extended help with all options and examples
+```
+
+### info
+
+Display detailed system information
+
+```
+Usage:
+  portunix system info [flags]
+
+Flags:
+  -h, --help    help for info
+  -j, --json    Output as JSON
+  -s, --short   Short output (OS Version Variant)
+
+Global Flags:
+      --help-ai       Show machine-readable help in JSON format
+      --help-expert   Show extended help with all options and examples
+```
 

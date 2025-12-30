@@ -127,6 +127,42 @@ var CommandRegistry = []CommandInfo{
 			"portunix system os",
 		},
 	},
+	{
+		Name:        "make",
+		Brief:       "Cross-platform Makefile utilities",
+		Description: "Cross-platform build utilities for Makefiles. Provides portable implementations of common file operations, build metadata generation, and Go compilation helpers that work consistently across Windows, Linux, and macOS.",
+		Category:    "utility",
+		Examples: []string{
+			"portunix make mkdir dist/bin",
+			"portunix make copy src/*.go dist/",
+			"portunix make rm build/",
+			"portunix make version",
+			"portunix make gobuild GOOS=linux GOARCH=amd64 go build -o output .",
+		},
+	},
+	{
+		Name:        "package",
+		Brief:       "Package management and registry",
+		Description: "Package management and registry operations including listing available packages, searching by name or description, and viewing detailed package information.",
+		Category:    "core",
+		Examples: []string{
+			"portunix package list",
+			"portunix package search python",
+			"portunix package info nodejs",
+		},
+	},
+	{
+		Name:        "pft",
+		Brief:       "Product feedback tool integration",
+		Description: "Manage integration with external Product Feedback Tools (Fider.io, Canny, ProductBoard). Provides bidirectional synchronization between local project documentation and external feedback systems.",
+		Category:    "integration",
+		Examples: []string{
+			"portunix pft example",
+			"portunix pft configure --name \"My Product\" --path /path/to/docs",
+			"portunix pft deploy",
+			"portunix pft status",
+		},
+	},
 	// Additional commands for expert level
 	{
 		Name:        "podman",
@@ -203,7 +239,7 @@ var CommandRegistry = []CommandInfo{
 
 // GetBasicCommands returns only the essential commands for basic help
 func GetBasicCommands() []CommandInfo {
-	essentials := []string{"install", "update", "plugin", "mcp", "container", "virt", "system"}
+	essentials := []string{"install", "update", "plugin", "mcp", "container", "virt", "system", "make", "package", "pft"}
 	var basic []CommandInfo
 	for _, cmd := range CommandRegistry {
 		for _, name := range essentials {

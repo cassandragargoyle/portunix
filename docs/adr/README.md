@@ -52,6 +52,9 @@ Each ADR typically contains:
 | 022 | Debtap Package Installation Support | Proposed | 2025-09-28 | Architect |
 | 023 | AUR (Arch User Repository) Support | Proposed | 2025-09-28 | Architect |
 | 024 | AI Parameter Autocorrection System | Proposed | 2025-09-30 | Architect |
+| 025 | PTX-Installer Helper Architecture | Proposed | - | Architect |
+| 026 | Shared Platform Utilities | Proposed | - | Architect |
+| 027 | Compose Command Architecture | Proposed | 2025-12-01 | Architect |
 
 ## Creating New ADRs
 

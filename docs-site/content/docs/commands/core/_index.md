@@ -19,3 +19,6 @@ These are the built-in commands available in Portunix.
 | [container](container/) | Universal container management |
 | [virt](virt/) | Virtual machine management |
 | [system](system/) | System information |
+| [make](make/) | Cross-platform Makefile utilities |
+| [package](package/) | Package management and registry |
+| [pft](pft/) | Product feedback tool integration |

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Make Release Script for Portunix
-# Usage: ./scripts/make-release.sh v1.5.1
+# Usage: ./scripts/make-release.sh v1.7.8
 # Uses existing GoReleaser configuration and creates everything needed for GitHub release
 
 set -e
@@ -86,22 +86,92 @@ check_dependencies() {
         echo "Install with: go install github.com/goreleaser/goreleaser@latest"
         exit 1
     fi
-    
+
     if ! git rev-parse --git-dir > /dev/null 2>&1; then
         print_error "Not in a git repository"
         exit 1
     fi
-    
+
     if [ ! -f ".goreleaser.yml" ]; then
         print_error ".goreleaser.yml not found"
         exit 1
     fi
-    
+
     print_info "✓ Go: $(go version | cut -d' ' -f3)"
     print_info "✓ GoReleaser: $($GORELEASER_CMD --version | head -n1)"
     print_info "✓ Git repository detected"
     print_info "✓ GoReleaser config found"
     echo
+}
+
+# Detect Python command and setup venv if needed
+setup_python_env() {
+    print_step "Setting up Python environment..."
+
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+    VENV_DIR="$PROJECT_ROOT/.venv"
+
+    # Determine venv paths based on OS
+    if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "cygwin" ]] || [[ "$OSTYPE" == "win32" ]]; then
+        VENV_PYTHON="$VENV_DIR/Scripts/python"
+        VENV_ACTIVATE="$VENV_DIR/Scripts/activate"
+    else
+        VENV_PYTHON="$VENV_DIR/bin/python"
+        VENV_ACTIVATE="$VENV_DIR/bin/activate"
+    fi
+
+    # Check if venv exists
+    if [ -f "$VENV_PYTHON" ] || [ -f "$VENV_PYTHON.exe" ]; then
+        PYTHON_CMD="$VENV_PYTHON"
+        print_info "✓ Using virtual environment: $VENV_DIR"
+        return 0
+    fi
+
+    # No venv - detect system Python
+    PYTHON_CMD=""
+
+    # Try python3 first (Linux/macOS)
+    if command -v python3 >/dev/null 2>&1; then
+        # Verify it actually works (not Windows stub)
+        if python3 --version >/dev/null 2>&1; then
+            PYTHON_CMD="python3"
+        fi
+    fi
+
+    # Try python if python3 didn't work (Windows)
+    if [ -z "$PYTHON_CMD" ] && command -v python >/dev/null 2>&1; then
+        # Check if it's Python 3 and actually works
+        if python --version 2>&1 | grep -q "Python 3"; then
+            PYTHON_CMD="python"
+        fi
+    fi
+
+    # Check if we found a working Python
+    if [ -z "$PYTHON_CMD" ]; then
+        print_warning "Python not found, documentation generation will be skipped"
+        print_info "To enable docs generation, run: ./scripts/setup-venv.sh"
+        print_info "Or install Python: portunix install python"
+        return 1
+    fi
+
+    print_info "✓ Found Python: $($PYTHON_CMD --version 2>&1)"
+
+    # Offer to create venv
+    print_info "Virtual environment not found at $VENV_DIR"
+    print_info "Creating virtual environment for consistent Python environment..."
+
+    if $PYTHON_CMD -m venv "$VENV_DIR" 2>/dev/null; then
+        PYTHON_CMD="$VENV_PYTHON"
+        print_info "✓ Virtual environment created"
+
+        # Upgrade pip silently
+        "$PYTHON_CMD" -m pip install --upgrade pip >/dev/null 2>&1 || true
+    else
+        print_warning "Could not create virtual environment, using system Python"
+    fi
+
+    return 0
 }
 
 update_version_files() {
@@ -337,11 +407,12 @@ main() {
     fi
     
     validate_version
-    
+
     print_info "🎯 Creating release for version: $VERSION"
     echo
-    
+
     check_dependencies
+    setup_python_env || true  # Python is optional, continue even if not found
     update_version_files
     run_goreleaser
     verify_outputs
@@ -354,16 +425,22 @@ main() {
     if [ "${AUTO_DOCS:-true}" != "false" ]; then
         echo
         print_step "Generating documentation site..."
-        if [ -x "./scripts/post-release-docs.py" ]; then
-            python3 ./scripts/post-release-docs.py "$VERSION" --build-only || {
+
+        # Check if Python environment is available
+        if [ -n "$PYTHON_CMD" ] && [ -f "./scripts/post-release-docs.py" ]; then
+            "$PYTHON_CMD" ./scripts/post-release-docs.py "$VERSION" --build-only || {
                 print_warning "Documentation generation failed (non-blocking)"
                 echo "You can manually regenerate documentation with:"
-                echo "  python3 ./scripts/post-release-docs.py $VERSION"
+                echo "  $PYTHON_CMD ./scripts/post-release-docs.py $VERSION"
             }
+        elif [ -z "$PYTHON_CMD" ]; then
+            print_warning "Python not available, skipping documentation generation"
+            echo "To enable docs generation:"
+            echo "  1. Run: ./scripts/setup-venv.sh"
+            echo "  2. Or install Python: portunix install python"
+            echo "  3. Then run: $0 $VERSION"
         else
-            print_warning "post-release-docs.py not found or not executable"
-            echo "Install Hugo and run:"
-            echo "  python3 ./scripts/post-release-docs.py $VERSION"
+            print_warning "post-release-docs.py not found"
         fi
     fi
 }

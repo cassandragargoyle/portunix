@@ -15,10 +15,14 @@ portunix
 coverage.out
 coverage.html
 .claude/roles/current.md
+CLAUDE.local.md
 portunix.backup
 
 # Test results directory
 test/results/
+
+# Python virtual environment
+.venv/
 
 # Python test artifacts
 __pycache__/
@@ -59,6 +63,26 @@ src/helpers/ptx-virt/ptx-virt
 /ptx-prompting
 ptx-prompting.exe
 
+/ptx-python
+ptx-python.exe
+
+/ptx-vocalio
+ptx-vocalio.exe
+
+/ptx-installer
+ptx-installer.exe
+
+/ptx-aiops
+ptx-aiops.exe
+
+/ptx-make
+ptx-make.exe
+
+/ptx-pft
+ptx-pft.exe
+/.pft-config.json
+/pft-demo
+
 # Documentation site generated files
 docs-site/public/
 docs-site/resources/
@@ -72,3 +96,5 @@ generated-playbooks
 
 # Hugo
 .hugo_build.lock
+
+aur-repo

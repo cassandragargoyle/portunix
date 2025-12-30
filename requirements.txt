@@ -1,0 +1,10 @@
+# Portunix Python Dependencies
+# Install with: pip install -r requirements.txt
+
+# Testing (optional - install with: pip install -r test/requirements-test.txt)
+# -r test/requirements-test.txt
+
+# Documentation generation (Hugo is installed separately via Portunix)
+# No additional Python packages required - uses only stdlib
+
+# Future dependencies can be added here

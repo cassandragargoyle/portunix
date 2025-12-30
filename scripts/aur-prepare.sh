@@ -47,7 +47,7 @@ usage() {
     echo ""
     echo "This script will:"
     echo "  1. Create/start Arch Linux container"
-    echo "  2. Copy source code into container"
+    echo "  2. Download source code from GitHub (tag must exist!)"
     echo "  3. Compile Portunix with specified version"
     echo "  4. Generate PKGBUILD and .SRCINFO"
     echo "  5. Test build the AUR package"
@@ -126,32 +126,59 @@ info "Creating working directory structure..."
 
 success "Directory structure created"
 
-# Copy source code to container
-info "Copying source code to container..."
-cd "$PROJECT_ROOT"
+# Download source code from GitHub
+info "Downloading source code from GitHub..."
+VERSION_NUM="${VERSION#v}"
+GITHUB_URL="https://github.com/cassandragargoyle/Portunix/archive/refs/tags/${VERSION}.tar.gz"
 
-# Copy essential build files
-info "Copying Go module files..."
-"$PORTUNIX" container cp go.mod "$CONTAINER_NAME:$SOURCE_DIR/"
-"$PORTUNIX" container cp go.sum "$CONTAINER_NAME:$SOURCE_DIR/"
-"$PORTUNIX" container cp main.go "$CONTAINER_NAME:$SOURCE_DIR/"
-"$PORTUNIX" container cp build-with-version.sh "$CONTAINER_NAME:$SOURCE_DIR/"
+info "Checking if GitHub tag ${VERSION} exists..."
+# Check if tag exists on GitHub (follow redirects with -L)
+HTTP_STATUS=$("$PORTUNIX" container exec "$CONTAINER_NAME" curl -I -L -s -o /dev/null -w "%{http_code}" "$GITHUB_URL")
 
-# Copy portunix.rc if exists (Windows resource file)
-if [ -f "portunix.rc" ]; then
-    "$PORTUNIX" container cp portunix.rc "$CONTAINER_NAME:$SOURCE_DIR/" 2>/dev/null || true
+if [ "$HTTP_STATUS" != "200" ]; then
+    error "GitHub tag ${VERSION} not found!"
+    error "URL: $GITHUB_URL"
+    error "HTTP Status: $HTTP_STATUS"
+    echo ""
+    info "GitHub tag ${VERSION} does not exist yet!"
+    echo ""
+    info "Option 1: Create tag manually (quick)"
+    info "  git tag -a ${VERSION} -m 'Release ${VERSION}'"
+    info "  git push origin ${VERSION}"
+    echo ""
+    info "Option 2: Use make-release.sh + manual tag push"
+    info "  ./scripts/make-release.sh ${VERSION}  # Builds binaries"
+    info "  git tag -a ${VERSION} -m 'Release ${VERSION}'"
+    info "  git push origin ${VERSION}"
+    info "  # Then create GitHub release and upload dist/ files"
+    echo ""
+    info "Option 3: Create GitHub release (creates tag automatically)"
+    info "  1. Go to: https://github.com/cassandragargoyle/Portunix/releases/new"
+    info "  2. Create new tag: ${VERSION}"
+    info "  3. Add release notes"
+    info "  4. Publish release"
+    echo ""
+    info "After creating tag, run this script again"
+    exit 1
 fi
 
-info "Copying source directories..."
-# Copy main source directory (contains all application code)
-"$PORTUNIX" container cp src "$CONTAINER_NAME:$SOURCE_DIR/"
+success "GitHub tag ${VERSION} found (HTTP $HTTP_STATUS)"
 
-# Copy assets (package definitions, scripts, etc.)
-if [ -d "assets" ]; then
-    "$PORTUNIX" container cp assets "$CONTAINER_NAME:$SOURCE_DIR/"
+info "Downloading source tarball from GitHub..."
+"$PORTUNIX" container exec "$CONTAINER_NAME" bash -c "
+    cd /tmp &&
+    curl -L -o portunix-${VERSION_NUM}.tar.gz '$GITHUB_URL' &&
+    tar -xzf portunix-${VERSION_NUM}.tar.gz &&
+    rm -rf $SOURCE_DIR &&
+    mv portunix-${VERSION_NUM} $SOURCE_DIR
+"
+
+if [ $? -ne 0 ]; then
+    error "Failed to download or extract source from GitHub!"
+    exit 1
 fi
 
-success "Source code copied to container"
+success "Source code downloaded from GitHub"
 
 # Make build script executable
 "$PORTUNIX" container exec "$CONTAINER_NAME" chmod +x "$SOURCE_DIR/build-with-version.sh"
@@ -200,7 +227,7 @@ source=(\"portunix-\${pkgver}.tar.gz::https://github.com/cassandragargoyle/Portu
 sha256sums=('SKIP')
 
 build() {
-  cd \"Portunix-\${pkgver}\"
+  cd \"portunix-\${pkgver}\"
 
   # Build using the project's build script
   chmod +x build-with-version.sh
@@ -208,7 +235,7 @@ build() {
 }
 
 package() {
-  cd \"Portunix-\${pkgver}\"
+  cd \"portunix-\${pkgver}\"
 
   # Install main binary
   install -Dm755 \"portunix\" \"\$pkgdir/usr/bin/portunix\"
@@ -292,7 +319,7 @@ if [[ $TEST_BUILD_RESPONSE =~ ^[Yy]$ ]]; then
 
         # List generated packages
         info "Generated packages:"
-        "$PORTUNIX" container exec "$CONTAINER_NAME" ls -lh "$AUR_WORKDIR"/*.pkg.tar.zst 2>/dev/null || true
+        "$PORTUNIX" container exec "$CONTAINER_NAME" bash -c "ls -lh $AUR_WORKDIR/*.pkg.tar.zst 2>/dev/null || echo '  No packages found'"
 
         echo ""
         if [ -t 0 ]; then
@@ -324,7 +351,7 @@ echo ""
 success "=== AUR preparation complete ==="
 info "Container: $CONTAINER_NAME"
 info "AUR working directory: $AUR_WORKDIR"
-info "Source directory: $SOURCE_DIR"
+info "Source directory: $SOURCE_DIR (downloaded from GitHub)"
 info "Version: $VERSION"
 info "Pacman hash: $PACMAN_HASH"
 echo ""
@@ -333,30 +360,30 @@ echo "  - $AUR_WORKDIR/PKGBUILD (AUR package definition)"
 echo "  - $AUR_WORKDIR/.SRCINFO (AUR metadata)"
 echo "  - $SOURCE_DIR/portunix (compiled binary with correct version)"
 echo ""
+info "✅ Source downloaded from GitHub: $GITHUB_URL"
+echo ""
 info "=== Next steps for AUR publication ==="
 echo ""
-echo "1️⃣  Create GitHub release (if not exists):"
-echo "   https://github.com/cassandragargoyle/Portunix/releases/new"
-echo "   Tag: v${VERSION_NUM}"
-echo "   Title: Release v${VERSION_NUM}"
+echo "1️⃣  GitHub release is already verified (tag v${VERSION_NUM} exists)"
 echo ""
 echo "2️⃣  Copy AUR files from container:"
 echo "   mkdir -p aur-package"
 echo "   $PORTUNIX container cp $CONTAINER_NAME:$AUR_WORKDIR/PKGBUILD aur-package/"
 echo "   $PORTUNIX container cp $CONTAINER_NAME:$AUR_WORKDIR/.SRCINFO aur-package/"
 echo ""
-echo "3️⃣  Setup AUR repository:"
+echo "3️⃣  Setup AUR repository (if first time):"
 echo "   git clone ssh://aur@aur.archlinux.org/portunix.git"
 echo "   cd portunix"
+echo ""
+echo "4️⃣  Update AUR files:"
 echo "   cp ../aur-package/PKGBUILD ."
 echo "   cp ../aur-package/.SRCINFO ."
 echo ""
-echo "4️⃣  Update checksum (after GitHub release is created):"
-echo "   cd portunix"
-echo "   updpkgsums  # or manually update sha256sums in PKGBUILD"
+echo "5️⃣  Update checksum:"
+echo "   updpkgsums  # Downloads tarball and updates sha256sums"
 echo "   makepkg --printsrcinfo > .SRCINFO"
 echo ""
-echo "5️⃣  Commit and push to AUR:"
+echo "6️⃣  Commit and push to AUR:"
 echo "   git add PKGBUILD .SRCINFO"
 echo "   git commit -m 'Update to v${VERSION_NUM}'"
 echo "   git push"

@@ -1,0 +1,123 @@
+@startuml ADR-026 Installation Sequence with Platform Package
+!theme plain
+skinparam backgroundColor #FEFEFE
+
+title ADR-026: Installation Sequence\nUsing Shared Platform Utilities
+
+actor User
+participant "portunix\n(dispatcher)" as dispatcher
+participant "ptx-installer\n(helper)" as installer
+participant "engine/\nplatform.go" as engine
+participant "pkg/platform/\nplatform.go" as platform
+participant "pkg/platform/\npermissions.go" as permissions
+participant "Go Runtime" as runtime
+participant "File System" as fs
+
+User -> dispatcher : portunix install hugo
+activate dispatcher
+
+dispatcher -> installer : execute install hugo
+activate installer
+
+installer -> engine : GetOperatingSystem()
+activate engine
+engine -> platform : GetOS()
+activate platform
+platform -> runtime : runtime.GOOS
+runtime --> platform : "linux"
+platform --> engine : "linux"
+deactivate platform
+engine --> installer : "linux"
+deactivate engine
+
+installer -> engine : GetArchitecture()
+activate engine
+engine -> platform : GetArchitecture()
+activate platform
+platform -> runtime : runtime.GOARCH
+runtime --> platform : "amd64"
+platform -> platform : normalize to "x64"
+platform --> engine : "x64"
+deactivate platform
+engine --> installer : "x64"
+deactivate engine
+
+note over installer
+    Select package variant
+    for linux-x64 platform
+end note
+
+installer -> installer : Download hugo_0.150.1_linux-amd64.tar.gz
+
+installer -> engine : CanWriteToDirectory("/usr/local/bin")
+activate engine
+engine -> permissions : CanWriteToDirectory("/usr/local/bin")
+activate permissions
+permissions -> fs : os.MkdirAll("/usr/local/bin")
+fs --> permissions : error (permission denied)
+permissions --> engine : false
+deactivate permissions
+engine --> installer : false
+deactivate engine
+
+installer -> engine : IsRunningAsRoot()
+activate engine
+engine -> permissions : IsRunningAsRoot()
+activate permissions
+permissions -> runtime : os.Geteuid()
+runtime --> permissions : 1000 (not root)
+permissions --> engine : false
+deactivate permissions
+engine --> installer : false
+deactivate engine
+
+installer -> engine : IsSudoAvailable()
+activate engine
+engine -> permissions : IsSudoAvailable()
+activate permissions
+permissions -> fs : stat("/usr/bin/sudo")
+fs --> permissions : exists
+permissions --> engine : true
+deactivate permissions
+engine --> installer : true
+deactivate engine
+
+installer -> engine : GetSudoPrefix()
+activate engine
+engine -> permissions : GetSudoPrefix()
+activate permissions
+permissions --> engine : "sudo "
+deactivate permissions
+engine --> installer : "sudo "
+deactivate engine
+
+note over installer
+    Use sudo for installation
+    to system directory
+end note
+
+installer -> fs : Extract archive with sudo
+fs --> installer : success
+
+installer --> dispatcher : Installation complete
+deactivate installer
+dispatcher --> User : ✅ Hugo installed successfully
+deactivate dispatcher
+
+note right of platform
+    **Platform Package Benefits:**
+    ✓ Consistent OS detection
+    ✓ Normalized architectures
+    ✓ Reliable permission checks
+    ✓ Cross-platform compatibility
+end note
+
+note right of permissions
+    **Permission Utilities:**
+    ✓ Root detection
+    ✓ Sudo availability
+    ✓ Directory permissions
+    ✓ Fallback strategies
+end note
+
+@enduml

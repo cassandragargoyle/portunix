@@ -1,0 +1,180 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "clearflask",
+    "displayName": "ClearFlask",
+    "description": "Open-source product feedback and roadmap management tool with multi-project support",
+    "category": "development-tools/feedback",
+    "homepage": "https://clearflask.com/",
+    "documentation": "https://github.com/clearflask/clearflask",
+    "license": "Apache-2.0",
+    "maintainer": "ClearFlask Team"
+  },
+  "spec": {
+    "type": "container",
+    "hasVariants": false,
+    "container": {
+      "provider": "docker-compose",
+      "projectName": "portunix-clearflask",
+      "services": {
+        "mariadb": {
+          "image": "mariadb:10.5",
+          "containerName": "portunix-clearflask-db",
+          "environment": {
+            "MYSQL_ROOT_PASSWORD": "${CLEARFLASK_DB_ROOT_PASSWORD}",
+            "MYSQL_DATABASE": "clearflask",
+            "MYSQL_USER": "clearflask",
+            "MYSQL_PASSWORD": "${CLEARFLASK_DB_PASSWORD}"
+          },
+          "volumes": [
+            "portunix-clearflask-db:/var/lib/mysql"
+          ],
+          "healthcheck": {
+            "test": ["CMD", "mysqladmin", "ping", "-h", "localhost"],
+            "interval": "10s",
+            "timeout": "5s",
+            "retries": 10
+          },
+          "restart": "unless-stopped"
+        },
+        "elasticsearch": {
+          "image": "docker.elastic.co/elasticsearch/elasticsearch:7.10.0",
+          "containerName": "portunix-clearflask-es",
+          "environment": {
+            "discovery.type": "single-node",
+            "ES_JAVA_OPTS": "-Xms512m -Xmx512m",
+            "xpack.security.enabled": "false"
+          },
+          "volumes": [
+            "portunix-clearflask-es:/usr/share/elasticsearch/data"
+          ],
+          "healthcheck": {
+            "test": ["CMD-SHELL", "curl -s http://localhost:9200/_cluster/health | grep -vq '\"status\":\"red\"'"],
+            "interval": "30s",
+            "timeout": "10s",
+            "retries": 10
+          },
+          "restart": "unless-stopped"
+        },
+        "localstack": {
+          "image": "localstack/localstack:0.14.3",
+          "containerName": "portunix-clearflask-s3",
+          "ports": ["4566:4566"],
+          "environment": {
+            "SERVICES": "s3",
+            "DEFAULT_REGION": "us-east-1",
+            "DATA_DIR": "/tmp/localstack/data"
+          },
+          "volumes": [
+            "portunix-clearflask-s3:/tmp/localstack"
+          ],
+          "healthcheck": {
+            "test": ["CMD-SHELL", "curl -s http://localhost:4566/_localstack/health | grep -q '\"s3\"'"],
+            "interval": "30s",
+            "timeout": "10s",
+            "retries": 5
+          },
+          "restart": "unless-stopped"
+        },
+        "clearflask-server": {
+          "image": "ghcr.io/clearflask/clearflask-server:latest",
+          "containerName": "portunix-clearflask-server",
+          "environment": {
+            "CLEARFLASK_ENVIRONMENT": "PRODUCTION_SELF_HOST",
+            "CLEARFLASK_DB_HOST": "mariadb",
+            "CLEARFLASK_DB_PORT": "3306",
+            "CLEARFLASK_DB_USER": "clearflask",
+            "CLEARFLASK_DB_PASS": "${CLEARFLASK_DB_PASSWORD}",
+            "CLEARFLASK_DB_DATABASE": "clearflask",
+            "CLEARFLASK_ES_HOST": "elasticsearch",
+            "CLEARFLASK_ES_PORT": "9200",
+            "CLEARFLASK_S3_ENDPOINT": "http://localstack:4566",
+            "CLEARFLASK_S3_REGION": "us-east-1",
+            "AWS_ACCESS_KEY_ID": "test",
+            "AWS_SECRET_ACCESS_KEY": "test"
+          },
+          "dependsOn": {
+            "mariadb": {
+              "condition": "service_healthy"
+            },
+            "elasticsearch": {
+              "condition": "service_healthy"
+            },
+            "localstack": {
+              "condition": "service_healthy"
+            }
+          },
+          "restart": "unless-stopped"
+        },
+        "clearflask-connect": {
+          "image": "ghcr.io/clearflask/clearflask-connect:latest",
+          "containerName": "portunix-clearflask-connect",
+          "ports": ["3100:9080"],
+          "environment": {
+            "CLEARFLASK_SERVER_HOST": "clearflask-server"
+          },
+          "dependsOn": {
+            "clearflask-server": {
+              "condition": "service_started"
+            }
+          },
+          "restart": "unless-stopped"
+        }
+      },
+      "volumes": {
+        "portunix-clearflask-db": {},
+        "portunix-clearflask-es": {},
+        "portunix-clearflask-s3": {}
+      },
+      "networks": {
+        "default": {
+          "name": "portunix-clearflask-network"
+        }
+      }
+    },
+    "defaults": {
+      "CLEARFLASK_DB_ROOT_PASSWORD": "auto-generate",
+      "CLEARFLASK_DB_PASSWORD": "auto-generate",
+      "CLEARFLASK_HOST": "http://localhost:3100"
+    },
+    "verification": {
+      "type": "http",
+      "url": "http://localhost:3100/api/health",
+      "expectedStatus": 200,
+      "timeout": 180
+    },
+    "sources": {
+      "ghcr": {
+        "type": "ghcr",
+        "url": "https://github.com/clearflask/clearflask/pkgs/container/clearflask-server",
+        "image": "ghcr.io/clearflask/clearflask-server"
+      },
+      "github": {
+        "type": "github",
+        "url": "https://github.com/clearflask/clearflask"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check GitHub Container Registry for clearflask images. Latest tag is recommended for self-hosted.",
+      "updateGuidance": "Monitor ClearFlask releases. Ensure MariaDB and Elasticsearch compatibility."
+    },
+    "dependencies": [],
+    "templates": ["docker-compose"],
+    "resourceRequirements": {
+      "minMemory": "2GB",
+      "recommendedMemory": "4GB",
+      "diskSpace": "10GB",
+      "notes": "ClearFlask requires significantly more resources than Fider due to Elasticsearch and MariaDB."
+    },
+    "knownIssues": {
+      "cgroupsV2": {
+        "severity": "critical",
+        "affectedKernels": "6.12+",
+        "description": "ClearFlask uses JDK 11 which has a known bug with cgroups v2 on Linux kernels 6.12+. The server will crash with NullPointerException at CgroupV2Subsystem.getInstance. This is an upstream issue requiring ClearFlask to upgrade to JDK 17+.",
+        "workaround": "Use external ClearFlask instance or run on older kernel with cgroups v1.",
+        "upstream": "https://github.com/clearflask/clearflask"
+      }
+    }
+  }
+}
