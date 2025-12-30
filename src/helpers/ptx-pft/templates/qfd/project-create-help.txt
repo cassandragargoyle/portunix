@@ -1,0 +1,44 @@
+Usage: portunix pft project create <name> [options]
+
+Create a new Product Feedback Tool project.
+
+Arguments:
+  <name>               Project name
+
+Options:
+  --template, -t <tpl> Project template (default: qfd)
+                       Available templates:
+                         qfd   - Full ISO 16355 QFD structure (default)
+                         basic - Minimal structure (VoC/VoS/VoB/VoE only)
+  --path, -p <path>    Project directory (default: ./<name>)
+  --help, -h           Show this help
+
+Examples:
+  portunix pft project create "My Product"
+  portunix pft project create "My Product" --template basic
+  portunix pft project create "My Product" --path /home/user/projects/myproduct
+
+QFD Template Structure:
+  project/
+  ├── README.md                 # Project overview, conventions, workflow
+  ├── VoC/                      # Voice of Customer
+  │   ├── README.md
+  │   ├── verbatims/
+  │   └── needs/
+  ├── VoB/                      # Voice of Business
+  │   ├── README.md
+  │   ├── verbatims/
+  │   └── needs/
+  ├── VoE/                      # Voice of Engineering
+  │   ├── README.md
+  │   ├── verbatims/
+  │   ├── needs/
+  │   └── constraints/          # VoE-specific
+  ├── VoS/                      # Voice of Stakeholder
+  │   ├── README.md
+  │   ├── verbatims/
+  │   └── needs/
+  ├── requirements/             # Technical requirements
+  │   └── README.md
+  └── matrices/                 # QFD matrices
+      └── README.md

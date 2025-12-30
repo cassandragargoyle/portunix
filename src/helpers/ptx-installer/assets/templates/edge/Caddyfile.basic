@@ -1,0 +1,44 @@
+# Basic Caddy configuration for edge reverse proxy
+# Template variables: {{.Domain}}, {{.UpstreamHost}}, {{.UpstreamPort}}
+
+{{.Domain}} {
+    # Automatic HTTPS with Let's Encrypt
+    encode gzip zstd
+    
+    # Basic reverse proxy to home lab
+    reverse_proxy {{.UpstreamHost}}:{{.UpstreamPort}} {
+        # Health check
+        health_uri /health
+        health_interval 30s
+        health_timeout 10s
+        
+        # Headers for proper proxy behavior
+        header_up Host {upstream_hostport}
+        header_up X-Forwarded-Host {host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+    }
+    
+    # Security headers
+    header {
+        # Enable HSTS
+        Strict-Transport-Security max-age=31536000;
+        # Prevent clickjacking
+        X-Frame-Options DENY
+        # Content type sniffing prevention
+        X-Content-Type-Options nosniff
+        # XSS protection
+        X-XSS-Protection "1; mode=block"
+        # Remove server information
+        -Server
+    }
+    
+    # Logging
+    log {
+        output file /var/log/caddy/{{.Domain}}.log {
+            roll_size 10MB
+            roll_keep 5
+        }
+        format json
+    }
+}

@@ -1,0 +1,45 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "ansible-collection",
+    "displayName": "Ansible Collections",
+    "description": "Collection of Ansible modules and plugins for various platforms",
+    "category": "infrastructure/automation",
+    "homepage": "https://galaxy.ansible.com/",
+    "documentation": "https://docs.ansible.com/ansible/latest/collections/",
+    "license": "GPL-3.0",
+    "maintainer": "Ansible Community"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "script",
+        "variants": {
+          "community": {
+            "version": "latest",
+            "installScript": "ansible-galaxy collection install community.general community.docker community.kubernetes",
+            "postInstall": ["ansible-galaxy collection list"]
+          },
+          "cloud": {
+            "version": "latest",
+            "installScript": "ansible-galaxy collection install amazon.aws azure.azcollection google.cloud",
+            "postInstall": ["ansible-galaxy collection list"]
+          }
+        },
+        "verification": {
+          "command": "ansible-galaxy collection list",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check Ansible Galaxy for collection versions and updates.",
+      "urlResolution": "Install via ansible-galaxy collection install",
+      "updateGuidance": "Monitor Ansible collections for updates. Essential for Ansible automation."
+    },
+    "dependencies": ["ansible"],
+    "templates": ["ansible-galaxy"]
+  }
+}

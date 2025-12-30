@@ -1,0 +1,74 @@
+# Voice of Stakeholder (VoS)
+
+## Purpose
+
+Evidence of requirements and constraints from external and internal stakeholders
+beyond direct customers and business.
+
+## VoS Sources
+
+- Regulatory requirements (GDPR, HIPAA, ...)
+- Partner agreements and SLAs
+- Internal stakeholders (HR, Legal, Finance)
+- Industry standards
+- Certifications
+
+## Structure
+
+### verbatims/
+Stakeholder statements, regulatory texts, contractual requirements.
+
+### needs/
+Structured stakeholder requirements.
+
+## Template: Verbatim
+
+File: `verbatims/VS-V001-name.md`
+
+```markdown
+# VS-V001 - [Brief Description]
+
+## Metadata
+- **Source:** [Stakeholder, organization]
+- **Date:** YYYY-MM-DD
+- **Type:** [Regulation / Partner / Internal / ...]
+
+## Verbatim
+> "[Literal quote or document reference]"
+
+## Reference
+[Link to full regulation/contract text]
+
+## Derived Needs
+- [[VS-P01-name]]
+```
+
+## Template: Need
+
+File: `needs/VS-P01-name.md`
+
+```markdown
+# VS-P01 - [Need Name]
+
+## Metadata
+- **Level:** [Primary / Secondary / Tertiary]
+- **Parent:** [[VS-P01-name]] or -
+- **Type:** [Compliance / SLA / Internal]
+- **Obligation:** [Mandatory / Recommended / Optional]
+- **Status:** [Captured / Structured / Analyzed / Prioritized / Translated]
+
+## Description
+[Stakeholder requirement]
+
+## Deadline / Validity
+[Date by which it must be fulfilled]
+
+## Non-compliance Consequences
+[Consequences of non-fulfillment]
+
+## Sources
+- [[VS-V001-name]]
+
+## Technical Requirements
+- [[R001-name]]
+```

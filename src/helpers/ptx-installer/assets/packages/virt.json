@@ -1,0 +1,117 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "virt",
+    "displayName": "Universal Virtualization",
+    "description": "Universal virtualization package - auto-selects QEMU/KVM on Linux or VirtualBox on Windows/macOS. Includes full virtualization stack with GUI tools.",
+    "category": "infrastructure/virtualization",
+    "homepage": "https://github.com/cassandragargoyle/portunix",
+    "documentation": "https://github.com/cassandragargoyle/portunix/wiki/Virtualization",
+    "license": "GPL-2.0",
+    "maintainer": "Portunix Project"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "packages": ["qemu-system-x86", "qemu-utils", "libvirt-daemon-system", "libvirt-clients"],
+            "postInstall": [
+              "sudo systemctl enable libvirtd",
+              "sudo systemctl start libvirtd",
+              "echo '✅ QEMU/KVM and Libvirt installed successfully'",
+              "echo '💡 Use: portunix virt create <vm-name> to create your first VM'",
+              "echo '💡 Use: portunix virt check to verify virtualization support'"
+            ]
+          },
+          "apt": {
+            "version": "latest",
+            "packages": ["qemu-system-x86", "qemu-utils", "libvirt-daemon-system", "libvirt-clients"],
+            "postInstall": [
+              "sudo systemctl enable libvirtd",
+              "sudo systemctl start libvirtd"
+            ]
+          },
+          "dnf": {
+            "version": "latest",
+            "packages": ["qemu-system-x86", "qemu-img", "libvirt-daemon", "libvirt-client"],
+            "postInstall": [
+              "sudo systemctl enable libvirtd",
+              "sudo systemctl start libvirtd"
+            ]
+          },
+          "full": {
+            "version": "latest",
+            "packages": ["qemu-system-x86", "qemu-utils", "libvirt-daemon-system", "libvirt-clients", "virt-manager"],
+            "postInstall": [
+              "sudo systemctl enable libvirtd",
+              "sudo systemctl start libvirtd",
+              "echo '✅ QEMU/KVM, Libvirt, and virt-manager (GUI) installed successfully'",
+              "echo '💡 Use: portunix virt create <vm-name> or launch virt-manager GUI'",
+              "echo '💡 Use: portunix virt check to verify virtualization support'"
+            ]
+          },
+          "minimal": {
+            "version": "latest",
+            "packages": ["qemu-system-x86", "qemu-utils"],
+            "postInstall": [
+              "echo '✅ QEMU minimal installation completed'",
+              "echo '⚠️  Note: Libvirt not installed. Install with: portunix install libvirt'"
+            ]
+          }
+        },
+        "verification": {
+          "command": "qemu-system-x86_64 --version",
+          "expectedExitCode": 0
+        }
+      },
+      "windows": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "7.0.14",
+            "installScript": "$url = 'https://download.virtualbox.org/virtualbox/7.0.14/VirtualBox-7.0.14-161095-Win.exe'; $output = Join-Path $env:TEMP 'VirtualBox-installer.exe'; Invoke-WebRequest -Uri $url -OutFile $output; Start-Process -FilePath $output -ArgumentList '--silent' -Wait; Remove-Item $output",
+            "postInstall": [
+              "echo '✅ VirtualBox installed successfully on Windows'",
+              "echo '💡 Use: portunix virt create <vm-name> to create your first VM'",
+              "echo '💡 Use: portunix virt check to verify virtualization support'"
+            ]
+          }
+        },
+        "verification": {
+          "command": "where VBoxManage",
+          "expectedExitCode": 0
+        }
+      },
+      "darwin": {
+        "type": "brew",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "packages": ["virtualbox"],
+            "postInstall": [
+              "echo '✅ VirtualBox installed successfully on macOS'",
+              "echo '💡 Use: portunix virt create <vm-name> to create your first VM'",
+              "echo '💡 Use: portunix virt check to verify virtualization support'"
+            ]
+          }
+        },
+        "verification": {
+          "command": "VBoxManage --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Universal virtualization package - automatically selects QEMU/KVM (Linux) or VirtualBox (Windows/macOS) based on platform",
+      "urlResolution": "Redirects to platform-specific virtualization solution: QEMU+Libvirt on Linux, VirtualBox on Windows/macOS",
+      "updateGuidance": "Keep virtualization tools up to date. Linux: monitor QEMU/KVM/Libvirt updates. Windows/macOS: monitor VirtualBox releases. Critical for security and performance."
+    },
+    "dependencies": [],
+    "templates": ["redirect-package"]
+  }
+}
