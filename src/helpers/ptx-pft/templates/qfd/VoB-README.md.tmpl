@@ -1,0 +1,72 @@
+# Voice of Business (VoB)
+
+## Purpose
+
+Evidence of business goals, strategic priorities, and constraints from
+the organization's perspective.
+
+## VoB Sources
+
+- Strategic documents
+- OKR / KPI
+- Financial plans and budgets
+- Management interviews
+- Competitive analysis
+- Market data
+
+## Structure
+
+### verbatims/
+Management statements, strategic assignments, business requirements.
+
+### needs/
+Structured business needs:
+- **P** (Primary) - strategic goals
+- **S** (Secondary) - tactical goals
+- **T** (Tertiary) - specific metrics
+
+## Template: Verbatim
+
+File: `verbatims/VB-V001-name.md`
+
+```markdown
+# VB-V001 - [Brief Description]
+
+## Metadata
+- **Source:** [Name, role]
+- **Date:** YYYY-MM-DD
+- **Context:** [Strategic meeting / OKR review / ...]
+
+## Verbatim
+> "[Literal quote]"
+
+## Derived Needs
+- [[VB-P01-name]]
+```
+
+## Template: Need
+
+File: `needs/VB-P01-name.md`
+
+```markdown
+# VB-P01 - [Need Name]
+
+## Metadata
+- **Level:** [Primary / Secondary / Tertiary]
+- **Parent:** [[VB-P01-name]] or -
+- **Priority:** [High / Medium / Low]
+- **Status:** [Captured / Structured / Analyzed / Prioritized / Translated]
+
+## Description
+[Business need]
+
+## Success Metrics
+- [KPI 1]
+- [KPI 2]
+
+## Sources
+- [[VB-V001-name]]
+
+## Conflicts with VoC
+- [[VC-P01-name]] - [conflict description]
+```

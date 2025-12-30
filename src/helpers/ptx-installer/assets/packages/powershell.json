@@ -1,0 +1,91 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "powershell",
+    "displayName": "PowerShell",
+    "description": "Cross-platform PowerShell scripting environment from Microsoft",
+    "category": "development/shells",
+    "homepage": "https://github.com/PowerShell/PowerShell",
+    "documentation": "https://docs.microsoft.com/en-us/powershell/",
+    "license": "MIT",
+    "maintainer": "Microsoft"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "script",
+        "variants": {
+          "latest": {
+            "version": "7.4.6",
+            "installScript": "Write-Host 'Installing PowerShell 7.4.6...'; $url = 'https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/PowerShell-7.4.6-win-x64.msi'; $output = Join-Path $env:TEMP 'PowerShell-7.4.6-win-x64.msi'; Invoke-WebRequest -Uri $url -OutFile $output; Start-Process msiexec.exe -Wait -ArgumentList \"/i $output /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1\"; Remove-Item $output",
+            "postInstall": [
+              "pwsh --version"
+            ]
+          }
+        },
+        "verification": {
+          "command": "pwsh --version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "apt": {
+            "version": "7.4.6",
+            "repositorySetup": [
+              "wget -q https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb",
+              "sudo dpkg -i packages-microsoft-prod.deb",
+              "rm packages-microsoft-prod.deb",
+              "sudo apt-get update"
+            ],
+            "packages": ["powershell"],
+            "postInstall": [
+              "sudo apt-get install -f"
+            ]
+          },
+          "dnf": {
+            "version": "7.4.6",
+            "repositorySetup": [
+              "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc",
+              "curl -o microsoft.repo https://packages.microsoft.com/config/fedora/$(rpm -E %fedora)/prod.repo",
+              "sudo mv microsoft.repo /etc/yum.repos.d/microsoft.repo",
+              "sudo dnf update"
+            ],
+            "packages": ["powershell"]
+          },
+          "snap": {
+            "version": "latest",
+            "packages": ["powershell"],
+            "installArgs": ["--classic"]
+          }
+        },
+        "verification": {
+          "command": "pwsh --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "github": {
+        "type": "github",
+        "url": "https://github.com/PowerShell/PowerShell",
+        "apiEndpoint": "https://api.github.com/repos/PowerShell/PowerShell/releases/latest",
+        "pattern": "PowerShell-{version}-{os}-{arch}"
+      }
+    },
+    "verification": {
+      "checksumType": "sha256",
+      "checksumUrl": "https://github.com/PowerShell/PowerShell/releases/latest"
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check GitHub API for PowerShell releases at https://api.github.com/repos/PowerShell/PowerShell/releases/latest. Parse version tag and verify MSI/DEB/RPM packages are available for multiple platforms.",
+      "urlResolution": "For Windows: PowerShell-{version}-win-x64.msi. For Linux: use Microsoft repositories or snap package",
+      "updateGuidance": "Monitor PowerShell releases for new versions. PowerShell follows semantic versioning. Verify cross-platform compatibility and repository configurations."
+    },
+    "dependencies": [],
+    "templates": ["msi-installer", "repository-package"]
+  }
+}

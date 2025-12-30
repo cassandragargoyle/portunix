@@ -1,0 +1,89 @@
+# Docker Compose configuration for containerized edge infrastructure
+# Template variables: {{.CaddyConfig}}, {{.WireguardConfig}}, {{.NetworkName}}
+
+version: '3.8'
+
+services:
+  caddy:
+    image: caddy:2.8-alpine
+    container_name: edge-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+      - ./logs/caddy:/var/log/caddy
+    networks:
+      - edge-network
+    environment:
+      - CADDY_ADMIN=0.0.0.0:2019
+    healthcheck:
+      test: ["CMD", "caddy", "version"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  wireguard:
+    image: linuxserver/wireguard:latest
+    container_name: edge-wireguard
+    restart: unless-stopped
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+    volumes:
+      - ./wireguard/config:/config
+      - /lib/modules:/lib/modules:ro
+    ports:
+      - "{{.WireguardPort}}:51820/udp"
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    networks:
+      - edge-network
+
+  fail2ban:
+    image: crazymax/fail2ban:latest
+    container_name: edge-fail2ban
+    restart: unless-stopped
+    network_mode: "host"
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    volumes:
+      - ./fail2ban/data:/data
+      - ./fail2ban/config:/etc/fail2ban
+      - ./logs:/var/log:ro
+    environment:
+      - TZ=UTC
+      - F2B_LOG_LEVEL=INFO
+
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: edge-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_SCHEDULE=0 0 4 * * *
+    command: --cleanup --schedule "0 0 4 * * *"
+
+networks:
+  edge-network:
+    name: {{.NetworkName}}
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  caddy-data:
+  caddy-config:
+  wireguard-config:
+  fail2ban-data:

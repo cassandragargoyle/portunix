@@ -1,0 +1,75 @@
+# {{.ProjectName}}
+
+## Overview
+
+This project uses QFD (Quality Function Deployment) methodology per ISO 16355
+for systematic requirements management from voice of customer collection
+through technical specification.
+
+## Project Structure
+
+| Directory | Purpose |
+|-----------|---------|
+| VoC/ | Voice of Customer - customer needs |
+| VoB/ | Voice of Business - business goals and constraints |
+| VoE/ | Voice of Engineering - technical capabilities and constraints |
+| VoS/ | Voice of Stakeholder - regulations, partners, internal stakeholders |
+| requirements/ | Technical requirements (intersection of all Voices) |
+| matrices/ | QFD matrices and prioritization |
+
+## Naming Conventions
+
+### File Prefixes
+
+| Voice | Verbatim | Need |
+|-------|----------|------|
+| VoC | VC-V001 | VC-P01, VC-S01, VC-T01 |
+| VoB | VB-V001 | VB-P01, VB-S01, VB-T01 |
+| VoE | VE-V001 | VE-C01 (constraints) |
+| VoS | VS-V001 | VS-P01, VS-S01, VS-T01 |
+| Requirements | - | R001, R002, ... |
+
+### Need Levels (ISO 16355)
+
+| Level | Prefix | Description |
+|-------|--------|-------------|
+| Primary | P | Strategic need (highest abstraction) |
+| Secondary | S | Tactical need |
+| Tertiary | T | Specific, measurable need |
+
+### Maturity Statuses
+
+| Status | Meaning |
+|--------|---------|
+| Captured | Raw input recorded |
+| Structured | Placed in hierarchy |
+| Analyzed | Context and motivation understood |
+| Prioritized | Importance determined (AHP, Kano) |
+| Translated | Converted to technical requirement |
+| Deployed | Handed off to implementation |
+
+### Kano Categories
+
+| Category | Description |
+|----------|-------------|
+| Must-be | Basic requirement (non-fulfillment = dissatisfaction) |
+| Performance | Linear relationship between fulfillment and satisfaction |
+| Delighter | Surprise (unexpected value) |
+
+## Workflow
+
+```
+Verbatim -> Reworded Need -> Customer Requirement -> Quality Characteristic -> Technical Requirement
+```
+
+1. **Acquisition** - Capture verbatim into `VoX/verbatims/`
+2. **Structuring** - Create need in `VoX/needs/` linked to verbatim
+3. **Analysis** - Add context, Kano category
+4. **Prioritization** - AHP score, update `matrices/`
+5. **Translation** - Create technical requirement in `requirements/`
+
+## Tools
+
+- **Editor:** MarkText / Obsidian / VS Code with Markdown preview
+- **Version Control:** Git
+- **Wikilinks:** `[[VC-V001]]` for inter-file navigation

@@ -1,0 +1,63 @@
+# QFD Matrices and Prioritization
+
+## Purpose
+
+Visualization of relationships between Voices, needs, and technical requirements.
+Support for prioritization and decision-making.
+
+## Matrix Types
+
+### House of Quality (HoQ)
+Mapping customer needs to technical characteristics.
+
+### Priority Matrix
+Aggregated priorities across all Voices.
+
+### Conflict Matrix
+Identification of conflicts between different Voices.
+
+## Files
+
+### priority-matrix.md
+
+```markdown
+# Priority Matrix
+
+| Requirement | VoC | VoB | VoE | VoS | Total | Rank |
+|-------------|-----|-----|-----|-----|-------|------|
+| [[R001]] | 0.8 | 0.6 | 0.9 | 0.5 | 0.70 | 1 |
+| [[R002]] | 0.5 | 0.9 | 0.7 | 0.3 | 0.60 | 2 |
+
+## Methodology
+- Voice weights: VoC 40%, VoB 30%, VoE 20%, VoS 10%
+- Total = weighted average
+```
+
+### conflict-matrix.md
+
+```markdown
+# Conflict Matrix
+
+| Need A | Need B | Conflict Type | Resolution |
+|--------|--------|---------------|------------|
+| [[VC-P01]] | [[VB-P02]] | Resource | VoC prioritization |
+| [[VC-S03]] | [[VE-C01]] | Technical | Workaround |
+```
+
+### hoq-voc-requirements.md
+
+```markdown
+# House of Quality: VoC -> Requirements
+
+|  | R001 | R002 | R003 | Priority |
+|--|------|------|------|----------|
+| VC-P01 | +++ | + | - | 0.85 |
+| VC-S01 | ++ | +++ | + | 0.72 |
+| VC-T01 | + | - | +++ | 0.65 |
+
+## Legend
+- +++ Strong relationship (9)
+- ++ Medium relationship (3)
+- + Weak relationship (1)
+- - No relationship (0)
+```

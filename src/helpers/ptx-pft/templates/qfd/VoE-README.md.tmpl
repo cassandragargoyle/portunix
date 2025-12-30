@@ -1,0 +1,73 @@
+# Voice of Engineering (VoE)
+
+## Purpose
+
+Evidence of technical capabilities, constraints, dependencies, and best practices
+from the development team's perspective.
+
+## VoE Sources
+
+- Architecture documentation
+- Technical debt (backlog)
+- External system dependencies
+- Capacity constraints
+- Security requirements
+- Standards and best practices
+
+## Structure
+
+### verbatims/
+Technical inputs, developer opinions, architectural decisions.
+
+### needs/
+Technical needs and infrastructure requirements.
+
+### constraints/
+Technical constraints and dependencies affecting possible solutions.
+
+## Template: Verbatim
+
+File: `verbatims/VE-V001-name.md`
+
+```markdown
+# VE-V001 - [Brief Description]
+
+## Metadata
+- **Source:** [Name, role]
+- **Date:** YYYY-MM-DD
+- **Context:** [Tech review / Architectural decision / ...]
+
+## Verbatim
+> "[Literal quote]"
+
+## Derived Constraints
+- [[VE-C01-name]]
+```
+
+## Template: Constraint
+
+File: `constraints/VE-C01-name.md`
+
+```markdown
+# VE-C01 - [Constraint Name]
+
+## Metadata
+- **Type:** [Technology / Capacity / Security / Dependency]
+- **Severity:** [Blocker / Major / Minor]
+- **Status:** [Active / Resolved / Accepted]
+
+## Description
+[Technical constraint description]
+
+## Impact
+[How the constraint affects possible solutions]
+
+## Workaround
+[Possible workaround, if any]
+
+## Sources
+- [[VE-V001-name]]
+
+## Affected Requirements
+- [[R001-name]]
+```

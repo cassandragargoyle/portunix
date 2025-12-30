@@ -1,0 +1,23 @@
+{
+  "apiVersion": "v1",
+  "kind": "PackageIndex",
+  "metadata": {
+    "name": "portunix-registry",
+    "version": "1.0.0",
+    "description": "Portunix Package Registry Index",
+    "created": "2025-09-27T23:06:00Z"
+  },
+  "spec": {
+    "packages": ["nodejs", "python", "go", "vscode", "chrome", "java"],
+    "categories": [
+      "development/languages",
+      "development/editors",
+      "development/tools",
+      "system/browsers",
+      "system/utilities",
+      "system/package-managers"
+    ],
+    "supportedPlatforms": ["windows", "linux", "darwin"],
+    "supportedArchitectures": ["amd64", "arm64", "386"]
+  }
+}

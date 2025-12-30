@@ -1,0 +1,55 @@
+# Technical Requirements
+
+## Purpose
+
+Evidence of technical requirements derived from all Voices' needs. Each requirement
+must be linked to at least one need.
+
+## Workflow
+
+```
+VoC/VoB/VoE/VoS Needs -> Translation -> Technical Requirement -> Implementation
+```
+
+## Template: Requirement
+
+File: `R001-name.md`
+
+```markdown
+# R001 - [Requirement Name]
+
+## Metadata
+- **Status:** [Draft / Ready / In Progress / Done / Cancelled]
+- **Priority:** [Critical / High / Medium / Low]
+- **Effort:** [XS / S / M / L / XL]
+- **Sprint/Release:** [reference]
+
+## Description
+[Technical requirement description]
+
+## Addresses Needs
+- [[VC-S01-name]] (VoC)
+- [[VB-P01-name]] (VoB)
+
+## Constraints
+- [[VE-C01-name]]
+
+## Acceptance Criteria
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+- [ ] [Criterion 3]
+
+## Technical Notes
+[Solution design, architecture, dependencies]
+
+## Dependencies
+- **Blocks:** [[R002-name]]
+- **Depends on:** [[R003-name]]
+```
+
+## Rules
+
+1. Every requirement must link to at least one Need
+2. Requirement without linkage = candidate for removal
+3. Priority is derived from AHP scores of linked Needs
+4. "Ready" status requires defined acceptance criteria

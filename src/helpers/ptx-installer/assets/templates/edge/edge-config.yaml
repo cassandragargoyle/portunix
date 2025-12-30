@@ -1,0 +1,139 @@
+# Edge infrastructure configuration template
+# This file defines the complete edge setup including domains, services, and security
+
+edge:
+  name: "{{ .EdgeName }}"
+  description: "{{ .EdgeDescription }}"
+  
+  # VPS/Edge server configuration
+  server:
+    public_ip: "{{ .PublicIP }}"
+    ssh_port: 22
+    admin_email: "{{ .AdminEmail }}"
+    
+  # Domain configuration
+  domains:
+    - name: "{{ .PrimaryDomain }}"
+      type: "primary"
+      upstream:
+        host: "{{ .UpstreamHost }}"
+        port: {{ .UpstreamPort }}
+      tls:
+        email: "{{ .AdminEmail }}"
+        provider: "letsencrypt"
+      paths:
+        - path: "/"
+          upstream_port: {{ .UpstreamPort }}
+          health_check: "/health"
+    
+    {{- range .AdditionalDomains }}
+    - name: "{{ .Name }}"
+      type: "additional"
+      upstream:
+        host: "{{ .UpstreamHost }}"
+        port: {{ .UpstreamPort }}
+      {{- if .StaticFiles }}
+      static:
+        enabled: true
+        path: "{{ .StaticFiles }}"
+      {{- end }}
+      tls:
+        email: "{{ $.AdminEmail }}"
+        provider: "letsencrypt"
+    {{- end }}
+
+  # VPN Configuration
+  vpn:
+    type: "wireguard"
+    network: "10.10.10.0/24"
+    server_ip: "10.10.10.1"
+    port: 51820
+    clients:
+      {{- range .VPNClients }}
+      - name: "{{ .Name }}"
+        ip: "{{ .IP }}"
+        public_key: "{{ .PublicKey }}"
+        allowed_ips: "{{ .AllowedIPs }}"
+        persistent_keepalive: 25
+      {{- end }}
+
+  # Security configuration
+  security:
+    firewall:
+      enabled: true
+      ssh_port: 22
+      allowed_ips:
+        {{- range .AllowedIPs }}
+        - ip: "{{ .IP }}"
+          description: "{{ .Description }}"
+        {{- end }}
+    
+    fail2ban:
+      enabled: true
+      ban_time: 600
+      max_retry: 3
+      find_time: 600
+      
+    ssl:
+      provider: "letsencrypt"
+      email: "{{ .AdminEmail }}"
+      key_type: "ec256"
+
+  # Container configuration
+  containers:
+    runtime: "podman"  # or "docker"
+    network: "edge-network"
+    auto_update: true
+    
+    services:
+      caddy:
+        image: "caddy:2.8-alpine"
+        ports:
+          - "80:80"
+          - "443:443"
+        volumes:
+          - "./caddy/Caddyfile:/etc/caddy/Caddyfile:ro"
+          - "./caddy/data:/data"
+          - "./caddy/config:/config"
+        health_check: true
+        
+      wireguard:
+        image: "linuxserver/wireguard:latest"
+        ports:
+          - "{{ .VPN.Port }}:51820/udp"
+        capabilities:
+          - "NET_ADMIN"
+          - "SYS_MODULE"
+        volumes:
+          - "./wireguard:/config"
+          
+      fail2ban:
+        image: "crazymax/fail2ban:latest"
+        network_mode: "host"
+        capabilities:
+          - "NET_ADMIN"
+          - "NET_RAW"
+        volumes:
+          - "./fail2ban:/data"
+          - "./logs:/var/log:ro"
+
+  # Monitoring and logging
+  monitoring:
+    uptime_checks: true
+    log_retention: "30d"
+    alert_email: "{{ .AdminEmail }}"
+    
+  # Backup configuration
+  backup:
+    enabled: true
+    schedule: "0 2 * * *"  # Daily at 2 AM
+    retention: "7d"
+    destinations:
+      - type: "local"
+        path: "/backup/edge"
+      {{- if .BackupS3 }}
+      - type: "s3"
+        bucket: "{{ .BackupS3.Bucket }}"
+        region: "{{ .BackupS3.Region }}"
+        access_key: "{{ .BackupS3.AccessKey }}"
+      {{- end }}

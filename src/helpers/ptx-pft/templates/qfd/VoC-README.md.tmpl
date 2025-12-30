@@ -1,0 +1,80 @@
+# Voice of Customer (VoC)
+
+## Purpose
+
+Evidence of customer voice - direct and indirect inputs from end users
+and product customers.
+
+## VoC Sources
+
+- Customer interviews
+- Customer support (tickets, emails)
+- User testing
+- Feedback tools (Fider)
+- Reviews and ratings
+- Competitive analysis (what customers praise/criticize)
+
+## Structure
+
+### verbatims/
+Raw, literal customer statements. Do not edit, preserve authentic language.
+
+### needs/
+Structured needs derived from verbatims:
+- **P** (Primary) - strategic needs
+- **S** (Secondary) - tactical needs
+- **T** (Tertiary) - specific, measurable needs
+
+## Template: Verbatim
+
+File: `verbatims/VC-V001-name.md`
+
+```markdown
+# VC-V001 - [Brief Description]
+
+## Metadata
+- **Source:** [Name, role, segment]
+- **Date:** YYYY-MM-DD
+- **Channel:** [Interview / Support / Fider / ...]
+- **Segment:** [Enterprise / SMB / Consumer / ...]
+
+## Verbatim
+> "[Literal customer quote]"
+
+## Context
+[Circumstances in which the statement was made]
+
+## Derived Needs
+- [[VC-S01-name]]
+- [[VC-T01-name]]
+```
+
+## Template: Need
+
+File: `needs/VC-S01-name.md`
+
+```markdown
+# VC-S01 - [Need Name]
+
+## Metadata
+- **Level:** [Primary / Secondary / Tertiary]
+- **Parent:** [[VC-P01-name]] or -
+- **Kano:** [Must-be / Performance / Delighter]
+- **AHP Priority:** [0.00 - 1.00]
+- **Status:** [Captured / Structured / Analyzed / Prioritized / Translated]
+
+## Description
+[Reworded need in customer language]
+
+## Sources (Verbatims)
+- [[VC-V001-name]]
+
+## Children
+- [[VC-T01-name]]
+
+## Technical Requirements
+- [[R001-name]]
+
+## Conflicts
+- [[VB-P01-name]] - [conflict description]
+```
