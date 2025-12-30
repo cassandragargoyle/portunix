@@ -36,7 +36,7 @@ theme = 'hugo-book'
 
   # (Optional) Set description in header
   description = 'Universal development environment management tool'
-  version = 'latest'
+  version = 'v1.9.0'
 
   # (Optional) Enable comments template on pages
   # By default partials/docs/comments.html includes Disqus template

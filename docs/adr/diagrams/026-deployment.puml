@@ -1,0 +1,119 @@
+@startuml ADR-026 Deployment Architecture
+!theme plain
+skinparam backgroundColor #FEFEFE
+skinparam node {
+    BackgroundColor #E5F0FF
+    BorderColor #0066CC
+}
+skinparam component {
+    BackgroundColor<<shared>> #E5FFE5
+    BorderColor<<shared>> #00AA00
+}
+
+title ADR-026: Deployment Architecture\nShared Platform Utilities Distribution
+
+node "Development Environment" {
+    folder "Source Code" {
+        component "src/pkg/platform/" <<shared>> {
+            [platform.go]
+            [permissions.go]
+            [platform_test.go]
+        }
+
+        component "Main Binary\nsrc/" {
+            [main.go]
+            [dispatcher/]
+            [app/install/]
+        }
+
+        component "Helper: ptx-installer\nsrc/helpers/ptx-installer/" {
+            [main.go (helper)]
+            [engine/]
+            [registry/]
+        }
+    }
+}
+
+node "Build Process" {
+    component "Go Compiler" as compiler {
+        [go build]
+        [go test]
+    }
+
+    note right of compiler
+        **Build Steps:**
+        1. Run tests (platform_test.go)
+        2. Build main binary
+        3. Build helper binaries
+        4. Embed platform utilities
+    end note
+}
+
+node "Deployment Artifacts" {
+    artifact "portunix\n(24.5 MB)" as mainBin {
+        [Dispatcher]
+        [Commands]
+        [No platform code]
+    }
+
+    artifact "ptx-installer\n(13 MB)" as helperBin {
+        [Installation Engine]
+        [Package Registry]
+        [Embedded Platform Utils]
+    }
+
+    note right of helperBin
+        **Contains Embedded:**
+        - platform utilities (compiled)
+        - 34 package definitions
+        - Installation executors
+    end note
+}
+
+node "User System" {
+    folder "~/.local/bin/" {
+        [portunix (deployed)]
+        [ptx-installer (deployed)]
+    }
+
+    folder "Runtime Memory" {
+        component "Shared Platform Code" <<shared>> {
+            note right: Loaded from\nptx-installer binary
+        }
+    }
+}
+
+' Build flow
+[platform.go] --> compiler : compile & embed
+[permissions.go] --> compiler : compile & embed
+[platform_test.go] --> compiler : run tests
+[main.go] --> compiler : build
+[main.go (helper)] --> compiler : build
+
+compiler --> mainBin : produces
+compiler --> helperBin : produces (with embedded platform)
+
+' Deployment flow
+mainBin --> [portunix (deployed)] : install
+helperBin --> [ptx-installer (deployed)] : install
+
+[ptx-installer (deployed)] ..> "Shared Platform Code" : loads at runtime
+
+legend right
+    |<#E5FFE5> Shared Code |
+    | Binary | Executable |
+    | Folder | Directory |
+    | → | Build/Deploy Flow |
+    | ..> | Runtime Loading |
+endlegend
+
+note bottom
+    **Key Points:**
+    ✓ Platform utilities compiled into ptx-installer
+    ✓ No separate platform library needed
+    ✓ Single binary deployment (self-contained)
+    ✓ Main binary stays lightweight
+    ✓ Helper contains all necessary utilities
+end note
+
+@enduml

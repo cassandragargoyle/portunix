@@ -23,7 +23,11 @@ DOCS_SITE_DIR = PROJECT_ROOT / "docs-site"
 CONTENT_DIR = DOCS_SITE_DIR / "content"
 DOCS_DIR = CONTENT_DIR / "docs"  # Hugo Book expects content in docs/
 COMMAND_DOCS_DIR = DOCS_DIR / "commands"  # Will be docs/commands/ for Hugo Book
-PORTUNIX_BIN = PROJECT_ROOT / "portunix"
+# Use .exe extension on Windows
+if sys.platform == 'win32':
+    PORTUNIX_BIN = PROJECT_ROOT / "portunix.exe"
+else:
+    PORTUNIX_BIN = PROJECT_ROOT / "portunix"
 HUGO_CMD = 'hugo'  # Default Hugo command, may be updated during dependency check
 
 # Color codes for output
@@ -221,25 +225,40 @@ def install_hugo_book_theme():
     # Create themes directory if it doesn't exist
     theme_dir.mkdir(parents=True, exist_ok=True)
 
-    # Check if theme already exists
+    # Check if theme already exists and is not empty
+    # (empty directory can exist from failed clone)
     if book_theme_dir.exists():
-        print_info("Hugo Book theme already installed")
-        return True
+        theme_files = list(book_theme_dir.iterdir())
+        if theme_files:
+            print_info("Hugo Book theme already installed")
+            return True
+        else:
+            # Empty directory - remove it and re-clone
+            print_warning("Hugo Book theme directory is empty, removing and re-cloning...")
+            shutil.rmtree(book_theme_dir)
 
     print_step("Installing Hugo Book theme...")
 
     try:
-        # Clone Hugo Book theme
-        subprocess.run(
-            ["git", "clone", "https://github.com/alex-shpak/hugo-book", str(book_theme_dir)],
+        # Clone Hugo Book theme with --depth 1 for faster download
+        result = subprocess.run(
+            ["git", "clone", "--depth", "1", "https://github.com/alex-shpak/hugo-book", str(book_theme_dir)],
             check=True,
             capture_output=True,
-            text=True
+            text=True,
+            timeout=120  # 2 minute timeout
         )
         print_success("Hugo Book theme installed successfully")
         return True
+    except subprocess.TimeoutExpired:
+        print_error("Hugo Book theme clone timed out")
+        print_warning("Falling back to basic theme creation")
+        create_basic_theme()
+        return False
     except subprocess.CalledProcessError as e:
         print_error(f"Failed to install Hugo Book theme: {e}")
+        if e.stderr:
+            print_info(f"Git error: {e.stderr}")
         print_warning("Falling back to basic theme creation")
         create_basic_theme()
         return False
@@ -282,7 +301,7 @@ def create_basic_theme():
 </body>
 </html>'''
 
-    (theme_dir / "layouts" / "_default" / "baseof.html").write_text(base_layout)
+    (theme_dir / "layouts" / "_default" / "baseof.html").write_text(base_layout, encoding='utf-8')
 
     # Create single page layout
     single_layout = '''{{ define "main" }}
@@ -292,7 +311,7 @@ def create_basic_theme():
 </article>
 {{ end }}'''
 
-    (theme_dir / "layouts" / "_default" / "single.html").write_text(single_layout)
+    (theme_dir / "layouts" / "_default" / "single.html").write_text(single_layout, encoding='utf-8')
 
     # Create list layout
     list_layout = '''{{ define "main" }}
@@ -326,7 +345,7 @@ def create_basic_theme():
 </section>
 {{ end }}'''
 
-    (theme_dir / "layouts" / "_default" / "list.html").write_text(list_layout)
+    (theme_dir / "layouts" / "_default" / "list.html").write_text(list_layout, encoding='utf-8')
 
     # Create basic CSS
     css_content = '''body {
@@ -397,7 +416,7 @@ footer {
     color: #586069;
 }'''
 
-    (theme_dir / "static" / "css" / "style.css").write_text(css_content)
+    (theme_dir / "static" / "css" / "style.css").write_text(css_content, encoding='utf-8')
 
 def init_hugo_site(version: str) -> bool:
     """Initialize Hugo site structure"""
@@ -531,7 +550,7 @@ theme = 'portunix-docs'
             create_basic_theme()
 
     # Write the configuration
-    (DOCS_SITE_DIR / "hugo.toml").write_text(hugo_config)
+    (DOCS_SITE_DIR / "hugo.toml").write_text(hugo_config, encoding='utf-8')
 
     # Ensure content directories exist
     # For Hugo Book theme, structure content under docs/
@@ -599,7 +618,7 @@ Commands provided by installed plugins.
 
 [View Plugin Commands →](plugins/)
 '''
-        commands_index.write_text(commands_index_content)
+        commands_index.write_text(commands_index_content, encoding='utf-8')
 
     # Create guides index page placeholder
     guides_index = DOCS_DIR / "guides" / "_index.md" if theme_installed else CONTENT_DIR / "guides" / "_index.md"
@@ -646,7 +665,7 @@ For now, please refer to:
 - [GitHub Repository](https://github.com/cassandragargoyle/Portunix)
 - [GitHub Discussions](https://github.com/cassandragargoyle/Portunix/discussions)
 '''
-        guides_index.write_text(guides_index_content)
+        guides_index.write_text(guides_index_content, encoding='utf-8')
 
     # Create releases index page placeholder
     releases_index = DOCS_DIR / "releases" / "_index.md" if theme_installed else CONTENT_DIR / "releases" / "_index.md"
@@ -689,7 +708,7 @@ Release notes are automatically generated during the release process.
 For the latest releases, please visit:
 - [GitHub Releases](https://github.com/cassandragargoyle/Portunix/releases)
 '''
-        releases_index.write_text(releases_index_content)
+        releases_index.write_text(releases_index_content, encoding='utf-8')
 
     # Create main index page
     if theme_installed:
@@ -808,7 +827,7 @@ Latest updates and version history.
 - [Issues & Bug Reports](https://github.com/cassandragargoyle/Portunix/issues)
 - [Discussions](https://github.com/cassandragargoyle/Portunix/discussions)
 '''
-        main_index.write_text(main_index_content)
+        main_index.write_text(main_index_content, encoding='utf-8')
 
     # For Hugo Book theme, also create home page (content/_index.md) with redirect
     if theme_installed:
@@ -827,7 +846,7 @@ Portunix is a cross-platform CLI tool that simplifies the installation and manag
 
 [→ Go to Documentation](/Portunix/docs/)
 '''
-            home_page.write_text(home_page_content)
+            home_page.write_text(home_page_content, encoding='utf-8')
 
     print_success("Hugo site structure initialized")
     return True
@@ -867,15 +886,17 @@ def generate_command_doc(cmd_type: str, cmd: str, desc: str):
     # Get detailed help for the command
     try:
         result = subprocess.run([str(PORTUNIX_BIN), cmd, '--help'],
-                              capture_output=True, text=True, timeout=5)
+                              capture_output=True, text=True, timeout=5,
+                              encoding='utf-8', errors='replace')
         # Some commands output help to stderr even on success
-        cmd_help = result.stdout if result.stdout.strip() else result.stderr
+        cmd_help = result.stdout if result.stdout and result.stdout.strip() else (result.stderr or '')
         if not cmd_help.strip():
             print_warning(f"   No help output for '{cmd}', trying without --help")
             # Try without --help flag as some commands might have different behavior
             result = subprocess.run([str(PORTUNIX_BIN), cmd],
-                                  capture_output=True, text=True, timeout=5)
-            cmd_help = result.stdout if result.stdout.strip() else result.stderr
+                                  capture_output=True, text=True, timeout=5,
+                                  encoding='utf-8', errors='replace')
+            cmd_help = result.stdout if result.stdout and result.stdout.strip() else (result.stderr or '')
     except (subprocess.TimeoutExpired, subprocess.SubprocessError) as e:
         cmd_help = f"Error getting help: {e}"
         print_error(f"   Error getting help for '{cmd}': {e}")
@@ -935,13 +956,49 @@ portunix {cmd} [options] [arguments]
 
 '''
 
-    # Try to extract subcommands
+    # Try to extract subcommands and get their detailed help
     subcommands = parse_command_from_help(cmd_help)
     if subcommands:
         content += "## Subcommands\n\n"
+        content += "| Subcommand | Description |\n"
+        content += "|------------|-------------|\n"
         for subcmd, subdesc in subcommands:
-            content += f"- **{subcmd}**: {subdesc}\n"
+            content += f"| [{subcmd}](#{subcmd}) | {subdesc} |\n"
         content += "\n"
+
+        # Generate detailed help for each subcommand
+        for subcmd, subdesc in subcommands:
+            content += f"### {subcmd}\n\n"
+            content += f"{subdesc}\n\n"
+
+            # Get subcommand help
+            try:
+                subcmd_result = subprocess.run(
+                    [str(PORTUNIX_BIN), cmd, subcmd, '--help'],
+                    capture_output=True, text=True, timeout=5,
+                    encoding='utf-8', errors='replace'
+                )
+                subcmd_help = subcmd_result.stdout if subcmd_result.stdout and subcmd_result.stdout.strip() else (subcmd_result.stderr or '')
+
+                # Check if output is valid help (not an error message)
+                # Skip outputs that start with error indicators or are execution results
+                is_valid_help = (
+                    subcmd_help.strip() and
+                    not subcmd_help.strip().startswith('❌') and
+                    not subcmd_help.strip().startswith('Error:') and
+                    ('Usage:' in subcmd_help or 'Options:' in subcmd_help or 'Examples:' in subcmd_help or '--help' in subcmd_help)
+                )
+
+                if is_valid_help:
+                    content += f"```\n{subcmd_help}```\n\n"
+                else:
+                    # Output was not proper help, generate usage hint instead
+                    content += f"```bash\nportunix {cmd} {subcmd} --help\n```\n\n"
+                    print_info(f"   Subcommand '{cmd} {subcmd}' does not have standard --help output")
+
+            except (subprocess.TimeoutExpired, subprocess.SubprocessError) as e:
+                print_warning(f"   Could not get help for subcommand '{cmd} {subcmd}': {e}")
+                content += f"```bash\nportunix {cmd} {subcmd} --help\n```\n\n"
 
     # Check for examples in help text
     if "Examples:" in cmd_help or "Example:" in cmd_help:
@@ -963,7 +1020,7 @@ portunix {cmd} [options] [arguments]
             content += '\n'.join(examples)
             content += "\n```\n"
 
-    cmd_file.write_text(content)
+    cmd_file.write_text(content, encoding='utf-8')
 
 def discover_core_commands():
     """Discover and parse core commands"""
@@ -972,14 +1029,16 @@ def discover_core_commands():
     # Get main help output
     try:
         result = subprocess.run([str(PORTUNIX_BIN), '--help'],
-                              capture_output=True, text=True)
-        help_output = result.stdout
+                              capture_output=True, text=True,
+                              encoding='utf-8', errors='replace')
+        help_output = result.stdout or ''
     except subprocess.SubprocessError as e:
         print_error(f"Failed to get help output: {e}")
         return
 
     # Extract commands from help output
     commands = parse_command_from_help(help_output)
+
 
     # Create index file for core commands with command list
     commands_file = COMMAND_DOCS_DIR / "core" / "_index.md"
@@ -1031,7 +1090,7 @@ These are the built-in commands available in Portunix.
         generate_command_doc("core", cmd, desc)
 
     # Write the complete index file
-    commands_file.write_text(index_content)
+    commands_file.write_text(index_content, encoding='utf-8')
 
     print_success("Core commands discovered")
 
@@ -1075,14 +1134,16 @@ These are the commands provided by installed Portunix plugins.
     # Check if plugin system is available
     try:
         result = subprocess.run([str(PORTUNIX_BIN), 'plugin', 'list'],
-                              capture_output=True, text=True)
+                              capture_output=True, text=True,
+                              encoding='utf-8', errors='replace')
 
         if result.returncode == 0:
             # Try to parse JSON output if jq is available
             try:
                 result_json = subprocess.run(
                     [str(PORTUNIX_BIN), 'plugin', 'list', '--format', 'json'],
-                    capture_output=True, text=True
+                    capture_output=True, text=True,
+                    encoding='utf-8', errors='replace'
                 )
                 if result_json.returncode == 0:
                     plugins = json.loads(result_json.stdout)
@@ -1121,7 +1182,7 @@ Documentation for {plugin_name} plugin commands.
 
 *Note: Plugin command discovery will be implemented in Phase 2.*
 '''
-                            plugin_file.write_text(plugin_content)
+                            plugin_file.write_text(plugin_content, encoding='utf-8')
 
                             # Add plugin to index table
                             index_content += f"| [{plugin_name}]({plugin_name}/) | {plugin_desc} |\n"
@@ -1139,7 +1200,7 @@ Documentation for {plugin_name} plugin commands.
 
     # Write the plugin index file
     index_file = COMMAND_DOCS_DIR / "plugins" / "_index.md"
-    index_file.write_text(index_content)
+    index_file.write_text(index_content, encoding='utf-8')
 
     print_success("Plugin command discovery completed")
 
@@ -1196,7 +1257,7 @@ For detailed release notes, please visit the [GitHub Releases](https://github.co
 Visit our [GitHub Releases](https://github.com/cassandragargoyle/Portunix/releases) page for the complete release history.
 '''
 
-    release_file.write_text(content)
+    release_file.write_text(content, encoding='utf-8')
     print_success("Release notes generated")
 
 def build_hugo_site() -> bool:
@@ -1211,6 +1272,278 @@ def build_hugo_site() -> bool:
     except subprocess.CalledProcessError as e:
         print_error(f"Failed to build Hugo site: {e}")
         return False
+
+
+def get_package_details(package_name: str) -> Dict:
+    """Get detailed package information using 'portunix package info' command"""
+    details = {
+        'homepage': '',
+        'documentation': '',
+        'license': '',
+        'maintainer': '',
+        'dependencies': []
+    }
+
+    try:
+        result = subprocess.run(
+            [str(PORTUNIX_BIN), 'package', 'info', package_name],
+            capture_output=True, text=True, timeout=10, encoding='utf-8', errors='replace'
+        )
+        output = result.stdout if result.stdout and result.stdout.strip() else (result.stderr or '')
+
+        # Parse the output for metadata
+        for line in output.split('\n'):
+            stripped = line.strip()
+            if stripped.startswith('Homepage:'):
+                details['homepage'] = stripped.replace('Homepage:', '').strip()
+            elif stripped.startswith('Documentation:'):
+                details['documentation'] = stripped.replace('Documentation:', '').strip()
+            elif stripped.startswith('License:'):
+                details['license'] = stripped.replace('License:', '').strip()
+            elif stripped.startswith('Maintainer:'):
+                details['maintainer'] = stripped.replace('Maintainer:', '').strip()
+            elif stripped.startswith('- ') and 'Dependencies:' in output:
+                # Parse dependencies (lines starting with "- " after Dependencies section)
+                dep = stripped[2:].strip()
+                if dep:
+                    details['dependencies'].append(dep)
+
+    except (subprocess.TimeoutExpired, subprocess.SubprocessError) as e:
+        print_warning(f"   Could not get details for package '{package_name}': {e}")
+
+    return details
+
+
+def generate_package_catalog():
+    """Generate a page listing all available packages with rich metadata"""
+    print_step("Generating package catalog...")
+
+    # Check if we're using Hugo Book theme
+    hugo_book_theme = (DOCS_SITE_DIR / "themes" / "hugo-book").exists()
+
+    # Get package list output
+    try:
+        result = subprocess.run(
+            [str(PORTUNIX_BIN), 'package', 'list'],
+            capture_output=True, text=True, timeout=30, encoding='utf-8', errors='replace'
+        )
+        package_output = result.stdout if result.stdout and result.stdout.strip() else (result.stderr or '')
+
+        # Parse the output to extract package information
+        # Format is:
+        # package-name         Short Title
+        #                      Long description
+        #                      Category: category/path
+        packages = []
+        current_package = None
+        lines = package_output.split('\n')
+
+        for line in lines:
+            # Skip empty lines and header lines
+            stripped = line.strip()
+            if not stripped:
+                continue
+            if stripped.startswith('Embedded') or stripped.startswith('Package registry') or stripped.startswith('═') or stripped.startswith('📦 Available'):
+                continue
+
+            # Check if this is a new package line (starts at column 0, not indented)
+            if line and not line.startswith(' '):
+                # Skip footer lines like "Total packages: 34"
+                if stripped.startswith('Total packages:') or stripped.startswith('Total:'):
+                    continue
+
+                # Save previous package
+                if current_package:
+                    packages.append(current_package)
+
+                # Parse: "package-name         Short Title"
+                parts = stripped.split(None, 1)
+                if parts and len(parts) >= 1:
+                    current_package = {
+                        'name': parts[0],
+                        'short_title': parts[1] if len(parts) > 1 else '',
+                        'description': '',
+                        'category': ''
+                    }
+            elif current_package and stripped.startswith('Category:'):
+                # Category line
+                current_package['category'] = stripped.replace('Category:', '').strip()
+            elif current_package and stripped:
+                # Description line (indented, not category)
+                if current_package['description']:
+                    current_package['description'] += ' ' + stripped
+                else:
+                    current_package['description'] = stripped
+
+        if current_package:
+            packages.append(current_package)
+
+        # Fetch detailed metadata for each package
+        print_info(f"Fetching detailed metadata for {len(packages)} packages...")
+        for pkg in packages:
+            pkg_name = pkg.get('name', '')
+            if pkg_name:
+                print_info(f"   Getting details for: {pkg_name}")
+                details = get_package_details(pkg_name)
+                pkg['homepage'] = details['homepage']
+                pkg['documentation'] = details['documentation']
+                pkg['license'] = details['license']
+                pkg['maintainer'] = details['maintainer']
+                pkg['dependencies'] = details['dependencies']
+
+    except (subprocess.TimeoutExpired, subprocess.SubprocessError) as e:
+        print_error(f"Failed to get package list: {e}")
+        packages = []
+        package_output = f"Error getting package list: {e}"
+
+    # Create the package catalog page
+    catalog_file = DOCS_DIR / "packages.md"
+
+    if hugo_book_theme:
+        content = '''---
+title: "Available Packages"
+weight: 5
+---
+
+# Available Packages
+
+Complete catalog of software packages available for installation via Portunix.
+
+## Quick Install
+
+```bash
+portunix install <package-name>
+portunix install <package-name> --variant <variant>
+portunix install <package-name> --dry-run
+```
+
+## Package Catalog
+
+'''
+    else:
+        content = f'''---
+title: "Available Packages"
+date: {datetime.now().isoformat()}
+draft: false
+---
+
+# Available Packages
+
+Complete catalog of software packages available for installation via Portunix.
+
+## Quick Install
+
+```bash
+portunix install <package-name>
+portunix install <package-name> --variant <variant>
+portunix install <package-name> --dry-run
+```
+
+## Package Catalog
+
+'''
+
+    # Add packages grouped by category
+    if packages:
+        # Group packages by category
+        categories = {}
+        for pkg in packages:
+            cat = pkg.get('category', 'other')
+            if not cat:
+                cat = 'other'
+            if cat not in categories:
+                categories[cat] = []
+            categories[cat].append(pkg)
+
+        # Sort categories alphabetically
+        sorted_categories = sorted(categories.keys())
+
+        # Category display names and icons (using monochrome Unicode symbols)
+        category_info = {
+            'development/languages': ('Programming Languages', '◈'),
+            'development/tools': ('Development Tools', '⚙'),
+            'development/editors': ('Editors & IDEs', '▣'),
+            'development/build-tools': ('Build Tools', '⛭'),
+            'development/ai-tools': ('AI Tools', '◉'),
+            'development/shells': ('Shells', '▶'),
+            'development/libraries': ('Libraries', '▤'),
+            'infrastructure/automation': ('Infrastructure Automation', '⚡'),
+            'infrastructure/virtualization': ('Virtualization', '▢'),
+            'infrastructure/web-servers': ('Web Servers', '◎'),
+            'system/package-managers': ('Package Managers', '▦'),
+            'system/browsers': ('Web Browsers', '◌'),
+            'security/vpn': ('VPN & Security', '▧'),
+            'security/firewall': ('Firewall', '◆'),
+            'security/certificates': ('Certificates', '▨'),
+            'security/intrusion-prevention': ('Security Tools', '◇'),
+            'other': ('Other', '○'),
+        }
+
+        for cat in sorted_categories:
+            cat_packages = categories[cat]
+            display_name, icon = category_info.get(cat, (cat.replace('/', ' / ').title(), '○'))
+
+            content += f"### {icon} {display_name}\n\n"
+
+            for pkg in cat_packages:
+                name = pkg.get('name', '')
+                title = pkg.get('short_title', '')
+                desc = pkg.get('description', '')
+                homepage = pkg.get('homepage', '')
+                documentation = pkg.get('documentation', '')
+                license_info = pkg.get('license', '')
+                maintainer = pkg.get('maintainer', '')
+
+                # Use title if available, otherwise use description
+                display_desc = title if title else desc
+
+                # Package name as header
+                content += f"#### `{name}`\n\n"
+                content += f"{display_desc}\n\n"
+
+                # Build links line
+                links = []
+                if homepage:
+                    links.append(f"[Homepage]({homepage})")
+                if documentation:
+                    links.append(f"[Documentation]({documentation})")
+                if license_info:
+                    links.append(f"License: {license_info}")
+                if maintainer:
+                    links.append(f"Maintainer: {maintainer}")
+
+                if links:
+                    content += " | ".join(links) + "\n\n"
+
+                content += "---\n\n"
+
+        content += f"\n**Total packages available: {len(packages)}**\n"
+    else:
+        # Fallback to raw output
+        content += "```\n"
+        content += package_output
+        content += "\n```\n"
+
+    content += '''
+## Getting Package Details
+
+To see detailed information about a specific package:
+
+```bash
+portunix package info <package-name>
+```
+
+## Searching Packages
+
+To search for packages by name or description:
+
+```bash
+portunix package search <query>
+```
+'''
+
+    catalog_file.write_text(content, encoding='utf-8')
+    print_success(f"Package catalog generated with {len(packages)} packages")
 
 
 def run_local_server():
@@ -1252,6 +1585,7 @@ def main():
             return 1
         discover_core_commands()
         discover_plugin_commands()
+        generate_package_catalog()
         generate_release_notes(version)
         run_local_server()
     else:
@@ -1260,6 +1594,7 @@ def main():
             return 1
         discover_core_commands()
         discover_plugin_commands()
+        generate_package_catalog()
         generate_release_notes(version)
 
         if not args.build_only or not build_hugo_site():
@@ -1270,6 +1605,12 @@ def main():
     return 0
 
 if __name__ == '__main__':
+    # Ensure UTF-8 encoding on Windows
+    if sys.platform == 'win32':
+        import io
+        sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+        sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
+
     try:
         sys.exit(main())
     except Exception as e:

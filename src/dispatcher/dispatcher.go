@@ -65,7 +65,7 @@ func (d *Dispatcher) registerHelpers() {
 		Required: false,
 	}
 
-	// Phase 2: MCP server extraction
+	// MCP server helper - handles all MCP protocol operations
 	d.helpers["ptx-mcp"] = &HelperConfig{
 		Commands: []string{"mcp"},
 		Binary:   "ptx-mcp",
@@ -83,6 +83,41 @@ func (d *Dispatcher) registerHelpers() {
 	d.helpers["ptx-prompting"] = &HelperConfig{
 		Commands: []string{"prompt"},
 		Binary:   "ptx-prompting",
+		Required: false,
+	}
+
+	// Issue #097: PTX-Python Helper for Python development utilities
+	d.helpers["ptx-python"] = &HelperConfig{
+		Commands: []string{"python"},
+		Binary:   "ptx-python",
+		Required: false,
+	}
+
+	// Issue #100: PTX-Installer Helper for package installation
+	d.helpers["ptx-installer"] = &HelperConfig{
+		Commands: []string{"install", "package"},
+		Binary:   "ptx-installer",
+		Required: false,
+	}
+
+	// Issue #101: PTX-AIOps Helper for AI operations and GPU management
+	d.helpers["ptx-aiops"] = &HelperConfig{
+		Commands: []string{"aiops"},
+		Binary:   "ptx-aiops",
+		Required: false,
+	}
+
+	// Issue #102: PTX-Make Helper for cross-platform Makefile utilities
+	d.helpers["ptx-make"] = &HelperConfig{
+		Commands: []string{"make"},
+		Binary:   "ptx-make",
+		Required: false,
+	}
+
+	// Issue #107: PTX-PFT Helper for Product Feedback Tool integration
+	d.helpers["ptx-pft"] = &HelperConfig{
+		Commands: []string{"pft"},
+		Binary:   "ptx-pft",
 		Required: false,
 	}
 }

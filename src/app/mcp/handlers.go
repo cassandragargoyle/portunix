@@ -408,6 +408,108 @@ func (s *Server) handleToolsList(params json.RawMessage) (interface{}, error) {
 				},
 			},
 		},
+		// PTX-PFT Configuration Tools (Issue #112)
+		{
+			"name":        "pft_config_show",
+			"description": "Show current PTX-PFT configuration including global settings, per-area providers, and SMTP",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"path": map[string]interface{}{
+						"type":        "string",
+						"description": "Path to document directory (where .pft-config.json is located)",
+					},
+				},
+			},
+		},
+		{
+			"name":        "pft_config_global",
+			"description": "Set global PTX-PFT configuration (product name and document path)",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "Product name",
+					},
+					"path": map[string]interface{}{
+						"type":        "string",
+						"description": "Path to document directory",
+					},
+				},
+				"required": []string{"path"},
+			},
+		},
+		{
+			"name":        "pft_config_area",
+			"description": "Configure provider for a specific area (voc, vos, vob, voe)",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"area": map[string]interface{}{
+						"type":        "string",
+						"enum":        []string{"voc", "vos", "vob", "voe"},
+						"description": "Target area",
+					},
+					"provider": map[string]interface{}{
+						"type":        "string",
+						"enum":        []string{"fider", "clearflask", "eververse", "local"},
+						"description": "Provider type",
+					},
+					"path": map[string]interface{}{
+						"type":        "string",
+						"description": "Path to document directory (where .pft-config.json is located)",
+					},
+					"url": map[string]interface{}{
+						"type":        "string",
+						"description": "Provider endpoint URL",
+					},
+					"token": map[string]interface{}{
+						"type":        "string",
+						"description": "API token for authentication",
+					},
+					"project_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Project ID (if provider supports multiple projects)",
+					},
+				},
+				"required": []string{"area", "provider"},
+			},
+		},
+		{
+			"name":        "pft_config_smtp",
+			"description": "Configure SMTP server for email notifications",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"path": map[string]interface{}{
+						"type":        "string",
+						"description": "Path to document directory (where .pft-config.json is located)",
+					},
+					"host": map[string]interface{}{
+						"type":        "string",
+						"description": "SMTP server hostname",
+					},
+					"port": map[string]interface{}{
+						"type":        "integer",
+						"description": "SMTP server port (default: 587)",
+					},
+					"username": map[string]interface{}{
+						"type":        "string",
+						"description": "SMTP username",
+					},
+					"password": map[string]interface{}{
+						"type":        "string",
+						"description": "SMTP password",
+					},
+					"from": map[string]interface{}{
+						"type":        "string",
+						"description": "Sender email address",
+					},
+				},
+				"required": []string{"host"},
+			},
+		},
 	}
 
 	return map[string]interface{}{
@@ -491,6 +593,15 @@ func (s *Server) handleToolsCall(params json.RawMessage) (interface{}, error) {
 		result, err = s.handleValidatePluginStructure(request.Arguments)
 	case "get_plugin_examples":
 		result, err = s.handleGetPluginExamples(request.Arguments)
+	// PTX-PFT Configuration Tools (Issue #112)
+	case "pft_config_show":
+		result, err = s.handlePftConfigShow(request.Arguments)
+	case "pft_config_global":
+		result, err = s.handlePftConfigGlobal(request.Arguments)
+	case "pft_config_area":
+		result, err = s.handlePftConfigArea(request.Arguments)
+	case "pft_config_smtp":
+		result, err = s.handlePftConfigSmtp(request.Arguments)
 	default:
 		err = fmt.Errorf("unknown tool: %s", request.Name)
 	}
@@ -5151,6 +5262,194 @@ CMD ["./plugin"]`,
 	
 	examples["examples"] = filteredExamples
 	examples["total_count"] = len(filteredExamples)
-	
+
 	return examples, nil
+}
+
+// PTX-PFT Configuration Handlers (Issue #112)
+
+// getPtxPftBinary returns the path to the ptx-pft binary
+func (s *Server) getPtxPftBinary() (string, error) {
+	// Get the directory of the current executable
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("failed to get executable path: %w", err)
+	}
+	execDir := filepath.Dir(execPath)
+
+	// Determine binary suffix based on OS
+	suffix := ""
+	if runtime.GOOS == "windows" {
+		suffix = ".exe"
+	}
+
+	// Look for ptx-pft binary in the same directory
+	pftBinary := filepath.Join(execDir, "ptx-pft"+suffix)
+	if _, err := os.Stat(pftBinary); os.IsNotExist(err) {
+		return "", fmt.Errorf("ptx-pft binary not found at %s", pftBinary)
+	}
+
+	return pftBinary, nil
+}
+
+// executePtxPft executes ptx-pft with the given arguments
+func (s *Server) executePtxPft(args ...string) (string, error) {
+	pftBinary, err := s.getPtxPftBinary()
+	if err != nil {
+		return "", err
+	}
+
+	cmd := exec.Command(pftBinary, args...)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return string(output), fmt.Errorf("ptx-pft command failed: %w\nOutput: %s", err, string(output))
+	}
+
+	return string(output), nil
+}
+
+// handlePftConfigShow shows current PTX-PFT configuration
+func (s *Server) handlePftConfigShow(args map[string]interface{}) (interface{}, error) {
+	cmdArgs := []string{"pft", "configure", "--show"}
+
+	// Get path (optional)
+	if path, ok := args["path"].(string); ok && path != "" {
+		cmdArgs = append(cmdArgs, "--path", path)
+	}
+
+	output, err := s.executePtxPft(cmdArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"status":        "success",
+		"configuration": output,
+	}, nil
+}
+
+// handlePftConfigGlobal sets global PTX-PFT configuration
+func (s *Server) handlePftConfigGlobal(args map[string]interface{}) (interface{}, error) {
+	cmdArgs := []string{"pft", "configure"}
+
+	// Get path (required)
+	path, ok := args["path"].(string)
+	if !ok || path == "" {
+		return nil, fmt.Errorf("path parameter is required")
+	}
+	cmdArgs = append(cmdArgs, "--path", path)
+
+	// Get name (optional)
+	if name, ok := args["name"].(string); ok && name != "" {
+		cmdArgs = append(cmdArgs, "--name", name)
+	}
+
+	output, err := s.executePtxPft(cmdArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"status":  "success",
+		"message": "Global configuration updated",
+		"output":  output,
+	}, nil
+}
+
+// handlePftConfigArea configures provider for a specific area
+func (s *Server) handlePftConfigArea(args map[string]interface{}) (interface{}, error) {
+	cmdArgs := []string{"pft", "configure"}
+
+	// Get path (optional but recommended)
+	if path, ok := args["path"].(string); ok && path != "" {
+		cmdArgs = append(cmdArgs, "--path", path)
+	}
+
+	// Get area (required)
+	area, ok := args["area"].(string)
+	if !ok || area == "" {
+		return nil, fmt.Errorf("area parameter is required")
+	}
+	cmdArgs = append(cmdArgs, "--area", area)
+
+	// Get provider (required)
+	provider, ok := args["provider"].(string)
+	if !ok || provider == "" {
+		return nil, fmt.Errorf("provider parameter is required")
+	}
+	cmdArgs = append(cmdArgs, "--provider", provider)
+
+	// Get url (optional)
+	if url, ok := args["url"].(string); ok && url != "" {
+		cmdArgs = append(cmdArgs, "--url", url)
+	}
+
+	// Get token (optional)
+	if token, ok := args["token"].(string); ok && token != "" {
+		cmdArgs = append(cmdArgs, "--token", token)
+	}
+
+	// Get project_id (optional)
+	if projectID, ok := args["project_id"].(string); ok && projectID != "" {
+		cmdArgs = append(cmdArgs, "--project-id", projectID)
+	}
+
+	output, err := s.executePtxPft(cmdArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"status":  "success",
+		"message": fmt.Sprintf("Area %s configured with provider %s", area, provider),
+		"output":  output,
+	}, nil
+}
+
+// handlePftConfigSmtp configures SMTP server for notifications
+func (s *Server) handlePftConfigSmtp(args map[string]interface{}) (interface{}, error) {
+	cmdArgs := []string{"pft", "configure"}
+
+	// Get path (optional but recommended)
+	if path, ok := args["path"].(string); ok && path != "" {
+		cmdArgs = append(cmdArgs, "--path", path)
+	}
+
+	// Get host (required)
+	host, ok := args["host"].(string)
+	if !ok || host == "" {
+		return nil, fmt.Errorf("host parameter is required")
+	}
+	cmdArgs = append(cmdArgs, "--smtp-host", host)
+
+	// Get port (optional, default 587)
+	if port, ok := args["port"].(float64); ok {
+		cmdArgs = append(cmdArgs, "--smtp-port", fmt.Sprintf("%d", int(port)))
+	}
+
+	// Get username (optional)
+	if username, ok := args["username"].(string); ok && username != "" {
+		cmdArgs = append(cmdArgs, "--smtp-user", username)
+	}
+
+	// Get password (optional)
+	if password, ok := args["password"].(string); ok && password != "" {
+		cmdArgs = append(cmdArgs, "--smtp-pass", password)
+	}
+
+	// Get from (optional)
+	if from, ok := args["from"].(string); ok && from != "" {
+		cmdArgs = append(cmdArgs, "--smtp-from", from)
+	}
+
+	output, err := s.executePtxPft(cmdArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"status":  "success",
+		"message": "SMTP configuration updated",
+		"output":  output,
+	}, nil
 }

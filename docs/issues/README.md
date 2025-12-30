@@ -65,7 +65,7 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#054](054-guid-generation-module.md) | - | GUID Generation Module for Portunix Core | ✅ Implemented | Medium | Enhancement | enhancement, core, utilities, cli |
 | [#055](055-vm-management-requirements-enterprise-architect.md) | - | VM Management Requirements for Enterprise Architect | ✅ Implemented | Critical | Feature | virtualization, vm-management, windows, critical, qemu, enterprise |
 | [#056](056-ansible-infrastructure-as-code-integration.md) | - | Ansible Infrastructure as Code Integration | ✅ Implemented | High | Feature | enhancement, infrastructure-as-code, ansible, helper-binary, multi-environment |
-| [#058](058-virt-list-vm-info-access-denied.md) | - | VirtualBox VM Information Access Denied | 🔄 Open | High | Bug Fix | bug, virtualization, windows, virtualbox, permissions |
+| [#058](058-virt-list-vm-info-access-denied.md) | - | VirtualBox VM Information Access Denied | 📋 Open | High | Bug Fix | bug, virtualization, windows, virtualbox, permissions |
 | [#059](059-playbook-help-command-not-working.md) | - | Playbook Help Command Not Working | ✅ Implemented | High | Bug Fix | bug, playbook, help, cli, ansible, user-experience |
 | [#060](060-backend-version-display-enhancement.md) | - | Backend Version Display Enhancement | ✅ Implemented | Medium | Enhancement | enhancement, system-info, virtualization, docker, podman, user-experience |
 | [#061](061-virt-snapshot-list-empty-names.md) | - | Virtual Machine Snapshot List Shows Empty Names | ✅ Implemented | High | Bug Fix | bug, virtualization, snapshot-management, virtualbox, qemu, data-parsing |
@@ -77,7 +77,7 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#067](067-disk-image-files-helper.md) | - | Disk Image Files Helper for Multiple Formats | 📋 Open | High | Enhancement | enhancement, virtualization, disk-management, cross-platform, vdi, vmdk, vhd, qcow2, image-processing |
 | [#068](068-main-binary-ptx-virt-helper-integration.md) | - | Main Binary ptx-virt Helper Integration | 📋 Open | High | Enhancement | enhancement, virtualization, dispatcher, helper-binary, integration, consistency |
 | [#069](069-container-command-help-display-incorrect-usage.md) | - | Container Command Help Display Shows Incorrect Usage | ✅ Implemented | Medium | Bug Fix | bug, container-management, help-system, user-experience, helper-integration |
-| [#078](078-github-cli-installation.md) | - | GitHub CLI Installation Support | 🔄 In Progress | Medium | Feature | enhancement, package-management, github-cli, developer-tools, cross-platform |
+| [#078](078-github-cli-installation.md) | - | GitHub CLI Installation Support | ✅ Implemented | Medium | Feature | enhancement, package-management, github-cli, developer-tools, cross-platform |
 | [#079](079-custom-installation-methods-cli-parameter.md) | - | Enhanced Package Installation with Custom URLs and Methods | 📋 Open | High | Enhancement | enhancement, package-management, installation, custom-methods, advanced-cli |
 | [#070](070-ansible-pipx-installation-support.md) | - | Ansible pipx Installation Support | ✅ Implemented | High | Enhancement | enhancement, package-management, ansible, pipx, cross-platform, installation |
 | [#071](071-container-exec-command-implementation.md) | - | Container Exec Command Implementation | ✅ Implemented | High | Bug Fix / Enhancement | bug, enhancement, container-management, core-functionality, exec, helper-binary |
@@ -104,6 +104,26 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#094](094-container-rm-subcommand-not-recognized.md) | - | Container 'rm' Subcommand Not Recognized | ✅ Implemented | Medium | Bug Fix | bug, container, cli, command-parsing |
 | [#095](095-container-exec-returns-helper-version.md) | - | Container exec Returns Helper Version Instead of Executing Command | ✅ Implemented | High | Bug Fix | bug, container, cli, ptx-container, critical |
 | [#096](096-container-start-stop-help-flag-bug.md) | - | Container Start/Stop Commands Misinterpret --help Flag as Container Name | ✅ Implemented | Medium | Bug Fix | bug, container, help-system, user-experience, cli |
+| [#097](097-ptx-python-helper-implementation.md) | - | PTX-Python Helper Implementation | 🔄 In Progress (Phase 2 Complete) | High | Feature | enhancement, helper-binary, python, development-tools, build-automation, code-quality |
+| [#098](098-ptx-vocalio-helper-implementation.md) | - | PTX-Vocalio Helper Implementation | 📋 Open | High | Feature | enhancement, helper-binary, speech-recognition, text-to-speech, ai-integration, accessibility |
+| [#099](099-system-info-performance-optimization.md) | - | System Info Performance Optimization | 📋 Open | High | Enhancement | enhancement, performance, system-info, optimization, user-experience, critical-path |
+| [#100](100-ptx-installer-helper-implementation.md) | - | PTX-Installer Helper Implementation | 🔄 In Progress (Phase 4 Complete) | High | Feature | enhancement, architecture, performance, helper-binary, package-management |
+| [#101](101-ptx-aiops-helper-implementation.md) | - | PTX-AIOps Helper Implementation | ✅ Implemented | High | Feature | enhancement, helper-binary, ai-integration, container, gpu-support |
+| [#102](102-compose-command-implementation.md) | - | Compose Command Implementation | ✅ Implemented | High | Enhancement | enhancement, container, docker-compose, podman-compose, universal-interface |
+| [#103](103-ptx-make-helper-implementation.md) | - | PTX-Make Helper Implementation | ✅ Implemented | High | Feature | enhancement, helper-binary, build-automation, cross-platform, makefile |
+| [#104](104-ptx-make-ls-command.md) | - | PTX-Make LS Command Implementation | 📋 Open | Medium | Enhancement | enhancement, helper-binary, ptx-make, cross-platform, file-operations |
+| [#105](105-ptx-make-gobuild-cross-platform-compilation.md) | - | PTX-Make GoBuild Cross-Platform Compilation | 📋 Open | High | Enhancement | enhancement, helper-binary, ptx-make, cross-platform, go-compilation |
+| [#106](106-install-command-help-flag-not-working.md) | - | Install Command --help Flag Not Working | ✅ Implemented | High | Bug Fix | bug, cli, help-system, install, user-experience, documentation |
+| [#107](107-ptx-pft-product-feedback-tool-helper.md) | - | PTX-PFT Product Feedback Tool Helper Implementation | ✅ Implemented | High | Feature | enhancement, helper-binary, product-feedback, fider, synchronization |
+| [#108](108-ptx-pft-email-notifications.md) | - | PTX-PFT E-mail Notifications for User Actions | ✅ Implemented | High | Enhancement | enhancement, helper-binary, ptx-pft, email, notifications |
+| [#109](109-ptx-pft-clearflask-provider.md) | - | PTX-PFT ClearFlask Provider Implementation | ✅ Implemented | Medium | Enhancement | enhancement, helper-binary, product-feedback, clearflask, provider |
+| [#110](110-ptx-pft-eververse-provider.md) | - | PTX-PFT Eververse Provider Implementation | ✅ Implemented | Medium | Enhancement | enhancement, helper-binary, product-feedback, eververse, provider, high-complexity |
+| [#111](111-ptx-pft-mcp-integration.md) | - | PTX-PFT MCP Integration | 📋 Open | High | Enhancement | enhancement, helper-binary, ptx-pft, ptx-mcp, ai-integration, mcp |
+| [#112](112-ptx-pft-category-management.md) | - | PTX-PFT Category Management for UC and Requirements | ✅ Implemented | High | Enhancement | enhancement, helper-binary, ptx-pft, categorization, organization |
+| [#113](113-mcp-help-missing-subcommands-v180.md) | - | MCP Help Missing Subcommands in v1.8.0 Release | ✅ Implemented | High | Bug Fix | bug, mcp, release, help-system, regression |
+| [#114](114-mcp-configure-default-stdio-mode.md) | - | MCP Configure Should Default to stdio Mode | ✅ Implemented | Medium | Enhancement | mcp, configuration, ux |
+| [#115](115-automated-release-notes-generation.md) | - | Automated Release Notes Generation System | ✅ Implemented | High | Enhancement | enhancement, release-process, automation, ai-integration |
+| [#116](116-ptx-pft-iso16355-qfd-project-structure.md) | - | PTX-PFT ISO 16355 QFD Project Structure | 📋 Open | High | Enhancement | enhancement, helper-binary, ptx-pft, iso-16355, qfd, requirements-management |
 
 ## Directory Structure
 

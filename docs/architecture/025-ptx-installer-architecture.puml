@@ -1,0 +1,128 @@
+@startuml PTX-Installer Architecture
+
+!define MAIN_COLOR #4A90E2
+!define HELPER_COLOR #50C878
+!define COMPONENT_COLOR #F39C12
+!define DATA_COLOR #9B59B6
+
+title PTX-Installer Helper Architecture - Component View
+
+skinparam component {
+    BackgroundColor<<main>> MAIN_COLOR
+    BackgroundColor<<helper>> HELPER_COLOR
+    BackgroundColor<<component>> COMPONENT_COLOR
+    BackgroundColor<<data>> DATA_COLOR
+    BorderColor #2C3E50
+    FontSize 12
+}
+
+skinparam note {
+    BackgroundColor #FFF9E6
+    BorderColor #E6B800
+}
+
+' Main Dispatcher
+package "Main Binary" <<main>> {
+    [Command Parser] as parser
+    [Dispatcher] as dispatcher
+    [Helper Discovery] as discovery
+    [System Info\n<50ms] as sysinfo
+    [Version Manager] as version
+}
+
+' PTX-Installer Helper
+package "PTX-Installer Helper" <<helper>> {
+    [CLI Interface] as cli
+    [Installation Engine] as engine
+    [Registry Manager] as registry
+    [Download Manager] as download
+    [Platform Adapters] as platform
+    [Dependency Resolver] as deps
+}
+
+' Platform-Specific Components
+package "Platform Installers" <<component>> {
+    [MSI Installer] as msi
+    [Chocolatey] as choco
+    [APT Manager] as apt
+    [TAR Extractor] as tar
+    [YUM/DNF] as yum
+}
+
+' Data and Assets
+database "Package Registry" <<data>> {
+    [index.json] as index
+    [packages/*.json] as packages
+}
+
+database "Shared Resources" <<data>> {
+    [Config Files] as config
+    [Cache Directory] as cache
+    [Log Files] as logs
+}
+
+' User Interaction
+actor User
+
+' Relationships - User to Main Binary
+User --> parser : portunix install python
+
+' Main Binary Internal Flow
+parser --> dispatcher : route command
+dispatcher --> discovery : find ptx-installer
+discovery --> cli : exec helper
+
+' PTX-Installer Internal Flow
+cli --> engine : process install
+engine --> registry : load package def
+registry --> packages : read python.json
+engine --> deps : resolve dependencies
+engine --> download : fetch binaries
+download --> cache : store downloads
+engine --> platform : select installer
+platform --> msi : Windows
+platform --> tar : Linux
+platform --> apt : Debian/Ubuntu
+platform --> choco : Windows Package Manager
+platform --> yum : RedHat/Fedora
+
+' Shared Resources
+engine --> config : read configuration
+engine --> logs : write logs
+sysinfo --> config : read config (lightweight)
+
+' Data Flow
+registry --> index : load registry index
+dispatcher ..> discovery : helper validation
+discovery ..> version : version check
+
+' Performance Notes
+note right of sysinfo
+  **Performance Improvement**
+  Before: 1.19s (loads full install system)
+  After: <0.05s (no install overhead)
+  **24× faster**
+end note
+
+note bottom of cli
+  **stdio/argv Interface**
+  Follows Git-style helper pattern
+  Transparent to user
+  ~10ms dispatch overhead
+end note
+
+note right of packages
+  **ADR-021 Integration**
+  Individual package definitions
+  AI-assisted version discovery
+  Platform-specific configurations
+end note
+
+note left of platform
+  **Cross-Platform Support**
+  Windows: MSI, Chocolatey, WinGet
+  Linux: APT, YUM, DNF, TAR
+  Auto-detection of platform
+end note
+
+@enduml

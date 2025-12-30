@@ -1,0 +1,118 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Portunix Release Notes Schema",
+  "description": "JSON schema for structured release notes",
+  "type": "object",
+  "required": ["version", "date", "tag"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Version number without v prefix (e.g., 1.8.0)",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "description": "Release date in YYYY-MM-DD format"
+    },
+    "tag": {
+      "type": "string",
+      "description": "Git tag with v prefix (e.g., v1.8.0)",
+      "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "previous_tag": {
+      "type": "string",
+      "description": "Previous git tag for diff range",
+      "pattern": "^v[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Brief summary of the release (1-2 sentences)",
+      "maxLength": 500
+    },
+    "highlights": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Key highlights of this release",
+      "maxItems": 10
+    },
+    "changes": {
+      "type": "object",
+      "properties": {
+        "features": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/change" },
+          "description": "New features added in this release"
+        },
+        "improvements": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/change" },
+          "description": "Improvements to existing functionality"
+        },
+        "fixes": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/change" },
+          "description": "Bug fixes"
+        },
+        "breaking": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/change" },
+          "description": "Breaking changes that may affect existing users"
+        },
+        "security": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/change" },
+          "description": "Security-related fixes"
+        },
+        "docs": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/change" },
+          "description": "Documentation updates"
+        }
+      },
+      "additionalProperties": false
+    },
+    "components": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Affected components/helpers (e.g., portunix, ptx-mcp, ptx-container)"
+    },
+    "contributors": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Contributors to this release"
+    },
+    "notes": {
+      "type": "string",
+      "description": "Additional notes or migration instructions"
+    }
+  },
+  "definitions": {
+    "change": {
+      "type": "object",
+      "required": ["description"],
+      "properties": {
+        "description": {
+          "type": "string",
+          "description": "Human-readable description of the change"
+        },
+        "issue": {
+          "type": "string",
+          "description": "Related issue number (e.g., #042)",
+          "pattern": "^#[0-9]+$"
+        },
+        "commit": {
+          "type": "string",
+          "description": "Short commit hash",
+          "pattern": "^[a-f0-9]{7,40}$"
+        },
+        "component": {
+          "type": "string",
+          "description": "Affected component if specific"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

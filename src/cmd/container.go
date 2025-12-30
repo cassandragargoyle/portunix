@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"portunix.ai/app/compose"
 	"portunix.ai/app/container"
 	"portunix.ai/app/docker"
 	"portunix.ai/app/podman"
@@ -724,6 +725,75 @@ The command automatically detects direction based on container: prefix.`,
 	},
 }
 
+// containerComposeCmd represents the universal compose command
+var containerComposeCmd = &cobra.Command{
+	Use:                "compose [args...]",
+	Short:              "Run docker-compose/podman-compose commands (universal runtime)",
+	DisableFlagParsing: true, // Pass all arguments directly to compose tool
+	Long: `🐳 UNIVERSAL COMPOSE COMMAND
+
+Execute docker-compose or podman-compose commands using automatic runtime detection.
+All arguments are passed directly to the detected compose tool.
+
+🌟 AUTOMATIC RUNTIME DETECTION:
+  Priority order (configurable):
+  1. Docker Compose V2 (docker compose) - preferred
+  2. Docker Compose V1 (docker-compose) - fallback
+  3. Podman Compose (podman-compose) - alternative
+
+  When container_runtime is set to 'podman', the order is reversed.
+
+💡 USAGE:
+  All standard compose commands and flags are supported:
+
+  portunix container compose -f <file> up [service]
+  portunix container compose -f <file> down
+  portunix container compose -f <file> build [service]
+  portunix container compose -f <file> logs [service]
+  portunix container compose -f <file> ps
+  portunix container compose -f <file> exec <service> <command>
+  portunix container compose -f <file> run <service> <command>
+
+Examples:
+  portunix container compose -f docker-compose.yml up -d
+  portunix container compose -f docker-compose.yml down
+  portunix container compose -f docker-compose.docs.yml up docs-server
+  portunix container compose -f docker-compose.yml logs -f web
+  portunix container compose -f docker-compose.yml ps
+  portunix container compose -f docker-compose.yml build --no-cache
+
+Configuration:
+  Set preferred runtime: portunix config set container_runtime docker
+  Check runtime: portunix container compose --version`,
+	Run: func(cmd *cobra.Command, args []string) {
+		// Handle help flag manually since DisableFlagParsing is true
+		for _, arg := range args {
+			if arg == "--help" || arg == "-h" {
+				cmd.Help()
+				return
+			}
+		}
+
+		// Show runtime info if no arguments or just --version
+		if len(args) == 0 {
+			runtime, err := compose.GetComposeRuntime()
+			if err != nil {
+				fmt.Printf("❌ %s\n", compose.GetInstallationInstructions())
+				return
+			}
+			fmt.Printf("🐳 Compose Runtime: %s (version %s)\n", runtime.Name, runtime.Version)
+			fmt.Println("\nUse 'portunix container compose --help' for usage information.")
+			return
+		}
+
+		// Execute compose command with all arguments
+		err := compose.Execute(args)
+		if err != nil {
+			fmt.Printf("❌ Compose command failed: %v\n", err)
+		}
+	},
+}
+
 // runDockerContainer delegates to docker run-in-container logic
 func runDockerContainer(args []string) {
 	// Use existing docker implementation
@@ -781,6 +851,7 @@ func init() {
 	containerCmd.AddCommand(containerRemoveCmd)
 	containerCmd.AddCommand(containerLogsCmd)
 	containerCmd.AddCommand(containerListCmd)
+	containerCmd.AddCommand(containerComposeCmd)
 
 	// Add flags to run command
 	containerRunCmd.Flags().BoolP("detach", "d", false, "Run container in background")

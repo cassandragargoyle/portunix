@@ -243,6 +243,38 @@ func formatInstalledWithVersion(installed bool, backend string) string {
 	return "installed"
 }
 
+func formatContainerRuntime(installed bool, daemonRunning bool, backend string) string {
+	if !installed {
+		return "not installed"
+	}
+
+	var version string
+	switch backend {
+	case "docker":
+		version = system.GetDockerVersion()
+	case "podman":
+		version = system.GetPodmanVersion()
+	}
+
+	status := version
+	if status == "" {
+		status = "installed"
+	}
+
+	if daemonRunning {
+		status += " (running)"
+	} else {
+		switch backend {
+		case "docker":
+			status += " (daemon not running)"
+		case "podman":
+			status += " (socket not running)"
+		}
+	}
+
+	return status
+}
+
 func printSystemInfo(info *system.SystemInfo) {
 	fmt.Printf("System Information:\n")
 	fmt.Printf("==================\n")
@@ -281,8 +313,33 @@ func printSystemInfo(info *system.SystemInfo) {
 	}
 
 	fmt.Printf("\nContainer Runtimes:\n")
-	fmt.Printf("Docker:       %s\n", formatInstalledWithVersion(info.Capabilities.Docker, "docker"))
-	fmt.Printf("Podman:       %s\n", formatInstalledWithVersion(info.Capabilities.Podman, "podman"))
+	fmt.Printf("Docker:       %s\n", formatContainerRuntime(info.Capabilities.Docker, info.Capabilities.DockerDaemonRunning, "docker"))
+	fmt.Printf("Podman:       %s\n", formatContainerRuntime(info.Capabilities.Podman, info.Capabilities.PodmanSocketRunning, "podman"))
+
+	// Compose support
+	if info.Capabilities.ComposeInfo != nil {
+		fmt.Printf("\nCompose Support:\n")
+		if info.Capabilities.ComposeInfo.Available {
+			status := info.Capabilities.ComposeInfo.Type
+			if info.Capabilities.ComposeInfo.Version != "" {
+				status += " " + info.Capabilities.ComposeInfo.Version
+			}
+			if info.Capabilities.ComposeInfo.DaemonReady {
+				status += " (ready)"
+			} else {
+				status += " (daemon not ready)"
+			}
+			fmt.Printf("Type:         %s\n", status)
+			if info.Capabilities.ComposeInfo.WarningMessage != "" {
+				fmt.Printf("Warning:      %s\n", info.Capabilities.ComposeInfo.WarningMessage)
+			}
+		} else {
+			fmt.Printf("Type:         not available\n")
+			if info.Capabilities.ComposeInfo.WarningMessage != "" {
+				fmt.Printf("Warning:      %s\n", info.Capabilities.ComposeInfo.WarningMessage)
+			}
+		}
+	}
 
 	// Virtualization backends
 	if info.Capabilities.VirtualizationInfo != nil {

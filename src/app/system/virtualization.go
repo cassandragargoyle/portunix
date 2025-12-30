@@ -187,3 +187,125 @@ func GetPodmanVersion() string {
 	}
 	return version
 }
+
+// IsDockerDaemonRunning checks if Docker daemon is running
+func IsDockerDaemonRunning() bool {
+	cmd := exec.Command("docker", "info")
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	return cmd.Run() == nil
+}
+
+// IsPodmanSocketRunning checks if Podman socket is running
+func IsPodmanSocketRunning() bool {
+	cmd := exec.Command("podman", "info")
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	return cmd.Run() == nil
+}
+
+// DetectComposeInfo detects container compose tool availability
+func DetectComposeInfo(dockerInstalled, dockerDaemonRunning, podmanInstalled, podmanSocketRunning bool) *ComposeInfo {
+	info := &ComposeInfo{}
+
+	// Try Docker Compose first (if Docker is installed and daemon is running)
+	if dockerInstalled {
+		if dockerDaemonRunning {
+			// Docker Compose V2 (docker compose)
+			cmd := exec.Command("docker", "compose", "version", "--short")
+			var out bytes.Buffer
+			cmd.Stdout = &out
+			cmd.Stderr = nil
+			if err := cmd.Run(); err == nil {
+				info.Available = true
+				info.Type = "Docker Compose"
+				info.Version = strings.TrimSpace(out.String())
+				info.DaemonReady = true
+				return info
+			}
+
+			// Docker Compose V1 (docker-compose)
+			cmd = exec.Command("docker-compose", "--version")
+			out.Reset()
+			cmd.Stdout = &out
+			cmd.Stderr = nil
+			if err := cmd.Run(); err == nil {
+				info.Available = true
+				info.Type = "Docker Compose (V1)"
+				// Parse version from "docker-compose version 1.29.2, build 5becea4c"
+				output := strings.TrimSpace(out.String())
+				if parts := strings.Fields(output); len(parts) >= 3 {
+					info.Version = strings.TrimSuffix(parts[2], ",")
+				}
+				info.DaemonReady = true
+				return info
+			}
+		} else {
+			// Docker installed but daemon not running
+			info.WarningMessage = "Docker installed but daemon not running"
+		}
+	}
+
+	// Try Podman Compose (if Podman is installed)
+	if podmanInstalled {
+		// Built-in podman compose (Podman 3.0+)
+		cmd := exec.Command("podman", "compose", "version")
+		var out bytes.Buffer
+		cmd.Stdout = &out
+		cmd.Stderr = nil
+		if err := cmd.Run(); err == nil {
+			info.Available = true
+			info.Type = "Podman Compose"
+			// Parse version from output
+			output := strings.TrimSpace(out.String())
+			if strings.Contains(output, "version") {
+				parts := strings.Fields(output)
+				for i, p := range parts {
+					if p == "version" && i+1 < len(parts) {
+						info.Version = parts[i+1]
+						break
+					}
+				}
+			}
+			if podmanSocketRunning {
+				info.DaemonReady = true
+			} else {
+				info.DaemonReady = false
+				info.WarningMessage = "Podman socket not running - start with: systemctl --user start podman.socket"
+			}
+			return info
+		}
+
+		// Standalone podman-compose
+		cmd = exec.Command("podman-compose", "--version")
+		out.Reset()
+		cmd.Stdout = &out
+		cmd.Stderr = nil
+		if err := cmd.Run(); err == nil {
+			info.Available = true
+			info.Type = "podman-compose"
+			// Parse version from "podman-compose version: 1.0.6"
+			output := strings.TrimSpace(out.String())
+			if strings.Contains(output, ":") {
+				parts := strings.Split(output, ":")
+				if len(parts) >= 2 {
+					info.Version = strings.TrimSpace(parts[1])
+				}
+			}
+			if podmanSocketRunning {
+				info.DaemonReady = true
+			} else {
+				info.DaemonReady = false
+				info.WarningMessage = "Podman socket not running - start with: systemctl --user start podman.socket"
+			}
+			return info
+		}
+
+		// Podman installed but no compose
+		if info.WarningMessage == "" {
+			info.WarningMessage = "Podman installed but no compose tool found"
+		}
+	}
+
+	return info
+}

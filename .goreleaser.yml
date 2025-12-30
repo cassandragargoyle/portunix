@@ -7,9 +7,10 @@ project_name: portunix
 snapshot:
   name_template: "{{ incpatch .Version }}-snapshot"
 
-before:
-  hooks:
-    - go mod tidy
+# before hooks disabled - go mod tidy removes manually added dependencies
+# before:
+#   hooks:
+#     - go mod tidy
 
 builds:
   # Build configurations:
@@ -58,10 +59,11 @@ builds:
     env:
       - CGO_ENABLED=0
 
-  # Helper binary: ptx-mcp (single file)
+  # Helper binary: ptx-mcp (multi-file package, separate module)
   - id: ptx-mcp
     binary: ptx-mcp
-    main: ./src/helpers/ptx-mcp/main.go
+    main: ./
+    dir: ./src/helpers/ptx-mcp/
     goos:
       - linux
       - windows
@@ -120,6 +122,90 @@ builds:
     env:
       - CGO_ENABLED=0
 
+  # Helper binary: ptx-make (multi-file package with cmd subpackage)
+  - id: ptx-make
+    binary: ptx-make
+    main: ./
+    dir: ./src/helpers/ptx-make/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-aiops (multi-file package)
+  - id: ptx-aiops
+    binary: ptx-aiops
+    main: ./
+    dir: ./src/helpers/ptx-aiops/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-pft (multi-file package, shared module)
+  - id: ptx-pft
+    binary: ptx-pft
+    main: ./
+    dir: ./src/helpers/ptx-pft/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-prompting (multi-file package, separate module)
+  - id: ptx-prompting
+    binary: ptx-prompting
+    main: ./
+    dir: ./src/helpers/ptx-prompting/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
 archives:
   - id: default
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{- tolower .Os }}_{{ .Arch }}"
@@ -135,6 +221,10 @@ archives:
       - ptx-mcp
       - ptx-virt
       - ptx-ansible
+      - ptx-make
+      - ptx-aiops
+      - ptx-pft
+      - ptx-prompting
     files:
       - src: scripts/install.sh
         dst: install.sh
@@ -172,12 +262,16 @@ release:
     - ptx-mcp helper (MCP server functionality)
     - ptx-virt helper (Virtualization management)
     - ptx-ansible helper (Infrastructure as Code with Ansible)
+    - ptx-make helper (Cross-platform Makefile utilities)
+    - ptx-aiops helper (AI/ML operations with Ollama)
+    - ptx-pft helper (Product Feedback Tool)
+    - ptx-prompting helper (Prompt templates management)
 
   footer: |
     ## Installation
 
     Download and extract the appropriate archive for your platform, then run the installation script.
-    The archive contains all necessary binaries (portunix, ptx-container, ptx-mcp, ptx-virt, ptx-ansible).
+    The archive contains all necessary binaries (portunix, ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-make, ptx-aiops, ptx-pft, ptx-prompting).
 
     ### Linux/macOS
     ```bash

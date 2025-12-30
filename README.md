@@ -48,6 +48,8 @@ Universal development environment management tool with intelligent OS detection,
 - **Docker** (optional, for container features)
 - **Windows 10/11 Pro/Enterprise** (for Windows Sandbox features)
 
+> **📝 Windows Users:** For proper emoji display in PowerShell, see [Windows Setup Guide](docs/WINDOWS-SETUP.md) to configure UTF-8 encoding.
+
 ### Quick Install
 ```bash
 # Clone repository
@@ -289,6 +291,7 @@ make lint
 ## 📚 Documentation
 
 ### User Guides
+- **[Windows Setup Guide](docs/WINDOWS-SETUP.md)**: Windows-specific setup and UTF-8 configuration ⭐
 - **[TEST_GUIDE.md](TEST_GUIDE.md)**: Complete testing guide for developers
 - **[TESTING.md](TESTING.md)**: Testing architecture and standards
 
@@ -370,18 +373,53 @@ make status
 
 ### Current Status ✅
 - ✅ Cross-platform OS detection system
-- ✅ Docker management with intelligent installation
-- ✅ Multi-platform container support
-- ✅ SSH-enabled development containers
-- ✅ Comprehensive testing architecture
-- ✅ CI/CD pipeline with quality gates
+- ✅ Docker/Podman management with intelligent installation
+- ✅ Multi-platform container support with SSH-enabled development containers
+- ✅ Container orchestration with docker-compose/podman-compose
+- ✅ MCP server for AI assistant integration
+- ✅ Package registry system with automatic discovery
+- ✅ Multi-level help system (basic, expert, AI)
+- ✅ QEMU/KVM virtualization with Windows 11 support and snapshots
+- ✅ Product feedback tool (ptx-pft) with Fider/ClearFlask/Eververse providers
+- ✅ AIOps helper for GPU/AI container workloads
+- ✅ Make helper for cross-platform builds
+- ✅ Ansible infrastructure as code integration
+- ✅ Self-update system with rollback capability
+- ✅ Comprehensive testing architecture and CI/CD pipeline
 
 ### Upcoming Features 🚧
-- [ ] Container orchestration with docker-compose
+- [ ] Plugin system with gRPC architecture (#7)
+- [ ] Virtual development disk management (#8)
+- [ ] Configurable datastore backends (#9)
+- [ ] Interactive wizard framework (#14)
+- [ ] AI assistant installation support (#35)
 - [ ] VSCode development containers integration
-- [ ] Package manager plugins
-- [ ] Cloud deployment automation
-- [ ] Advanced security scanning
+
+## 📦 Creating a Release
+
+To create a new release, use the provided release script:
+
+```bash
+# Create release with version tag
+./scripts/make-release.sh v1.7.6
+```
+
+The script automatically:
+- Updates version in source files and `portunix.rc`
+- Creates git tag
+- Builds cross-platform binaries using GoReleaser
+- Generates release notes and checksums
+- Publishes to GitHub Releases
+
+For manual builds without release:
+```bash
+# Build with embedded version
+./build-with-version.sh v1.7.6
+
+# Or use Makefile targets
+make build-release
+make test-release
+```
 
 ## 📄 License
 

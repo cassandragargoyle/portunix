@@ -16,27 +16,31 @@ portunix install [options] [arguments]
 ## Full Help
 
 ```
-Usage:
-  portunix install [software1] [software2] ... [flags]
-  portunix install [command]
+Install software packages
 
-Available Commands:
-  apt         APT package manager operations (Linux only)
-  iso         Download OS installation ISO
+Usage: portunix install <package> [options]
 
-Flags:
-  -h, --help   help for install
+Options:
+  --variant=<variant>  Select package variant (e.g., --variant=21 for Java 21)
+  --dry-run            Preview installation without executing
+  --force              Force reinstallation even if already installed
+  -h, --help           Show this help message
 
-Global Flags:
-      --help-ai       Show machine-readable help in JSON format
-      --help-expert   Show extended help with all options and examples
+Examples:
+  portunix install python
+  portunix install java --variant=21
+  portunix install nodejs --dry-run
 
-Use "portunix install [command] --help" for more information about a command.
+Use 'portunix package list' to see available packages
+Use 'portunix package info <package>' for detailed package information
 
 ```
 
-## Subcommands
+## Examples
 
-- **apt**: APT package manager operations (Linux only)
-- **iso**: Download OS installation ISO
+```bash
+  portunix install python
+  portunix install java --variant=21
+  portunix install nodejs --dry-run
 
+```
