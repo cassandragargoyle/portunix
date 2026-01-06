@@ -85,9 +85,13 @@ Usage:
   portunix system info [flags]
 
 Flags:
-  -h, --help    help for info
-  -j, --json    Output as JSON
-  -s, --short   Short output (OS Version Variant)
+      --cpuprofile string   Write CPU profile to file
+  -h, --help                help for info
+  -j, --json                Output as JSON
+      --memprofile string   Write memory profile to file
+  -s, --short               Short output (OS Version Variant)
+  -t, --time                Show execution time
+      --trace string        Write execution trace to file
 
 Global Flags:
       --help-ai       Show machine-readable help in JSON format

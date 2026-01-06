@@ -1,6 +1,6 @@
 1 VERSIONINFO
-FILEVERSION 1,9,0,0
-PRODUCTVERSION 1,9,0,0
+FILEVERSION 1,9,1,0
+PRODUCTVERSION 1,9,1,0
 FILEFLAGSMASK 0x3fL
 FILEFLAGS 0x0L
 FILEOS 0x4L
@@ -13,14 +13,14 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Portunix"
       VALUE "FileDescription", "Portunix install and config applications"
-      VALUE "FileVersion", "1.9.0"
+      VALUE "FileVersion", "1.9.1"
       VALUE "InternalName",     "shconfig"
       VALUE "LegalCopyright",   "Portunix"
       VALUE "LegalTrademarks1", ""
       VALUE "LegalTrademarks2", ""
       VALUE "OriginalFilename", "portunix.exe"
       VALUE "ProductName",      "Portunix"
-      VALUE "ProductVersion", "1.9.0" 
+      VALUE "ProductVersion", "1.9.1" 
     END 
   END 
   BLOCK "VarFileInfo" 

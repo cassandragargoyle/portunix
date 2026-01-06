@@ -1,0 +1,43 @@
+apiVersion: portunix.ai/v1
+kind: Playbook
+metadata:
+  name: "{{ .Name }}"
+  description: "Static documentation site using Hugo"
+
+spec:
+  environment:
+    target: {{ .Target }}
+{{- if eq .Target "container" }}
+    runtime: {{ .ContainerRuntime }}
+    image: "ubuntu:22.04"
+    container_name: "{{ .Name }}-hugo"
+    ports:
+      - "1313:1313"
+    volumes:
+      - "./:/workspace"
+{{- end }}
+
+  variables:
+    site_title: "{{ .Name }} Documentation"
+    output_dir: "./public"
+
+  portunix:
+    packages:
+      - name: "hugo"
+        variant: "extended"
+      - name: "git"
+
+  scripts:
+{{- if and (eq .OS "windows") (eq .Target "local") }}
+    init: "hugo.exe new site . --force && git clone https://github.com/theNewDynamic/gohugo-theme-ananke themes/ananke && echo 'theme = \"ananke\"' >> hugo.toml && hugo.exe new content posts/hello.md && echo '---' > content/posts/hello.md && echo 'title: \"Hello World\"' >> content/posts/hello.md && echo 'date: 2024-01-01' >> content/posts/hello.md && echo 'draft: false' >> content/posts/hello.md && echo '---' >> content/posts/hello.md && echo 'Welcome to {{ .Name }}!' >> content/posts/hello.md"
+    build: "hugo.exe build"
+    serve: "hugo.exe server -D"
+{{- else if eq .Target "container" }}
+    init: "hugo new site . --force && git clone https://github.com/theNewDynamic/gohugo-theme-ananke themes/ananke && echo 'theme = \"ananke\"' >> hugo.toml && hugo new content posts/hello.md && echo '---' > content/posts/hello.md && echo 'title: \"Hello World\"' >> content/posts/hello.md && echo 'date: 2024-01-01' >> content/posts/hello.md && echo 'draft: false' >> content/posts/hello.md && echo '---' >> content/posts/hello.md && echo 'Welcome to {{ .Name }}!' >> content/posts/hello.md"
+    build: "hugo build"
+    serve: "hugo server -D --bind 0.0.0.0"
+{{- else }}
+    init: "hugo new site . --force && git clone https://github.com/theNewDynamic/gohugo-theme-ananke themes/ananke && echo 'theme = \"ananke\"' >> hugo.toml && hugo new content posts/hello.md && echo '---' > content/posts/hello.md && echo 'title: \"Hello World\"' >> content/posts/hello.md && echo 'date: 2024-01-01' >> content/posts/hello.md && echo 'draft: false' >> content/posts/hello.md && echo '---' >> content/posts/hello.md && echo 'Welcome to {{ .Name }}!' >> content/posts/hello.md"
+    build: "hugo build"
+    serve: "hugo server -D"
+{{- end }}

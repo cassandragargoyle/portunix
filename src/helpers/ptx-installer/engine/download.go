@@ -7,14 +7,100 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
-// DownloadFile downloads a file from URL to the specified filepath
-func DownloadFile(filepath string, url string) error {
+// ProgressWriter wraps an io.Writer to display download progress
+type ProgressWriter struct {
+	Total      int64
+	Downloaded int64
+	LastUpdate time.Time
+	StartTime  time.Time
+}
+
+// Write implements io.Writer interface with progress display
+func (pw *ProgressWriter) Write(p []byte) (int, error) {
+	n := len(p)
+	pw.Downloaded += int64(n)
+
+	// Update progress every 100ms to avoid too frequent updates
+	if time.Since(pw.LastUpdate) > 100*time.Millisecond {
+		pw.displayProgress()
+		pw.LastUpdate = time.Now()
+	}
+
+	return n, nil
+}
+
+// displayProgress shows current download progress
+func (pw *ProgressWriter) displayProgress() {
+	if pw.Total <= 0 {
+		// Unknown size - just show downloaded amount
+		fmt.Printf("\r⏳ Downloaded: %s", formatBytes(pw.Downloaded))
+		return
+	}
+
+	percent := float64(pw.Downloaded) / float64(pw.Total) * 100
+	elapsed := time.Since(pw.StartTime).Seconds()
+
+	// Calculate speed and ETA
+	var speedStr, etaStr string
+	if elapsed > 0 {
+		speed := float64(pw.Downloaded) / elapsed
+		speedStr = fmt.Sprintf("%s/s", formatBytes(int64(speed)))
+
+		if speed > 0 {
+			remaining := float64(pw.Total-pw.Downloaded) / speed
+			etaStr = formatDuration(remaining)
+		}
+	}
+
+	// Progress bar (20 chars wide)
+	barWidth := 20
+	filled := int(percent / 100 * float64(barWidth))
+	bar := strings.Repeat("█", filled) + strings.Repeat("░", barWidth-filled)
+
+	fmt.Printf("\r⏳ [%s] %.1f%% (%s / %s) %s %s   ",
+		bar, percent,
+		formatBytes(pw.Downloaded), formatBytes(pw.Total),
+		speedStr, etaStr)
+}
+
+// Finish completes the progress display
+func (pw *ProgressWriter) Finish() {
+	if pw.Total > 0 {
+		elapsed := time.Since(pw.StartTime).Seconds()
+		speed := float64(pw.Downloaded) / elapsed
+		fmt.Printf("\r✅ Downloaded: %s in %s (%s/s)                    \n",
+			formatBytes(pw.Downloaded),
+			formatDuration(elapsed),
+			formatBytes(int64(speed)))
+	} else {
+		fmt.Printf("\r✅ Downloaded: %s                    \n", formatBytes(pw.Downloaded))
+	}
+}
+
+// formatDuration formats seconds to human-readable duration
+func formatDuration(seconds float64) string {
+	if seconds < 60 {
+		return fmt.Sprintf("%.0fs", seconds)
+	}
+	minutes := int(seconds) / 60
+	secs := int(seconds) % 60
+	if minutes < 60 {
+		return fmt.Sprintf("%dm %ds", minutes, secs)
+	}
+	hours := minutes / 60
+	minutes = minutes % 60
+	return fmt.Sprintf("%dh %dm", hours, minutes)
+}
+
+// DownloadFile downloads a file from URL to the specified filepath with progress
+func DownloadFile(destPath string, url string) error {
 	fmt.Printf("📥 Downloading from: %s\n", url)
 
 	// Create the file
-	out, err := os.Create(filepath)
+	out, err := os.Create(destPath)
 	if err != nil {
 		return fmt.Errorf("failed to create file: %w", err)
 	}
@@ -32,18 +118,26 @@ func DownloadFile(filepath string, url string) error {
 		return fmt.Errorf("bad status: %s", resp.Status)
 	}
 
-	// Writer the body to file with progress
+	// Show file size
 	size := resp.ContentLength
 	if size > 0 {
-		fmt.Printf("📦 File size: %.2f MB\n", float64(size)/(1024*1024))
+		fmt.Printf("📦 Size: %s\n", formatBytes(size))
 	}
 
-	written, err := io.Copy(out, resp.Body)
+	// Create progress writer
+	progress := &ProgressWriter{
+		Total:     size,
+		StartTime: time.Now(),
+		LastUpdate: time.Now(),
+	}
+
+	// Download with progress
+	_, err = io.Copy(out, io.TeeReader(resp.Body, progress))
 	if err != nil {
 		return fmt.Errorf("failed to write file: %w", err)
 	}
 
-	fmt.Printf("✅ Downloaded: %.2f MB\n", float64(written)/(1024*1024))
+	progress.Finish()
 	return nil
 }
 
@@ -80,29 +174,37 @@ func DownloadFileWithProperFilename(url string, cacheDir string) (string, error)
 	}
 
 	// Create full path
-	filepath := filepath.Join(cacheDir, filename)
+	destPath := filepath.Join(cacheDir, filename)
 
 	// Create file
-	out, err := os.Create(filepath)
+	out, err := os.Create(destPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create file: %w", err)
 	}
 	defer out.Close()
 
-	// Download
+	// Show download info
 	fmt.Printf("📥 Downloading: %s\n", filename)
 	size := resp.ContentLength
 	if size > 0 {
-		fmt.Printf("📦 Size: %.2f MB\n", float64(size)/(1024*1024))
+		fmt.Printf("📦 Size: %s\n", formatBytes(size))
 	}
 
-	written, err := io.Copy(out, resp.Body)
+	// Create progress writer
+	progress := &ProgressWriter{
+		Total:      size,
+		StartTime:  time.Now(),
+		LastUpdate: time.Now(),
+	}
+
+	// Download with progress
+	_, err = io.Copy(out, io.TeeReader(resp.Body, progress))
 	if err != nil {
 		return "", fmt.Errorf("failed to write file: %w", err)
 	}
 
-	fmt.Printf("✅ Downloaded: %s (%.2f MB)\n", filename, float64(written)/(1024*1024))
-	return filepath, nil
+	progress.Finish()
+	return destPath, nil
 }
 
 // ExtractFilenameFromResponse extracts filename from HTTP response

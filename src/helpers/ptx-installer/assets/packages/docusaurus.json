@@ -1,0 +1,62 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "docusaurus",
+    "displayName": "Docusaurus Static Documentation Site",
+    "description": "Build optimized documentation websites with React",
+    "category": "development/tools",
+    "homepage": "https://docusaurus.io/",
+    "documentation": "https://docusaurus.io/docs",
+    "license": "MIT",
+    "maintainer": "Meta Platforms, Inc."
+  },
+  "spec": {
+    "hasVariants": true,
+    "dependencies": ["nodejs"],
+    "requiresPath": true,
+    "defaultPath": {
+      "windows": ".\\site",
+      "linux": "./site"
+    },
+    "platforms": {
+      "windows": {
+        "type": "script",
+        "variants": {
+          "classic": {
+            "version": "latest",
+            "description": "Classic template with TypeScript",
+            "installScript": [
+              "npx.cmd create-docusaurus@latest ${INSTALL_PATH} classic --typescript"
+            ]
+          }
+        },
+        "verification": {
+          "command": "if exist ${INSTALL_PATH}\\package.json (exit 0) else (exit 1)",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "script",
+        "variants": {
+          "classic": {
+            "version": "latest",
+            "description": "Classic template with TypeScript",
+            "installScript": [
+              "npx create-docusaurus@latest /tmp/docusaurus-new classic --typescript && cp -rT /tmp/docusaurus-new ${INSTALL_PATH} && rm -rf /tmp/docusaurus-new"
+            ]
+          }
+        },
+        "verification": {
+          "command": "test -f ${INSTALL_PATH}/package.json",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Docusaurus uses npm for distribution. Check latest version at https://www.npmjs.com/package/@docusaurus/core",
+      "updateGuidance": "Docusaurus follows semantic versioning. The create-docusaurus@latest command always uses the newest stable version."
+    },
+    "templates": ["npm-create"]
+  }
+}

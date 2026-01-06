@@ -1,0 +1,137 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "openssh",
+    "displayName": "OpenSSH",
+    "description": "Secure Shell (SSH) client and server for secure remote access and file transfer",
+    "category": "security/remote-access",
+    "homepage": "https://www.openssh.com/",
+    "documentation": "https://www.openssh.com/manual.html",
+    "license": "BSD",
+    "maintainer": "OpenBSD Project"
+  },
+  "spec": {
+    "hasVariants": true,
+    "defaultVariant": "client",
+    "platforms": {
+      "windows": {
+        "type": "zip",
+        "variants": {
+          "client": {
+            "version": "latest",
+            "description": "SSH client only (portable)",
+            "urls": {
+              "x64": "https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win64.zip",
+              "x86": "https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win32.zip"
+            },
+            "extractTo": "${LOCALAPPDATA}/Programs/OpenSSH",
+            "postInstall": [
+              "echo OpenSSH client installed to %LOCALAPPDATA%\\Programs\\OpenSSH",
+              "echo Add to PATH: %LOCALAPPDATA%\\Programs\\OpenSSH\\OpenSSH-Win64"
+            ]
+          },
+          "server": {
+            "version": "latest",
+            "description": "SSH client and server (requires admin)",
+            "urls": {
+              "x64": "https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win64.zip",
+              "x86": "https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win32.zip"
+            },
+            "extractTo": "C:/Program Files",
+            "requiresAdmin": true,
+            "installScript": "windows/Install-PortableOpenSSH.ps1",
+            "installScriptArgs": "-OpenSSHPath \"${install_path}/OpenSSH-Win64\" -Verbose"
+          },
+          "portable": {
+            "version": "latest",
+            "description": "Portable installation (no system changes)",
+            "urls": {
+              "x64": "https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win64.zip",
+              "x86": "https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win32.zip"
+            },
+            "extractTo": "${install_dir}/openssh",
+            "postInstall": []
+          }
+        },
+        "verification": {
+          "command": "ssh -V",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "${install_path}"
+        }
+      },
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "client": {
+            "type": "apt",
+            "version": "latest",
+            "description": "SSH client only",
+            "packages": ["openssh-client"],
+            "requiresSudo": true
+          },
+          "server": {
+            "type": "apt",
+            "version": "latest",
+            "description": "SSH client and server",
+            "packages": ["openssh-client", "openssh-server"],
+            "requiresSudo": true,
+            "postInstall": [
+              "sudo systemctl enable ssh",
+              "sudo systemctl start ssh"
+            ]
+          },
+          "dnf": {
+            "type": "dnf",
+            "version": "latest",
+            "packages": ["openssh-clients"]
+          },
+          "dnf-server": {
+            "type": "dnf",
+            "version": "latest",
+            "packages": ["openssh-clients", "openssh-server"],
+            "postInstall": [
+              "sudo systemctl enable sshd",
+              "sudo systemctl start sshd"
+            ]
+          },
+          "pacman": {
+            "type": "pacman",
+            "version": "latest",
+            "packages": ["openssh"]
+          }
+        },
+        "verification": {
+          "command": "ssh -V",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "github": {
+        "type": "github",
+        "url": "https://github.com/PowerShell/Win32-OpenSSH",
+        "apiEndpoint": "https://api.github.com/repos/PowerShell/Win32-OpenSSH/releases/latest",
+        "pattern": "OpenSSH-Win{arch}.zip"
+      },
+      "official": {
+        "type": "direct",
+        "url": "https://www.openssh.com/",
+        "pattern": "OpenSSH releases"
+      }
+    },
+    "verification": {
+      "checksumType": "sha256",
+      "checksumUrl": "https://github.com/PowerShell/Win32-OpenSSH/releases/latest"
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check GitHub API for Win32-OpenSSH releases at https://api.github.com/repos/PowerShell/Win32-OpenSSH/releases/latest. For Linux, versions come from distribution package managers.",
+      "urlResolution": "For Windows: https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win{arch}.zip where arch=64/32",
+      "updateGuidance": "Monitor Win32-OpenSSH GitHub releases for Windows updates. Linux versions are managed by distribution package managers (apt, dnf, pacman)."
+    },
+    "dependencies": [],
+    "templates": ["zip-archive", "apt-package"]
+  }
+}

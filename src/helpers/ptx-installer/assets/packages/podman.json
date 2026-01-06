@@ -1,0 +1,87 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "podman",
+    "displayName": "Podman",
+    "description": "Daemonless container engine for OCI containers - rootless by default",
+    "category": "development/containers",
+    "homepage": "https://podman.io/",
+    "documentation": "https://docs.podman.io/",
+    "license": "Apache-2.0",
+    "maintainer": "Red Hat"
+  },
+  "spec": {
+    "hasVariants": false,
+    "installationType": "builtin",
+    "platforms": {
+      "windows": {
+        "type": "builtin",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Podman Desktop for Windows"
+          }
+        },
+        "verification": {
+          "command": "podman --version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "builtin",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Podman for Linux (rootless containers)"
+          }
+        },
+        "verification": {
+          "command": "podman --version",
+          "expectedExitCode": 0
+        }
+      },
+      "darwin": {
+        "type": "builtin",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Podman for macOS"
+          }
+        },
+        "verification": {
+          "command": "podman --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "official": {
+        "type": "direct",
+        "url": "https://podman.io/",
+        "apiEndpoint": "https://github.com/containers/podman/releases",
+        "pattern": "podman-{version}"
+      },
+      "desktop": {
+        "type": "direct",
+        "url": "https://podman-desktop.io/",
+        "apiEndpoint": "https://github.com/containers/podman-desktop/releases",
+        "pattern": "podman-desktop-{version}"
+      }
+    },
+    "features": [
+      "Rootless containers by default (enhanced security)",
+      "Daemonless operation (no background service required)",
+      "OCI-compatible with Docker images",
+      "Pod support for Kubernetes-style container grouping",
+      "Cross-platform support (Windows, Linux, macOS)"
+    ],
+    "aiPrompts": {
+      "versionDiscovery": "Check Podman releases at https://github.com/containers/podman/releases and Podman Desktop at https://github.com/containers/podman-desktop/releases",
+      "urlResolution": "Podman Desktop: https://github.com/containers/podman-desktop/releases/latest/download/podman-desktop-setup.exe for Windows",
+      "updateGuidance": "Podman installation uses built-in Portunix logic. Use 'portunix install podman' for installation."
+    },
+    "dependencies": [],
+    "templates": []
+  }
+}

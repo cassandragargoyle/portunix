@@ -212,6 +212,9 @@ info "Creating PKGBUILD for source-based build..."
 VERSION_NUM="${VERSION#v}"
 
 PKGBUILD_CONTENT="# Maintainer: CassandraGargoyle <cassandragargoyle@gmail.com>
+# Note: This package builds Linux binaries only. For cross-platform provisioning
+# (Windows/macOS VMs, ARM containers), use GitHub releases which include
+# pre-built platform archives in platforms/ directory.
 pkgname=portunix
 pkgver=${VERSION_NUM}
 pkgrel=1
@@ -246,6 +249,11 @@ package() {
   install -Dm755 \"ptx-virt\" \"\$pkgdir/usr/bin/ptx-virt\"
   install -Dm755 \"ptx-ansible\" \"\$pkgdir/usr/bin/ptx-ansible\"
   install -Dm755 \"ptx-prompting\" \"\$pkgdir/usr/bin/ptx-prompting\"
+  install -Dm755 \"ptx-python\" \"\$pkgdir/usr/bin/ptx-python\"
+  install -Dm755 \"ptx-installer\" \"\$pkgdir/usr/bin/ptx-installer\"
+  install -Dm755 \"ptx-aiops\" \"\$pkgdir/usr/bin/ptx-aiops\"
+  install -Dm755 \"ptx-make\" \"\$pkgdir/usr/bin/ptx-make\"
+  install -Dm755 \"ptx-pft\" \"\$pkgdir/usr/bin/ptx-pft\"
 
   # Install shell completions
   \$pkgdir/usr/bin/portunix completion bash > portunix.bash

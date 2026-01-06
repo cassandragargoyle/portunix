@@ -12,6 +12,13 @@ import (
 	"portunix.ai/portunix/src/helpers/ptx-installer/registry"
 )
 
+func init() {
+	// Pass embedded assets to registry package
+	registry.SetEmbeddedAssets(embeddedAssets)
+	// Pass embedded scripts to engine package
+	engine.SetEmbeddedScripts(embeddedScripts)
+}
+
 var version = "dev"
 
 // rootCmd represents the base command for ptx-installer
@@ -80,20 +87,55 @@ func handleInstall(args []string) {
 
 	// Parse arguments
 	packageName := args[0]
+	dryRun := false
+
+	// Parse flags
+	for i := 1; i < len(args); i++ {
+		arg := args[i]
+		if arg == "--dry-run" {
+			dryRun = true
+		}
+	}
+
+	// Handle special container runtime packages
+	switch strings.ToLower(packageName) {
+	case "docker":
+		dockerInstaller := engine.NewDockerInstaller(dryRun)
+		if err := dockerInstaller.Install(); err != nil {
+			fmt.Printf("\n❌ Docker installation failed: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	case "podman":
+		podmanInstaller := engine.NewPodmanInstaller(dryRun)
+		if err := podmanInstaller.Install(); err != nil {
+			fmt.Printf("\n❌ Podman installation failed: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	}
+
+	// Standard package installation
 	options := &engine.InstallOptions{
 		PackageName: packageName,
-		DryRun:      false,
+		DryRun:      dryRun,
 		Force:       false,
 	}
 
-	// Parse flags
+	// Parse additional flags
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
 
 		if strings.HasPrefix(arg, "--variant=") {
 			options.Variant = strings.TrimPrefix(arg, "--variant=")
-		} else if arg == "--dry-run" {
-			options.DryRun = true
+		} else if arg == "--variant" && i+1 < len(args) {
+			options.Variant = args[i+1]
+			i++ // Skip next argument as it's the variant value
+		} else if strings.HasPrefix(arg, "--path=") {
+			options.InstallPath = strings.TrimPrefix(arg, "--path=")
+		} else if arg == "--path" && i+1 < len(args) {
+			options.InstallPath = args[i+1]
+			i++ // Skip next argument as it's the path value
 		} else if arg == "--force" {
 			options.Force = true
 		}
@@ -469,12 +511,14 @@ func showInstallHelp() {
 	fmt.Println("\nUsage: portunix install <package> [options]")
 	fmt.Println("\nOptions:")
 	fmt.Println("  --variant=<variant>  Select package variant (e.g., --variant=21 for Java 21)")
+	fmt.Println("  --path=<path>        Target installation path (for project generators like docusaurus)")
 	fmt.Println("  --dry-run            Preview installation without executing")
 	fmt.Println("  --force              Force reinstallation even if already installed")
 	fmt.Println("  -h, --help           Show this help message")
 	fmt.Println("\nExamples:")
 	fmt.Println("  portunix install python")
 	fmt.Println("  portunix install java --variant=21")
+	fmt.Println("  portunix install docusaurus --path ./my-docs")
 	fmt.Println("  portunix install nodejs --dry-run")
 	fmt.Println("\nUse 'portunix package list' to see available packages")
 	fmt.Println("Use 'portunix package info <package>' for detailed package information")

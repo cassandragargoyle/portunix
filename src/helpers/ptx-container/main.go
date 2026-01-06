@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 )
 
 var version = "dev"
@@ -300,18 +301,22 @@ func handleContainerExec(args []string) {
 			if isDockerAvailable() {
 				if err := execDockerCommand(containerName, command); err != nil {
 					fmt.Fprintf(os.Stderr, "❌ Error: Failed to execute command in container '%s': %v\n", containerName, err)
+					os.Exit(1)
 				}
 			} else {
 				fmt.Fprintf(os.Stderr, "❌ Error: Failed to execute command in container '%s': %v\n", containerName, err)
+				os.Exit(1)
 			}
 		}
 	} else if isDockerAvailable() {
 		if err := execDockerCommand(containerName, command); err != nil {
 			fmt.Fprintf(os.Stderr, "❌ Error: Failed to execute command in container '%s': %v\n", containerName, err)
+			os.Exit(1)
 		}
 	} else {
 		fmt.Fprintln(os.Stderr, "❌ Error: Neither Podman nor Docker is available")
 		fmt.Fprintln(os.Stderr, "Please install Podman or Docker first")
+		os.Exit(1)
 	}
 }
 
@@ -1203,7 +1208,14 @@ func runDockerContainer(image string, command []string) {
 
 // execPodmanCommand executes a command inside an existing Podman container
 func execPodmanCommand(containerName string, command []string) error {
-	args := []string{"exec", "-it", containerName}
+	// Only use -t flag if stdin is a terminal (interactive mode)
+	// This prevents "the input device is not a TTY" error on Windows
+	var args []string
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		args = []string{"exec", "-it", containerName}
+	} else {
+		args = []string{"exec", "-i", containerName}
+	}
 	args = append(args, command...)
 
 	cmd := exec.Command("podman", args...)
@@ -1216,7 +1228,14 @@ func execPodmanCommand(containerName string, command []string) error {
 
 // execDockerCommand executes a command inside an existing Docker container
 func execDockerCommand(containerName string, command []string) error {
-	args := []string{"exec", "-it", containerName}
+	// Only use -t flag if stdin is a terminal (interactive mode)
+	// This prevents "the input device is not a TTY" error on Windows
+	var args []string
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		args = []string{"exec", "-it", containerName}
+	} else {
+		args = []string{"exec", "-i", containerName}
+	}
 	args = append(args, command...)
 
 	cmd := exec.Command("docker", args...)

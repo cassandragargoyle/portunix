@@ -4,7 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"runtime"
+	"runtime/pprof"
+	"runtime/trace"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"portunix.ai/app/system"
@@ -30,15 +34,75 @@ var systemInfoCmd = &cobra.Command{
 - Hostname
 - PowerShell/Shell availability
 
-Output can be formatted as JSON for programmatic use.`,
+Output can be formatted as JSON for programmatic use.
+
+Performance profiling flags:
+  --time           Show execution time
+  --cpuprofile     Write CPU profile to file
+  --memprofile     Write memory profile to file
+  --trace          Write execution trace to file`,
 	Run: func(cmd *cobra.Command, args []string) {
 		formatJSON, _ := cmd.Flags().GetBool("json")
 		formatShort, _ := cmd.Flags().GetBool("short")
+		showTime, _ := cmd.Flags().GetBool("time")
+		cpuProfile, _ := cmd.Flags().GetString("cpuprofile")
+		memProfile, _ := cmd.Flags().GetString("memprofile")
+		traceFile, _ := cmd.Flags().GetString("trace")
+
+		// Start CPU profiling if requested
+		if cpuProfile != "" {
+			f, err := os.Create(cpuProfile)
+			if err != nil {
+				fmt.Printf("Error creating CPU profile: %v\n", err)
+				os.Exit(1)
+			}
+			defer f.Close()
+			if err := pprof.StartCPUProfile(f); err != nil {
+				fmt.Printf("Error starting CPU profile: %v\n", err)
+				os.Exit(1)
+			}
+			defer pprof.StopCPUProfile()
+		}
+
+		// Start trace if requested
+		if traceFile != "" {
+			f, err := os.Create(traceFile)
+			if err != nil {
+				fmt.Printf("Error creating trace file: %v\n", err)
+				os.Exit(1)
+			}
+			defer f.Close()
+			if err := trace.Start(f); err != nil {
+				fmt.Printf("Error starting trace: %v\n", err)
+				os.Exit(1)
+			}
+			defer trace.Stop()
+		}
+
+		// Measure execution time
+		startTime := time.Now()
 
 		sysInfo, err := system.GetSystemInfo()
 		if err != nil {
 			fmt.Printf("Error getting system information: %v\n", err)
 			os.Exit(1)
+		}
+
+		duration := time.Since(startTime)
+
+		// Write memory profile if requested
+		if memProfile != "" {
+			f, err := os.Create(memProfile)
+			if err != nil {
+				fmt.Printf("Error creating memory profile: %v\n", err)
+				os.Exit(1)
+			}
+			defer f.Close()
+			runtime.GC() // Run GC before taking memory profile
+			if err := pprof.WriteHeapProfile(f); err != nil {
+				fmt.Printf("Error writing memory profile: %v\n", err)
+				os.Exit(1)
+			}
 		}
 
 		if formatJSON {
@@ -52,6 +116,11 @@ Output can be formatted as JSON for programmatic use.`,
 			fmt.Printf("%s %s %s\n", sysInfo.OS, sysInfo.Version, sysInfo.Variant)
 		} else {
 			printSystemInfo(sysInfo)
+		}
+
+		// Show execution time if requested
+		if showTime {
+			fmt.Printf("\nExecution time: %v\n", duration)
 		}
 	},
 }
@@ -378,6 +447,12 @@ func init() {
 	// Add flags for system info command
 	systemInfoCmd.Flags().BoolP("json", "j", false, "Output as JSON")
 	systemInfoCmd.Flags().BoolP("short", "s", false, "Short output (OS Version Variant)")
+
+	// Add profiling flags for system info command
+	systemInfoCmd.Flags().BoolP("time", "t", false, "Show execution time")
+	systemInfoCmd.Flags().String("cpuprofile", "", "Write CPU profile to file")
+	systemInfoCmd.Flags().String("memprofile", "", "Write memory profile to file")
+	systemInfoCmd.Flags().String("trace", "", "Write execution trace to file")
 
 	// Add flags for dispatcher command
 	systemDispatcherCmd.Flags().BoolP("json", "j", false, "Output as JSON")

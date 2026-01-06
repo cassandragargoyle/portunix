@@ -107,6 +107,17 @@
       "published": true,
       "priority": "high",
       "reporter": "@rjankovic"
+    },
+    "PUB-022": {
+      "internal": "119",
+      "github_number": 22,
+      "title": "Implementácia podpory pre Docusaurus na multiplatformnom prostredí",
+      "type": "feature",
+      "status": "open",
+      "published": true,
+      "priority": "medium",
+      "reporter": "@Roman-Kazicka",
+      "file": "github-022-docusaurus-multiplatform.md"
     }
   }
 }

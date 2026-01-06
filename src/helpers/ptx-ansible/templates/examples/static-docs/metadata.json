@@ -1,0 +1,25 @@
+{
+  "name": "static-docs",
+  "description": "Static documentation site generator",
+  "version": "1.0.0",
+  "parameters": [
+    {
+      "name": "engine",
+      "required": false,
+      "type": "choice",
+      "choices": ["hugo", "docusaurus", "docsify"],
+      "default": "docusaurus",
+      "description": "Documentation engine to use"
+    },
+    {
+      "name": "target",
+      "required": false,
+      "type": "choice",
+      "choices": ["container", "local"],
+      "default": "container",
+      "description": "Where to run the installation (container is recommended)"
+    }
+  ],
+  "os_support": ["linux", "windows", "darwin"],
+  "tags": ["documentation", "static-site", "web"]
+}

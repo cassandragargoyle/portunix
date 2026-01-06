@@ -1,0 +1,60 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "git",
+    "displayName": "Git",
+    "description": "Distributed version control system",
+    "category": "development/vcs",
+    "homepage": "https://git-scm.com",
+    "documentation": "https://git-scm.com/doc",
+    "license": "GPL-2.0",
+    "maintainer": "Git Project"
+  },
+  "spec": {
+    "hasVariants": false,
+    "platforms": {
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "apt": {
+            "version": "latest",
+            "packages": ["git"]
+          },
+          "dnf": {
+            "version": "latest",
+            "packages": ["git"]
+          }
+        },
+        "verification": {
+          "command": "git --version",
+          "expectedExitCode": 0
+        }
+      },
+      "windows": {
+        "type": "chocolatey",
+        "variants": {
+          "chocolatey": {
+            "version": "latest",
+            "packages": ["git"]
+          },
+          "winget": {
+            "version": "latest",
+            "packages": ["Git.Git"]
+          }
+        },
+        "verification": {
+          "command": "git --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check https://git-scm.com for latest Git version",
+      "urlResolution": "Install via package managers",
+      "updateGuidance": "Git updates regularly with security fixes"
+    },
+    "dependencies": [],
+    "templates": ["apt-package"]
+  }
+}

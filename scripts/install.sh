@@ -63,27 +63,94 @@ EOF
 # Function to find portunix binary
 find_portunix() {
     local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    
+
     # Check in script directory
     if [ -f "$script_dir/portunix" ]; then
         echo "$script_dir/portunix"
         return 0
     fi
-    
+
     # Check in parent directory
     local parent_dir="$(dirname "$script_dir")"
     if [ -f "$parent_dir/portunix" ]; then
         echo "$parent_dir/portunix"
         return 0
     fi
-    
+
     # Check in current directory
     if [ -f "./portunix" ]; then
         echo "$(pwd)/portunix"
         return 0
     fi
-    
+
     return 1
+}
+
+# Function to find platforms directory (ADR-031: Cross-Platform Binary Distribution)
+find_platforms_dir() {
+    local script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+    # Check in script directory
+    if [ -d "$script_dir/platforms" ]; then
+        echo "$script_dir/platforms"
+        return 0
+    fi
+
+    # Check in parent directory
+    local parent_dir="$(dirname "$script_dir")"
+    if [ -d "$parent_dir/platforms" ]; then
+        echo "$parent_dir/platforms"
+        return 0
+    fi
+
+    # Check in current directory
+    if [ -d "./platforms" ]; then
+        echo "$(pwd)/platforms"
+        return 0
+    fi
+
+    return 1
+}
+
+# Function to install platform archives (ADR-031: Cross-Platform Binary Distribution)
+install_platform_archives() {
+    local install_dir="$1"
+
+    PLATFORMS_DIR=$(find_platforms_dir)
+    if [ $? -ne 0 ]; then
+        print_color "$BLUE" "No platforms directory found (cross-platform binaries not included)"
+        return 0
+    fi
+
+    print_color "$BLUE" "Installing cross-platform binaries (ADR-031)..."
+
+    # Create platforms directory in install location
+    local dest_platforms="$install_dir/platforms"
+    mkdir -p "$dest_platforms" 2>/dev/null || {
+        print_color "$YELLOW" "Note: Could not create platforms directory (may need sudo)"
+        return 1
+    }
+
+    # Copy platform archives
+    local count=0
+    for archive in "$PLATFORMS_DIR"/*.tar.gz "$PLATFORMS_DIR"/*.zip; do
+        if [ -f "$archive" ]; then
+            cp "$archive" "$dest_platforms/" && {
+                count=$((count + 1))
+                if [ "$SILENT" = false ]; then
+                    print_color "$GREEN" "  ✓ Installed $(basename "$archive")"
+                fi
+            }
+        fi
+    done
+
+    if [ $count -gt 0 ]; then
+        print_color "$GREEN" "Installed $count platform archive(s) for cross-platform provisioning"
+    else
+        print_color "$BLUE" "No platform archives found to install"
+    fi
+
+    return 0
 }
 
 # Function to check if running with sudo
@@ -206,7 +273,21 @@ main() {
     if "${INSTALL_CMD[@]}"; then
         echo ""
         print_color "$GREEN" "Installation completed successfully!"
-        
+
+        # Determine install directory for platform archives
+        # Default is /usr/local/portunix or ~/portunix based on permissions
+        if [ -n "$INSTALL_PATH" ]; then
+            INSTALL_DIR="$(dirname "$INSTALL_PATH")"
+        elif is_sudo || [ -w "/usr/local" ]; then
+            INSTALL_DIR="/usr/local/portunix"
+        else
+            INSTALL_DIR="$HOME/portunix"
+        fi
+
+        # ADR-031: Install cross-platform binary archives
+        echo ""
+        install_platform_archives "$INSTALL_DIR"
+
         # Additional instructions
         if [ "$ADD_TO_PATH" = true ]; then
             echo ""
@@ -214,7 +295,7 @@ main() {
             print_color "$YELLOW" "  source ~/.bashrc  (or ~/.zshrc for Zsh)"
             print_color "$YELLOW" "for PATH changes to take effect."
         fi
-        
+
         echo ""
         print_color "$BLUE" "You can verify the installation by running:"
         print_color "$YELLOW" "  portunix --version"

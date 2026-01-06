@@ -1,0 +1,31 @@
+apiVersion: portunix.ai/v1
+kind: Playbook
+metadata:
+  name: "{{ .Name }}"
+  description: "Static documentation site using Docsify"
+
+spec:
+  environment:
+    target: {{ .Target }}
+{{- if eq .Target "container" }}
+    runtime: {{ .ContainerRuntime }}
+    image: "node:20-alpine"
+{{- end }}
+
+  variables:
+    site_title: "{{ .Name }} Documentation"
+    output_dir: "./"
+
+  portunix:
+    packages:
+      - name: "nodejs"
+        variant: "lts"
+
+  scripts:
+{{- if eq .OS "windows" }}
+    init: "npm.cmd install -g docsify-cli && docsify.cmd init ./docs"
+    serve: "docsify.cmd serve ./docs"
+{{- else }}
+    init: "npm install -g docsify-cli && docsify init ./docs"
+    serve: "docsify serve ./docs"
+{{- end }}

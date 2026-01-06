@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"text/template"
 
-	"portunix.ai/portunix/src/helpers/ptx-pft/templates"
+	"portunix.ai/portunix/src/helpers/ptx-pft/assets/templates"
 )
 
 // ProjectTemplateData holds data for template rendering

@@ -108,8 +108,8 @@ Examples:
 	},
 }
 
-// virtStartCmd represents the virt start command
-var virtStartCmd = &cobra.Command{
+// virtStartCmdFallback represents the virt start command (fallback implementation)
+var virtStartCmdFallback = &cobra.Command{
 	Use:   "start [vm-name]",
 	Short: "Start a virtual machine",
 	Long:  `Start a virtual machine. If the VM is already running, this command has no effect.`,
@@ -131,6 +131,15 @@ var virtStartCmd = &cobra.Command{
 
 		fmt.Printf("✅ VM '%s' started successfully!\n", vmName)
 	},
+}
+
+// virtStartCmd represents the virt start command with helper delegation
+var virtStartCmd = &cobra.Command{
+	Use:   "start [vm-name]",
+	Short: "Start a virtual machine",
+	Long:  `Start a virtual machine. If the VM is already running, this command has no effect.`,
+	Args:  cobra.ExactArgs(1),
+	Run:   virtWithHelperCheck(virtStartCmdFallback),
 }
 
 // virtStopCmd represents the virt stop command

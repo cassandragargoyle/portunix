@@ -32,17 +32,21 @@
         "type": "apt",
         "variants": {
           "apt": {
+            "type": "apt",
             "version": "latest",
             "repository": "deb [arch=amd64 signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main",
             "keyUrl": "https://cli.github.com/packages/githubcli-archive-keyring.gpg",
-            "packages": ["gh"]
+            "packages": ["gh"],
+            "requiresSudo": true
           },
           "dnf": {
+            "type": "dnf",
             "version": "latest",
             "repository": "https://cli.github.com/packages/rpm/gh-cli.repo",
             "packages": ["gh"]
           },
           "pacman": {
+            "type": "pacman",
             "version": "latest",
             "packages": ["github-cli"]
           }

@@ -67,15 +67,80 @@ function Get-PortunixBinary {
     if (Test-Path $localPortunix) {
         return $localPortunix
     }
-    
+
     # Check in parent directory (in case script is in subdirectory)
     $parentPortunix = Join-Path (Split-Path $PSScriptRoot -Parent) "portunix.exe"
     if (Test-Path $parentPortunix) {
         return $parentPortunix
     }
-    
+
     Write-Error "portunix.exe not found. Please ensure it's in the same directory as this script."
     exit 1
+}
+
+# ADR-031: Cross-Platform Binary Distribution
+function Get-PlatformsDirectory {
+    # Check if platforms directory exists in script directory
+    $localPlatforms = Join-Path $PSScriptRoot "platforms"
+    if (Test-Path $localPlatforms) {
+        return $localPlatforms
+    }
+
+    # Check in parent directory
+    $parentPlatforms = Join-Path (Split-Path $PSScriptRoot -Parent) "platforms"
+    if (Test-Path $parentPlatforms) {
+        return $parentPlatforms
+    }
+
+    return $null
+}
+
+# ADR-031: Install cross-platform binary archives
+function Install-PlatformArchives {
+    param(
+        [string]$InstallDir
+    )
+
+    $platformsSource = Get-PlatformsDirectory
+    if (-not $platformsSource) {
+        Write-Host "No platforms directory found (cross-platform binaries not included)"
+        return
+    }
+
+    Write-Host "Installing cross-platform binaries (ADR-031)..."
+
+    # Create platforms directory in install location
+    $destPlatforms = Join-Path $InstallDir "platforms"
+    try {
+        if (-not (Test-Path $destPlatforms)) {
+            New-Item -ItemType Directory -Path $destPlatforms -Force | Out-Null
+        }
+    } catch {
+        Write-Warning "Could not create platforms directory: $_"
+        return
+    }
+
+    # Copy platform archives
+    $count = 0
+    $archives = Get-ChildItem -Path $platformsSource -Include "*.tar.gz", "*.zip" -File
+
+    foreach ($archive in $archives) {
+        try {
+            Copy-Item -Path $archive.FullName -Destination $destPlatforms -Force
+            $count++
+            if (-not $Silent) {
+                Write-ColorOutput Green "  ✓ Installed $($archive.Name)"
+            }
+        } catch {
+            Write-Warning "Failed to copy $($archive.Name): $_"
+        }
+    }
+
+    if ($count -gt 0) {
+        Write-ColorOutput Green "Installed $count platform archive(s) for cross-platform provisioning"
+    } else {
+        Write-Host "No platform archives found to install"
+    }
 }
 
 # Main installation logic
@@ -147,13 +212,27 @@ function Install-Portunix {
             Write-ColorOutput Green "  ✅ INSTALLATION SUCCESSFUL!"
             Write-ColorOutput Green "========================================"
             Write-Host ""
-            
+
             # Show installation location
             Write-Host "Portunix has been installed successfully."
             if ($Path) {
                 Write-Host "Installation location: $Path"
             }
-            
+
+            # Determine install directory for platform archives
+            if ($Path) {
+                $installDir = Split-Path $Path -Parent
+                if (-not $installDir) {
+                    $installDir = $Path
+                }
+            } else {
+                $installDir = "C:\Portunix"
+            }
+
+            # ADR-031: Install cross-platform binary archives
+            Write-Host ""
+            Install-PlatformArchives -InstallDir $installDir
+
             # Additional instructions for PATH
             if ($AddToPath) {
                 Write-Host ""
@@ -161,16 +240,16 @@ function Install-Portunix {
                 Write-Host "You may need to restart your terminal or log out"
                 Write-Host "and log back in for PATH changes to take effect."
             }
-            
+
             Write-Host ""
             Write-ColorOutput Cyan "Next steps:"
             Write-Host "1. Verify installation: portunix --version"
             Write-Host "2. Get help: portunix --help"
             Write-Host "3. Install development tools: portunix install default"
-            
+
             Write-Host ""
             Write-ColorOutput Green "Installation completed successfully! 🎉"
-            
+
         } else {
             Write-Host ""
             Write-ColorOutput Red "========================================"

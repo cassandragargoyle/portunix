@@ -1,0 +1,65 @@
+apiVersion: portunix.ai/v1
+kind: Playbook
+metadata:
+  name: "{{ .Name }}"
+  description: "Static documentation site using Docusaurus"
+
+spec:
+  environment:
+    target: {{ .Target }}
+{{- if eq .Target "container" }}
+    runtime: {{ .ContainerRuntime }}
+    image: "node:22"
+    container_name: "{{ .Name }}-docusaurus"
+    ports:
+      - "3000:3000"
+    volumes:
+      # Source code on host (editable)
+      - "./site:/workspace/site"
+      # Named volumes for node_modules and npm cache (fast, persistent)
+      - "{{ .Name }}_node_modules:/workspace/site/node_modules:named"
+      - "{{ .Name }}_npm_cache:/root/.npm:named"
+{{- end }}
+
+  variables:
+    site_title: "{{ .Name }} Documentation"
+    output_dir: "./build"
+
+{{- if eq .Target "local" }}
+  portunix:
+    packages:
+      - name: "nodejs"
+        variant: "20"
+{{- end }}
+
+  # Scripts are separated for flexible execution:
+  # - create: One-time project initialization (run once)
+  # - dev: Development server with hot reload (fast, ~30s startup)
+  # - build: Production build (CI/CD only)
+  # - serve: Serve production build
+  #
+  # Usage examples:
+  #   portunix playbook run my-docs.ptxbook --script create    # First time only
+  #   portunix playbook run my-docs.ptxbook --script dev       # Development
+  #   portunix playbook run my-docs.ptxbook --script build     # Production build
+  #   portunix playbook run my-docs.ptxbook --list-scripts     # Show all scripts
+  scripts:
+{{- if and (eq .OS "windows") (eq .Target "local") }}
+    create: "portunix install docusaurus --path ./site"
+    dev: "cd site && npm.cmd install && npm.cmd run start"
+    build: "cd site && npm.cmd ci && npm.cmd run build"
+    serve: "cd site && npm.cmd run serve"
+{{- else if eq .Target "container" }}
+    # Internal script: copy Portunix binaries to container (runs first automatically)
+    internal:bin-update: "builtin"
+    # Use portunix install for consistent experience
+    create: "portunix install docusaurus --path /workspace/site"
+    dev: "cd /workspace/site && npm install && npm run start -- --host 0.0.0.0"
+    build: "cd /workspace/site && npm ci && npm run build"
+    serve: "cd /workspace/site && npm run serve -- --host 0.0.0.0"
+{{- else }}
+    create: "portunix install docusaurus --path ./site"
+    dev: "cd site && npm install && npm run start"
+    build: "cd site && npm ci && npm run build"
+    serve: "cd site && npm run serve"
+{{- end }}
