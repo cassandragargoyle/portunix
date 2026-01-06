@@ -163,6 +163,21 @@ var CommandRegistry = []CommandInfo{
 			"portunix pft status",
 		},
 	},
+	{
+		Name:        "playbook",
+		Brief:       "Infrastructure as Code management",
+		Description: "Manage Ansible Infrastructure as Code using .ptxbook files. Supports multi-environment deployments with enterprise features including secrets management, audit logging, RBAC, and CI/CD integration.",
+		Category:    "integration",
+		Parameters: []ParameterInfo{
+			{Name: "subcommand", Type: "string", Required: true, Description: "Operation to perform", Choices: []string{"run", "validate", "check", "list", "init", "template"}},
+		},
+		Examples: []string{
+			"portunix playbook run deployment.ptxbook",
+			"portunix playbook validate my-project.ptxbook",
+			"portunix playbook init web-server.ptxbook",
+			"portunix playbook template list",
+		},
+	},
 	// Additional commands for expert level
 	{
 		Name:        "podman",
@@ -239,7 +254,7 @@ var CommandRegistry = []CommandInfo{
 
 // GetBasicCommands returns only the essential commands for basic help
 func GetBasicCommands() []CommandInfo {
-	essentials := []string{"install", "update", "plugin", "mcp", "container", "virt", "system", "make", "package", "pft"}
+	essentials := []string{"install", "update", "plugin", "mcp", "container", "virt", "playbook", "system", "make", "package", "pft"}
 	var basic []CommandInfo
 	for _, cmd := range CommandRegistry {
 		for _, name := range essentials {

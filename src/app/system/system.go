@@ -9,6 +9,16 @@ import (
 	"strings"
 )
 
+// Native implementation function pointers (set by platform-specific init())
+var (
+	nativeGetWindowsInfo           func(*SystemInfo) error
+	nativeDetectWindowsEnvironment func(*SystemInfo)
+	nativeIsAdmin                  func() bool
+	nativeCheckHardwareVirt        func() bool
+	nativeQueryRegistry            func(keyPath, valueName string) string
+	nativeIsVirtualBoxAvailable    func() bool
+)
+
 // SystemInfo contains comprehensive system information
 type SystemInfo struct {
 	OS           string        `json:"os"`
@@ -148,6 +158,14 @@ func CheckCondition(info *SystemInfo, condition string) bool {
 
 // getWindowsInfo gets Windows-specific information
 func getWindowsInfo(info *SystemInfo) error {
+	// Try native API first if available (set by system_windows.go init())
+	if nativeGetWindowsInfo != nil {
+		if err := nativeGetWindowsInfo(info); err == nil {
+			return nil
+		}
+	}
+
+	// Fallback to external commands
 	info.OS = "Windows"
 	info.WindowsInfo = &WindowsInfo{}
 
@@ -261,15 +279,23 @@ func getMacOSInfo(info *SystemInfo) error {
 
 // detectEnvironment detects if running in special environments
 func detectEnvironment(info *SystemInfo) {
-	// Check for Windows Sandbox
+	// Check for Windows Sandbox and VM
 	if info.OS == "Windows" {
-		// Windows Sandbox typically has WDAGUtilityAccount user
+		// Try native detection first if available
+		if nativeDetectWindowsEnvironment != nil {
+			nativeDetectWindowsEnvironment(info)
+			if info.Variant != "" {
+				return
+			}
+		}
+
+		// Fallback: Windows Sandbox typically has WDAGUtilityAccount user
 		if username := os.Getenv("USERNAME"); username == "WDAGUtilityAccount" {
 			info.Environment = append(info.Environment, "sandbox")
 			info.Variant = "Sandbox"
 		}
 
-		// Check for specific sandbox registry keys or processes
+		// Fallback: Check for specific sandbox registry keys or processes
 		if output, err := exec.Command("tasklist", "/FI", "IMAGENAME eq CExecSvc.exe", "/FO", "CSV", "/NH").Output(); err == nil {
 			if strings.Contains(string(output), "CExecSvc.exe") {
 				info.Environment = append(info.Environment, "sandbox")
@@ -388,10 +414,15 @@ func checkCapabilities(info *SystemInfo) {
 
 	// Check admin privileges (platform-specific)
 	if info.OS == "Windows" {
-		// Check if running as administrator
-		if output, err := exec.Command("net", "session").Output(); err == nil {
-			if len(output) > 0 {
-				info.Capabilities.Admin = true
+		// Try native API first
+		if nativeIsAdmin != nil {
+			info.Capabilities.Admin = nativeIsAdmin()
+		} else {
+			// Fallback: Check if running as administrator
+			if output, err := exec.Command("net", "session").Output(); err == nil {
+				if len(output) > 0 {
+					info.Capabilities.Admin = true
+				}
 			}
 		}
 	} else {
@@ -491,7 +522,11 @@ func checkHardwareVirtualization() bool {
 			return strings.Contains(string(data), "vmx") || strings.Contains(string(data), "svm")
 		}
 	case "windows":
-		// Check Windows virtualization features
+		// Try native API first
+		if nativeCheckHardwareVirt != nil {
+			return nativeCheckHardwareVirt()
+		}
+		// Fallback: Check Windows virtualization features via PowerShell
 		if output, err := exec.Command("powershell", "-Command", "Get-ComputerInfo | Select-Object -ExpandProperty HyperVisorPresent").Output(); err == nil {
 			return strings.Contains(string(output), "True")
 		}
@@ -556,7 +591,12 @@ func isVirtualBoxAvailable() bool {
 
 // isVirtualBoxAvailableWindows checks for VirtualBox on Windows using registry
 func isVirtualBoxAvailableWindows() bool {
-	// Check registry keys
+	// Try native API first
+	if nativeIsVirtualBoxAvailable != nil {
+		return nativeIsVirtualBoxAvailable()
+	}
+
+	// Fallback: Check registry keys
 	regKeys := []string{
 		"HKEY_LOCAL_MACHINE\\SOFTWARE\\Oracle\\VirtualBox",
 		"HKEY_LOCAL_MACHINE\\SOFTWARE\\WOW6432Node\\Oracle\\VirtualBox",
@@ -631,6 +671,14 @@ func queryWindowsRegistry(keyPath, valueName string) string {
 		return ""
 	}
 
+	// Try native API first
+	if nativeQueryRegistry != nil {
+		if val := nativeQueryRegistry(keyPath, valueName); val != "" {
+			return val
+		}
+	}
+
+	// Fallback to reg command
 	cmd := exec.Command("reg", "query", keyPath, "/v", valueName)
 	output, err := cmd.Output()
 	if err != nil {

@@ -1,24 +1,29 @@
 # Git Workflow Guidelines
 
 ## Purpose
+
 This document defines the Git workflow and conventions for CassandraGargoyle projects, ensuring consistent version control practices across all team projects.
 
 ## Branch Strategy
 
 ### Main Branches
+
 - **`main`** - Primary branch containing production-ready code (not `master`)
 - **`develop`** - Integration branch for ongoing development (optional, for git-flow)
 
 ### Supporting Branches
 
 #### Feature Branches
+
 For developing new features:
+
 - **Naming**: `feature/short-description`
 - **Source**: Branch from `main` or `develop`
 - **Merge target**: `main` or `develop`
 - **Lifetime**: Until feature is complete
 
 **Just-in-Time Branching Strategy:**
+
 - Create feature branches only when you actively start working on the issue
 - Don't create branches for issues you plan to work on "someday"
 - Clean up unused branches regularly to maintain a clear workspace
@@ -39,7 +44,9 @@ git push -u origin feature/github-integration
 ```
 
 #### Bug Fix Branches
+
 For fixing bugs:
+
 - **Naming**: `fix/short-description`
 - **Source**: Branch from `main`
 - **Merge target**: `main` (and `develop` if exists)
@@ -60,7 +67,9 @@ git push -u origin fix/docker-installation-timeout
 ```
 
 #### Hotfix Branches
+
 For critical production fixes:
+
 - **Naming**: `hotfix/critical-description`
 - **Source**: Branch from `main`
 - **Merge target**: `main` and `develop` (if exists)
@@ -83,6 +92,7 @@ git push -u origin hotfix/security-vulnerability
 ## Branch Naming Conventions
 
 ### Standard Prefixes
+
 - `feature/` - New features and enhancements
 - `fix/` - Bug fixes and corrections
 - `hotfix/` - Critical production fixes
@@ -93,6 +103,7 @@ git push -u origin hotfix/security-vulnerability
 - `release/` - Release preparation
 
 ### Naming Rules
+
 1. **Use lowercase letters only**
 2. **Use hyphens (-) to separate words**
 3. **No spaces, underscores, or special characters**
@@ -101,6 +112,7 @@ git push -u origin hotfix/security-vulnerability
 6. **Use present tense verbs**
 
 ### Good Examples
+
 ```
 ✅ feature/github-integration
 ✅ feature/user-authentication  
@@ -118,6 +130,7 @@ git push -u origin hotfix/security-vulnerability
 ```
 
 ### Bad Examples
+
 ```
 ❌ feature/NewFeature              # Use lowercase
 ❌ fix_bug                         # Use hyphens, not underscores
@@ -132,6 +145,7 @@ git push -u origin hotfix/security-vulnerability
 ## Commit Message Guidelines
 
 ### Format
+
 ```
 <type>: <description>
 
@@ -141,6 +155,7 @@ git push -u origin hotfix/security-vulnerability
 ```
 
 ### Commit Types
+
 - **feat**: New feature
 - **fix**: Bug fix
 - **docs**: Documentation changes
@@ -150,6 +165,7 @@ git push -u origin hotfix/security-vulnerability
 - **chore**: Maintenance tasks
 
 ### Commit Message Rules
+
 1. **Use imperative mood** (\"Add feature\" not \"Added feature\")
 2. **Capitalize first letter** of the description
 3. **Keep first line under 50 characters**
@@ -158,6 +174,7 @@ git push -u origin hotfix/security-vulnerability
 6. **Wrap body at 72 characters**
 
 ### Examples
+
 ```bash
 # Good commit messages
 git commit -m \"feat: Add Docker container support\"
@@ -178,6 +195,7 @@ Closes #123\"
 ## Workflow Examples
 
 ### Feature Development Workflow
+
 ```bash
 # 1. Start from updated main branch
 git checkout main
@@ -213,6 +231,7 @@ git push origin --delete feature/user-dashboard
 ```
 
 ### Bug Fix Workflow
+
 ```bash
 # 1. Start from main branch
 git checkout main
@@ -235,6 +254,7 @@ git branch -d fix/login-validation-error
 ```
 
 ### Hotfix Workflow
+
 ```bash
 # 1. Create hotfix from main
 git checkout main
@@ -260,7 +280,9 @@ git push origin v1.2.1
 ## Pull Request Guidelines
 
 ### PR Title Format
+
 Use the same format as commit messages:
+
 ```
 feat: Add user authentication system
 fix: Resolve Docker installation issue
@@ -268,6 +290,7 @@ docs: Update API documentation
 ```
 
 ### PR Description Template
+
 ```markdown
 ## Summary
 Brief description of changes.
@@ -290,6 +313,7 @@ Brief description of changes.
 ```
 
 ### PR Best Practices
+
 1. **Keep PRs small and focused** (< 400 lines of changes)
 2. **Use descriptive titles and descriptions**
 3. **Link related issues** using keywords (\"Closes #123\")
@@ -302,6 +326,7 @@ Brief description of changes.
 ### Just-in-Time Branching Workflow
 
 **✅ Recommended Approach:**
+
 ```bash
 # 1. Check issue tracker for work to do
 # 2. Only when you're ready to start coding, create the branch
@@ -323,6 +348,7 @@ git push origin --delete feature/implement-user-auth
 ```
 
 **❌ Avoid This Approach:**
+
 ```bash
 # Don't create branches for all planned work
 git checkout -b feature/future-feature-1
@@ -334,6 +360,7 @@ git checkout -b feature/maybe-someday-feature
 ### Branch Cleanup
 
 **Regular cleanup of unused branches:**
+
 ```bash
 # List all branches
 git branch -a
@@ -349,6 +376,7 @@ git remote prune origin
 ```
 
 **Automated cleanup script:**
+
 ```bash
 #!/bin/bash
 # cleanup-branches.sh
@@ -361,7 +389,9 @@ git remote prune origin
 ## Release Management
 
 ### Release Branches
+
 For preparing releases:
+
 ```bash
 # Create release branch
 git checkout main
@@ -384,7 +414,9 @@ git push origin v1.2.0
 ```
 
 ### Semantic Versioning
+
 Use semantic versioning (MAJOR.MINOR.PATCH):
+
 - **MAJOR**: Breaking changes
 - **MINOR**: New features (backward compatible)
 - **PATCH**: Bug fixes (backward compatible)
@@ -400,6 +432,7 @@ git tag -a v2.0.0 -m \"Breaking changes\"
 ## Git Configuration
 
 ### Required Git Settings
+
 ```bash
 # Set user information
 git config --global user.name \"Your Name\"
@@ -416,6 +449,7 @@ git config --global pull.rebase false
 ```
 
 ### Recommended Git Aliases
+
 ```bash
 # Useful aliases
 git config --global alias.st status
@@ -429,24 +463,28 @@ git config --global alias.amend \"commit --amend --no-edit\"
 ## Best Practices
 
 ### Before Starting Work
+
 1. Always pull the latest changes from main
 2. Create a new branch for each feature/fix
 3. Use descriptive branch names
 4. Check that your branch name follows conventions
 
 ### While Working
+
 1. Make small, focused commits
 2. Write clear commit messages
 3. Commit frequently (don't let changes pile up)
 4. Test your changes before committing
 
 ### Before Creating PR
+
 1. Rebase or merge latest main into your branch
 2. Run tests and ensure they pass
 3. Review your own changes
 4. Update documentation if needed
 
 ### After PR Merge
+
 1. Delete the feature branch locally and remotely
 2. Pull latest main branch
 3. Clean up any stale branches
@@ -454,6 +492,7 @@ git config --global alias.amend \"commit --amend --no-edit\"
 ## Common Git Commands
 
 ### Branch Management
+
 ```bash
 # List all branches
 git branch -a
@@ -475,6 +514,7 @@ git branch -m new-branch-name
 ```
 
 ### Synchronization
+
 ```bash
 # Update local main with remote changes
 git checkout main
@@ -494,6 +534,7 @@ git push --force-with-lease origin feature/my-feature
 ```
 
 ### Cleanup
+
 ```bash
 # Remove branches that no longer exist on remote
 git remote prune origin
@@ -505,11 +546,39 @@ git branch --merged main
 git branch --merged main | grep -v main | xargs -n 1 git branch -d
 ```
 
+## Understanding Git Output
+
+### Commit Statistics
+
+When viewing commit statistics (e.g., `git show --stat`, `git diff --stat`), the numbers represent **lines**, not files:
+
+```
+63 files changed, 56 insertions(+), 3786 deletions(-)
+                  ↑                    ↑
+              56 lines added    3786 lines deleted
+```
+
+**Common misunderstanding**: The numbers after "insertions" and "deletions" refer to **lines of code**, not files. The file count is shown separately at the beginning.
+
+### Reading Diff Stats
+
+```bash
+# Example output
+src/cmd/install.go | 180 +++--------
+main.go            |   8 +-
+```
+
+- The number (180, 8) shows total lines changed in that file
+- `+` symbols represent additions
+- `-` symbols represent deletions
+- Combined `+-` means both additions and deletions
+
 ## Troubleshooting
 
 ### Common Issues
 
 **Merge Conflicts**:
+
 ```bash
 # When merge conflicts occur
 git status  # See conflicted files
@@ -519,6 +588,7 @@ git commit  # Complete the merge
 ```
 
 **Accidentally Committed to Main**:
+
 ```bash
 # Create branch from current state
 git branch feature/accidental-work
@@ -531,6 +601,7 @@ git checkout feature/accidental-work
 ```
 
 **Wrong Commit Message**:
+
 ```bash
 # Amend last commit message
 git commit --amend -m \"New commit message\"
@@ -552,4 +623,4 @@ git push --force-with-lease origin branch-name
 **Note**: These guidelines should be consistently applied across all CassandraGargoyle projects. Team members should review and follow these practices to maintain clean and manageable Git history.
 
 *Created: 2025-08-23*
-*Last updated: 2025-08-23*
+*Last updated: 2026-01-03*

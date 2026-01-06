@@ -5,18 +5,26 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 )
 
 // ExecutionOptions contains options for playbook execution
 type ExecutionOptions struct {
-	DryRun      bool
-	Environment string // "local", "container", "virt"
-	Target      string // For multi-environment execution (VM name, container name)
-	Image       string // Container image for container environment
-	Verbose     bool
-	User        string // Phase 4: User executing the playbook
+	DryRun        bool
+	Environment   string   // "local", "container", "virt"
+	Target        string   // For multi-environment execution (VM name, container name)
+	Image         string   // Container image for container environment
+	Runtime       string   // Container runtime: "docker", "podman", or "" for auto-detect
+	ContainerName string   // Custom container name (optional)
+	Ports         []string // Port mappings for container (e.g., "1313:1313")
+	Volumes       []string // Volume mappings for container (e.g., "./workspace:/workspace")
+	NamedVolumes  []string // Named volumes for container (e.g., "node_modules:/app/node_modules")
+	Verbose       bool
+	User          string   // Phase 4: User executing the playbook
+	ScriptFilter  []string // Phase 1 #128: Filter scripts to run (empty = all)
+	ListScripts   bool     // Phase 1 #128: Just list available scripts
 }
 
 // ExecutionResult contains the result of playbook execution
@@ -210,6 +218,31 @@ func ExecutePlaybook(filePath string, options ExecutionOptions) (*ExecutionResul
 		}
 	}
 
+	// Execute custom scripts if present
+	if len(ptxbook.Spec.Scripts) > 0 {
+		if options.Verbose {
+			fmt.Printf("📜 Executing %d custom scripts...\n", len(ptxbook.Spec.Scripts))
+		}
+
+		if err := executeScripts(ptxbook, options, envCtx); err != nil {
+			result.Success = false
+			result.Errors = append(result.Errors, fmt.Sprintf("Script execution failed: %v", err))
+
+			// Execute rollback on failure
+			if rollbackManager.IsEnabled() {
+				if rollbackErr := rollbackManager.ExecuteRollback(err.Error()); rollbackErr != nil {
+					result.Errors = append(result.Errors, fmt.Sprintf("Rollback failed: %v", rollbackErr))
+				}
+			}
+
+			return result, err
+		}
+
+		if options.Verbose {
+			fmt.Println("✅ Custom scripts executed successfully")
+		}
+	}
+
 	if options.Verbose {
 		fmt.Println("🎉 Playbook execution completed successfully")
 		fmt.Printf("📊 Audit trail logged for compliance\n")
@@ -346,7 +379,7 @@ func executeAnsiblePlaybooks(ptxbook *PtxbookFile, options ExecutionOptions, env
 	return nil
 }
 
-// getPortunixBinaryPath finds the path to the main portunix binary
+// getPortunixBinaryPath finds the path to the main portunix binary for the current OS
 func getPortunixBinaryPath() (string, error) {
 	// Get the current executable path (ptx-ansible)
 	currentExe, err := os.Executable()
@@ -371,6 +404,214 @@ func getPortunixBinaryPath() (string, error) {
 	return portunixPath, nil
 }
 
+// getLinuxBinaryPath finds the path to the Linux portunix binary (for container use)
+// Uses cross-platform binary distribution (ADR-031, Issue #125)
+func getLinuxBinaryPath() (string, error) {
+	// Get the current executable path (ptx-ansible)
+	currentExe, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	execDir := filepath.Dir(currentExe)
+
+	// On Linux, just return the current binary
+	if runtime.GOOS == "linux" {
+		linuxPath := filepath.Join(execDir, "portunix")
+		if _, err := os.Stat(linuxPath); err == nil {
+			return linuxPath, nil
+		}
+	}
+
+	// For cross-platform (e.g., Windows host → Linux container), use platform binaries
+	// First check cache directory
+	platformDir, err := getPlatformBinariesDir("linux-amd64")
+	if err == nil {
+		linuxPath := filepath.Join(platformDir, "portunix")
+		if _, err := os.Stat(linuxPath); err == nil {
+			return linuxPath, nil
+		}
+	}
+
+	// Fallback: try to extract from platform archive
+	platformDir, err = extractPlatformArchive("linux-amd64", false)
+	if err == nil {
+		linuxPath := filepath.Join(platformDir, "portunix")
+		if _, err := os.Stat(linuxPath); err == nil {
+			return linuxPath, nil
+		}
+	}
+
+	return "", fmt.Errorf("Linux portunix binary not found. Cross-platform binaries may not be installed (ADR-031)")
+}
+
+// getPlatformBinariesDir returns the directory containing extracted platform binaries
+// Part of ADR-031: Cross-Platform Binary Distribution Strategy
+func getPlatformBinariesDir(platform string) (string, error) {
+	// Get portunix installation directory
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	execDir := filepath.Dir(execPath)
+
+	// Check cache directory: <install_dir>/cache/<platform>/
+	cacheDir := filepath.Join(execDir, "cache", platform)
+	if info, err := os.Stat(cacheDir); err == nil && info.IsDir() {
+		// Verify portunix binary exists in cache
+		binaryName := "portunix"
+		if strings.HasPrefix(platform, "windows") {
+			binaryName = "portunix.exe"
+		}
+		if _, err := os.Stat(filepath.Join(cacheDir, binaryName)); err == nil {
+			return cacheDir, nil
+		}
+	}
+
+	return "", fmt.Errorf("platform binaries not cached for %s", platform)
+}
+
+// extractPlatformArchive extracts platform binaries from the platform archive
+// Part of ADR-031: Cross-Platform Binary Distribution Strategy
+func extractPlatformArchive(platform string, verbose bool) (string, error) {
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", err
+	}
+	execDir := filepath.Dir(execPath)
+
+	// Look for platform archive in <install_dir>/platforms/
+	platformsDir := filepath.Join(execDir, "platforms")
+
+	// Determine archive name based on platform
+	var archiveName string
+	if strings.HasPrefix(platform, "windows") {
+		archiveName = platform + ".zip"
+	} else {
+		archiveName = platform + ".tar.gz"
+	}
+
+	archivePath := filepath.Join(platformsDir, archiveName)
+	if _, err := os.Stat(archivePath); os.IsNotExist(err) {
+		return "", fmt.Errorf("platform archive not found: %s", archivePath)
+	}
+
+	// Create cache directory
+	cacheDir := filepath.Join(execDir, "cache", platform)
+	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+		return "", fmt.Errorf("failed to create cache directory: %v", err)
+	}
+
+	if verbose {
+		fmt.Printf("   Extracting platform binaries from %s...\n", archiveName)
+	}
+
+	// Extract archive based on type
+	if strings.HasSuffix(archivePath, ".zip") {
+		if err := extractZip(archivePath, cacheDir); err != nil {
+			return "", fmt.Errorf("failed to extract zip: %v", err)
+		}
+	} else {
+		if err := extractTarGz(archivePath, cacheDir); err != nil {
+			return "", fmt.Errorf("failed to extract tar.gz: %v", err)
+		}
+	}
+
+	if verbose {
+		fmt.Printf("   ✓ Platform binaries extracted to cache\n")
+	}
+
+	return cacheDir, nil
+}
+
+// extractTarGz extracts a tar.gz archive to the specified directory
+func extractTarGz(archivePath, destDir string) error {
+	cmd := exec.Command("tar", "-xzf", archivePath, "-C", destDir)
+	return cmd.Run()
+}
+
+// extractZip extracts a zip archive to the specified directory
+func extractZip(archivePath, destDir string) error {
+	if runtime.GOOS == "windows" {
+		// Use PowerShell on Windows
+		cmd := exec.Command("powershell", "-Command",
+			fmt.Sprintf("Expand-Archive -Path '%s' -DestinationPath '%s' -Force", archivePath, destDir))
+		return cmd.Run()
+	}
+	// Use unzip on Linux/macOS
+	cmd := exec.Command("unzip", "-o", archivePath, "-d", destDir)
+	return cmd.Run()
+}
+
+// detectContainerPlatform detects the target platform from container image
+// Part of ADR-031: Cross-Platform Binary Distribution Strategy
+func detectContainerPlatform(image string) string {
+	// Default to linux-amd64 for most container images
+	// Container images are almost always Linux-based
+	image = strings.ToLower(image)
+
+	// Check for ARM-based images
+	if strings.Contains(image, "arm64") || strings.Contains(image, "aarch64") {
+		return "linux-arm64"
+	}
+
+	// Windows containers (rare but possible)
+	if strings.Contains(image, "windows") || strings.Contains(image, "nanoserver") || strings.Contains(image, "servercore") {
+		return "windows-amd64"
+	}
+
+	// Default to linux-amd64 (most common case)
+	return "linux-amd64"
+}
+
+// getPlatformBinaries returns paths to all platform binaries for the given platform
+// Part of ADR-031: Cross-Platform Binary Distribution Strategy
+func getPlatformBinaries(platform string, verbose bool) (map[string]string, error) {
+	// First try to get from cache
+	platformDir, err := getPlatformBinariesDir(platform)
+	if err != nil {
+		// Not in cache, try to extract
+		platformDir, err = extractPlatformArchive(platform, verbose)
+		if err != nil {
+			return nil, fmt.Errorf("platform binaries not available for %s: %v", platform, err)
+		}
+	}
+
+	// Build map of binary name -> path
+	binaries := make(map[string]string)
+	ext := ""
+	if strings.HasPrefix(platform, "windows") {
+		ext = ".exe"
+	}
+
+	// List of expected binaries
+	binaryNames := []string{
+		"portunix",
+		"ptx-installer",
+		"ptx-ansible",
+		"ptx-container",
+		"ptx-virt",
+		"ptx-mcp",
+		"ptx-pft",
+		"ptx-python",
+		"ptx-prompting",
+		"ptx-aiops",
+		"ptx-make",
+	}
+
+	for _, name := range binaryNames {
+		binaryPath := filepath.Join(platformDir, name+ext)
+		if _, err := os.Stat(binaryPath); err == nil {
+			binaries[name] = binaryPath
+		}
+	}
+
+	if len(binaries) == 0 {
+		return nil, fmt.Errorf("no binaries found for platform %s in %s", platform, platformDir)
+	}
+
+	return binaries, nil
+}
+
 // isAnsibleAvailable checks if Ansible is installed and available
 func isAnsibleAvailable() bool {
 	cmd := exec.Command("ansible", "--version")
@@ -392,12 +633,14 @@ func substituteVariables(text string, variables map[string]interface{}) string {
 type EnvironmentContext struct {
 	Type        string // "container" or "virt"
 	Target      string // Container ID or VM name
+	Runtime     string // Container runtime: "docker" or "podman"
 	SSHHost     string // SSH connection host
 	SSHPort     string // SSH connection port
 	SSHUser     string // SSH username
 	SSHKeyPath  string // Path to SSH private key
-	TempDir     string // Temporary directory for environment setup
+	TempDir     string // Temporary directory for environment setup (also stores runtime for containers)
 	Inventory   string // Generated Ansible inventory content
+	WorkDir     string // Working directory for script execution
 }
 
 // setupEnvironment prepares the environment for playbook execution
@@ -412,31 +655,248 @@ func setupEnvironment(options ExecutionOptions) (*EnvironmentContext, error) {
 	}
 }
 
+// copyBinariesToContainer copies Portunix binaries to a running container
+// This is called by the internal _bin-update script
+func copyBinariesToContainer(containerName string, options ExecutionOptions, portunixPath, runtime string, useDirectRuntime bool) error {
+	if options.Verbose {
+		fmt.Printf("   📦 Copying platform binaries to container...\n")
+	}
+
+	// ADR-031: Detect target platform and get appropriate binaries
+	targetPlatform := detectContainerPlatform(options.Image)
+	if options.Verbose {
+		fmt.Printf("   Detected target platform: %s\n", targetPlatform)
+	}
+
+	// Get Linux binary path for fallback
+	linuxBinaryPath, _ := getLinuxBinaryPath()
+
+	// Get platform binaries (uses cache or extracts from archive)
+	platformBinaries, err := getPlatformBinaries(targetPlatform, options.Verbose)
+	if err != nil {
+		// Fallback to legacy behavior if platform binaries not available
+		if options.Verbose {
+			fmt.Printf("   ⚠️  Platform binaries not available: %v\n", err)
+			fmt.Printf("   Falling back to local binaries (may not work cross-platform)\n")
+		}
+
+		// Get directory containing local binaries
+		execDir := filepath.Dir(linuxBinaryPath)
+
+		// List of binaries to copy (legacy behavior)
+		legacyBinaries := []string{"portunix", "ptx-installer", "ptx-ansible", "ptx-container", "ptx-virt", "ptx-mcp", "ptx-pft"}
+		platformBinaries = make(map[string]string)
+		for _, binary := range legacyBinaries {
+			srcPath := filepath.Join(execDir, binary)
+			if _, err := os.Stat(srcPath); err == nil {
+				platformBinaries[binary] = srcPath
+			}
+		}
+	}
+
+	// Copy platform binaries into the container
+	for binaryName, srcPath := range platformBinaries {
+		destPath := containerName + ":/usr/local/bin/" + binaryName
+
+		var copyCmd *exec.Cmd
+		if useDirectRuntime {
+			copyCmd = exec.Command(runtime, "cp", srcPath, destPath)
+		} else {
+			copyCmd = exec.Command(portunixPath, "container", "cp", srcPath, destPath)
+		}
+
+		if err := copyCmd.Run(); err != nil {
+			return fmt.Errorf("failed to copy %s to container: %v", binaryName, err)
+		}
+
+		// Make executable
+		var chmodCmd *exec.Cmd
+		if useDirectRuntime {
+			chmodCmd = exec.Command(runtime, "exec", containerName, "chmod", "+x", "/usr/local/bin/"+binaryName)
+		} else {
+			chmodCmd = exec.Command(portunixPath, "container", "exec", containerName, "chmod", "+x", "/usr/local/bin/"+binaryName)
+		}
+		chmodCmd.Run()
+
+		if options.Verbose {
+			fmt.Printf("   ✓ Copied %s\n", binaryName)
+		}
+	}
+
+	if options.Verbose {
+		fmt.Printf("   All binaries installed in container (%d total)\n", len(platformBinaries))
+	}
+
+	// Install ca-certificates for HTTPS downloads using portunix
+	if options.Verbose {
+		fmt.Printf("   Installing ca-certificates...\n")
+	}
+
+	containerPortunixPath := "/usr/local/bin/portunix"
+	var installCACmd *exec.Cmd
+	if useDirectRuntime {
+		installCACmd = exec.Command(runtime, "exec", containerName, containerPortunixPath, "install", "ca-certificates")
+	} else {
+		installCACmd = exec.Command(portunixPath, "container", "exec", containerName, containerPortunixPath, "install", "ca-certificates")
+	}
+	if options.Verbose {
+		installCACmd.Stdout = os.Stdout
+		installCACmd.Stderr = os.Stderr
+	}
+	installCACmd.Run() // Ignore errors, some distros may not need this
+
+	return nil
+}
+
 // setupContainerEnvironment creates and configures a container for playbook execution
 func setupContainerEnvironment(options ExecutionOptions) (*EnvironmentContext, error) {
 	if options.Verbose {
 		fmt.Printf("🐳 Setting up container environment with image: %s\n", options.Image)
 	}
 
-	// Generate unique container name
-	containerName := fmt.Sprintf("ptx-ansible-%s", generateRandomString(8))
+	// Get portunix binary path (for running local commands)
+	portunixPath, err := getPortunixBinaryPath()
+	if err != nil {
+		return nil, fmt.Errorf("failed to find portunix binary: %v", err)
+	}
 
-	// For Phase 2, we simulate container creation for testing purposes
-	// In a full implementation, this would:
-	// 1. Create container using Portunix container system
-	// 2. Configure SSH access
-	// 3. Setup environment
+	// Determine runtime to use
+	runtime := options.Runtime
+	useDirectRuntime := runtime == "docker" || runtime == "podman"
+
+	if !useDirectRuntime {
+		// Check if container runtime is available via portunix, auto-install if not
+		runtime, err = ensureContainerRuntime(options)
+		if err != nil {
+			return nil, fmt.Errorf("failed to ensure container runtime: %v", err)
+		}
+	}
+
+	if options.Verbose {
+		if useDirectRuntime {
+			fmt.Printf("   Using explicit runtime from playbook: %s\n", runtime)
+		} else {
+			fmt.Printf("   Using container runtime: %s\n", runtime)
+		}
+	}
+
+	// Ensure Docker daemon is running (for Docker runtime)
+	if runtime == "docker" {
+		if err := ensureDockerDaemonRunning(options.Verbose, portunixPath); err != nil {
+			return nil, err
+		}
+	}
+
+	// Use custom container name or generate one
+	containerName := options.ContainerName
+	if containerName == "" {
+		containerName = fmt.Sprintf("ptx-ansible-%s", generateRandomString(8))
+	}
+
+	// Parse volumes to separate bind mounts and named volumes
+	bindMounts, namedVolumes := parseVolumes(options.Volumes)
 
 	if options.Verbose {
 		fmt.Printf("   Container name: %s\n", containerName)
 		fmt.Printf("   Image: %s\n", options.Image)
-		fmt.Printf("   Note: Phase 2 implementation - simulated container setup for testing\n")
+		if len(options.Ports) > 0 {
+			fmt.Printf("   Port mappings: %v\n", options.Ports)
+		}
+		if len(bindMounts) > 0 {
+			fmt.Printf("   Bind mounts: %v\n", bindMounts)
+		}
+		if len(namedVolumes) > 0 {
+			fmt.Printf("   Named volumes: %v\n", namedVolumes)
+		}
 	}
 
-	// Setup SSH connectivity (simulated)
+	// Create named volumes before starting container
+	if len(namedVolumes) > 0 {
+		if err := createNamedVolumes(namedVolumes, runtime, options.Verbose); err != nil {
+			return nil, fmt.Errorf("failed to create named volumes: %v", err)
+		}
+	}
+
+	// Create and start the container
+	if options.Verbose {
+		fmt.Printf("   Creating container...\n")
+	}
+
+	var createCmd *exec.Cmd
+	if useDirectRuntime {
+		// Use explicit runtime directly - build args with port and volume mappings
+		args := []string{"run", "-d"}
+		for _, port := range options.Ports {
+			args = append(args, "-p", port)
+		}
+		// Add bind mounts
+		for _, vol := range bindMounts {
+			args = append(args, "-v", vol)
+		}
+		// Add named volumes (without :named suffix)
+		for _, vol := range namedVolumes {
+			args = append(args, "-v", vol)
+		}
+		args = append(args, "--name", containerName, options.Image, "sleep", "infinity")
+		createCmd = exec.Command(runtime, args...)
+	} else {
+		// Use portunix container (auto-selects runtime) - build args with port and volume mappings
+		args := []string{"container", "run", "-d"}
+		for _, port := range options.Ports {
+			args = append(args, "-p", port)
+		}
+		// Add bind mounts
+		for _, vol := range bindMounts {
+			args = append(args, "-v", vol)
+		}
+		// Add named volumes (without :named suffix)
+		for _, vol := range namedVolumes {
+			args = append(args, "-v", vol)
+		}
+		args = append(args, "--name", containerName, options.Image, "sleep", "infinity")
+		createCmd = exec.Command(portunixPath, args...)
+	}
+
+	if options.Verbose {
+		createCmd.Stdout = os.Stdout
+		createCmd.Stderr = os.Stderr
+	}
+	if err := createCmd.Run(); err != nil {
+		return nil, fmt.Errorf("failed to create container: %v", err)
+	}
+
+	if options.Verbose {
+		fmt.Printf("   Container created successfully\n")
+	}
+
+	// Note: Binary copying is now handled by _bin-update internal script
+	// This allows playbooks to control when binaries are copied
+
+	// Create workspace directory for script execution
+	workDir := "/workspace"
+	if options.Verbose {
+		fmt.Printf("   Creating workspace directory: %s\n", workDir)
+	}
+	var mkdirCmd *exec.Cmd
+	if useDirectRuntime {
+		mkdirCmd = exec.Command(runtime, "exec", containerName, "mkdir", "-p", workDir)
+	} else {
+		mkdirCmd = exec.Command(portunixPath, "container", "exec", containerName, "mkdir", "-p", workDir)
+	}
+	mkdirCmd.Run() // Ignore errors if directory already exists
+
+	if options.Verbose {
+		fmt.Printf("   Container initialized\n")
+	}
+
+	// Setup SSH connectivity (for Ansible if needed)
 	sshKeyPath, err := setupSSHForContainer(containerName, options)
 	if err != nil {
-		return nil, fmt.Errorf("failed to setup SSH for container: %v", err)
+		// Non-fatal, SSH is optional for direct container execution
+		if options.Verbose {
+			fmt.Printf("   Note: SSH setup skipped (not required for direct execution)\n")
+		}
+		sshKeyPath = ""
 	}
 
 	// Generate inventory
@@ -445,11 +905,14 @@ func setupContainerEnvironment(options ExecutionOptions) (*EnvironmentContext, e
 	envCtx := &EnvironmentContext{
 		Type:       "container",
 		Target:     containerName,
-		SSHHost:    "localhost", // Container SSH is usually on localhost
-		SSHPort:    "2222",      // Default SSH port for containers
+		Runtime:    runtime, // Container runtime (docker/podman)
+		SSHHost:    "localhost",
+		SSHPort:    "2222",
 		SSHUser:    "root",
 		SSHKeyPath: sshKeyPath,
 		Inventory:  inventory,
+		TempDir:    runtime, // Store runtime for cleanup (legacy)
+		WorkDir:    workDir, // Working directory for scripts
 	}
 
 	if options.Verbose {
@@ -457,6 +920,17 @@ func setupContainerEnvironment(options ExecutionOptions) (*EnvironmentContext, e
 	}
 
 	return envCtx, nil
+}
+
+// cleanupContainer removes a container
+func cleanupContainer(portunixPath, containerName, runtime string, useDirectRuntime bool) {
+	var cmd *exec.Cmd
+	if useDirectRuntime {
+		cmd = exec.Command(runtime, "rm", "-f", containerName)
+	} else {
+		cmd = exec.Command(portunixPath, "container", "rm", "-f", containerName)
+	}
+	cmd.Run() // Ignore errors
 }
 
 // setupVirtEnvironment configures a virtual machine for playbook execution
@@ -572,11 +1046,23 @@ func cleanupEnvironment(envCtx *EnvironmentContext, options ExecutionOptions) {
 		fmt.Printf("🧹 Cleaning up %s environment: %s\n", envCtx.Type, envCtx.Target)
 	}
 
+	// Get portunix path for cleanup commands
+	portunixPath, _ := getPortunixBinaryPath()
+
 	switch envCtx.Type {
 	case "container":
-		// For Phase 2 testing, containers are simulated
+		// Remove the container
+		runtime := envCtx.TempDir // Runtime stored during setup
+		useDirectRuntime := runtime == "docker" || runtime == "podman"
+
 		if options.Verbose {
-			fmt.Printf("   Container %s (simulated) - no cleanup needed\n", envCtx.Target)
+			fmt.Printf("   Removing container %s...\n", envCtx.Target)
+		}
+
+		cleanupContainer(portunixPath, envCtx.Target, runtime, useDirectRuntime)
+
+		if options.Verbose {
+			fmt.Printf("   Container removed\n")
 		}
 	case "virt":
 		// For VMs, we don't automatically stop them as they might be persistent
@@ -593,6 +1079,87 @@ func cleanupEnvironment(envCtx *EnvironmentContext, options ExecutionOptions) {
 	}
 }
 
+// ensureContainerRuntime checks if a container runtime is available and installs one if not
+func ensureContainerRuntime(options ExecutionOptions) (string, error) {
+	// Check if Docker is available
+	if _, err := exec.LookPath("docker"); err == nil {
+		return "docker", nil
+	}
+
+	// Check if Podman is available
+	if _, err := exec.LookPath("podman"); err == nil {
+		return "podman", nil
+	}
+
+	// No container runtime found - try to auto-install
+	if options.Verbose {
+		fmt.Printf("   No container runtime found, attempting auto-install...\n")
+	}
+
+	// Get path to portunix binary
+	portunixPath, err := getPortunixBinaryPath()
+	if err != nil {
+		return "", fmt.Errorf("no container runtime available (docker or podman). Install with: portunix install docker")
+	}
+
+	// Try to install Docker first (more common)
+	if options.Verbose {
+		fmt.Printf("   Installing Docker...\n")
+	}
+
+	cmd := exec.Command(portunixPath, "install", "docker")
+	if options.Verbose {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
+
+	if err := cmd.Run(); err != nil {
+		// Docker install failed - ask user before trying Podman
+		fmt.Printf("\n❌ Docker installation failed: %v\n", err)
+		fmt.Printf("\n🤔 Would you like to try installing Podman instead? (y/N): ")
+
+		var response string
+		fmt.Scanln(&response)
+		response = strings.ToLower(strings.TrimSpace(response))
+
+		if response != "y" && response != "yes" {
+			return "", fmt.Errorf("Docker installation failed and Podman installation was declined. Please install a container runtime manually")
+		}
+
+		if options.Verbose {
+			fmt.Printf("   Trying Podman installation...\n")
+		}
+
+		cmd = exec.Command(portunixPath, "install", "podman")
+		if options.Verbose {
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+		}
+
+		if err := cmd.Run(); err != nil {
+			return "", fmt.Errorf("failed to install Podman. Please install Docker or Podman manually")
+		}
+
+		// Verify Podman is now available
+		if _, err := exec.LookPath("podman"); err == nil {
+			if options.Verbose {
+				fmt.Printf("   ✅ Podman installed successfully\n")
+			}
+			return "podman", nil
+		}
+	}
+
+	// Verify Docker is now available
+	if _, err := exec.LookPath("docker"); err == nil {
+		if options.Verbose {
+			fmt.Printf("   ✅ Docker installed successfully\n")
+		}
+		return "docker", nil
+	}
+
+	return "", fmt.Errorf("container runtime installation completed but not found in PATH. You may need to restart your terminal")
+}
+
 // generateRandomString generates a random string for unique naming
 func generateRandomString(length int) string {
 	const charset = "abcdefghijklmnopqrstuvwxyz0123456789"
@@ -601,6 +1168,234 @@ func generateRandomString(length int) string {
 		result[i] = charset[i%len(charset)]
 	}
 	return string(result)
+}
+
+// findDockerDesktopPath finds Docker Desktop executable path
+func findDockerDesktopPath(verbose bool) string {
+	// 1. First try "where docker" to check if Docker is on PATH
+	if verbose {
+		fmt.Println("   Checking PATH with 'where docker'...")
+	}
+	whereCmd := exec.Command("where", "docker")
+	output, err := whereCmd.Output()
+	if err == nil {
+		// Parse first line - path to docker.exe
+		lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+		if len(lines) > 0 {
+			dockerExePath := strings.TrimSpace(lines[0])
+			if verbose {
+				fmt.Printf("   Found docker.exe at: %s\n", dockerExePath)
+			}
+			// docker.exe is typically in Docker\Docker\resources\bin\docker.exe
+			// Docker Desktop.exe is in Docker\Docker\Docker Desktop.exe (not in resources!)
+			dockerDir := filepath.Dir(dockerExePath) // .../resources/bin
+			resourcesDir := filepath.Dir(dockerDir)  // .../resources
+			dockerDockerDir := filepath.Dir(resourcesDir) // .../Docker\Docker
+			dockerDesktop := filepath.Join(dockerDockerDir, "Docker Desktop.exe")
+			if verbose {
+				fmt.Printf("   Checking: %s\n", dockerDesktop)
+			}
+			if _, err := os.Stat(dockerDesktop); err == nil {
+				return dockerDesktop
+			}
+		}
+	} else if verbose {
+		fmt.Println("   Docker not found on PATH")
+	}
+
+	// 2. Try registry: HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Docker Desktop
+	if verbose {
+		fmt.Println("   Checking registry: HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Docker Desktop")
+	}
+	regCmd := exec.Command("reg", "query", `HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Docker Desktop`, "/v", "InstallLocation")
+	output, err = regCmd.Output()
+	if err == nil {
+		lines := strings.Split(string(output), "\n")
+		for _, line := range lines {
+			if strings.Contains(line, "InstallLocation") && strings.Contains(line, "REG_SZ") {
+				parts := strings.SplitN(line, "REG_SZ", 2)
+				if len(parts) == 2 {
+					installDir := strings.TrimSpace(parts[1])
+					if verbose {
+						fmt.Printf("   InstallLocation: %s\n", installDir)
+					}
+					// Docker Desktop.exe is directly in install directory (not in resources!)
+					dockerDesktop := filepath.Join(installDir, "Docker Desktop.exe")
+					if verbose {
+						fmt.Printf("   Checking: %s\n", dockerDesktop)
+					}
+					if _, err := os.Stat(dockerDesktop); err == nil {
+						return dockerDesktop
+					}
+				}
+			}
+		}
+	} else if verbose {
+		fmt.Printf("   Registry key not found: %v\n", err)
+	}
+
+	// 3. Fallback: try common installation paths
+	if verbose {
+		fmt.Println("   Trying common installation paths...")
+	}
+	commonPaths := []string{
+		`C:\Program Files\Docker\Docker\Docker Desktop.exe`,
+		`C:\Program Files (x86)\Docker\Docker\Docker Desktop.exe`,
+	}
+
+	for _, path := range commonPaths {
+		if verbose {
+			fmt.Printf("   Checking: %s\n", path)
+		}
+		if _, err := os.Stat(path); err == nil {
+			return path
+		}
+	}
+
+	return ""
+}
+
+// ensureDockerDaemonRunning checks if Docker daemon is running and starts it if needed
+// If Docker is not installed, it offers to install it via portunix
+func ensureDockerDaemonRunning(verbose bool, portunixPath string) error {
+	// Check if Docker daemon is already running using "docker info"
+	// When daemon is running, output contains "Server:" with info
+	// When daemon is not running, output contains "Server:" followed by "failed to connect"
+	fmt.Println("   Checking if Docker daemon is running...")
+	checkCmd := exec.Command("docker", "info")
+	output, _ := checkCmd.CombinedOutput()
+	outputStr := string(output)
+	if strings.Contains(outputStr, "Server:") && !strings.Contains(outputStr, "failed to connect") {
+		fmt.Println("   ✅ Docker daemon is already running")
+		return nil
+	}
+
+	fmt.Println("   Docker daemon is not running, attempting to start...")
+	fmt.Println("   Searching for Docker Desktop...")
+
+	// Try to start Docker based on OS
+	if runtime.GOOS == "windows" {
+		// Try to find Docker Desktop path from registry
+		dockerDesktopPath := findDockerDesktopPath(verbose)
+		if dockerDesktopPath == "" {
+			// Docker not installed - offer to install it
+			return offerDockerInstallation(verbose, portunixPath)
+		}
+
+		fmt.Printf("   Found Docker Desktop at: %s\n", dockerDesktopPath)
+		fmt.Printf("   Starting Docker Desktop from: %s\n", dockerDesktopPath)
+
+		// Start Docker Desktop
+		startCmd := exec.Command("cmd", "/C", "start", "", dockerDesktopPath)
+		startCmd.Run() // Ignore errors
+
+		fmt.Println("   ⏳ Waiting for Docker daemon to start (up to 5 minutes)...")
+
+		// Wait for Docker daemon to become available (up to 5 minutes)
+		// Use "docker info" and check for Server info (not "failed to connect")
+		for i := 0; i < 60; i++ {
+			time.Sleep(5 * time.Second)
+
+			checkCmd := exec.Command("docker", "info")
+			output, _ := checkCmd.CombinedOutput()
+			outputStr := string(output)
+			// Docker daemon is running if output contains server info and no connection failure
+			if strings.Contains(outputStr, "Server:") && !strings.Contains(outputStr, "failed to connect") {
+				fmt.Println("   ✅ Docker daemon is running and ready!")
+				return nil
+			}
+			fmt.Printf("   Waiting... (%d/300s)\n", (i+1)*5)
+		}
+
+		return fmt.Errorf("Docker daemon did not start within 5 minutes. Please start Docker Desktop manually")
+	} else {
+		// On Linux, try systemctl
+		startCmd := exec.Command("sudo", "systemctl", "start", "docker")
+		if err := startCmd.Run(); err != nil {
+			return fmt.Errorf("failed to start Docker daemon: %v. Try: sudo systemctl start docker", err)
+		}
+
+		// Wait a bit for daemon to be ready
+		time.Sleep(3 * time.Second)
+
+		checkCmd := exec.Command("docker", "version")
+		if checkCmd.Run() == nil {
+			if verbose {
+				fmt.Println("   ✅ Docker daemon started successfully!")
+			}
+			return nil
+		}
+
+		return fmt.Errorf("Docker daemon started but not responding. Check with: docker version")
+	}
+}
+
+// offerDockerInstallation offers to install container runtime when none is found
+func offerDockerInstallation(verbose bool, portunixPath string) error {
+	fmt.Println()
+	fmt.Println("❌ No container runtime found on this system.")
+	fmt.Println()
+	fmt.Println("A container runtime (Docker or Podman) is required to run container-based playbooks.")
+	fmt.Println("Would you like to install one now?")
+	fmt.Println()
+	fmt.Println("  [1] Install Docker Desktop (recommended for Windows)")
+	fmt.Println("  [2] Install Podman Desktop (alternative)")
+	fmt.Println("  [3] Cancel")
+	fmt.Println()
+	fmt.Print("Your choice (1/2/3): ")
+
+	var response string
+	fmt.Scanln(&response)
+	response = strings.TrimSpace(response)
+
+	switch response {
+	case "1", "":
+		// Install Docker
+		fmt.Println()
+		fmt.Println("📦 Installing Docker...")
+		fmt.Println()
+
+		cmd := exec.Command(portunixPath, "install", "docker")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("Docker installation failed: %v\nYou can try installing manually or use: portunix install podman", err)
+		}
+
+		fmt.Println()
+		fmt.Println("✅ Docker installed successfully!")
+		fmt.Println("⚠️  Please start Docker Desktop and run this command again.")
+		fmt.Println()
+		return fmt.Errorf("Docker installed - please start Docker Desktop and run the playbook again")
+
+	case "2":
+		// Install Podman
+		fmt.Println()
+		fmt.Println("📦 Installing Podman...")
+		fmt.Println()
+
+		cmd := exec.Command(portunixPath, "install", "podman")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("Podman installation failed: %v", err)
+		}
+
+		fmt.Println()
+		fmt.Println("✅ Podman installed successfully!")
+		fmt.Println("ℹ️  Note: Your playbook specifies Docker. Consider updating it to use Podman,")
+		fmt.Println("    or run: portunix playbook run <playbook> --runtime podman")
+		fmt.Println()
+		return fmt.Errorf("Podman installed - please run the playbook again with --runtime podman")
+
+	case "3":
+		return fmt.Errorf("installation cancelled by user")
+
+	default:
+		return fmt.Errorf("invalid choice. Please install Docker manually with: portunix install docker")
+	}
 }
 
 // createTemporaryInventory creates a temporary inventory file and returns its path
@@ -673,12 +1468,27 @@ func executePortunixPackagesWithRollback(ptxbook *PtxbookFile, options Execution
 			// For container/VM environments, execute install inside the environment
 			switch envCtx.Type {
 			case "container":
-				// Execute inside container
-				args := []string{"container", "exec", envCtx.Target, portunixPath, "install", processedPkg.Name}
-				if processedPkg.Variant != "" {
-					args = append(args, "--variant", processedPkg.Variant)
+				// Execute inside container - portunix is at /usr/local/bin/portunix in container
+				containerPortunixPath := "/usr/local/bin/portunix"
+				runtime := envCtx.TempDir // Runtime stored during setup
+				useDirectRuntime := runtime == "docker" || runtime == "podman"
+
+				var execArgs []string
+				if useDirectRuntime {
+					// Use explicit runtime directly
+					execArgs = []string{"exec", envCtx.Target, containerPortunixPath, "install", processedPkg.Name}
+					if processedPkg.Variant != "" {
+						execArgs = append(execArgs, "--variant", processedPkg.Variant)
+					}
+					cmd = exec.Command(runtime, execArgs...)
+				} else {
+					// Use portunix container exec
+					execArgs = []string{"container", "exec", envCtx.Target, containerPortunixPath, "install", processedPkg.Name}
+					if processedPkg.Variant != "" {
+						execArgs = append(execArgs, "--variant", processedPkg.Variant)
+					}
+					cmd = exec.Command(portunixPath, execArgs...)
 				}
-				cmd = exec.Command(portunixPath, args...)
 			case "virt":
 				// Execute on VM via SSH (simplified approach)
 				// In a full implementation, this would copy the binary and execute remotely
@@ -810,5 +1620,371 @@ func executeAnsiblePlaybooksWithRollback(ptxbook *PtxbookFile, options Execution
 		}
 	}
 
+	return nil
+}
+
+// evaluateScriptCondition evaluates a shell condition (e.g., "! -d ./site")
+// Returns true if condition passes (script should run), false otherwise
+func evaluateScriptCondition(condition string, envCtx *EnvironmentContext, options ExecutionOptions) (bool, error) {
+	if condition == "" {
+		return true, nil // No condition, always run
+	}
+
+	var cmd *exec.Cmd
+	if envCtx != nil && envCtx.Type == "container" {
+		// Evaluate condition inside container
+		portunixPath, err := getPortunixBinaryPath()
+		if err != nil {
+			return false, err
+		}
+		runtime := envCtx.TempDir
+		useDirectRuntime := runtime == "docker" || runtime == "podman"
+
+		workDir := envCtx.WorkDir
+		if workDir == "" {
+			workDir = "/workspace"
+		}
+
+		// Use test command to evaluate condition
+		testCmd := fmt.Sprintf("cd %s && test %s", workDir, condition)
+		if useDirectRuntime {
+			cmd = exec.Command(runtime, "exec", envCtx.Target, "sh", "-c", testCmd)
+		} else {
+			cmd = exec.Command(portunixPath, "container", "exec", envCtx.Target, "sh", "-c", testCmd)
+		}
+	} else {
+		// Local evaluation - use appropriate shell for OS
+		if runtime.GOOS == "windows" {
+			// Windows: use cmd /c with if exist syntax
+			cmd = exec.Command("cmd", "/c", fmt.Sprintf("if %s (exit 0) else (exit 1)", condition))
+		} else {
+			cmd = exec.Command("sh", "-c", fmt.Sprintf("test %s", condition))
+		}
+	}
+
+	err := cmd.Run()
+	return err == nil, nil // err == nil means condition passed
+}
+
+// executeScripts executes custom scripts defined in the playbook
+func executeScripts(ptxbook *PtxbookFile, options ExecutionOptions, envCtx *EnvironmentContext) error {
+	// Define script execution order - internal scripts first, then common scripts
+	// Internal scripts (prefix "internal:") are executed before user scripts
+	scriptOrder := []string{"internal:bin-update", "init", "create", "dev", "build", "test", "serve", "deploy"}
+
+	// Helper function to check if script should run
+	shouldRunScript := func(name string) bool {
+		// Internal scripts (prefix "internal:") always run regardless of filter
+		if strings.HasPrefix(name, "internal:") {
+			return true
+		}
+		if len(options.ScriptFilter) == 0 {
+			return true // No filter, run all
+		}
+		for _, allowed := range options.ScriptFilter {
+			if strings.TrimSpace(allowed) == name {
+				return true
+			}
+		}
+		return false
+	}
+
+	// Collect all scripts (simple + extended)
+	allScripts := make(map[string]struct {
+		Command   string
+		Condition string
+	})
+
+	// Add simple scripts
+	for name, cmd := range ptxbook.Spec.Scripts {
+		allScripts[name] = struct {
+			Command   string
+			Condition string
+		}{Command: cmd, Condition: ""}
+	}
+
+	// Add/override with extended scripts
+	for name, cfg := range ptxbook.Spec.ScriptsExt {
+		allScripts[name] = struct {
+			Command   string
+			Condition string
+		}{Command: cfg.Command, Condition: cfg.Condition}
+	}
+
+	for _, scriptName := range scriptOrder {
+		script, exists := allScripts[scriptName]
+		if !exists {
+			continue
+		}
+
+		// Check if script should run based on filter
+		if !shouldRunScript(scriptName) {
+			if options.Verbose {
+				fmt.Printf("   Skipping script '%s' (not in filter)\n", scriptName)
+			}
+			continue
+		}
+
+		// Evaluate condition if present
+		if script.Condition != "" {
+			conditionPassed, err := evaluateScriptCondition(script.Condition, envCtx, options)
+			if err != nil {
+				return fmt.Errorf("failed to evaluate condition for script '%s': %v", scriptName, err)
+			}
+			if !conditionPassed {
+				if options.Verbose {
+					fmt.Printf("   Skipping script '%s' (condition not met: %s)\n", scriptName, script.Condition)
+				}
+				continue
+			}
+		}
+
+		// Handle built-in internal scripts
+		if scriptName == "internal:bin-update" && script.Command == "builtin" {
+			if envCtx == nil || envCtx.Type != "container" {
+				if options.Verbose {
+					fmt.Printf("   Skipping internal:bin-update (only runs in container environment)\n")
+				}
+				continue
+			}
+
+			fmt.Printf("   Running internal:bin-update (copying Portunix binaries to container)...\n")
+
+			if options.DryRun {
+				fmt.Printf("   [DRY-RUN] Would copy binaries to container\n")
+				continue
+			}
+
+			// Get runtime info from environment context
+			portunixPath, err := getPortunixBinaryPath()
+			if err != nil {
+				return fmt.Errorf("failed to find portunix binary: %v", err)
+			}
+
+			// Detect runtime (docker or podman)
+			containerRuntime := "docker"
+			if envCtx.Runtime != "" {
+				containerRuntime = envCtx.Runtime
+			}
+
+			// Call the binary copy function
+			if err := copyBinariesToContainer(envCtx.Target, options, portunixPath, containerRuntime, false); err != nil {
+				return fmt.Errorf("internal:bin-update failed: %v", err)
+			}
+
+			fmt.Printf("   ✓ internal:bin-update completed\n")
+			continue
+		}
+
+		// Always show which script is running
+		fmt.Printf("   Running script '%s': %s\n", scriptName, script.Command)
+
+		if options.DryRun {
+			fmt.Printf("   [DRY-RUN] Would run: %s\n", script.Command)
+			continue
+		}
+
+		var cmd *exec.Cmd
+		if envCtx != nil && envCtx.Type == "container" {
+			// Execute inside container with proper working directory
+			portunixPath, err := getPortunixBinaryPath()
+			if err != nil {
+				return fmt.Errorf("failed to find portunix binary: %v", err)
+			}
+			// Wrap command with cd to working directory
+			workDir := envCtx.WorkDir
+			if workDir == "" {
+				workDir = "/workspace"
+			}
+			wrappedCmd := fmt.Sprintf("cd %s && %s", workDir, script.Command)
+			cmd = exec.Command(portunixPath, "container", "exec", envCtx.Target, "sh", "-c", wrappedCmd)
+		} else {
+			// Local execution - use appropriate shell for OS
+			if runtime.GOOS == "windows" {
+				cmd = exec.Command("cmd", "/c", script.Command)
+			} else {
+				cmd = exec.Command("sh", "-c", script.Command)
+			}
+		}
+
+		// Always show output from scripts (not just in verbose mode)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("script '%s' failed: %v", scriptName, err)
+		}
+
+		fmt.Printf("   ✓ Script '%s' completed\n", scriptName)
+	}
+
+	// Execute any remaining scripts not in the predefined order
+	for scriptName, script := range allScripts {
+		// Skip if already executed (in predefined order)
+		found := false
+		for _, ordered := range scriptOrder {
+			if scriptName == ordered {
+				found = true
+				break
+			}
+		}
+		if found {
+			continue
+		}
+
+		// Check if script should run based on filter
+		if !shouldRunScript(scriptName) {
+			if options.Verbose {
+				fmt.Printf("   Skipping script '%s' (not in filter)\n", scriptName)
+			}
+			continue
+		}
+
+		// Evaluate condition if present
+		if script.Condition != "" {
+			conditionPassed, err := evaluateScriptCondition(script.Condition, envCtx, options)
+			if err != nil {
+				return fmt.Errorf("failed to evaluate condition for script '%s': %v", scriptName, err)
+			}
+			if !conditionPassed {
+				if options.Verbose {
+					fmt.Printf("   Skipping script '%s' (condition not met: %s)\n", scriptName, script.Condition)
+				}
+				continue
+			}
+		}
+
+		// Always show which script is running
+		fmt.Printf("   Running script '%s': %s\n", scriptName, script.Command)
+
+		if options.DryRun {
+			fmt.Printf("   [DRY-RUN] Would run: %s\n", script.Command)
+			continue
+		}
+
+		var cmd *exec.Cmd
+		if envCtx != nil && envCtx.Type == "container" {
+			portunixPath, err := getPortunixBinaryPath()
+			if err != nil {
+				return fmt.Errorf("failed to find portunix binary: %v", err)
+			}
+			// Wrap command with cd to working directory
+			workDir := envCtx.WorkDir
+			if workDir == "" {
+				workDir = "/workspace"
+			}
+			wrappedCmd := fmt.Sprintf("cd %s && %s", workDir, script.Command)
+			cmd = exec.Command(portunixPath, "container", "exec", envCtx.Target, "sh", "-c", wrappedCmd)
+		} else {
+			// Local execution - use appropriate shell for OS
+			if runtime.GOOS == "windows" {
+				cmd = exec.Command("cmd", "/c", script.Command)
+			} else {
+				cmd = exec.Command("sh", "-c", script.Command)
+			}
+		}
+
+		// Always show output from scripts (not just in verbose mode)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("script '%s' failed: %v", scriptName, err)
+		}
+
+		fmt.Printf("   ✓ Script '%s' completed\n", scriptName)
+	}
+
+	return nil
+}
+
+// getEnvironmentFromPlaybook extracts environment settings from playbook spec
+func getEnvironmentFromPlaybook(ptxbook *PtxbookFile) (target, runtime, image, containerName string, ports, volumes []string) {
+	if ptxbook.Spec.Environment == nil {
+		return "local", "", "", "", nil, nil
+	}
+
+	if t, ok := ptxbook.Spec.Environment["target"].(string); ok {
+		target = t
+	} else {
+		target = "local"
+	}
+
+	if r, ok := ptxbook.Spec.Environment["runtime"].(string); ok {
+		runtime = r
+	}
+
+	if i, ok := ptxbook.Spec.Environment["image"].(string); ok {
+		image = i
+	}
+
+	if cn, ok := ptxbook.Spec.Environment["container_name"].(string); ok {
+		containerName = cn
+	}
+
+	// Parse ports - can be a single string or array of strings
+	if p, ok := ptxbook.Spec.Environment["ports"].(string); ok {
+		ports = []string{p}
+	} else if pList, ok := ptxbook.Spec.Environment["ports"].([]interface{}); ok {
+		for _, port := range pList {
+			if ps, ok := port.(string); ok {
+				ports = append(ports, ps)
+			}
+		}
+	}
+
+	// Parse volumes - can be a single string or array of strings
+	// Supports :named suffix for Docker named volumes
+	if v, ok := ptxbook.Spec.Environment["volumes"].(string); ok {
+		volumes = []string{v}
+	} else if vList, ok := ptxbook.Spec.Environment["volumes"].([]interface{}); ok {
+		for _, vol := range vList {
+			if vs, ok := vol.(string); ok {
+				volumes = append(volumes, vs)
+			}
+		}
+	}
+
+	return
+}
+
+// parseVolumes separates bind mounts and named volumes
+// Named volumes have :named suffix, e.g., "node_modules:/app/node_modules:named"
+func parseVolumes(volumes []string) (bindMounts, namedVolumes []string) {
+	for _, vol := range volumes {
+		if strings.HasSuffix(vol, ":named") {
+			// Remove :named suffix and add to named volumes
+			namedVol := strings.TrimSuffix(vol, ":named")
+			namedVolumes = append(namedVolumes, namedVol)
+		} else {
+			bindMounts = append(bindMounts, vol)
+		}
+	}
+	return
+}
+
+// createNamedVolumes creates Docker/Podman named volumes if they don't exist
+func createNamedVolumes(namedVolumes []string, runtime string, verbose bool) error {
+	for _, vol := range namedVolumes {
+		// Extract volume name (first part before :)
+		parts := strings.Split(vol, ":")
+		if len(parts) < 2 {
+			continue
+		}
+		volumeName := parts[0]
+
+		if verbose {
+			fmt.Printf("   Creating named volume: %s\n", volumeName)
+		}
+
+		// Create volume using docker/podman
+		cmd := exec.Command(runtime, "volume", "create", volumeName)
+		if err := cmd.Run(); err != nil {
+			// Volume might already exist, which is fine
+			if verbose {
+				fmt.Printf("   Volume %s already exists or creation skipped\n", volumeName)
+			}
+		}
+	}
 	return nil
 }

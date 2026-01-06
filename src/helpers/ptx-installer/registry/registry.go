@@ -69,19 +69,44 @@ type PlatformSpec struct {
 	Verification *VerificationSpec        `json:"verification,omitempty"`
 }
 
+// StringOrSlice is a type that can unmarshal either a string or []string from JSON
+type StringOrSlice []string
+
+// UnmarshalJSON implements custom unmarshaling for StringOrSlice
+func (s *StringOrSlice) UnmarshalJSON(data []byte) error {
+	// Try to unmarshal as string first
+	var str string
+	if err := json.Unmarshal(data, &str); err == nil {
+		*s = []string{str}
+		return nil
+	}
+	// Try to unmarshal as array
+	var arr []string
+	if err := json.Unmarshal(data, &arr); err != nil {
+		return err
+	}
+	*s = arr
+	return nil
+}
+
 // VariantSpec represents a specific variant of a package
 type VariantSpec struct {
 	Version       string                `json:"version"`
+	Description   string                `json:"description,omitempty"`
 	Type          string                `json:"type,omitempty"`
 	URL           string                `json:"url,omitempty"`
 	URLs          map[string]string     `json:"urls,omitempty"`
 	Packages      []string              `json:"packages,omitempty"`
-	InstallScript string                `json:"installScript,omitempty"`
-	InstallPath   string                `json:"installPath,omitempty"`
+	Repository    string                `json:"repository,omitempty"`
+	KeyUrl        string                `json:"keyUrl,omitempty"`
+	InstallScript     StringOrSlice         `json:"installScript,omitempty"`
+	InstallScriptArgs string                `json:"installScriptArgs,omitempty"`
+	InstallPath       string                `json:"installPath,omitempty"`
 	ExtractTo     string                `json:"extractTo,omitempty"`
 	Extract       bool                  `json:"extract,omitempty"`
 	Binary        string                `json:"binary,omitempty"`
 	RequiresSudo  bool                  `json:"requiresSudo,omitempty"`
+	RequiresAdmin bool                  `json:"requiresAdmin,omitempty"`
 	PostInstall   []string              `json:"postInstall,omitempty"`
 	InstallArgs   []string              `json:"installArgs,omitempty"`
 	Distributions interface{}           `json:"distributions,omitempty"`
@@ -402,14 +427,19 @@ func (r *PackageRegistry) validatePlatform(platformName string, platform *Platfo
 		return fmt.Errorf("type is required")
 	}
 
-	validTypes := []string{"msi", "exe", "zip", "tar.gz", "deb", "rpm", "apt", "dnf", "pacman", "snap", "repository", "powershell", "script", "winget", "npm", "brew", "redirect"}
+	validTypes := []string{"msi", "exe", "zip", "tar.gz", "deb", "rpm", "apt", "dnf", "pacman", "snap", "repository", "powershell", "script", "winget", "chocolatey", "npm", "brew", "redirect", "builtin"}
 	if !containsString(validTypes, platform.Type) {
 		return fmt.Errorf("unsupported type '%s', must be one of: %v", platform.Type, validTypes)
 	}
 
-	// Validate variants
+	// Validate variants (skip detailed validation for builtin packages)
 	if len(platform.Variants) == 0 {
 		return fmt.Errorf("at least one variant must be specified")
+	}
+
+	// Builtin packages are handled by special logic in ptx-installer, skip install method validation
+	if platform.Type == "builtin" {
+		return nil
 	}
 
 	for variantName, variant := range platform.Variants {
@@ -429,7 +459,7 @@ func (r *PackageRegistry) validateVariant(variantName string, variant *VariantSp
 
 	// Ensure at least one installation method is specified
 	hasInstallMethod := false
-	if variant.URL != "" || len(variant.URLs) > 0 || len(variant.Packages) > 0 || variant.InstallScript != "" {
+	if variant.URL != "" || len(variant.URLs) > 0 || len(variant.Packages) > 0 || len(variant.InstallScript) > 0 {
 		hasInstallMethod = true
 	}
 

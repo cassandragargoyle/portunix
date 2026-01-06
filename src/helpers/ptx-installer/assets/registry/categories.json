@@ -36,6 +36,11 @@
       "name": "Package Managers",
       "description": "Software package management tools",
       "icon": "📦"
+    },
+    "security/remote-access": {
+      "name": "Remote Access Tools",
+      "description": "SSH, VPN, and secure remote access utilities",
+      "icon": "🔐"
     }
   }
 }

@@ -22,3 +22,4 @@ These are the built-in commands available in Portunix.
 | [make](make/) | Cross-platform Makefile utilities |
 | [package](package/) | Package management and registry |
 | [pft](pft/) | Product feedback tool integration |
+| [playbook](playbook/) | Infrastructure as Code management |

@@ -292,10 +292,25 @@ func handleCreateCommand(args []string) {
 func handleStartCommand(args []string) {
 	if len(args) == 0 {
 		fmt.Println("VM name required")
+		fmt.Println("Usage: portunix virt start <vm-name>")
 		return
 	}
-	fmt.Printf("Starting VM: %s\n", args[0])
-	// TODO: Implement using existing virt start logic
+
+	vmName := args[0]
+	fmt.Printf("Starting VM '%s'...\n", vmName)
+
+	manager, err := NewVirtManager()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		return
+	}
+
+	if err := manager.Start(vmName); err != nil {
+		fmt.Printf("Error starting VM: %v\n", err)
+		return
+	}
+
+	fmt.Printf("✅ VM '%s' started successfully!\n", vmName)
 }
 
 func handleStopCommand(args []string) {

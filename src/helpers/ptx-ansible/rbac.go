@@ -545,7 +545,7 @@ func GetDefaultRBACConfig() *RBACConfig {
 	dataDir := filepath.Join(homeDir, ".portunix", "rbac")
 
 	return &RBACConfig{
-		Enabled:               true,
+		Enabled:               false, // Disabled by default for standalone usage (Issue #119)
 		DefaultRole:           "developer",
 		AdminUsers:            []string{}, // Will be populated from environment
 		EnvironmentIsolation:  true,

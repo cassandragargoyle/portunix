@@ -247,8 +247,11 @@ release:
     name: portunix
   
   # Create individual checksum files for each binary
+  # Include quickstart scripts for easy onboarding
   extra_files:
     - glob: ./dist/*
+    - glob: ./release-assets/quickstart/*.ps1
+    - glob: ./release-assets/quickstart/*.sh
   
   # Release notes
   header: |
@@ -309,6 +312,14 @@ release:
     - **ptx-ansible**: Handles Infrastructure as Code with Ansible integration
 
     All binaries are installed together and work seamlessly. The user interface remains unchanged.
+
+    ## QuickStart Scripts
+
+    Get started quickly with pre-configured environments:
+    ```powershell
+    # Docusaurus documentation site (Windows)
+    irm https://github.com/cassandragargoyle/Portunix/releases/latest/download/quickstart-docusaurus.ps1 | iex
+    ```
 
     ## Self-Update
 

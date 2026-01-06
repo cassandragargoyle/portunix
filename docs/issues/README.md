@@ -124,6 +124,20 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#114](114-mcp-configure-default-stdio-mode.md) | - | MCP Configure Should Default to stdio Mode | ✅ Implemented | Medium | Enhancement | mcp, configuration, ux |
 | [#115](115-automated-release-notes-generation.md) | - | Automated Release Notes Generation System | ✅ Implemented | High | Enhancement | enhancement, release-process, automation, ai-integration |
 | [#116](116-ptx-pft-iso16355-qfd-project-structure.md) | - | PTX-PFT ISO 16355 QFD Project Structure | 📋 Open | High | Enhancement | enhancement, helper-binary, ptx-pft, iso-16355, qfd, requirements-management |
+| [#117](117-ptx-pft-list-qfd-compatibility.md) | - | PTX-PFT List QFD Compatibility | 📋 Open | Medium | Enhancement | enhancement, helper-binary, ptx-pft, qfd, compatibility |
+| [#118](118-system-info-pprof-profiling.md) | - | System Info pprof Profiling | 📋 Open | Medium | Enhancement | enhancement, performance, profiling, system-info |
+| [#119](119-ptx-ansible-standalone-help-and-template-examples.md) | - | PTX-Ansible Standalone Help and Template Examples System | 🔄 In Progress | High | Enhancement | enhancement, helper-binary, ptx-ansible, templates, user-experience, documentation |
+| [#120](120-windows-native-system-info-module.md) | - | Windows Native System Info Module | 📋 Open | High | Enhancement | enhancement, performance, windows, system-info, native-api |
+| [#121](121-virt-list-libvirt-detection-fix.md) | - | Fix libvirt Detection in portunix virt list | ✅ Implemented | Medium | Bug Fix | bug, ptx-virt, libvirt, detection |
+| [#122](122-consolidate-docker-podman-installation.md) | - | Consolidate Docker/Podman Installation into ptx-installer | ✅ Implemented | High | Refactoring | refactoring, architecture, ptx-installer, docker, podman |
+| [#123](123-consolidate-installation-systems.md) | - | Consolidate Installation Systems - Remove Duplicate Assets | ✅ Implemented | Medium | Refactoring | refactoring, architecture, ptx-installer, assets |
+| [#124](124-download-progress-indicator.md) | - | Download Progress Indicator | ✅ Implemented | Medium | Enhancement | enhancement, user-experience, ptx-installer, download |
+| [#125](125-cross-platform-binary-distribution.md) | - | Cross-Platform Binary Distribution | 📋 Open | High | Enhancement | enhancement, architecture, distribution, cross-platform, container, vm |
+| [#126](126-gh-installation-package-manager-detection.md) | - | GitHub CLI Installation Package Manager Detection Bug | 🔄 In Progress | High | Bug Fix | bug, package-management, github-cli, arch-linux, detection |
+| [#127](127-migrate-openssh-to-ptx-installer.md) | - | Migrate Win32-OpenSSH Installation to ptx-installer | 🔄 In Progress | Medium | Enhancement | enhancement, package-management, openssh, cross-platform, refactoring |
+| [#128](128-docusaurus-container-performance-optimization.md) | - | Docusaurus Container Performance Optimization | ✅ Implemented | High | Enhancement | enhancement, container, docker, performance, docusaurus, playbook |
+| [#129](129-docusaurus-quickstart-script.md) | - | Docusaurus QuickStart Script for GitHub Release | ✅ Implemented | Medium | Enhancement | enhancement, documentation, user-experience, quickstart, docusaurus, release-assets |
+| [#131](131-openssh-reinstall-hostkeys-bug.md) | - | OpenSSH Installation Refactoring - Embedded Script Support | ✅ Implemented | High | Bug Fix | bug, openssh, windows, installation, refactoring |
 
 ## Directory Structure
 

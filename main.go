@@ -1,11 +1,10 @@
 package main
 
 import (
-	"embed"
+	_ "embed"
 	"fmt"
 	"os"
 
-	"portunix.ai/app/install"
 	"portunix.ai/app/sandbox"
 	"portunix.ai/app/update"
 	appversion "portunix.ai/app/version"
@@ -22,15 +21,10 @@ var vscodeInstallScript string
 //go:embed assets/scripts/windows/PortunixSystem.ps1
 var portunixSystemPSScript string
 
-//go:embed assets
-var AssetsFS embed.FS
-
 // Version will be set at build time using ldflags.
 var version = "dev"
 
 func main() {
-	// Set the embedded assets for install package
-	install.SetEmbeddedAssets(AssetsFS)
 
 	// Set the version for update package and version package
 	update.Version = version

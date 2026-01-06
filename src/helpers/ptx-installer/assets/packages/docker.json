@@ -1,0 +1,81 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "docker",
+    "displayName": "Docker",
+    "description": "Container runtime platform for building, sharing, and running applications",
+    "category": "development/containers",
+    "homepage": "https://www.docker.com/",
+    "documentation": "https://docs.docker.com/",
+    "license": "Apache-2.0",
+    "maintainer": "Docker Inc."
+  },
+  "spec": {
+    "hasVariants": false,
+    "installationType": "builtin",
+    "platforms": {
+      "windows": {
+        "type": "builtin",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Docker Desktop for Windows with WSL2 backend"
+          }
+        },
+        "verification": {
+          "command": "docker --version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "builtin",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Docker Engine for Linux"
+          }
+        },
+        "verification": {
+          "command": "docker --version",
+          "expectedExitCode": 0
+        }
+      },
+      "darwin": {
+        "type": "builtin",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Docker Desktop for macOS"
+          }
+        },
+        "verification": {
+          "command": "docker --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "official": {
+        "type": "direct",
+        "url": "https://www.docker.com/products/docker-desktop",
+        "apiEndpoint": "https://desktop.docker.com/",
+        "pattern": "docker-desktop-{version}"
+      }
+    },
+    "features": [
+      "Intelligent storage selection (prioritizes non-system drives)",
+      "Minimum 10 GB space requirement check",
+      "Automatic data-root configuration",
+      "Cross-platform support (Windows, Linux, macOS)",
+      "User group configuration on Linux"
+    ],
+    "aiPrompts": {
+      "versionDiscovery": "Check Docker Desktop releases at https://docs.docker.com/desktop/release-notes/ and Docker Engine releases at https://docs.docker.com/engine/release-notes/",
+      "urlResolution": "Docker Desktop: https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe for Windows",
+      "updateGuidance": "Docker installation uses built-in Portunix logic with intelligent storage detection. Use 'portunix install docker' for installation."
+    },
+    "dependencies": [],
+    "templates": []
+  }
+}

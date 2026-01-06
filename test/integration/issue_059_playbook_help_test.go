@@ -34,7 +34,7 @@ func TestIssue059PlaybookHelpCommand(t *testing.T) {
 
 	// Verify essential content is present
 	expectedStrings := []string{
-		"portunix playbook - Ansible Infrastructure as Code Management",
+		"portunix playbook - Infrastructure as Code Management",
 		"USAGE:",
 		"SUBCOMMANDS:",
 		"EXAMPLES:",

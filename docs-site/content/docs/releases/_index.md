@@ -8,9 +8,9 @@ bookFlatSection: true
 
 Latest updates and version history.
 
-## Current Version: v1.9.0
+## Current Version: v1.9.1
 
-Released: 2025-12-27
+Released: 2026-01-02
 
 For detailed release notes, please visit the [GitHub Releases](https://github.com/cassandragargoyle/Portunix/releases) page.
 

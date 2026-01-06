@@ -857,18 +857,38 @@ func analyzeWindowsStorage() ([]DriveInfo, error) {
 		return nil, fmt.Errorf("no accessible drives found")
 	}
 
-	// Sort drives: non-system drives first (better for Docker data), then by free space (largest first)
+	// Minimum space required for Docker (10 GB)
+	const minDockerSpace int64 = 10 * 1024 * 1024 * 1024
+
+	// Sort drives: non-system drives with sufficient space first, then by free space (largest first)
 	sort.Slice(drives, func(i, j int) bool {
-		// Prioritize non-C drives for Docker storage
-		if drives[i].Letter != "C" && drives[j].Letter == "C" {
+		spaceI := parseSpaceString(drives[i].FreeSpace)
+		spaceJ := parseSpaceString(drives[j].FreeSpace)
+
+		// Check if drives have sufficient space
+		hasSufficientI := spaceI >= minDockerSpace
+		hasSufficientJ := spaceJ >= minDockerSpace
+
+		// Drives with insufficient space should be sorted last
+		if hasSufficientI && !hasSufficientJ {
 			return true
 		}
-		if drives[i].Letter == "C" && drives[j].Letter != "C" {
+		if !hasSufficientI && hasSufficientJ {
 			return false
 		}
 
-		// If both are C or both are non-C, sort by free space (descending)
-		return parseSpaceString(drives[i].FreeSpace) > parseSpaceString(drives[j].FreeSpace)
+		// Both have sufficient space: prioritize non-C drives
+		if hasSufficientI && hasSufficientJ {
+			if drives[i].Letter != "C" && drives[j].Letter == "C" {
+				return true
+			}
+			if drives[i].Letter == "C" && drives[j].Letter != "C" {
+				return false
+			}
+		}
+
+		// Sort by free space (descending)
+		return spaceI > spaceJ
 	})
 
 	return drives, nil

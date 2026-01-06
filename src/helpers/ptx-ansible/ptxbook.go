@@ -30,11 +30,20 @@ type PtxbookSpec struct {
 	Requirements *PtxbookRequirements   `yaml:"requirements,omitempty" json:"requirements,omitempty"`
 	Portunix     *PtxbookPortunix       `yaml:"portunix,omitempty" json:"portunix,omitempty"`
 	Ansible      *PtxbookAnsible        `yaml:"ansible,omitempty" json:"ansible,omitempty"`
+	Scripts      map[string]string      `yaml:"scripts,omitempty" json:"scripts,omitempty"`       // Custom scripts (init, build, serve, etc.)
+	ScriptsExt   map[string]ScriptConfig `yaml:"scripts_ext,omitempty" json:"scripts_ext,omitempty"` // Extended scripts with conditions (Issue #128)
 	// Phase 3: Advanced features
 	Rollback     *PtxbookRollback       `yaml:"rollback,omitempty" json:"rollback,omitempty"`     // Rollback configuration
-	Environment  map[string]interface{} `yaml:"environment,omitempty" json:"environment,omitempty"` // Environment detection variables
+	Environment  map[string]interface{} `yaml:"environment,omitempty" json:"environment,omitempty"` // Environment configuration (target, runtime, image)
 	// Phase 4: Enterprise features
 	Secrets      map[string]interface{} `yaml:"secrets,omitempty" json:"secrets,omitempty"`     // Secret references
+}
+
+// ScriptConfig represents a script with optional condition (Issue #128 Phase 3)
+type ScriptConfig struct {
+	Command     string `yaml:"command" json:"command"`                           // The command to execute
+	Condition   string `yaml:"condition,omitempty" json:"condition,omitempty"`   // Shell condition to evaluate (e.g., "! -d ./site")
+	Description string `yaml:"description,omitempty" json:"description,omitempty"` // Optional description for --list-scripts
 }
 
 // PtxbookRequirements represents the requirements section
@@ -127,9 +136,12 @@ func ValidatePtxbookFile(ptxbook *PtxbookFile) error {
 		return fmt.Errorf("metadata.name is required")
 	}
 
-	// Validate that at least Portunix or Ansible section exists
-	if ptxbook.Spec.Portunix == nil && ptxbook.Spec.Ansible == nil {
-		return fmt.Errorf("spec must contain either 'portunix' or 'ansible' section")
+	// Validate that at least Portunix, Ansible, or Scripts section exists
+	hasPortunix := ptxbook.Spec.Portunix != nil && len(ptxbook.Spec.Portunix.Packages) > 0
+	hasAnsible := ptxbook.Spec.Ansible != nil && len(ptxbook.Spec.Ansible.Playbooks) > 0
+	hasScripts := len(ptxbook.Spec.Scripts) > 0
+	if !hasPortunix && !hasAnsible && !hasScripts {
+		return fmt.Errorf("spec must contain at least one of: 'portunix', 'ansible', or 'scripts' section")
 	}
 
 	// Validate Portunix packages if present
