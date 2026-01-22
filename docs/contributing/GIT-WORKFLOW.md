@@ -552,7 +552,7 @@ git branch --merged main | grep -v main | xargs -n 1 git branch -d
 
 When viewing commit statistics (e.g., `git show --stat`, `git diff --stat`), the numbers represent **lines**, not files:
 
-```
+```text
 63 files changed, 56 insertions(+), 3786 deletions(-)
                   ↑                    ↑
               56 lines added    3786 lines deleted

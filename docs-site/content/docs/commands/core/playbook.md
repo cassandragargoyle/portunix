@@ -31,6 +31,7 @@ DESCRIPTION:
 
 SUBCOMMANDS:
   run         Execute a .ptxbook file
+  build       Generate production Dockerfile from playbook
   validate    Validate a .ptxbook file syntax and dependencies
   check       Check if ptx-ansible helper is available and working
   list        List available playbooks in current directory
@@ -41,6 +42,16 @@ SUBCOMMANDS:
 EXAMPLES:
   # Execute a playbook
   portunix playbook run deployment.ptxbook
+
+  # Run specific scripts only
+  portunix playbook run my-docs.ptxbook --script dev
+  portunix playbook run my-docs.ptxbook --script create,build
+
+  # List available scripts in playbook
+  portunix playbook run my-docs.ptxbook --list-scripts
+
+  # Generate production Dockerfile
+  portunix playbook build my-docs.ptxbook
 
   # Validate playbook without execution
   portunix playbook run deployment.ptxbook --dry-run

@@ -8,7 +8,7 @@
     "created": "2025-09-27T23:06:00Z"
   },
   "spec": {
-    "packages": ["nodejs", "python", "go", "vscode", "chrome", "java", "openssh", "hugo", "docusaurus"],
+    "packages": ["nodejs", "python", "go", "vscode", "chrome", "java", "graalvm", "openssh", "hugo", "docusaurus"],
     "categories": [
       "development/languages",
       "development/editors",

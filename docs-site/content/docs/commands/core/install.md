@@ -22,6 +22,7 @@ Usage: portunix install <package> [options]
 
 Options:
   --variant=<variant>  Select package variant (e.g., --variant=21 for Java 21)
+  --path=<path>        Target installation path (for project generators like docusaurus)
   --dry-run            Preview installation without executing
   --force              Force reinstallation even if already installed
   -h, --help           Show this help message
@@ -29,6 +30,7 @@ Options:
 Examples:
   portunix install python
   portunix install java --variant=21
+  portunix install docusaurus --path ./my-docs
   portunix install nodejs --dry-run
 
 Use 'portunix package list' to see available packages
@@ -41,6 +43,7 @@ Use 'portunix package info <package>' for detailed package information
 ```bash
   portunix install python
   portunix install java --variant=21
+  portunix install docusaurus --path ./my-docs
   portunix install nodejs --dry-run
 
 ```

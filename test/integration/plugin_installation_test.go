@@ -416,7 +416,7 @@ func TestPluginCreate(t *testing.T) {
 
 	// Verify plugin structure was created
 	expectedFiles := []string{
-		"plugin.yaml",
+		"plugin.json",
 		"main.go",
 		"README.md",
 	}

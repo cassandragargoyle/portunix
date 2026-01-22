@@ -69,7 +69,7 @@ package: build ## Create distribution package
 	@echo "Creating package..."
 	@mkdir -p dist
 	@tar -czf dist/$(BINARY_NAME)-$(VERSION).tar.gz -C $(BUILD_DIR) $(BINARY_NAME)
-	@cp plugin.yaml dist/
+	@cp plugin.json dist/
 	@echo "Package created: dist/$(BINARY_NAME)-$(VERSION).tar.gz"
 
 install: build ## Install plugin to Portunix

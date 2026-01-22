@@ -12,18 +12,87 @@ import (
 
 // ParseMarkdownFile parses a feedback markdown file
 func ParseMarkdownFile(filePath string) (*FeedbackItem, error) {
-	file, err := os.Open(filePath)
+	content, err := os.ReadFile(filePath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open file: %w", err)
+		return nil, fmt.Errorf("failed to read file: %w", err)
 	}
-	defer file.Close()
 
 	item := &FeedbackItem{
 		ID:       strings.TrimSuffix(filepath.Base(filePath), ".md"),
 		FilePath: filePath,
 	}
 
-	scanner := bufio.NewScanner(file)
+	contentStr := string(content)
+
+	// Parse YAML frontmatter if present
+	if strings.HasPrefix(contentStr, "---") {
+		endIndex := strings.Index(contentStr[3:], "---")
+		if endIndex != -1 {
+			frontmatter := contentStr[3 : endIndex+3]
+			lines := strings.Split(frontmatter, "\n")
+
+			var currentArrayField string
+			for _, line := range lines {
+				line = strings.TrimSpace(line)
+				if line == "" {
+					continue
+				}
+
+				// Check if this is an array item
+				if strings.HasPrefix(line, "- ") {
+					value := strings.TrimPrefix(line, "- ")
+					switch currentArrayField {
+					case "categories":
+						item.Categories = append(item.Categories, value)
+					case "tags":
+						item.Tags = append(item.Tags, value)
+					}
+					continue
+				}
+
+				// Parse key: value
+				parts := strings.SplitN(line, ":", 2)
+				if len(parts) != 2 {
+					continue
+				}
+
+				key := strings.TrimSpace(parts[0])
+				value := strings.TrimSpace(parts[1])
+
+				// Check if this starts an array
+				if value == "" {
+					currentArrayField = key
+					continue
+				}
+				currentArrayField = ""
+
+				switch key {
+				case "id":
+					item.ID = value
+				case "title":
+					item.Title = value
+				case "status":
+					item.Status = value
+				case "priority":
+					item.Priority = value
+				case "category":
+					// Single category field - add to categories slice
+					if value != "" {
+						item.Categories = append(item.Categories, value)
+					}
+				case "external_id":
+					item.ExternalID = value
+				case "created_at":
+					item.CreatedAt = value
+				case "updated_at":
+					item.UpdatedAt = value
+				}
+			}
+		}
+	}
+
+	// Also parse markdown sections for backward compatibility
+	scanner := bufio.NewScanner(strings.NewReader(contentStr))
 	var currentSection string
 	var descriptionLines []string
 	var inDescription bool
@@ -67,7 +136,7 @@ func ParseMarkdownFile(filePath string) (*FeedbackItem, error) {
 				item.Status = trimmedLine
 			}
 		case "Categories":
-			// Parse comma-separated categories
+			// Parse comma-separated categories (only if not already loaded from frontmatter)
 			if len(item.Categories) == 0 && trimmedLine != "" {
 				cats := strings.Split(trimmedLine, ",")
 				for _, cat := range cats {
@@ -763,7 +832,7 @@ func PrintConflicts(conflicts []SyncConflict) {
 	}
 }
 
-// UpdateFileCategories updates the Categories section in a markdown file
+// UpdateFileCategories updates categories in YAML frontmatter
 func UpdateFileCategories(filePath string, categories []string) error {
 	content, err := os.ReadFile(filePath)
 	if err != nil {
@@ -771,42 +840,48 @@ func UpdateFileCategories(filePath string, categories []string) error {
 	}
 
 	contentStr := string(content)
-	categoriesLine := strings.Join(categories, ", ")
 
-	// Check if file has Categories section
-	if strings.Contains(contentStr, "## Categories") {
-		// Replace existing Categories section content
-		re := regexp.MustCompile(`(## Categories\n)[^\n#]*`)
-		if len(categories) == 0 {
-			// Remove entire Categories section if empty
-			contentStr = regexp.MustCompile(`## Categories\n[^\n#]*\n?`).ReplaceAllString(contentStr, "")
-		} else {
-			contentStr = re.ReplaceAllString(contentStr, "${1}"+categoriesLine+"\n")
-		}
-	} else if len(categories) > 0 {
-		// Add Categories section after Summary (or after title if no Summary)
-		if strings.Contains(contentStr, "## Summary") {
-			// Find the end of Summary section and insert after
-			re := regexp.MustCompile(`(## Summary\n[^\n#]*\n)`)
-			contentStr = re.ReplaceAllString(contentStr, "${1}\n## Categories\n"+categoriesLine+"\n")
-		} else if strings.Contains(contentStr, "## Priority") {
-			// Insert before Priority
-			contentStr = strings.Replace(contentStr, "## Priority", "## Categories\n"+categoriesLine+"\n\n## Priority", 1)
-		} else {
-			// Find first ## section and insert before it
-			re := regexp.MustCompile(`(\n## )`)
-			if re.MatchString(contentStr) {
-				contentStr = re.ReplaceAllStringFunc(contentStr, func(s string) string {
-					return "\n## Categories\n" + categoriesLine + "\n" + s
-				})
-			} else {
-				// No sections found, append at end
-				contentStr += "\n## Categories\n" + categoriesLine + "\n"
-			}
-		}
+	// Check if file has YAML frontmatter
+	if !strings.HasPrefix(contentStr, "---") {
+		return fmt.Errorf("file does not have YAML frontmatter")
 	}
 
-	return os.WriteFile(filePath, []byte(contentStr), 0644)
+	// Find end of frontmatter
+	endIndex := strings.Index(contentStr[3:], "---")
+	if endIndex == -1 {
+		return fmt.Errorf("invalid YAML frontmatter (no closing ---)")
+	}
+
+	frontmatter := contentStr[3 : endIndex+3]
+	afterFrontmatter := contentStr[endIndex+6:] // Skip past "---\n"
+
+	// Remove old 'category:' line (singular) from frontmatter
+	frontmatter = regexp.MustCompile(`(?m)^category:.*\n?`).ReplaceAllString(frontmatter, "")
+
+	// Remove old 'categories:' block from frontmatter (including array items)
+	frontmatter = regexp.MustCompile(`(?m)^categories:\s*\n(  - .*\n)*`).ReplaceAllString(frontmatter, "")
+	frontmatter = regexp.MustCompile(`(?m)^categories:.*\n?`).ReplaceAllString(frontmatter, "")
+
+	// Add new categories as YAML array (if any)
+	if len(categories) > 0 {
+		var categoriesYAML strings.Builder
+		categoriesYAML.WriteString("categories:\n")
+		for _, cat := range categories {
+			categoriesYAML.WriteString("  - " + cat + "\n")
+		}
+		// Add before closing of frontmatter (at the end)
+		frontmatter = strings.TrimRight(frontmatter, "\n") + "\n" + categoriesYAML.String()
+	}
+
+	// Remove ## Categories markdown section if exists (clean up old format)
+	afterFrontmatter = regexp.MustCompile(`(?m)^## Categories\n[^\n#]*\n?`).ReplaceAllString(afterFrontmatter, "")
+	// Remove duplicate empty lines that might result
+	afterFrontmatter = regexp.MustCompile(`\n{3,}`).ReplaceAllString(afterFrontmatter, "\n\n")
+
+	// Rebuild file
+	result := "---" + frontmatter + "---" + afterFrontmatter
+
+	return os.WriteFile(filePath, []byte(result), 0644)
 }
 
 // AddCategoryToFile adds a category to a file's Categories section
@@ -856,4 +931,9 @@ func RemoveCategoryFromFile(filePath string, categoryID string) error {
 // ClearCategoriesFromFile removes all categories from a file
 func ClearCategoriesFromFile(filePath string) error {
 	return UpdateFileCategories(filePath, nil)
+}
+
+// SetCategoryToFile replaces all categories with a single new category
+func SetCategoryToFile(filePath string, categoryID string) error {
+	return UpdateFileCategories(filePath, []string{categoryID})
 }

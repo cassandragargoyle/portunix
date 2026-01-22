@@ -257,21 +257,78 @@ function Install-Portunix {
     Write-Status "INFO" "Installing Portunix..."
 
     try {
-        # Use official Portunix installation script
-        $installScript = "https://raw.githubusercontent.com/cassandragargoyle/Portunix/main/scripts/install.ps1"
+        # Determine architecture
+        $arch = if ([Environment]::Is64BitOperatingSystem) { "amd64" } else { "386" }
 
-        Write-Status "INFO" "Downloading installer from GitHub..."
-        Invoke-Expression ((New-Object System.Net.WebClient).DownloadString($installScript))
+        # Get latest version from GitHub API
+        Write-Status "INFO" "Checking latest Portunix version..."
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        $apiUrl = "https://api.github.com/repos/cassandragargoyle/Portunix/releases/latest"
+        $release = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing
+        $version = $release.tag_name  # e.g., "v1.10.0"
+        $versionNum = $version.TrimStart('v')  # e.g., "1.10.0"
 
-        # Refresh PATH
+        # Construct direct download URL
+        $fileName = "portunix_${versionNum}_windows_${arch}.zip"
+        $releaseUrl = "https://github.com/cassandragargoyle/Portunix/releases/download/${version}/${fileName}"
+        Write-Status "INFO" "Downloading: $fileName"
+
+        # Create temp directory
+        $tempDir = Join-Path $env:TEMP "portunix-install"
+        if (Test-Path $tempDir) {
+            Remove-Item -Recurse -Force $tempDir
+        }
+        New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+
+        # Download release archive
+        Write-Status "INFO" "Downloading Portunix from GitHub..."
+        $zipPath = Join-Path $tempDir "portunix.zip"
+
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        Invoke-WebRequest -Uri $releaseUrl -OutFile $zipPath -UseBasicParsing
+
+        # Extract archive
+        Write-Status "INFO" "Extracting archive..."
+        Expand-Archive -Path $zipPath -DestinationPath $tempDir -Force
+
+        # Find portunix.exe in extracted files
+        $portunixExe = Get-ChildItem -Path $tempDir -Recurse -Filter "portunix.exe" | Select-Object -First 1
+        if (-not $portunixExe) {
+            throw "portunix.exe not found in downloaded archive"
+        }
+
+        # Install to C:\Portunix
+        $installDir = "C:\Portunix"
+        if (-not (Test-Path $installDir)) {
+            New-Item -ItemType Directory -Path $installDir -Force | Out-Null
+        }
+
+        # Copy all files from the extracted directory
+        $sourceDir = $portunixExe.DirectoryName
+        Copy-Item -Path "$sourceDir\*" -Destination $installDir -Recurse -Force
+        Write-Status "OK" "Portunix installed to $installDir"
+
+        # Add to PATH if not already there
+        $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+        if ($userPath -notlike "*$installDir*") {
+            [Environment]::SetEnvironmentVariable("Path", "$userPath;$installDir", "User")
+            Write-Status "OK" "Added $installDir to PATH"
+        }
+
+        # Refresh PATH for current session
         $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
-        if (Test-CommandExists "portunix") {
+        # Cleanup
+        Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
+
+        # Set portunix path
+        $script:PortunixPath = Join-Path $installDir "portunix.exe"
+
+        if (Test-Path $script:PortunixPath) {
             Write-Status "OK" "Portunix installed successfully"
             return $true
         } else {
-            Write-Status "FAIL" "Installation completed but portunix command not found"
-            Write-Status "INFO" "Try restarting PowerShell and running this script again"
+            Write-Status "FAIL" "Installation completed but portunix.exe not found"
             return $false
         }
     } catch {

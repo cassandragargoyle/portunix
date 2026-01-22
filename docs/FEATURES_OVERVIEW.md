@@ -5,11 +5,13 @@ This document provides an overview of features available in the Portunix core an
 ## Core Features (portunix)
 
 ### 🎯 Core System
+
 - **Cross-platform support**: Windows, Linux, macOS
 - **Intelligent OS detection**: Automatic platform detection and optimization
 - **Configuration management**: Flexible configuration system
 
 ### 🔄 Self-Update & Version Management
+
 - **Automatic updates**: Update Portunix to latest version from GitHub releases
 - **Update commands**:
   - `portunix update` - Check and install updates
@@ -24,6 +26,7 @@ This document provides an overview of features available in the Portunix core an
 - **Plugin updates** (🚧 planned): Automatic plugin version management and updates
 
 ### 📦 Package Management
+
 - **Universal installer**: Cross-platform package installation system
 - **Package definitions**: JSON-based package definitions (`assets/install-packages.json`)
 - **Supported package managers**:
@@ -33,31 +36,38 @@ This document provides an overview of features available in the Portunix core an
 #### Pre-configured Software Packages
 
 **Programming Languages & Runtimes:**
+
 - **Java (OpenJDK)**: Multiple LTS versions (8, 11, 17, 21) from Eclipse Adoptium
+- **GraalVM**: High-performance JDK with native image compilation (17, 21, 23)
 - **Python**: Version 3.13.6 (embeddable and full installations)
 - **Go**: Latest version (1.23.4) from Google
 - **PowerShell**: Cross-platform PowerShell for Linux systems
 
 **Development Tools:**
+
 - **Visual Studio Code**: Microsoft's source code editor (stable/insider builds)
 - **Apache Maven**: Build automation tool for Java projects (3.9.9)
 - **Claude Code**: Anthropic's official CLI for Claude AI assistant
 - **GitHub CLI**: Official command line tool for GitHub - manage repos, issues, PRs from the terminal
 
 **Package Managers:**
+
 - **Chocolatey**: Windows package manager
 - **WinGet**: Microsoft's official Windows Package Manager
 
 **Web Browsers:**
+
 - **Google Chrome**: Latest stable version
 
 **Installation Profiles:**
+
 - **`default`**: Python + Java 17 + VS Code (recommended for most developers)
 - **`minimal`**: Python only (lightweight setup)
 - **`full`**: Python + Java 17 + VS Code + Go (complete development environment)
 - **`empty`**: Clean environment without any pre-installed packages
 
 ### 🐳 Container Management
+
 - **Docker support**:
   - Intelligent Docker installation
   - Container lifecycle management
@@ -71,11 +81,13 @@ This document provides an overview of features available in the Portunix core an
   - Alternative to Docker for rootless containers
 
 ### 🪟 Virtualization
+
 - **Windows Sandbox integration**: Isolated development environments
 - **VM management**: Virtual machine creation and management
 - **Development disk**: Virtual development disk support (Issue #8)
 
 ### 🔌 Plugin System
+
 - **gRPC-based architecture**: High-performance plugin communication
 - **Plugin lifecycle management**: Install, enable, disable, start, stop, uninstall plugins
 - **Plugin creation**: Generate new plugin templates with `plugin create`
@@ -87,11 +99,13 @@ This document provides an overview of features available in the Portunix core an
 - **Proto definitions**: Protocol Buffer support for plugin API
 
 ### 🤖 AI Integration
+
 - **MCP Server**: Model Context Protocol server for AI assistants
 - **MCP configuration**: Configure, reconfigure, remove MCP integrations
 - **AI-friendly commands**: Designed for integration with AI tools
 
 ### 🛠️ Developer Tools
+
 - **Shell completion**: Auto-completion scripts for bash, zsh, fish, and PowerShell
 - **Sandbox environments**: Isolated development sandboxes
 - **SSH integration**: SSH client and server support
@@ -100,11 +114,13 @@ This document provides an overview of features available in the Portunix core an
 - **Preprocessor**: Command preprocessing support
 
 ### 📊 Data Management
+
 - **Datastore system**: Pluggable datastore architecture (Issue #9)
 - **File-based storage**: Default file datastore implementation
 - **Plugin datastore**: Plugin-specific data storage support
 
 ### 🔐 Security
+
 - **Authentication**: Login/logout system
 - **Service management**: Linux service integration
 - **Update verification**: Secure update mechanism
@@ -112,6 +128,7 @@ This document provides an overview of features available in the Portunix core an
 ## Standard Plugins (portunix-plugins)
 
 ### 📋 Agile Software Development Plugin
+
 - **Kanban board management**: Full Kanban methodology support
 - **Project management**: Create and manage agile projects
 - **Task tracking**: User stories and task management
@@ -126,7 +143,8 @@ This document provides an overview of features available in the Portunix core an
 ## Architecture Overview
 
 ### Core Components
-```
+
+```text
 portunix/
 ├── app/              # Core application logic
 │   ├── datastore/    # Datastore implementations
@@ -144,6 +162,7 @@ portunix/
 ```
 
 ### Plugin Architecture
+
 ```
 portunix-plugins/
 ├── plugins/          # Plugin implementations
@@ -154,12 +173,14 @@ portunix-plugins/
 ## Integration Points
 
 ### For Core Development
+
 - Extend commands in `cmd/` directory
 - Add new installers in `app/install/`
 - Implement new datastores in `app/datastore/`
 - Add container support in `app/docker/` or `app/podman/`
 
 ### For Plugin Development
+
 - Use gRPC protocol for communication
 - Implement plugin interface from `app/plugins/proto/`
 - Register plugin in `registry/plugin-index.json`
@@ -168,7 +189,9 @@ portunix-plugins/
 ## Command Categories
 
 ### Core Commands
+
 - `portunix install` - Install packages and tools
+- `portunix container` - Universal container management (ato detect podman or docker)
 - `portunix docker` - Docker management
 - `portunix podman` - Podman management
 - `portunix sandbox` - Sandbox environments
@@ -179,16 +202,19 @@ portunix-plugins/
 - `portunix completion` - Generate shell completion scripts
 
 ### Plugin Commands
+
 - `portunix agile` - Agile development tools (via plugin)
 
 ## Future Roadmap
 
 ### Planned Core Features
+
 - Enhanced virtual development disk (Issue #8)
 - Configurable datastore backends (Issue #9)
 - Extended MCP capabilities (Issue #4)
 
 ### Planned Plugins
+
 - CI/CD integration
 - Code quality tools
 - Database management
@@ -197,6 +223,7 @@ portunix-plugins/
 ## Usage Examples
 
 ### Core Usage
+
 ```bash
 # Install development environment
 portunix install default
@@ -222,6 +249,7 @@ portunix plugin health my-plugin        # Check plugin health
 ```
 
 ### Plugin Usage
+
 ```bash
 # Create agile project
 portunix agile project create "WebApp Development"

@@ -1,0 +1,84 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "tea",
+    "displayName": "Tea (Gitea CLI)",
+    "description": "Gitea's official command line tool - manage repos, issues, PRs, releases from the terminal",
+    "category": "development/tools",
+    "homepage": "https://gitea.com/gitea/tea",
+    "documentation": "https://gitea.com/gitea/tea/src/branch/main/docs/CLI.md",
+    "license": "MIT",
+    "maintainer": "Gitea"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "exe",
+        "variants": {
+          "latest": {
+            "version": "0.11.1",
+            "urls": {
+              "x64": "https://gitea.com/gitea/tea/releases/download/v0.11.1/tea-0.11.1-windows-amd64.exe"
+            },
+            "binary": "tea.exe",
+            "installPath": "C:/Program Files/tea",
+            "postInstall": [
+              "setx PATH \"%PATH%;C:\\Program Files\\tea\" /m"
+            ]
+          }
+        },
+        "verification": {
+          "command": "tea --version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "script",
+        "variants": {
+          "latest": {
+            "version": "0.11.1",
+            "installScript": ["sudo curl -L -o /usr/local/bin/tea https://gitea.com/gitea/tea/releases/download/v0.11.1/tea-0.11.1-linux-amd64 && sudo chmod +x /usr/local/bin/tea"],
+            "requiresSudo": true
+          }
+        },
+        "verification": {
+          "command": "tea --version",
+          "expectedExitCode": 0
+        }
+      },
+      "darwin": {
+        "type": "brew",
+        "variants": {
+          "latest": {
+            "version": "latest",
+            "packages": ["tea"]
+          }
+        },
+        "verification": {
+          "command": "tea --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "gitea": {
+        "type": "gitea",
+        "url": "https://gitea.com/gitea/tea",
+        "apiEndpoint": "https://gitea.com/api/v1/repos/gitea/tea/releases/latest",
+        "pattern": "tea-{version}-{os}-{arch}"
+      }
+    },
+    "verification": {
+      "checksumType": "sha256"
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check Gitea API for latest releases at https://gitea.com/api/v1/repos/gitea/tea/releases/latest. Parse release tag to extract version number. Verify download assets include binaries for Windows, Linux, and macOS.",
+      "urlResolution": "For binary releases: tea-{version}-{os}-{arch}[.exe] where os=windows/linux/darwin, arch=amd64/arm64. Windows includes .exe extension.",
+      "updateGuidance": "Monitor Gitea tea releases for new versions. Tea follows semantic versioning. On macOS use Homebrew for easier updates."
+    },
+    "dependencies": [],
+    "templates": ["binary-download", "brew"]
+  }
+}

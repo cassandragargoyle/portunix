@@ -3,7 +3,11 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+
+	"portunix.ai/app/plugins/manager"
 )
 
 // CommandInfo represents a command with all its metadata
@@ -178,6 +182,44 @@ var CommandRegistry = []CommandInfo{
 			"portunix playbook template list",
 		},
 	},
+	{
+		Name:        "python",
+		Brief:       "Python development tools",
+		Description: "Comprehensive Python development utilities including virtual environment management, package installation with pip, code building and distribution with PyInstaller/cx_Freeze, and multi-version Python management.",
+		Category:    "development",
+		Parameters: []ParameterInfo{
+			{Name: "subcommand", Type: "string", Required: true, Description: "Operation to perform", Choices: []string{"init", "venv", "pip", "build", "check"}},
+		},
+		Examples: []string{
+			"portunix python init",
+			"portunix python venv create myproject",
+			"portunix python venv list",
+			"portunix python pip install requests",
+			"portunix python build exe script.py",
+		},
+	},
+	{
+		Name:        "aiops",
+		Brief:       "AI operations and GPU management",
+		Description: "AI operations helper for managing GPU resources, Ollama installations, and AI development stacks including Open WebUI integration.",
+		Category:    "development",
+		Examples: []string{
+			"portunix aiops gpu list",
+			"portunix aiops ollama install",
+			"portunix aiops stack deploy",
+		},
+	},
+	{
+		Name:        "credential",
+		Brief:       "Secure credential storage",
+		Description: "Secure credential management with encrypted storage. Store, retrieve, and manage sensitive credentials for various services.",
+		Category:    "utility",
+		Examples: []string{
+			"portunix credential set myservice --username user",
+			"portunix credential get myservice",
+			"portunix credential list",
+		},
+	},
 	// Additional commands for expert level
 	{
 		Name:        "podman",
@@ -254,7 +296,7 @@ var CommandRegistry = []CommandInfo{
 
 // GetBasicCommands returns only the essential commands for basic help
 func GetBasicCommands() []CommandInfo {
-	essentials := []string{"install", "update", "plugin", "mcp", "container", "virt", "playbook", "system", "make", "package", "pft"}
+	essentials := []string{"install", "update", "plugin", "mcp", "container", "virt", "playbook", "python", "aiops", "system", "make", "package", "pft", "credential"}
 	var basic []CommandInfo
 	for _, cmd := range CommandRegistry {
 		for _, name := range essentials {
@@ -267,6 +309,52 @@ func GetBasicCommands() []CommandInfo {
 	return basic
 }
 
+// GetInstalledPlugins returns CommandInfo for all installed plugins
+func GetInstalledPlugins() []CommandInfo {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return nil
+	}
+
+	registryPath := filepath.Join(homeDir, ".portunix", "plugins", "registry.json")
+	if _, err := os.Stat(registryPath); os.IsNotExist(err) {
+		return nil
+	}
+
+	registry, err := manager.NewRegistry(registryPath)
+	if err != nil {
+		return nil
+	}
+
+	plugins, err := registry.ListPlugins()
+	if err != nil {
+		return nil
+	}
+
+	var pluginCommands []CommandInfo
+	for _, p := range plugins {
+		// Get full plugin data for description
+		fullPlugin, err := registry.GetPluginRegistryData(p.Name)
+		if err != nil {
+			continue
+		}
+
+		status := "disabled"
+		if fullPlugin.Enabled {
+			status = "enabled"
+		}
+
+		pluginCommands = append(pluginCommands, CommandInfo{
+			Name:        p.Name,
+			Brief:       fmt.Sprintf("%s [%s]", fullPlugin.Description, status),
+			Description: fullPlugin.Description,
+			Category:    "plugin",
+		})
+	}
+
+	return pluginCommands
+}
+
 // GenerateBasicHelp generates the basic help output
 func GenerateBasicHelp() string {
 	var sb strings.Builder
@@ -277,15 +365,31 @@ func GenerateBasicHelp() string {
 
 	// Get basic commands and format them
 	commands := GetBasicCommands()
+	plugins := GetInstalledPlugins()
+
+	// Calculate max length for alignment (include plugins)
 	maxLen := 0
 	for _, cmd := range commands {
 		if len(cmd.Name) > maxLen {
 			maxLen = len(cmd.Name)
 		}
 	}
+	for _, p := range plugins {
+		if len(p.Name) > maxLen {
+			maxLen = len(p.Name)
+		}
+	}
 
 	for _, cmd := range commands {
 		sb.WriteString(fmt.Sprintf("  %-*s  %s\n", maxLen+2, cmd.Name, cmd.Brief))
+	}
+
+	// Add plugins section if any are installed
+	if len(plugins) > 0 {
+		sb.WriteString("\nInstalled plugins:\n")
+		for _, p := range plugins {
+			sb.WriteString(fmt.Sprintf("  %-*s  %s\n", maxLen+2, p.Name, p.Brief))
+		}
 	}
 
 	// Add help levels section (MANDATORY)
@@ -322,8 +426,14 @@ func GenerateExpertHelp() string {
 		categories[cmd.Category] = append(categories[cmd.Category], cmd)
 	}
 
+	// Add installed plugins to categories
+	plugins := GetInstalledPlugins()
+	if len(plugins) > 0 {
+		categories["plugin"] = plugins
+	}
+
 	// Display commands by category
-	categoryOrder := []string{"core", "container", "virtualization", "integration", "utility", "other"}
+	categoryOrder := []string{"core", "development", "container", "virtualization", "integration", "utility", "plugin", "other"}
 	for _, cat := range categoryOrder {
 		if cmds, ok := categories[cat]; ok {
 			sb.WriteString(fmt.Sprintf("\n%s Commands:\n", strings.ToUpper(cat)))

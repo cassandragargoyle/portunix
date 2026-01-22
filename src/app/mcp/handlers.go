@@ -4772,7 +4772,7 @@ func (s *Server) handleGetPluginBuildInstructions(args map[string]interface{}) (
 				"go test -cover ./...",
 			},
 			"package_commands": []string{
-				"tar -czf plugin.tar.gz plugin plugin.yaml",
+				"tar -czf plugin.tar.gz plugin plugin.json",
 			},
 			"install_commands": []string{
 				"portunix plugin install .",
@@ -4802,7 +4802,7 @@ func (s *Server) handleGetPluginBuildInstructions(args map[string]interface{}) (
 				"python -m pytest --cov=src tests/",
 			},
 			"package_commands": []string{
-				"tar -czf plugin.tar.gz src/ plugin.yaml requirements.txt",
+				"tar -czf plugin.tar.gz src/ plugin.json requirements.txt",
 			},
 			"install_commands": []string{
 				"portunix plugin install .",
@@ -4887,7 +4887,7 @@ func (s *Server) handleGetPluginBuildInstructions(args map[string]interface{}) (
 			},
 			"package_commands": []string{
 				"cargo build --release",
-				"tar -czf plugin.tar.gz target/release/plugin plugin.yaml",
+				"tar -czf plugin.tar.gz target/release/plugin plugin.json",
 			},
 			"install_commands": []string{
 				"portunix plugin install .",
@@ -4919,7 +4919,7 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 	
 	var manifestPath string
 	if info.IsDir() {
-		manifestPath = filepath.Join(pluginPath, "plugin.yaml")
+		manifestPath = filepath.Join(pluginPath, "plugin.json")
 	} else if filepath.Ext(pluginPath) == ".yaml" || filepath.Ext(pluginPath) == ".yml" {
 		manifestPath = pluginPath
 		pluginPath = filepath.Dir(pluginPath)
@@ -4941,17 +4941,17 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 	warnings := []string{}
 	checks := map[string]interface{}{}
 	
-	// Check plugin.yaml exists
+	// Check plugin.json exists
 	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
-		errors = append(errors, "plugin.yaml not found")
+		errors = append(errors, "plugin.json not found")
 		checks["manifest"] = false
 	} else {
 		checks["manifest"] = true
 		
-		// Validate plugin.yaml content
+		// Validate plugin.json content
 		content, err := os.ReadFile(manifestPath)
 		if err != nil {
-			errors = append(errors, fmt.Sprintf("Cannot read plugin.yaml: %v", err))
+			errors = append(errors, fmt.Sprintf("Cannot read plugin.json: %v", err))
 		} else {
 			var manifest map[string]interface{}
 			if err := yaml.Unmarshal(content, &manifest); err != nil {
@@ -5233,7 +5233,7 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /app/plugin .
-COPY --from=builder /app/plugin.yaml .
+COPY --from=builder /app/plugin.json .
 HEALTHCHECK --interval=30s --timeout=10s \
   CMD ./plugin health || exit 1
 CMD ["./plugin"]`,

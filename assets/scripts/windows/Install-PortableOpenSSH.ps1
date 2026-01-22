@@ -86,7 +86,7 @@ function Ensure-HostKeys {
 
 function Set-WDAGUserPassword {
   param(
-    [string]$Password = "Portunix2024!"
+    [string]$Password = "<YOUR_PASSWORD>"
   )
   
   try {

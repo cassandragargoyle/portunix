@@ -138,6 +138,14 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#128](128-docusaurus-container-performance-optimization.md) | - | Docusaurus Container Performance Optimization | ✅ Implemented | High | Enhancement | enhancement, container, docker, performance, docusaurus, playbook |
 | [#129](129-docusaurus-quickstart-script.md) | - | Docusaurus QuickStart Script for GitHub Release | ✅ Implemented | Medium | Enhancement | enhancement, documentation, user-experience, quickstart, docusaurus, release-assets |
 | [#131](131-openssh-reinstall-hostkeys-bug.md) | - | OpenSSH Installation Refactoring - Embedded Script Support | ✅ Implemented | High | Bug Fix | bug, openssh, windows, installation, refactoring |
+| [#132](132-text-extractor-plugin-integration.md) | - | Text Extractor Plugin Integration | 📋 Open | High | Feature / Plugin | plugin, text-extraction, java, tika, mcp, ai-integration |
+| [#133](133-plugin-run-command-argument-forwarding.md) | - | Plugin Run Command Argument Forwarding | ✅ Implemented | Medium | Enhancement | enhancement, plugin-system, cli, ai-integration, user-experience |
+| [#134](134-pft-config-cross-platform-path-support.md) | - | PFT Config Cross-Platform Path Support | 📋 Open | High | Enhancement | bug, enhancement, helper-binary, ptx-pft, cross-platform, configuration |
+| [#135](135-pft-assign-show-path-parameter-bug.md) | - | PFT Assign/Show Commands Ignore --path Parameter | ✅ Implemented | High | Bug Fix | bug, helper-binary, ptx-pft, cli, path-parameter, regression |
+| [#136](136-ptx-credential-helper-implementation.md) | - | PTX-Credential Helper Implementation | ✅ Implemented | High | Feature | enhancement, helper-binary, security, credential-storage, encryption, cross-platform |
+| [#137](137-graalvm-installation-support.md) | - | GraalVM Installation Support | ✅ Implemented | High | Feature | enhancement, package-management, graalvm, java, native-image, cross-platform |
+| [#138](138-ptx-python-project-local-venv-support.md) | - | PTX-Python Project-Local Virtual Environment Support | ✅ Implemented | High | Enhancement | enhancement, helper-binary, ptx-python, python, virtual-environment, developer-experience |
+| [#139](139-tea-gitea-cli-installation-support.md) | - | Tea (Gitea CLI) Installation Support | ✅ Implemented | Medium | Enhancement | enhancement, package-management, gitea, cli, developer-tools, cross-platform |
 
 ## Directory Structure
 

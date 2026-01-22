@@ -44,6 +44,9 @@ func init() {
 	// Disable the default help command to avoid duplication
 	rootCmd.SetHelpCommand(&cobra.Command{Hidden: true})
 
+	// Register plugin commands dynamically
+	initPluginDispatcher()
+
 	// Add help level flags
 	rootCmd.PersistentFlags().BoolVar(&helpExpert, "help-expert", false, "Show extended help with all options and examples")
 	rootCmd.PersistentFlags().BoolVar(&helpAI, "help-ai", false, "Show machine-readable help in JSON format")

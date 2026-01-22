@@ -1,0 +1,42 @@
+{
+  "name": "test-plugin",
+  "version": "1.0.0",
+  "description": "Test plugin for Portunix",
+  "author": "Test Author",
+  "license": "MIT",
+  "plugin": {
+    "type": "grpc",
+    "binary": "./test-plugin",
+    "runtime": "native",
+    "port": 9001,
+    "health_check_interval": 30000000000
+  },
+  "dependencies": {
+    "portunix_min_version": "1.1.0",
+    "os_support": ["linux", "windows", "darwin"]
+  },
+  "ai_integration": {
+    "mcp_tools": [
+      {
+        "name": "example_tool",
+        "description": "Example MCP tool"
+      }
+    ]
+  },
+  "permissions": {
+    "filesystem": ["read"],
+    "network": ["outbound"],
+    "database": [],
+    "system": [],
+    "level": "limited"
+  },
+  "commands": [
+    {
+      "name": "help",
+      "description": "Show help for test-plugin plugin",
+      "subcommands": [],
+      "parameters": [],
+      "examples": ["portunix test-plugin help"]
+    }
+  ]
+}

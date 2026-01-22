@@ -3,9 +3,8 @@ package main
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -69,21 +68,35 @@ func handleCommand(args []string) {
 func showPythonHelp() {
 	fmt.Println("Usage: portunix python [subcommand]")
 	fmt.Println()
+	fmt.Println("Compatibility: Python 3.x only (Python 2 is not supported)")
+	fmt.Println()
 	fmt.Println("Python Development Commands:")
 	fmt.Println()
+	fmt.Println("Project Setup:")
+	fmt.Println("  init                         - Initialize project: create ./.venv, install deps")
+	fmt.Println("  init --force                 - Recreate existing venv")
+	fmt.Println("  init --python <version>      - Specify Python version (e.g., 3.11)")
+	fmt.Println()
 	fmt.Println("Virtual Environment Management:")
-	fmt.Println("  venv create <name>           - Create a new virtual environment")
-	fmt.Println("  venv list                    - List all virtual environments with Python versions")
+	fmt.Println("  venv create <name>           - Create centralized venv (~/.portunix/python/venvs/)")
+	fmt.Println("  venv create --local          - Create project-local venv (./.venv)")
+	fmt.Println("  venv create --path <dir>     - Create venv at custom location")
+	fmt.Println("  venv list                    - List all virtual environments")
 	fmt.Println("  venv list --group-by-version - Group venvs by Python version")
 	fmt.Println("  venv exists <name>           - Check if venv exists (exit code 0/1)")
-	fmt.Println("  venv scan [path]             - Discover all venvs in directory")
-	fmt.Println("  venv activate <name>         - Activate virtual environment")
+	fmt.Println("  venv info                    - Show ./.venv details (auto-detect)")
+	fmt.Println("  venv info --verbose          - Include component versions (pip, setuptools)")
+	fmt.Println("  venv info --json             - Output in JSON format (implies --verbose)")
 	fmt.Println("  venv delete <name>           - Remove virtual environment")
-	fmt.Println("  venv info <name>             - Show venv details (Python version, packages)")
+	fmt.Println("  venv delete --local          - Remove ./.venv")
+	fmt.Println("  venv activate <name>         - Show activation command")
+	fmt.Println("  venv scan [path]             - Discover all venvs in directory")
 	fmt.Println()
 	fmt.Println("Package Management:")
-	fmt.Println("  pip install <package>        - Install package to active/specified venv")
+	fmt.Println("  pip install <package>        - Install package (auto-detects ./.venv)")
 	fmt.Println("  pip install -r requirements.txt - Install from requirements file")
+	fmt.Println("  pip install <pkg> --local    - Install to ./.venv explicitly")
+	fmt.Println("  pip install <pkg> --venv <n> - Install to centralized venv")
 	fmt.Println("  pip uninstall <package>      - Remove package")
 	fmt.Println("  pip list                     - List installed packages")
 	fmt.Println("  pip freeze                   - Generate requirements.txt")
@@ -95,9 +108,10 @@ func showPythonHelp() {
 	fmt.Println("  build sdist                  - Build source distribution package")
 	fmt.Println()
 	fmt.Println("Options:")
-	fmt.Println("  --venv <name>                - Target specific virtual environment")
+	fmt.Println("  --local                      - Use project-local venv (./.venv)")
+	fmt.Println("  --path <path>                - Use venv at custom location")
+	fmt.Println("  --venv <name>                - Use centralized venv by name")
 	fmt.Println("  --global                     - Operate on system Python")
-	fmt.Println("  --path <path>                - Custom venv location")
 }
 
 func handlePythonCommand(args []string) {
@@ -110,6 +124,8 @@ func handlePythonCommand(args []string) {
 	subArgs := args[1:]
 
 	switch subcommand {
+	case "init":
+		handleInitCommand(subArgs)
 	case "venv":
 		handleVenvCommand(subArgs)
 	case "pip":
@@ -124,6 +140,103 @@ func handlePythonCommand(args []string) {
 		fmt.Printf("Unknown python subcommand: %s\n", subcommand)
 		fmt.Println("Run 'portunix python --help' for available commands")
 	}
+}
+
+// handleInitCommand initializes a Python project with local venv
+func handleInitCommand(args []string) {
+	force := false
+	pythonVersion := ""
+	customPath := ""
+
+	// Parse flags
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--force", "-f":
+			force = true
+		case "--python":
+			if i+1 < len(args) {
+				pythonVersion = args[i+1]
+				i++
+			}
+		case "--path":
+			if i+1 < len(args) {
+				customPath = args[i+1]
+				i++
+			}
+		}
+	}
+
+	vm, err := NewVenvManager()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Determine venv path
+	var venvPath string
+	if customPath != "" {
+		venvPath, err = filepath.Abs(customPath)
+		if err != nil {
+			fmt.Printf("Error: invalid path: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		cwd, err := os.Getwd()
+		if err != nil {
+			fmt.Printf("Error: failed to get current directory: %v\n", err)
+			os.Exit(1)
+		}
+		venvPath = filepath.Join(cwd, ".venv")
+	}
+
+	// Check for existing venv
+	if vm.VenvExistsAtPath(venvPath) && !force {
+		fmt.Printf("Virtual environment already exists at %s\n", venvPath)
+		fmt.Println("Use --force to recreate it")
+		os.Exit(1)
+	}
+
+	// Detect requirements file
+	requirementsFile, reqErr := vm.DetectRequirementsFile()
+	if reqErr != nil {
+		fmt.Printf("Warning: %v\n", reqErr)
+		fmt.Println("Continuing without installing dependencies...")
+	}
+
+	// Step 1: Create venv
+	fmt.Println()
+	fmt.Println("🐍 Initializing Python project...")
+	fmt.Println()
+
+	if err := vm.CreateLocalVenv(venvPath, force, pythonVersion); err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Step 2: Upgrade pip
+	if err := vm.UpgradePip(venvPath); err != nil {
+		fmt.Printf("Warning: failed to upgrade pip: %v\n", err)
+		// Continue anyway, pip might still work
+	}
+
+	// Step 3: Install dependencies
+	if reqErr == nil {
+		fmt.Println()
+		if err := vm.InstallRequirementsAtPath(venvPath, requirementsFile); err != nil {
+			fmt.Printf("Error installing dependencies: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println("✅ Dependencies installed successfully")
+	}
+
+	// Display activation command
+	fmt.Println()
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("✅ Project initialized successfully!")
+	fmt.Println()
+	fmt.Println("To activate the virtual environment, run:")
+	fmt.Printf("  %s\n", vm.GetActivationCommand(venvPath))
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 }
 
 // Command handlers
@@ -222,20 +335,33 @@ func showPipHelp() {
 
 // Venv command implementations
 func handleVenvCreate(args []string) {
-	if len(args) == 0 {
-		fmt.Println("Error: Virtual environment name required")
-		fmt.Println("Usage: portunix python venv create <name> [--python <version>]")
-		os.Exit(1)
-	}
-
-	venvName := args[0]
+	venvName := ""
 	pythonVersion := ""
+	localFlag := false
+	pathFlag := ""
+	force := false
 
-	// Parse optional --python flag
-	for i := 1; i < len(args); i++ {
-		if args[i] == "--python" && i+1 < len(args) {
-			pythonVersion = args[i+1]
-			break
+	// Parse arguments and flags
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--local", "-l":
+			localFlag = true
+		case "--path":
+			if i+1 < len(args) {
+				pathFlag = args[i+1]
+				i++
+			}
+		case "--python":
+			if i+1 < len(args) {
+				pythonVersion = args[i+1]
+				i++
+			}
+		case "--force", "-f":
+			force = true
+		default:
+			if !strings.HasPrefix(args[i], "-") && venvName == "" {
+				venvName = args[i]
+			}
 		}
 	}
 
@@ -245,9 +371,52 @@ func handleVenvCreate(args []string) {
 		os.Exit(1)
 	}
 
-	if err := vm.CreateVenv(venvName, pythonVersion); err != nil {
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(1)
+	// Determine if this is local or centralized venv
+	if localFlag || pathFlag != "" {
+		// Create local/custom path venv
+		var venvPath string
+		if pathFlag != "" {
+			venvPath, err = filepath.Abs(pathFlag)
+			if err != nil {
+				fmt.Printf("Error: invalid path: %v\n", err)
+				os.Exit(1)
+			}
+		} else {
+			cwd, err := os.Getwd()
+			if err != nil {
+				fmt.Printf("Error: failed to get current directory: %v\n", err)
+				os.Exit(1)
+			}
+			venvPath = filepath.Join(cwd, ".venv")
+		}
+
+		if err := vm.CreateLocalVenv(venvPath, force, pythonVersion); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+
+		fmt.Println()
+		fmt.Println("To activate the virtual environment, run:")
+		fmt.Printf("  %s\n", vm.GetActivationCommand(venvPath))
+	} else {
+		// Create centralized venv (original behavior)
+		if venvName == "" {
+			fmt.Println("Error: Virtual environment name required")
+			fmt.Println("Usage: portunix python venv create <name> [--python <version>]")
+			fmt.Println("       portunix python venv create --local [--python <version>]")
+			fmt.Println("       portunix python venv create --path <dir> [--python <version>]")
+			os.Exit(1)
+		}
+
+		if err := vm.CreateVenv(venvName, pythonVersion); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+
+		venvPath := filepath.Join(vm.venvBaseDir, venvName)
+		fmt.Println()
+		fmt.Println("To activate the virtual environment, run:")
+		fmt.Printf("  %s\n", vm.GetActivationCommand(venvPath))
 	}
 }
 
@@ -351,13 +520,33 @@ func handleVenvExists(args []string) {
 }
 
 func handleVenvInfo(args []string) {
-	if len(args) == 0 {
-		fmt.Println("Error: Virtual environment name required")
-		fmt.Println("Usage: portunix python venv info <name>")
-		os.Exit(1)
-	}
+	venvName := ""
+	localFlag := false
+	pathFlag := ""
+	verboseFlag := false
+	jsonFlag := false
 
-	venvName := args[0]
+	// Parse arguments and flags
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--local", "-l":
+			localFlag = true
+		case "--path":
+			if i+1 < len(args) {
+				pathFlag = args[i+1]
+				i++
+			}
+		case "--verbose", "-v":
+			verboseFlag = true
+		case "--json":
+			jsonFlag = true
+			verboseFlag = true // JSON implies verbose
+		default:
+			if !strings.HasPrefix(args[i], "-") && venvName == "" {
+				venvName = args[i]
+			}
+		}
+	}
 
 	vm, err := NewVenvManager()
 	if err != nil {
@@ -365,27 +554,134 @@ func handleVenvInfo(args []string) {
 		os.Exit(1)
 	}
 
-	info, err := vm.GetVenvInfo(venvName)
+	// Resolve venv path
+	var venvPath string
+	var isLocal bool
+
+	if localFlag || pathFlag != "" {
+		target, err := vm.ResolveVenvPath(localFlag, pathFlag, "", false)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+		venvPath = target.Path
+		isLocal = target.IsLocal
+	} else if venvName != "" {
+		venvPath = filepath.Join(vm.venvBaseDir, venvName)
+		isLocal = false
+	} else {
+		// Default: auto-detect local .venv
+		target, err := vm.ResolveVenvPath(false, "", "", true)
+		if err != nil {
+			fmt.Println("Error: No .venv found in current directory")
+			fmt.Println("Create one with: portunix python init")
+			os.Exit(1)
+		}
+		venvPath = target.Path
+		isLocal = target.IsLocal
+	}
+
+	// Get info (verbose or basic)
+	var info *VenvInfo
+	if verboseFlag {
+		info, err = vm.GetVenvInfoAtPathVerbose(venvPath)
+	} else {
+		info, err = vm.GetVenvInfoAtPath(venvPath)
+	}
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
+	info.IsLocal = isLocal
 
+	// Output
+	if jsonFlag {
+		outputVenvInfoJSON(info)
+	} else {
+		outputVenvInfoText(info, verboseFlag)
+	}
+}
+
+func outputVenvInfoText(info *VenvInfo, verbose bool) {
 	fmt.Printf("Virtual Environment: %s\n", info.Name)
 	fmt.Printf("Python Version: %s\n", info.PythonVersion)
 	fmt.Printf("Location: %s\n", info.Path)
 	fmt.Printf("Packages: %d installed\n", info.PackageCount)
 	fmt.Printf("Size: %s\n", formatSize(info.Size))
+	if info.IsLocal {
+		fmt.Println("Type: Project-local")
+	} else {
+		fmt.Println("Type: Centralized")
+	}
+
+	if verbose && len(info.Components) > 0 {
+		fmt.Println()
+		fmt.Println("Components:")
+		for name, version := range info.Components {
+			fmt.Printf("  %s: %s\n", name, version)
+		}
+	}
+}
+
+func outputVenvInfoJSON(info *VenvInfo) {
+	// Manual JSON output to avoid importing encoding/json for this small case
+	fmt.Println("{")
+	fmt.Printf("  \"name\": \"%s\",\n", info.Name)
+	fmt.Printf("  \"path\": \"%s\",\n", escapeJSON(info.Path))
+	fmt.Printf("  \"python_version\": \"%s\",\n", info.PythonVersion)
+	fmt.Printf("  \"package_count\": %d,\n", info.PackageCount)
+	fmt.Printf("  \"size_bytes\": %d,\n", info.Size)
+	fmt.Printf("  \"size_human\": \"%s\",\n", info.SizeHuman)
+	fmt.Printf("  \"is_local\": %t,\n", info.IsLocal)
+	fmt.Printf("  \"exists\": %t", info.Exists)
+
+	if len(info.Components) > 0 {
+		fmt.Println(",")
+		fmt.Println("  \"components\": {")
+		i := 0
+		for name, version := range info.Components {
+			if i > 0 {
+				fmt.Println(",")
+			}
+			fmt.Printf("    \"%s\": \"%s\"", name, version)
+			i++
+		}
+		fmt.Println()
+		fmt.Println("  }")
+	} else {
+		fmt.Println()
+	}
+	fmt.Println("}")
+}
+
+func escapeJSON(s string) string {
+	// Simple JSON string escaping for paths
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "\"", "\\\"")
+	return s
 }
 
 func handleVenvDelete(args []string) {
-	if len(args) == 0 {
-		fmt.Println("Error: Virtual environment name required")
-		fmt.Println("Usage: portunix python venv delete <name>")
-		os.Exit(1)
-	}
+	venvName := ""
+	localFlag := false
+	pathFlag := ""
 
-	venvName := args[0]
+	// Parse arguments and flags
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--local", "-l":
+			localFlag = true
+		case "--path":
+			if i+1 < len(args) {
+				pathFlag = args[i+1]
+				i++
+			}
+		default:
+			if !strings.HasPrefix(args[i], "-") && venvName == "" {
+				venvName = args[i]
+			}
+		}
+	}
 
 	vm, err := NewVenvManager()
 	if err != nil {
@@ -393,32 +689,100 @@ func handleVenvDelete(args []string) {
 		os.Exit(1)
 	}
 
-	if err := vm.DeleteVenv(venvName); err != nil {
-		fmt.Printf("Error: %v\n", err)
-		os.Exit(1)
+	if localFlag || pathFlag != "" {
+		// Delete local or custom path venv
+		target, err := vm.ResolveVenvPath(localFlag, pathFlag, "", false)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+
+		if err := vm.DeleteVenvAtPath(target.Path); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		// Delete centralized venv
+		if venvName == "" {
+			fmt.Println("Error: Virtual environment name required")
+			fmt.Println("Usage: portunix python venv delete <name>")
+			fmt.Println("       portunix python venv delete --local")
+			fmt.Println("       portunix python venv delete --path <dir>")
+			os.Exit(1)
+		}
+
+		if err := vm.DeleteVenv(venvName); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
 	}
 }
 
 func handleVenvActivate(args []string) {
-	if len(args) == 0 {
-		fmt.Println("Error: Virtual environment name required")
-		fmt.Println("Usage: portunix python venv activate <name>")
+	venvName := ""
+	localFlag := false
+	pathFlag := ""
+
+	// Parse arguments and flags
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--local", "-l":
+			localFlag = true
+		case "--path":
+			if i+1 < len(args) {
+				pathFlag = args[i+1]
+				i++
+			}
+		default:
+			if !strings.HasPrefix(args[i], "-") && venvName == "" {
+				venvName = args[i]
+			}
+		}
+	}
+
+	vm, err := NewVenvManager()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
 
-	// TODO: Implementation for venv activation
-	// This is complex because activation typically modifies shell environment
-	fmt.Println("Note: Venv activation modifies shell environment")
-	fmt.Println("To activate manually, run:")
+	var venvPath string
 
-	homeDir, _ := os.UserHomeDir()
-	venvPath := fmt.Sprintf("%s/.portunix/python/venvs/%s", homeDir, args[0])
-
-	if runtime.GOOS == "windows" {
-		fmt.Printf("  %s\\Scripts\\activate\n", venvPath)
+	if localFlag || pathFlag != "" {
+		// Local or custom path venv
+		target, err := vm.ResolveVenvPath(localFlag, pathFlag, "", false)
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+		venvPath = target.Path
+	} else if venvName != "" {
+		// Centralized venv
+		venvPath = filepath.Join(vm.venvBaseDir, venvName)
 	} else {
-		fmt.Printf("  source %s/bin/activate\n", venvPath)
+		// Try auto-detect local venv
+		cwd, _ := os.Getwd()
+		localVenvPath := filepath.Join(cwd, ".venv")
+		if vm.VenvExistsAtPath(localVenvPath) {
+			venvPath = localVenvPath
+		} else {
+			fmt.Println("Error: Virtual environment name required")
+			fmt.Println("Usage: portunix python venv activate <name>")
+			fmt.Println("       portunix python venv activate --local")
+			fmt.Println("       portunix python venv activate --path <dir>")
+			os.Exit(1)
+		}
 	}
+
+	// Check if venv exists
+	if !vm.VenvExistsAtPath(venvPath) {
+		fmt.Printf("Error: Virtual environment does not exist at %s\n", venvPath)
+		os.Exit(1)
+	}
+
+	fmt.Println("Note: Venv activation modifies shell environment")
+	fmt.Println("To activate, run:")
+	fmt.Printf("  %s\n", vm.GetActivationCommand(venvPath))
 }
 
 func handleVenvScan(args []string) {
@@ -430,35 +794,46 @@ func handleVenvScan(args []string) {
 func handlePipInstall(args []string) {
 	if len(args) == 0 {
 		fmt.Println("Error: Package name or -r requirements.txt required")
-		fmt.Println("Usage: portunix python pip install <package> [--venv <name>]")
-		fmt.Println("       portunix python pip install -r requirements.txt [--venv <name>]")
+		fmt.Println("Usage: portunix python pip install <package> [--local|--venv <name>]")
+		fmt.Println("       portunix python pip install -r requirements.txt [--local|--venv <name>]")
 		os.Exit(1)
 	}
 
 	venvName := ""
+	localFlag := false
+	pathFlag := ""
 	isRequirementsFile := false
 	requirementsPath := ""
-	packageName := ""
+	packages := []string{}
 
 	// Parse arguments
 	for i := 0; i < len(args); i++ {
-		if args[i] == "-r" && i+1 < len(args) {
-			isRequirementsFile = true
-			requirementsPath = args[i+1]
-			i++
-		} else if args[i] == "--venv" && i+1 < len(args) {
-			venvName = args[i+1]
-			i++
-		} else if packageName == "" && !isRequirementsFile {
-			packageName = args[i]
+		switch args[i] {
+		case "-r":
+			if i+1 < len(args) {
+				isRequirementsFile = true
+				requirementsPath = args[i+1]
+				i++
+			}
+		case "--venv":
+			if i+1 < len(args) {
+				venvName = args[i+1]
+				i++
+			}
+		case "--local", "-l":
+			localFlag = true
+		case "--path":
+			if i+1 < len(args) {
+				pathFlag = args[i+1]
+				i++
+			}
+		case "--upgrade", "-U":
+			packages = append(packages, "--upgrade")
+		default:
+			if !strings.HasPrefix(args[i], "-") {
+				packages = append(packages, args[i])
+			}
 		}
-	}
-
-	if venvName == "" {
-		fmt.Println("Error: --venv flag required to specify target virtual environment")
-		fmt.Println("Usage: portunix python pip install <package> --venv <name>")
-		fmt.Println("       portunix python pip install -r requirements.txt --venv <name>")
-		os.Exit(1)
 	}
 
 	vm, err := NewVenvManager()
@@ -467,18 +842,37 @@ func handlePipInstall(args []string) {
 		os.Exit(1)
 	}
 
+	// Resolve venv target (with auto-detect for pip commands)
+	target, err := vm.ResolveVenvPath(localFlag, pathFlag, venvName, true)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		fmt.Println("Usage: portunix python pip install <package> [--local|--venv <name>]")
+		fmt.Println("       portunix python pip install -r requirements.txt [--local|--venv <name>]")
+		fmt.Println()
+		fmt.Println("Tip: Create a local venv first with: portunix python init")
+		os.Exit(1)
+	}
+
 	if isRequirementsFile {
 		// Install from requirements.txt
-		if err := vm.InstallRequirements(venvName, requirementsPath); err != nil {
+		if err := vm.InstallRequirementsAtPath(target.Path, requirementsPath); err != nil {
 			fmt.Printf("Error: %v\n", err)
 			os.Exit(1)
+		}
+	} else if len(packages) > 0 {
+		// Install packages
+		for _, pkg := range packages {
+			if pkg == "--upgrade" {
+				continue
+			}
+			if err := vm.InstallPackageAtPath(target.Path, pkg); err != nil {
+				fmt.Printf("Error installing %s: %v\n", pkg, err)
+				os.Exit(1)
+			}
 		}
 	} else {
-		// Install single package
-		if err := vm.InstallPackage(venvName, packageName); err != nil {
-			fmt.Printf("Error: %v\n", err)
-			os.Exit(1)
-		}
+		fmt.Println("Error: No package specified")
+		os.Exit(1)
 	}
 }
 
@@ -489,19 +883,25 @@ func handlePipUninstall(args []string) {
 
 func handlePipList(args []string) {
 	venvName := ""
+	localFlag := false
+	pathFlag := ""
 
-	// Parse --venv flag
+	// Parse flags
 	for i := 0; i < len(args); i++ {
-		if args[i] == "--venv" && i+1 < len(args) {
-			venvName = args[i+1]
-			break
+		switch args[i] {
+		case "--venv":
+			if i+1 < len(args) {
+				venvName = args[i+1]
+				i++
+			}
+		case "--local", "-l":
+			localFlag = true
+		case "--path":
+			if i+1 < len(args) {
+				pathFlag = args[i+1]
+				i++
+			}
 		}
-	}
-
-	if venvName == "" {
-		fmt.Println("Error: --venv flag required to specify target virtual environment")
-		fmt.Println("Usage: portunix python pip list --venv <name>")
-		os.Exit(1)
 	}
 
 	vm, err := NewVenvManager()
@@ -510,7 +910,15 @@ func handlePipList(args []string) {
 		os.Exit(1)
 	}
 
-	if err := vm.ListPackages(venvName); err != nil {
+	// Resolve venv target (with auto-detect)
+	target, err := vm.ResolveVenvPath(localFlag, pathFlag, venvName, true)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		fmt.Println("Usage: portunix python pip list [--local|--venv <name>]")
+		os.Exit(1)
+	}
+
+	if err := vm.ListPackagesAtPath(target.Path); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}
@@ -518,19 +926,25 @@ func handlePipList(args []string) {
 
 func handlePipFreeze(args []string) {
 	venvName := ""
+	localFlag := false
+	pathFlag := ""
 
-	// Parse --venv flag
+	// Parse flags
 	for i := 0; i < len(args); i++ {
-		if args[i] == "--venv" && i+1 < len(args) {
-			venvName = args[i+1]
-			break
+		switch args[i] {
+		case "--venv":
+			if i+1 < len(args) {
+				venvName = args[i+1]
+				i++
+			}
+		case "--local", "-l":
+			localFlag = true
+		case "--path":
+			if i+1 < len(args) {
+				pathFlag = args[i+1]
+				i++
+			}
 		}
-	}
-
-	if venvName == "" {
-		fmt.Println("Error: --venv flag required to specify target virtual environment")
-		fmt.Println("Usage: portunix python pip freeze --venv <name>")
-		os.Exit(1)
 	}
 
 	vm, err := NewVenvManager()
@@ -539,18 +953,15 @@ func handlePipFreeze(args []string) {
 		os.Exit(1)
 	}
 
-	venvPath := filepath.Join(vm.venvBaseDir, venvName)
-	if !vm.VenvExists(venvName) {
-		fmt.Printf("Error: virtual environment '%s' does not exist\n", venvName)
+	// Resolve venv target (with auto-detect)
+	target, err := vm.ResolveVenvPath(localFlag, pathFlag, venvName, true)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		fmt.Println("Usage: portunix python pip freeze [--local|--venv <name>]")
 		os.Exit(1)
 	}
 
-	pipExe := vm.getPipExecutable(venvPath)
-	cmd := exec.Command(pipExe, "freeze")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
+	if err := vm.FreezePackagesAtPath(target.Path); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}

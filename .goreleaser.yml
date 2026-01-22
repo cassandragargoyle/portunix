@@ -206,6 +206,69 @@ builds:
     env:
       - CGO_ENABLED=0
 
+  # Helper binary: ptx-credential (secure credential storage, Issue #136)
+  - id: ptx-credential
+    binary: ptx-credential
+    main: ./
+    dir: ./src/helpers/ptx-credential/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-python (Python environment management, Issue #97)
+  - id: ptx-python
+    binary: ptx-python
+    main: ./
+    dir: ./src/helpers/ptx-python/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-installer (Package installation engine)
+  - id: ptx-installer
+    binary: ptx-installer
+    main: ./
+    dir: ./src/helpers/ptx-installer/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
 archives:
   - id: default
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{- tolower .Os }}_{{ .Arch }}"
@@ -225,13 +288,16 @@ archives:
       - ptx-aiops
       - ptx-pft
       - ptx-prompting
+      - ptx-credential
+      - ptx-python
+      - ptx-installer
     files:
       - src: scripts/install.sh
         dst: install.sh
       - src: scripts/install.ps1
         dst: install.ps1
       - LICENSE*
-      - README*
+      - README.md
       # Optionally add e.g. shell completion:
       # - "completions/*"
  
@@ -269,12 +335,15 @@ release:
     - ptx-aiops helper (AI/ML operations with Ollama)
     - ptx-pft helper (Product Feedback Tool)
     - ptx-prompting helper (Prompt templates management)
+    - ptx-credential helper (Secure credential storage)
+    - ptx-python helper (Python environment management)
+    - ptx-installer helper (Package installation engine)
 
   footer: |
     ## Installation
 
     Download and extract the appropriate archive for your platform, then run the installation script.
-    The archive contains all necessary binaries (portunix, ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-make, ptx-aiops, ptx-pft, ptx-prompting).
+    The archive contains all necessary binaries (portunix, ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-make, ptx-aiops, ptx-pft, ptx-prompting, ptx-credential, ptx-python, ptx-installer).
 
     ### Linux/macOS
     ```bash
