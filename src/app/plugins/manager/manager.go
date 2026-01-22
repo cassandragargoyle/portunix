@@ -142,13 +142,16 @@ func (m *Manager) EnablePlugin(name string) error {
 
 	// Create plugin configuration
 	config := plugins.PluginConfig{
-		Name:        registryData.Name,
-		Version:     registryData.Version,
-		BinaryPath:  filepath.Join(registryData.InstallPath, registryData.BinaryName),
-		Port:        m.assignPort(),
-		WorkingDir:  registryData.InstallPath,
-		Environment: make(map[string]string),
-		Permissions: registryData.RequiredPermissions,
+		Name:           registryData.Name,
+		Version:        registryData.Version,
+		BinaryPath:     filepath.Join(registryData.InstallPath, registryData.BinaryName),
+		Runtime:        registryData.Runtime,
+		RuntimeVersion: registryData.RuntimeVersion,
+		JVMArgs:        registryData.JVMArgs,
+		Port:           m.assignPort(),
+		WorkingDir:     registryData.InstallPath,
+		Environment:    make(map[string]string),
+		Permissions:    registryData.RequiredPermissions,
 	}
 
 	// Create plugin instance
@@ -159,6 +162,11 @@ func (m *Manager) EnablePlugin(name string) error {
 
 	// Add to active plugins
 	m.plugins[name] = plugin
+
+	// Mark plugin as enabled in registry
+	if err := m.registry.EnablePlugin(name); err != nil {
+		return fmt.Errorf("failed to enable plugin in registry: %w", err)
+	}
 
 	// Update registry status
 	if err := m.registry.UpdatePluginStatus(name, plugins.PluginStatusStopped); err != nil {

@@ -83,6 +83,9 @@ ptx-pft.exe
 /.pft-config.json
 /pft-demo
 
+/ptx-credential
+ptx-credential.exe
+
 # Documentation site generated files
 docs-site/public/
 docs-site/resources/
@@ -99,3 +102,6 @@ generated-playbooks
 
 aur-repo
 portunix-windows.zip
+.claude/settings.json
+tmpclaude-*-cwd
+

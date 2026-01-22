@@ -1,0 +1,121 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "graalvm",
+    "displayName": "GraalVM",
+    "description": "High-performance JDK with native image compilation and polyglot support",
+    "category": "development/languages",
+    "homepage": "https://www.graalvm.org/",
+    "license": "GPL-2.0 with Classpath Exception",
+    "maintainer": "Oracle"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "zip",
+        "variants": {
+          "17": {
+            "version": "17.0.9",
+            "urls": {
+              "x64": "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.9/graalvm-community-jdk-17.0.9_windows-x64_bin.zip"
+            },
+            "extractTo": "${ProgramFiles}/GraalVM/graalvm-jdk-17.0.9"
+          },
+          "21": {
+            "version": "21.0.2",
+            "urls": {
+              "x64": "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.2/graalvm-community-jdk-21.0.2_windows-x64_bin.zip"
+            },
+            "extractTo": "${ProgramFiles}/GraalVM/graalvm-jdk-21.0.2"
+          },
+          "23": {
+            "version": "23.0.2",
+            "urls": {
+              "x64": "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-23.0.2/graalvm-community-jdk-23.0.2_windows-x64_bin.zip"
+            },
+            "extractTo": "${ProgramFiles}/GraalVM/graalvm-jdk-23.0.2"
+          }
+        },
+        "verification": {
+          "command": "java -version",
+          "expectedOutput": "GraalVM"
+        },
+        "environment": {
+          "GRAALVM_HOME": "${extract_to}",
+          "JAVA_HOME": "${extract_to}",
+          "PATH_APPEND": "${extract_to}/bin"
+        }
+      },
+      "linux": {
+        "type": "tar.gz",
+        "variants": {
+          "17": {
+            "version": "17.0.9",
+            "urls": {
+              "x64": "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.9/graalvm-community-jdk-17.0.9_linux-x64_bin.tar.gz",
+              "arm64": "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-17.0.9/graalvm-community-jdk-17.0.9_linux-aarch64_bin.tar.gz"
+            },
+            "extractTo": "/opt/graalvm/graalvm-jdk-17.0.9",
+            "postInstall": [
+              "sudo update-alternatives --install /usr/bin/java java ${install_path}/bin/java 2",
+              "sudo update-alternatives --install /usr/bin/javac javac ${install_path}/bin/javac 2",
+              "sudo update-alternatives --install /usr/bin/native-image native-image ${install_path}/bin/native-image 2"
+            ]
+          },
+          "21": {
+            "version": "21.0.2",
+            "urls": {
+              "x64": "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.2/graalvm-community-jdk-21.0.2_linux-x64_bin.tar.gz",
+              "arm64": "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-21.0.2/graalvm-community-jdk-21.0.2_linux-aarch64_bin.tar.gz"
+            },
+            "extractTo": "/opt/graalvm/graalvm-jdk-21.0.2",
+            "postInstall": [
+              "sudo update-alternatives --install /usr/bin/java java ${install_path}/bin/java 2",
+              "sudo update-alternatives --install /usr/bin/javac javac ${install_path}/bin/javac 2",
+              "sudo update-alternatives --install /usr/bin/native-image native-image ${install_path}/bin/native-image 2"
+            ]
+          },
+          "23": {
+            "version": "23.0.2",
+            "urls": {
+              "x64": "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-23.0.2/graalvm-community-jdk-23.0.2_linux-x64_bin.tar.gz",
+              "arm64": "https://github.com/graalvm/graalvm-ce-builds/releases/download/jdk-23.0.2/graalvm-community-jdk-23.0.2_linux-aarch64_bin.tar.gz"
+            },
+            "extractTo": "/opt/graalvm/graalvm-jdk-23.0.2",
+            "postInstall": [
+              "sudo update-alternatives --install /usr/bin/java java ${install_path}/bin/java 2",
+              "sudo update-alternatives --install /usr/bin/javac javac ${install_path}/bin/javac 2",
+              "sudo update-alternatives --install /usr/bin/native-image native-image ${install_path}/bin/native-image 2"
+            ]
+          }
+        },
+        "verification": {
+          "command": "java -version",
+          "expectedOutput": "GraalVM"
+        },
+        "environment": {
+          "GRAALVM_HOME": "${extract_to}",
+          "JAVA_HOME": "${extract_to}",
+          "PATH_APPEND": "${extract_to}/bin"
+        }
+      }
+    },
+    "sources": {
+      "graalvm-ce": {
+        "type": "github",
+        "url": "https://github.com/graalvm/graalvm-ce-builds",
+        "apiEndpoint": "https://api.github.com/repos/graalvm/graalvm-ce-builds/releases",
+        "pattern": "jdk-{version}"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check GitHub API for latest releases in graalvm/graalvm-ce-builds repository. Parse release tags to extract version numbers (format: jdk-X.Y.Z). Focus on LTS releases (17, 21) and latest stable. Verify download assets include x64 for Windows, x64 and aarch64 for Linux. Use GitHub API: https://api.github.com/repos/graalvm/graalvm-ce-builds/releases",
+      "urlResolution": "For Windows: graalvm-community-jdk-{version}_windows-x64_bin.zip. For Linux: graalvm-community-jdk-{version}_linux-{arch}_bin.tar.gz. Replace {version} with full version and {arch} with x64/aarch64.",
+      "updateGuidance": "Research available GraalVM Community Edition releases. Focus on LTS releases (17, 21) and latest stable (23+). For each version, verify both x64 and ARM64 binaries are available. Check that native-image is included in distribution."
+    },
+    "dependencies": [],
+    "templates": ["tar-archive"]
+  }
+}

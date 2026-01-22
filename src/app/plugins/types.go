@@ -34,6 +34,9 @@ type PluginConfig struct {
 	Name           string            `json:"name"`
 	Version        string            `json:"version"`
 	BinaryPath     string            `json:"binary_path"`
+	Runtime        string            `json:"runtime"`         // native, java, python
+	RuntimeVersion string            `json:"runtime_version"` // e.g., ">=21" for Java
+	JVMArgs        []string          `json:"jvm_args"`        // JVM arguments for Java plugins
 	Port           int               `json:"port"`
 	HealthInterval time.Duration     `json:"health_check_interval"`
 	Environment    map[string]string `json:"environment"`
@@ -48,6 +51,7 @@ type PluginInfo struct {
 	Description         string             `json:"description"`
 	Author              string             `json:"author"`
 	License             string             `json:"license"`
+	Mode                string             `json:"mode"` // service or helper
 	SupportedOS         []string           `json:"supported_os"`
 	Commands            []PluginCommand    `json:"commands"`
 	Capabilities        PluginCapabilities `json:"capabilities"`
@@ -103,6 +107,7 @@ const (
 	PluginStatusRunning
 	PluginStatusStopping
 	PluginStatusFailed
+	PluginStatusReady // for helper plugins that don't run as daemon
 )
 
 func (s PluginStatus) String() string {
@@ -117,6 +122,8 @@ func (s PluginStatus) String() string {
 		return "stopping"
 	case PluginStatusFailed:
 		return "failed"
+	case PluginStatusReady:
+		return "ready"
 	default:
 		return "unknown"
 	}
@@ -151,41 +158,52 @@ type ExecuteResponse struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
-// PluginManifest represents the plugin.yaml manifest file
+// PluginManifest represents the plugin.json manifest file
 type PluginManifest struct {
-	Name          string              `yaml:"name"`
-	Version       string              `yaml:"version"`
-	Description   string              `yaml:"description"`
-	Author        string              `yaml:"author"`
-	License       string              `yaml:"license"`
-	Plugin        PluginBinaryConfig  `yaml:"plugin"`
-	Dependencies  PluginDependencies  `yaml:"dependencies"`
-	AIIntegration AIIntegrationConfig `yaml:"ai_integration"`
-	Permissions   PluginPermissions   `yaml:"permissions"`
-	Commands      []PluginCommand     `yaml:"commands"`
+	Name          string              `json:"name"`
+	Version       string              `json:"version"`
+	Description   string              `json:"description"`
+	Author        string              `json:"author"`
+	License       string              `json:"license"`
+	Plugin        PluginBinaryConfig  `json:"plugin"`
+	Dependencies  PluginDependencies  `json:"dependencies"`
+	AIIntegration AIIntegrationConfig `json:"ai_integration"`
+	Permissions   PluginPermissions   `json:"permissions"`
+	Commands      []PluginCommand     `json:"commands"`
 }
 
 // PluginBinaryConfig holds binary-specific configuration
 type PluginBinaryConfig struct {
-	Type                string        `yaml:"type"`
-	Binary              string        `yaml:"binary"`
-	Port                int           `yaml:"port"`
-	HealthCheckInterval time.Duration `yaml:"health_check_interval"`
+	Type                string        `json:"type"`
+	Binary              string        `json:"binary"`
+	Mode                string        `json:"mode,omitempty"`             // service (default) or helper
+	Runtime             string        `json:"runtime,omitempty"`          // native, java, python
+	RuntimeVersion      string        `json:"runtime_version,omitempty"`  // e.g., ">=21" for Java
+	JVMArgs             []string      `json:"jvm_args,omitempty"`         // JVM arguments for Java plugins
+	Port                int           `json:"port"`
+	HealthCheckInterval time.Duration `json:"health_check_interval"`
 }
 
 // PluginDependencies holds dependency information
 type PluginDependencies struct {
-	PortunixMinVersion string   `yaml:"portunix_min_version"`
-	OSSupport          []string `yaml:"os_support"`
+	PortunixMinVersion string         `json:"portunix_min_version"`
+	OSSupport          []string       `json:"os_support"`
+	OptionalTools      []OptionalTool `json:"optional_tools,omitempty"`
+}
+
+// OptionalTool represents an optional external tool dependency
+type OptionalTool struct {
+	Name   string `json:"name"`
+	Reason string `json:"reason"`
 }
 
 // AIIntegrationConfig holds AI integration configuration
 type AIIntegrationConfig struct {
-	MCPTools []MCPTool `yaml:"mcp_tools"`
+	MCPTools []MCPTool `json:"mcp_tools"`
 }
 
 // MCPTool represents an MCP tool provided by the plugin
 type MCPTool struct {
-	Name        string `yaml:"name"`
-	Description string `yaml:"description"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }

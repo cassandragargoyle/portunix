@@ -53,6 +53,24 @@ Apache Maven
 
 ---
 
+### ○ Development / Containers
+
+#### `docker`
+
+Docker
+
+[Homepage](https://www.docker.com/) | [Documentation](https://docs.docker.com/) | License: Apache-2.0 | Maintainer: Docker Inc.
+
+---
+
+#### `podman`
+
+Podman
+
+[Homepage](https://podman.io/) | [Documentation](https://docs.podman.io/) | License: Apache-2.0 | Maintainer: Red Hat
+
+---
+
 ### ▣ Editors & IDEs
 
 #### `vscode`
@@ -70,6 +88,14 @@ Visual Studio Code
 Go Programming Language
 
 [Homepage](https://go.dev/) | [Documentation](https://go.dev/doc/) | License: BSD-3-Clause | Maintainer: Google
+
+---
+
+#### `graalvm`
+
+GraalVM
+
+[Homepage](https://www.graalvm.org/) | License: GPL-2.0 with Classpath Exception | Maintainer: Oracle
 
 ---
 
@@ -135,6 +161,14 @@ Actionlint
 
 ---
 
+#### `docusaurus`
+
+Docusaurus Static Documentation Site
+
+[Homepage](https://docusaurus.io/) | [Documentation](https://docusaurus.io/docs) | License: MIT | Maintainer: Meta Platforms, Inc.
+
+---
+
 #### `gh`
 
 GitHub CLI
@@ -180,6 +214,16 @@ Pipx
 Protocol Buffers Compiler
 
 [Homepage](https://developers.google.com/protocol-buffers) | [Documentation](https://developers.google.com/protocol-buffers/docs) | License: BSD-3-Clause | Maintainer: Google
+
+---
+
+### ○ Development / Vcs
+
+#### `git`
+
+Git
+
+[Homepage](https://git-scm.com) | [Documentation](https://git-scm.com/doc) | License: GPL-2.0 | Maintainer: Git Project
 
 ---
 
@@ -283,6 +327,16 @@ Fail2ban
 
 ---
 
+### ○ Security / Remote-Access
+
+#### `openssh`
+
+OpenSSH
+
+[Homepage](https://www.openssh.com/) | [Documentation](https://www.openssh.com/manual.html) | License: BSD | Maintainer: OpenBSD Project
+
+---
+
 ### ▧ VPN & Security
 
 #### `wireguard`
@@ -322,7 +376,7 @@ Windows Package Manager
 ---
 
 
-**Total packages available: 34**
+**Total packages available: 40**
 
 ## Getting Package Details
 

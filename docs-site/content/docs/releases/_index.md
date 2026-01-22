@@ -10,7 +10,7 @@ Latest updates and version history.
 
 ## Current Version: v1.9.1
 
-Released: 2026-01-02
+Released: 2026-01-21
 
 For detailed release notes, please visit the [GitHub Releases](https://github.com/cassandragargoyle/Portunix/releases) page.
 

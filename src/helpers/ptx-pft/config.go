@@ -96,6 +96,22 @@ func LoadConfig() (*Config, error) {
 	return LoadConfigFromPath(configPath)
 }
 
+// LoadConfigWithFilePath loads configuration and returns the config file path
+// This is needed for cross-platform path resolution
+func LoadConfigWithFilePath() (*Config, string, error) {
+	configPath, err := findConfigFile()
+	if err != nil {
+		return nil, "", err
+	}
+
+	config, err := LoadConfigFromPath(configPath)
+	if err != nil {
+		return nil, "", err
+	}
+
+	return config, configPath, nil
+}
+
 // LoadConfigFromPath loads configuration from a specific path
 func LoadConfigFromPath(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
@@ -132,17 +148,20 @@ func (c *Config) SaveToPath(path string) error {
 }
 
 // Validate checks if the configuration is valid
+// Note: Empty path is now allowed for cross-platform compatibility
+// The actual project directory is resolved at runtime using ResolveProjectPath
 func (c *Config) Validate() error {
 	if c.Name == "" {
 		return fmt.Errorf("product name is required")
 	}
-	if c.Path == "" {
-		return fmt.Errorf("document path is required")
-	}
 
-	// Check if path exists
-	if _, err := os.Stat(c.Path); os.IsNotExist(err) {
-		return fmt.Errorf("document path does not exist: %s", c.Path)
+	// Empty path is allowed - will use config file directory at runtime
+	// Relative paths are allowed - will be resolved at runtime
+	// Only validate absolute paths for existence (backwards compatibility)
+	if c.Path != "" && filepath.IsAbs(c.Path) {
+		if _, err := os.Stat(c.Path); os.IsNotExist(err) {
+			return fmt.Errorf("document path does not exist: %s", c.Path)
+		}
 	}
 
 	// Validate area configs
@@ -323,5 +342,45 @@ func (c *Config) GetProjectID() string {
 		}
 	}
 	return ""
+}
+
+// ResolveProjectPath determines the actual project directory to use
+// Priority:
+// 1. If explicitPath is provided (--path flag), use it
+// 2. If config.Path is empty, use config file directory
+// 3. If config.Path is relative, resolve from config file directory
+// 4. If config.Path is absolute, use as-is (backwards compatible)
+func ResolveProjectPath(config *Config, configFilePath string, explicitPath string) string {
+	// If --path was explicitly provided, always use it
+	if explicitPath != "" {
+		absPath, err := filepath.Abs(explicitPath)
+		if err != nil {
+			return explicitPath
+		}
+		return absPath
+	}
+
+	// If config.Path is empty, use config file directory
+	if config.Path == "" {
+		if configFilePath != "" {
+			return filepath.Dir(configFilePath)
+		}
+		// Fallback to current working directory
+		cwd, _ := os.Getwd()
+		return cwd
+	}
+
+	// If config.Path is relative, resolve from config file directory
+	if !filepath.IsAbs(config.Path) {
+		if configFilePath != "" {
+			return filepath.Join(filepath.Dir(configFilePath), config.Path)
+		}
+		// Fallback: resolve from current working directory
+		cwd, _ := os.Getwd()
+		return filepath.Join(cwd, config.Path)
+	}
+
+	// Absolute path - use as-is (may fail on different OS)
+	return config.Path
 }
 

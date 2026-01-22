@@ -69,10 +69,10 @@ var pluginListCmd = &cobra.Command{
 var pluginInstallCmd = &cobra.Command{
 	Use:   "install <plugin-path>",
 	Short: "Install a plugin",
-	Long: `Install a plugin from a directory containing plugin.yaml manifest.
+	Long: `Install a plugin from a directory containing plugin.json manifest.
 
 The plugin directory must contain:
-- plugin.yaml (manifest file)
+- plugin.json (manifest file)
 - Plugin binary
 - Any additional plugin files
 
@@ -177,7 +177,7 @@ var pluginCreateCmd = &cobra.Command{
 	Long: `Create a new plugin template with basic structure and manifest.
 
 This creates a directory with:
-- plugin.yaml (manifest file)
+- plugin.json (manifest file)
 - Basic plugin structure
 - Example implementation
 
@@ -203,6 +203,35 @@ var pluginValidateCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		pluginPath := args[0]
 		return validatePlugin(pluginPath)
+	},
+}
+
+// Plugin run command
+var pluginRunCmd = &cobra.Command{
+	Use:   "run <plugin-name> [args...]",
+	Short: "Run a plugin with arguments",
+	Long: `Run an installed plugin with specified arguments.
+
+This command is equivalent to calling the plugin directly:
+  portunix plugin run text-extractor --help
+  portunix text-extractor --help
+
+Both commands produce the same result.
+
+Examples:
+  portunix plugin run text-extractor --help
+  portunix plugin run text-extractor extract --file document.pdf`,
+	DisableFlagParsing: true,
+	PersistentPreRunE:  nil, // override parent's PreRunE - we handle initialization ourselves
+	PersistentPostRunE: nil, // override parent's PostRunE
+	RunE: func(cmd *cobra.Command, args []string) error {
+		// Handle help flags manually since DisableFlagParsing is true
+		if len(args) == 0 || args[0] == "--help" || args[0] == "-h" {
+			return cmd.Help()
+		}
+		pluginName := args[0]
+		pluginArgs := args[1:]
+		return runPluginByName(pluginName, pluginArgs)
 	},
 }
 
@@ -261,6 +290,7 @@ func init() {
 	pluginCmd.AddCommand(pluginHealthCmd)
 	pluginCmd.AddCommand(pluginCreateCmd)
 	pluginCmd.AddCommand(pluginValidateCmd)
+	pluginCmd.AddCommand(pluginRunCmd)
 
 	// Flags for list command
 	pluginListCmd.Flags().BoolP("all", "a", false, "Show all plugins (including disabled)")
@@ -333,11 +363,11 @@ func listPlugins(showAll bool, outputFormat string) error {
 
 // installPlugin installs a plugin
 func installPlugin(pluginPath string) error {
-	manifestPath := filepath.Join(pluginPath, "plugin.yaml")
+	manifestPath := filepath.Join(pluginPath, "plugin.json")
 
 	// Check if manifest exists
 	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
-		return fmt.Errorf("plugin.yaml not found in %s", pluginPath)
+		return fmt.Errorf("plugin.json not found in %s", pluginPath)
 	}
 
 	fmt.Printf("Installing plugin from %s...\n", pluginPath)
@@ -507,12 +537,12 @@ func createPluginTemplate(pluginName, author, description, outputDir string) err
 		return fmt.Errorf("failed to create plugin directory: %w", err)
 	}
 
-	// Create plugin.yaml
-	manifestPath := filepath.Join(pluginDir, "plugin.yaml")
+	// Create plugin.json
+	manifestPath := filepath.Join(pluginDir, "plugin.json")
 	manifestContent := plugins.GetManifestTemplate(pluginName, description, author)
 
 	if err := os.WriteFile(manifestPath, []byte(manifestContent), 0644); err != nil {
-		return fmt.Errorf("failed to create plugin.yaml: %w", err)
+		return fmt.Errorf("failed to create plugin.json: %w", err)
 	}
 
 	// Create basic plugin structure
@@ -523,7 +553,7 @@ func createPluginTemplate(pluginName, author, description, outputDir string) err
 	fmt.Printf("✅ Plugin template created at: %s\n", pluginDir)
 	fmt.Printf("\nNext steps:\n")
 	fmt.Printf("1. cd %s\n", pluginDir)
-	fmt.Printf("2. Edit plugin.yaml to configure your plugin\n")
+	fmt.Printf("2. Edit plugin.json to configure your plugin\n")
 	fmt.Printf("3. Implement your plugin in main.go\n")
 	fmt.Printf("4. Build: go build -o %s\n", pluginName)
 	fmt.Printf("5. Install: portunix plugin install .\n")
@@ -533,7 +563,7 @@ func createPluginTemplate(pluginName, author, description, outputDir string) err
 
 // validatePlugin validates a plugin
 func validatePlugin(pluginPath string) error {
-	manifestPath := filepath.Join(pluginPath, "plugin.yaml")
+	manifestPath := filepath.Join(pluginPath, "plugin.json")
 
 	manifest, err := plugins.LoadManifest(manifestPath)
 	if err != nil {
@@ -668,7 +698,7 @@ func installPluginFromGitHub(pluginName, version string, force bool) error {
 		return fmt.Errorf("failed to extract plugin: %w", err)
 	}
 
-	// Find plugin.yaml in extracted directory
+	// Find plugin.json in extracted directory
 	var manifestPath string
 	if owner == defaultOwner && repo == defaultRepo {
 		// For default repository, look for plugin manifest in plugin-specific directory
@@ -762,16 +792,26 @@ func outputYAML(data interface{}) error {
 }
 
 // Helper functions for output formatting
-func outputPluginTable(plugins []plugins.PluginInfo, showAll bool) error {
+func outputPluginTable(pluginList []plugins.PluginInfo, showAll bool) error {
 	// Implementation for table output
 	fmt.Printf("%-20s %-10s %-15s %-30s\n", "NAME", "VERSION", "STATUS", "DESCRIPTION")
 	fmt.Printf("%-20s %-10s %-15s %-30s\n", "----", "-------", "------", "-----------")
 
-	for _, plugin := range plugins {
+	for _, plugin := range pluginList {
+		status := plugin.Status.String()
+		// For helper plugins, show "ready" instead of service-oriented statuses
+		if plugin.Mode == "helper" {
+			if plugin.Status == plugins.PluginStatusReady {
+				status = "ready"
+			} else if plugin.Status == plugins.PluginStatusStopped {
+				// Helper plugins don't "stop", they're just not running
+				status = "ready"
+			}
+		}
 		fmt.Printf("%-20s %-10s %-15s %-30s\n",
 			plugin.Name,
 			plugin.Version,
-			plugin.Status.String(),
+			status,
 			truncateString(plugin.Description, 30))
 	}
 
@@ -947,7 +987,7 @@ func copyFile(src, dst string) error {
 	return err
 }
 
-// findPluginManifest finds plugin.yaml in the extracted directory
+// findPluginManifest finds plugin.json in the extracted directory
 func findPluginManifest(searchDir string) (string, error) {
 	var manifestPath string
 
@@ -956,7 +996,7 @@ func findPluginManifest(searchDir string) (string, error) {
 			return err
 		}
 
-		if info.Name() == "plugin.yaml" {
+		if info.Name() == "plugin.json" {
 			manifestPath = path
 			return filepath.SkipDir // Stop searching
 		}
@@ -969,7 +1009,7 @@ func findPluginManifest(searchDir string) (string, error) {
 	}
 
 	if manifestPath == "" {
-		return "", fmt.Errorf("plugin.yaml not found in %s", searchDir)
+		return "", fmt.Errorf("plugin.json not found in %s", searchDir)
 	}
 
 	return manifestPath, nil
@@ -1024,13 +1064,13 @@ func findPluginAssetInRelease(release *github.Release, pluginName, platform stri
 	return nil
 }
 
-// findPluginManifestInDefaultRepo finds plugin.yaml in the default repository structure
+// findPluginManifestInDefaultRepo finds plugin.json in the default repository structure
 func findPluginManifestInDefaultRepo(searchDir, pluginName string) (string, error) {
-	// Expected directory structure: plugins/pluginName/plugin.yaml
+	// Expected directory structure: plugins/pluginName/plugin.json
 	possiblePaths := []string{
-		filepath.Join(searchDir, "plugins", pluginName, "plugin.yaml"),
-		filepath.Join(searchDir, pluginName, "plugin.yaml"),
-		filepath.Join(searchDir, "plugin.yaml"), // Fallback to root
+		filepath.Join(searchDir, "plugins", pluginName, "plugin.json"),
+		filepath.Join(searchDir, pluginName, "plugin.json"),
+		filepath.Join(searchDir, "plugin.json"), // Fallback to root
 	}
 	
 	for _, path := range possiblePaths {
@@ -1186,10 +1226,10 @@ func handleReleaseError(owner, repo string, err error) error {
 // handleSpecificReleaseError provides user-friendly error messages for specific version issues
 func handleSpecificReleaseError(owner, repo, version string, err error) error {
 	errMsg := err.Error()
-	
+
 	if strings.Contains(errMsg, "404") || strings.Contains(errMsg, "Not Found") {
 		fmt.Printf("📦 Release version '%s' not found in %s/%s\n", version, owner, repo)
-		
+
 		// Try to show available releases
 		githubService := github.NewService()
 		releases, listErr := githubService.ListRepositoryReleases(owner, repo)
@@ -1205,9 +1245,38 @@ func handleSpecificReleaseError(owner, repo, version string, err error) error {
 		} else {
 			fmt.Println("\n💡 Use: portunix plugin install-github <plugin-name>  (without --version for latest)")
 		}
-		
+
 		return fmt.Errorf("version %s not found in %s/%s", version, owner, repo)
 	}
-	
+
 	return handleRepositoryError(owner, repo, err)
+}
+
+// runPluginByName runs a plugin by its name with given arguments
+// This is used by 'portunix plugin run <name> [args...]' command
+func runPluginByName(pluginName string, args []string) error {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return fmt.Errorf("failed to get home directory: %w", err)
+	}
+
+	registryPath := filepath.Join(homeDir, ".portunix", "plugins", "registry.json")
+	registry, err := manager.NewRegistry(registryPath)
+	if err != nil {
+		return fmt.Errorf("failed to load plugin registry: %w", err)
+	}
+
+	// Get plugin data
+	plugin, err := registry.GetPluginRegistryData(pluginName)
+	if err != nil {
+		return fmt.Errorf("plugin '%s' not found. Use 'portunix plugin list' to see installed plugins", pluginName)
+	}
+
+	// Check if plugin is enabled
+	if !plugin.Enabled {
+		return fmt.Errorf("plugin '%s' is not enabled. Enable it with: portunix plugin enable %s", pluginName, pluginName)
+	}
+
+	// Use existing executePlugin from plugin_dispatcher.go
+	return executePlugin(plugin, args)
 }

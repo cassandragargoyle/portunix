@@ -18,6 +18,7 @@ This script:
 The script automatically uses the project's .venv if available.
 """
 
+import hashlib
 import os
 import re
 import sys
@@ -91,7 +92,8 @@ def find_venv_python() -> Optional[Path]:
 
 
 def run_command(cmd: List[str], cwd: Optional[Path] = None,
-                capture: bool = False, check: bool = True) -> subprocess.CompletedProcess:
+                capture: bool = False, check: bool = True,
+                env: Optional[dict] = None) -> subprocess.CompletedProcess:
     """Run a command and optionally capture output"""
     try:
         result = subprocess.run(
@@ -99,7 +101,8 @@ def run_command(cmd: List[str], cwd: Optional[Path] = None,
             cwd=cwd,
             capture_output=capture,
             text=True,
-            check=check
+            check=check,
+            env=env
         )
         return result
     except subprocess.CalledProcessError as e:
@@ -176,14 +179,14 @@ def update_version_files(version: str) -> None:
     # Update build-with-version.sh default version
     build_script = project_root / "build-with-version.sh"
     if build_script.exists():
-        content = build_script.read_text()
+        content = build_script.read_text(encoding='utf-8')
         content = re.sub(
             r'^VERSION=\$\{1:-v[0-9]+\.[0-9]+\.[0-9]+\}',
             f'VERSION=${{1:-{version}}}',
             content,
             flags=re.MULTILINE
         )
-        build_script.write_text(content)
+        build_script.write_text(content, encoding='utf-8')
         print_info("✓ Updated build-with-version.sh default version")
 
     # Run build-with-version.sh to update portunix.rc
@@ -243,15 +246,102 @@ def run_goreleaser(version: str, goreleaser_cmd: str) -> bool:
 
 
 def build_platform_archives() -> bool:
-    """Build cross-platform binaries using Makefile"""
+    """Build cross-platform binaries using pure Python (Windows compatible)"""
     print_step("Building cross-platform binaries for ADR-031...")
     project_root = get_project_root()
 
-    print_info("Building binaries for all target platforms...")
-    try:
-        run_command(["make", "build-all-platforms"], cwd=project_root)
-    except subprocess.CalledProcessError:
-        print_warning("Platform builds had some issues, continuing...")
+    # Define target platforms
+    platforms = [
+        ("linux", "amd64"),
+        ("linux", "arm64"),
+        ("windows", "amd64"),
+        ("darwin", "amd64"),
+    ]
+
+    # Define helper binaries to build
+    helpers = [
+        "ptx-container",
+        "ptx-virt",
+        "ptx-mcp",
+        "ptx-ansible",
+        "ptx-prompting",
+        "ptx-python",
+        "ptx-installer",
+        "ptx-aiops",
+        "ptx-make",
+        "ptx-pft",
+        "ptx-credential",
+    ]
+
+    dist_dir = project_root / "dist"
+    platforms_dir = dist_dir / "platforms"
+
+    # Find .syso files (Windows resource files) that break non-Windows builds
+    syso_files = list(project_root.glob("*.syso"))
+
+    # Build for each platform
+    for goos, goarch in platforms:
+        platform_name = f"{goos}-{goarch}"
+        platform_dir = platforms_dir / platform_name
+        platform_dir.mkdir(parents=True, exist_ok=True)
+
+        ext = ".exe" if goos == "windows" else ""
+        print_info(f"Building for {goos}/{goarch}...")
+
+        # Set environment for cross-compilation
+        env = os.environ.copy()
+        env["GOOS"] = goos
+        env["GOARCH"] = goarch
+        env["CGO_ENABLED"] = "0"
+
+        # Temporarily rename .syso files for non-Windows builds
+        # (they contain Windows-specific relocations incompatible with other platforms)
+        renamed_syso = []
+        if goos != "windows":
+            for syso in syso_files:
+                backup = syso.with_suffix(".syso.bak")
+                syso.rename(backup)
+                renamed_syso.append((backup, syso))
+
+        # Build main portunix binary
+        output_path = platform_dir / f"portunix{ext}"
+        try:
+            run_command(
+                ["go", "build", "-o", str(output_path), "."],
+                cwd=project_root,
+                env=env,
+                capture=True
+            )
+        except subprocess.CalledProcessError as e:
+            print_warning(f"Failed to build portunix for {platform_name}: {e}")
+            # Restore .syso files before continuing
+            for backup, original in renamed_syso:
+                backup.rename(original)
+            continue
+        finally:
+            # Restore .syso files
+            for backup, original in renamed_syso:
+                if backup.exists():
+                    backup.rename(original)
+
+        # Build helper binaries
+        for helper in helpers:
+            helper_dir = project_root / "src" / "helpers" / helper
+            if not helper_dir.exists():
+                continue
+
+            helper_output = platform_dir / f"{helper}{ext}"
+            try:
+                run_command(
+                    ["go", "build", "-o", str(helper_output), "."],
+                    cwd=helper_dir,
+                    env=env,
+                    capture=True
+                )
+            except subprocess.CalledProcessError as e:
+                print_warning(f"Failed to build {helper} for {platform_name}: {e}")
+
+        print_info(f"  ✓ {platform_name} complete")
 
     # Create platform archives using Python script
     print_info("Creating platform archives...")
@@ -322,6 +412,46 @@ def inject_platform_archives() -> None:
             print_info(f"  ✓ Added platforms/ to {archive_name}")
 
     print_info("✓ Platform archives injected into all release packages")
+    print()
+
+
+def copy_quickstart_scripts() -> None:
+    """Copy quickstart scripts to dist and update checksums"""
+    print_step("Copying quickstart scripts...")
+    project_root = get_project_root()
+    dist_dir = project_root / "dist"
+    quickstart_dir = project_root / "release-assets" / "quickstart"
+
+    if not quickstart_dir.exists():
+        print_warning("Quickstart directory not found, skipping")
+        return
+
+    # Copy all quickstart scripts
+    copied_files = []
+    for script in quickstart_dir.glob("*"):
+        if script.is_file():
+            dest = dist_dir / script.name
+            shutil.copy2(script, dest)
+            copied_files.append(dest)
+            print_info(f"✓ Copied {script.name}")
+
+    # Update checksums file
+    if copied_files:
+        # Find checksums file
+        checksums_files = list(dist_dir.glob("checksums_*.txt"))
+        if checksums_files:
+            checksums_file = checksums_files[0]
+            with open(checksums_file, 'a') as f:
+                for file_path in copied_files:
+                    # Calculate SHA256
+                    sha256_hash = hashlib.sha256()
+                    with open(file_path, 'rb') as file:
+                        for chunk in iter(lambda: file.read(4096), b''):
+                            sha256_hash.update(chunk)
+                    checksum = sha256_hash.hexdigest()
+                    f.write(f"{checksum}  {file_path.name}\n")
+            print_info(f"✓ Updated checksums in {checksums_file.name}")
+
     print()
 
 
@@ -488,7 +618,7 @@ Verify downloads using SHA256 checksums provided with the release.
 """
 
     notes_path = dist_dir / f"RELEASE_NOTES_{version}.md"
-    notes_path.write_text(release_notes)
+    notes_path.write_text(release_notes, encoding='utf-8')
     print_info(f"✓ Release notes created: {notes_path}")
     print()
 
@@ -587,6 +717,9 @@ def main() -> int:
 
     # Inject platform archives
     inject_platform_archives()
+
+    # Copy quickstart scripts
+    copy_quickstart_scripts()
 
     # Verify outputs
     if not verify_outputs():

@@ -246,10 +246,12 @@ func handleConfigureCommand(args []string) {
 	var name, path, area, provider, url, token, projectID string
 	var smtpHost, smtpUser, smtpPass, smtpFrom string
 	var smtpPort int
-	var showConfig bool
+	var showConfig, fixPaths bool
 
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
+		case "--fix-paths":
+			fixPaths = true
 		case "--name":
 			if i+1 < len(args) {
 				name = args[i+1]
@@ -324,6 +326,12 @@ func handleConfigureCommand(args []string) {
 		return
 	}
 
+	// Fix absolute paths to relative for cross-platform compatibility
+	if fixPaths {
+		fixConfigPaths(path)
+		return
+	}
+
 	// SMTP configuration
 	if smtpHost != "" || smtpPort > 0 || smtpUser != "" || smtpFrom != "" {
 		updateSMTPConfig(path, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom)
@@ -353,6 +361,7 @@ func showConfigureHelp() {
 	fmt.Println("  --name <name>         Set product name")
 	fmt.Println("  --path <path>         Set path to local documents")
 	fmt.Println("  --show                Show current configuration")
+	fmt.Println("  --fix-paths           Convert absolute paths to relative for cross-platform use")
 	fmt.Println()
 	fmt.Println("Per-area options (requires --area):")
 	fmt.Println("  --area <area>         Target area (voc, vos, vob, voe)")
@@ -377,7 +386,7 @@ func showConfigureHelp() {
 }
 
 func showCurrentConfig(configPath string) {
-	config, err := loadOrCreateConfig(configPath)
+	config, _, err := loadOrCreateConfig(configPath)
 	if err != nil {
 		fmt.Printf("No configuration found: %v\n", err)
 		fmt.Println("Run 'portunix pft configure' to create one.")
@@ -439,7 +448,7 @@ func showCurrentConfig(configPath string) {
 
 // updateGlobalConfig updates global settings (name, path)
 func updateGlobalConfig(name, path string) {
-	config, err := loadOrCreateConfig(path)
+	config, _, err := loadOrCreateConfig(path)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
@@ -483,7 +492,7 @@ func updateAreaConfig(configPath, area, provider, url, token, projectID string) 
 		}
 	}
 
-	config, err := loadOrCreateConfig(configPath)
+	config, _, err := loadOrCreateConfig(configPath)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
@@ -521,7 +530,7 @@ func updateAreaConfig(configPath, area, provider, url, token, projectID string) 
 
 // updateSMTPConfig updates SMTP server configuration
 func updateSMTPConfig(configPath, host string, port int, user, pass, from string) {
-	config, err := loadOrCreateConfig(configPath)
+	config, _, err := loadOrCreateConfig(configPath)
 	if err != nil {
 		fmt.Printf("Error: %v\n", err)
 		return
@@ -556,31 +565,40 @@ func updateSMTPConfig(configPath, host string, port int, user, pass, from string
 }
 
 // loadOrCreateConfig loads existing config or creates a new one
-func loadOrCreateConfig(path string) (*Config, error) {
+// Returns: config, configFilePath (path to .pft-config.json), error
+func loadOrCreateConfig(path string) (*Config, string, error) {
 	var config *Config
+	var configFilePath string
 
 	if path != "" {
 		absPath, err := filepath.Abs(path)
 		if err != nil {
-			return nil, fmt.Errorf("error resolving path: %w", err)
+			return nil, "", fmt.Errorf("error resolving path: %w", err)
 		}
-		configFile := filepath.Join(absPath, ConfigFileName)
-		if _, statErr := os.Stat(configFile); statErr == nil {
-			config, _ = LoadConfigFromPath(configFile)
+		configFilePath = filepath.Join(absPath, ConfigFileName)
+		if _, statErr := os.Stat(configFilePath); statErr == nil {
+			config, _ = LoadConfigFromPath(configFilePath)
 		}
 		if config == nil {
 			config = NewDefaultConfig()
 			config.Path = absPath
 		}
 	} else {
-		var err error
-		config, err = LoadConfig()
-		if err != nil {
+		// Try to find config in current or parent directories
+		foundPath, err := findConfigFile()
+		if err == nil {
+			configFilePath = foundPath
+			config, _ = LoadConfigFromPath(configFilePath)
+		}
+		if config == nil {
 			config = NewDefaultConfig()
+			// Set configFilePath to current directory for new configs
+			cwd, _ := os.Getwd()
+			configFilePath = filepath.Join(cwd, ConfigFileName)
 		}
 	}
 
-	return config, nil
+	return config, configFilePath, nil
 }
 
 // saveConfig saves configuration to the appropriate path
@@ -594,6 +612,69 @@ func saveConfig(config *Config) {
 		return
 	}
 	fmt.Printf("\nConfiguration saved to %s\n", GetConfigPath(savePath))
+}
+
+// fixConfigPaths converts absolute paths to empty/relative for cross-platform compatibility
+func fixConfigPaths(configPath string) {
+	config, configFilePath, err := loadOrCreateConfig(configPath)
+	if err != nil {
+		fmt.Printf("Error loading configuration: %v\n", err)
+		return
+	}
+
+	if config.Path == "" {
+		fmt.Println("Path is already empty (cross-platform compatible)")
+		return
+	}
+
+	configDir := filepath.Dir(configFilePath)
+	oldPath := config.Path
+
+	// Check if path is absolute
+	if !filepath.IsAbs(config.Path) {
+		fmt.Printf("Path is already relative: %s\n", config.Path)
+		return
+	}
+
+	// Check if the absolute path points to the config directory
+	absConfigDir, _ := filepath.Abs(configDir)
+	if config.Path == absConfigDir {
+		// Path points to config directory - set to empty
+		config.Path = ""
+		fmt.Printf("Converting absolute path to empty (same as config directory):\n")
+		fmt.Printf("  Old: %s\n", oldPath)
+		fmt.Printf("  New: (empty - uses config file directory)\n")
+	} else {
+		// Try to make it relative to config directory
+		relPath, err := filepath.Rel(configDir, config.Path)
+		if err != nil {
+			fmt.Printf("Cannot convert to relative path: %v\n", err)
+			fmt.Println("The path may be on a different drive or volume.")
+			return
+		}
+
+		// Check if relative path would go too many levels up
+		if strings.HasPrefix(relPath, ".."+string(filepath.Separator)+".."+string(filepath.Separator)+"..") {
+			fmt.Printf("Path is too far from config directory, keeping as empty:\n")
+			fmt.Printf("  Old: %s\n", oldPath)
+			config.Path = ""
+			fmt.Printf("  New: (empty - uses config file directory)\n")
+		} else {
+			config.Path = relPath
+			fmt.Printf("Converting absolute path to relative:\n")
+			fmt.Printf("  Old: %s\n", oldPath)
+			fmt.Printf("  New: %s\n", relPath)
+		}
+	}
+
+	// Save the updated config
+	if err := config.SaveToPath(configFilePath); err != nil {
+		fmt.Printf("Error saving configuration: %v\n", err)
+		return
+	}
+
+	fmt.Println("\nConfiguration updated for cross-platform compatibility.")
+	fmt.Println("The project will now work across different operating systems.")
 }
 
 func runConfigureWizard() {
@@ -1006,16 +1087,14 @@ func handleSyncCommand(args []string) {
 		syncVoS = true
 	}
 
-	config, err := LoadConfig()
+	config, configFilePath, err := LoadConfigWithFilePath()
 	if err != nil {
 		fmt.Println("No configuration found. Run 'portunix pft configure' first.")
 		return
 	}
 
-	basePath := config.Path
-	if basePath == "" {
-		basePath = "."
-	}
+	// Use cross-platform path resolution
+	basePath := ResolveProjectPath(config, configFilePath, "")
 
 	// Update config with tokens if provided
 	if vocToken != "" {
@@ -1194,16 +1273,14 @@ func handlePullCommand(args []string) {
 		pullVoS = true
 	}
 
-	config, err := LoadConfig()
+	config, configFilePath, err := LoadConfigWithFilePath()
 	if err != nil {
 		fmt.Println("No configuration found. Run 'portunix pft configure' first.")
 		return
 	}
 
-	basePath := config.Path
-	if basePath == "" {
-		basePath = "."
-	}
+	// Use cross-platform path resolution
+	basePath := ResolveProjectPath(config, configFilePath, "")
 
 	// Update config with tokens if provided
 	if vocToken != "" {
@@ -1345,16 +1422,14 @@ func handlePushCommand(args []string) {
 		pushVoS = true
 	}
 
-	config, err := LoadConfig()
+	config, configFilePath, err := LoadConfigWithFilePath()
 	if err != nil {
 		fmt.Println("No configuration found. Run 'portunix pft configure' first.")
 		return
 	}
 
-	basePath := config.Path
-	if basePath == "" {
-		basePath = "."
-	}
+	// Use cross-platform path resolution
+	basePath := ResolveProjectPath(config, configFilePath, "")
 
 	// Update config with tokens if provided
 	if vocToken != "" {
@@ -1511,16 +1586,14 @@ func handleListCommand(args []string) {
 		listVoS = true
 	}
 
-	config, err := loadOrCreateConfig(configPath)
+	config, configFilePath, err := loadOrCreateConfig(configPath)
 	if err != nil {
 		fmt.Println("No configuration found. Run 'portunix pft configure' first.")
 		return
 	}
 
-	projectDir := config.Path
-	if projectDir == "" {
-		projectDir, _ = os.Getwd()
-	}
+	// Use cross-platform path resolution
+	projectDir := ResolveProjectPath(config, configFilePath, configPath)
 
 	fmt.Printf("Feedback Items - %s\n", config.Name)
 	if categoryFilter != "" {
@@ -1674,18 +1747,41 @@ func handleShowCommand(args []string) {
 		return
 	}
 
-	itemID := args[0]
+	// Parse arguments - first non-flag argument is itemID
+	var itemID string
+	var configPath string
 
-	config, err := LoadConfig()
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--path":
+			if i+1 < len(args) {
+				configPath = args[i+1]
+				i++
+			}
+		case "--help", "-h":
+			showShowHelp()
+			return
+		default:
+			if !strings.HasPrefix(args[i], "-") && itemID == "" {
+				itemID = args[i]
+			}
+		}
+	}
+
+	if itemID == "" {
+		fmt.Println("Error: item ID is required")
+		showShowHelp()
+		return
+	}
+
+	config, configFilePath, err := loadOrCreateConfig(configPath)
 	if err != nil {
 		fmt.Println("No configuration found. Run 'portunix pft configure' first.")
 		return
 	}
 
-	projectDir := config.Path
-	if projectDir == "" {
-		projectDir, _ = os.Getwd()
-	}
+	// Use cross-platform path resolution
+	projectDir := ResolveProjectPath(config, configFilePath, configPath)
 
 	// Try to find item in VoC or VoS directories
 	item, filePath, err := findFeedbackItem(projectDir, itemID)
@@ -1735,7 +1831,7 @@ func handleShowCommand(args []string) {
 }
 
 func findFeedbackItem(projectDir, itemID string) (*FeedbackItem, string, error) {
-	// Try VoC directory
+	// Try VoC directory (uses recursive ScanFeedbackDirectory)
 	vocDir := getVoiceDir(projectDir, "voc")
 	if item, path, err := findItemInDirectory(vocDir, itemID, "voc"); err == nil {
 		return item, path, nil
@@ -1747,30 +1843,33 @@ func findFeedbackItem(projectDir, itemID string) (*FeedbackItem, string, error) 
 		return item, path, nil
 	}
 
-	return nil, "", fmt.Errorf("item not found in voc/ or vos/ directories")
+	// Try VoB directory
+	vobDir := getVoiceDir(projectDir, "vob")
+	if item, path, err := findItemInDirectory(vobDir, itemID, "vob"); err == nil {
+		return item, path, nil
+	}
+
+	// Try VoE directory
+	voeDir := getVoiceDir(projectDir, "voe")
+	if item, path, err := findItemInDirectory(voeDir, itemID, "voe"); err == nil {
+		return item, path, nil
+	}
+
+	return nil, "", fmt.Errorf("item not found in voc/, vos/, vob/, or voe/ directories")
 }
 
 func findItemInDirectory(dir, itemID, feedbackType string) (*FeedbackItem, string, error) {
-	files, err := os.ReadDir(dir)
+	// Use recursive ScanFeedbackDirectory to find items in subdirectories (needs/, verbatims/, etc.)
+	items, err := ScanFeedbackDirectory(dir, feedbackType)
 	if err != nil {
 		return nil, "", err
 	}
 
-	for _, file := range files {
-		if file.IsDir() || !strings.HasSuffix(file.Name(), ".md") {
-			continue
-		}
-
-		filePath := filepath.Join(dir, file.Name())
-		item, err := ParseMarkdownFile(filePath)
-		if err != nil {
-			continue
-		}
-
-		item.Type = feedbackType
-		if item.ID == itemID || strings.HasPrefix(file.Name(), itemID) {
-			item.FilePath = filePath
-			return item, filePath, nil
+	for _, item := range items {
+		// Match by ID from frontmatter or by filename prefix
+		filename := filepath.Base(item.FilePath)
+		if item.ID == itemID || strings.HasPrefix(filename, itemID+"-") || strings.HasPrefix(filename, itemID+".") {
+			return item, item.FilePath, nil
 		}
 	}
 
@@ -1886,21 +1985,14 @@ func handleAddCommand(args []string) {
 	}
 
 	// Load config
-	config, err := loadOrCreateConfig(configPath)
+	config, configFilePath, err := loadOrCreateConfig(configPath)
 	if err != nil {
 		fmt.Printf("Error loading configuration: %v\n", err)
 		return
 	}
 
-	projectDir := config.Path
-	if projectDir == "" {
-		projectDir, _ = os.Getwd()
-	}
-
-	// Override projectDir with explicit --path if provided
-	if configPath != "" {
-		projectDir, _ = filepath.Abs(configPath)
-	}
+	// Use cross-platform path resolution
+	projectDir := ResolveProjectPath(config, configFilePath, configPath)
 
 	// Lookup author role from user registry
 	var authorRole string
@@ -2073,16 +2165,14 @@ func handleUpdateCommand(args []string) {
 	}
 
 	// Load config
-	config, err := loadOrCreateConfig(configPath)
+	config, configFilePath, err := loadOrCreateConfig(configPath)
 	if err != nil {
 		fmt.Printf("Error loading configuration: %v\n", err)
 		return
 	}
 
-	projectDir := config.Path
-	if projectDir == "" {
-		projectDir, _ = os.Getwd()
-	}
+	// Use cross-platform path resolution
+	projectDir := ResolveProjectPath(config, configFilePath, configPath)
 
 	// Find the item file
 	var itemPath string
@@ -2561,16 +2651,21 @@ func showAddHelp() {
 }
 
 func showShowHelp() {
-	fmt.Println("Usage: portunix pft show <id>")
+	fmt.Println("Usage: portunix pft show <id> [options]")
 	fmt.Println()
 	fmt.Println("Show details of a specific feedback item")
 	fmt.Println()
 	fmt.Println("Arguments:")
-	fmt.Println("  <id>    Item ID (e.g., UC001, REQ001)")
+	fmt.Println("  <id>    Item ID (e.g., UC001, P01) or full slug (e.g., P01-feature-name)")
+	fmt.Println()
+	fmt.Println("Options:")
+	fmt.Println("  --path <dir>    Path to PFT project directory")
+	fmt.Println("  --help, -h      Show this help")
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  portunix pft show UC001")
-	fmt.Println("  portunix pft show REQ002")
+	fmt.Println("  portunix pft show P01 --path docs/pft-project")
+	fmt.Println("  portunix pft show P01-feature-name --path /path/to/project")
 }
 
 func handleLinkCommand(args []string) {
@@ -2588,16 +2683,14 @@ func handleLinkCommand(args []string) {
 	feedbackID := args[0]
 	issueID := args[1]
 
-	config, err := LoadConfig()
+	config, configFilePath, err := LoadConfigWithFilePath()
 	if err != nil {
 		fmt.Println("No configuration found. Run 'portunix pft configure' first.")
 		return
 	}
 
-	projectDir := config.Path
-	if projectDir == "" {
-		projectDir, _ = os.Getwd()
-	}
+	// Use cross-platform path resolution
+	projectDir := ResolveProjectPath(config, configFilePath, "")
 
 	// Find the feedback item
 	item, filePath, err := findFeedbackItem(projectDir, feedbackID)
@@ -3068,16 +3161,14 @@ func handleReportCommand(args []string) {
 		}
 	}
 
-	config, err := LoadConfig()
+	config, configFilePath, err := LoadConfigWithFilePath()
 	if err != nil {
 		fmt.Println("No configuration found. Run 'portunix pft configure' first.")
 		return
 	}
 
-	projectDir := config.Path
-	if projectDir == "" {
-		projectDir, _ = os.Getwd()
-	}
+	// Use cross-platform path resolution
+	projectDir := ResolveProjectPath(config, configFilePath, "")
 
 	// Collect all items
 	var allItems []FeedbackItem
@@ -3290,16 +3381,14 @@ func handleExportCommand(args []string) {
 		exportVoS = true
 	}
 
-	config, err := LoadConfig()
+	config, configFilePath, err := LoadConfigWithFilePath()
 	if err != nil {
 		fmt.Println("No configuration found. Run 'portunix pft configure' first.")
 		return
 	}
 
-	projectDir := config.Path
-	if projectDir == "" {
-		projectDir, _ = os.Getwd()
-	}
+	// Use cross-platform path resolution
+	projectDir := ResolveProjectPath(config, configFilePath, "")
 
 	// Collect items
 	var allItems []FeedbackItem
@@ -4838,9 +4927,9 @@ func handleRoleInitCommand(projectDir string) {
 }
 
 func getProjectDir() string {
-	config, err := LoadConfig()
-	if err == nil && config.Path != "" {
-		return config.Path
+	config, configFilePath, err := LoadConfigWithFilePath()
+	if err == nil {
+		return ResolveProjectPath(config, configFilePath, "")
 	}
 	cwd, _ := os.Getwd()
 	return cwd
@@ -5252,17 +5341,40 @@ func handleAssignCommand(args []string) {
 		return
 	}
 
-	itemID := args[0]
+	// Parse arguments - first non-flag argument is itemID
+	var itemID string
 	var categoryID string
+	var configPath string
+	var setMode bool
 
-	for i := 1; i < len(args); i++ {
+	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--category", "-c":
 			if i+1 < len(args) {
 				categoryID = args[i+1]
 				i++
 			}
+		case "--path":
+			if i+1 < len(args) {
+				configPath = args[i+1]
+				i++
+			}
+		case "--set", "-s":
+			setMode = true
+		case "--help", "-h":
+			showAssignHelp()
+			return
+		default:
+			if !strings.HasPrefix(args[i], "-") && itemID == "" {
+				itemID = args[i]
+			}
 		}
+	}
+
+	if itemID == "" {
+		fmt.Println("Error: item ID is required")
+		showAssignHelp()
+		return
 	}
 
 	if categoryID == "" {
@@ -5271,7 +5383,14 @@ func handleAssignCommand(args []string) {
 		return
 	}
 
-	projectDir := getProjectDir()
+	config, configFilePath, err := loadOrCreateConfig(configPath)
+	if err != nil {
+		fmt.Println("No configuration found. Run 'portunix pft configure' first.")
+		return
+	}
+
+	// Use cross-platform path resolution
+	projectDir := ResolveProjectPath(config, configFilePath, configPath)
 
 	// Find the item file
 	filePath, feedbackType, err := findFeedbackItemFile(projectDir, itemID)
@@ -5293,13 +5412,22 @@ func handleAssignCommand(args []string) {
 		return
 	}
 
-	// Add category to file
-	if err := AddCategoryToFile(filePath, categoryID); err != nil {
-		fmt.Printf("Error assigning category: %v\n", err)
-		return
+	// Set or add category to file
+	if setMode {
+		// Replace all categories with the new one
+		if err := SetCategoryToFile(filePath, categoryID); err != nil {
+			fmt.Printf("Error setting category: %v\n", err)
+			return
+		}
+		fmt.Printf("✓ Set category '%s' to %s (replaced all previous)\n", categoryID, itemID)
+	} else {
+		// Add category to existing ones
+		if err := AddCategoryToFile(filePath, categoryID); err != nil {
+			fmt.Printf("Error assigning category: %v\n", err)
+			return
+		}
+		fmt.Printf("✓ Assigned category '%s' to %s\n", categoryID, itemID)
 	}
-
-	fmt.Printf("✓ Assigned category '%s' to %s\n", categoryID, itemID)
 }
 
 func handleUnassignCommand(args []string) {
@@ -5308,20 +5436,40 @@ func handleUnassignCommand(args []string) {
 		return
 	}
 
-	itemID := args[0]
+	// Parse arguments - first non-flag argument is itemID
+	var itemID string
 	var categoryID string
+	var configPath string
 	var removeAll bool
 
-	for i := 1; i < len(args); i++ {
+	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "--category", "-c":
 			if i+1 < len(args) {
 				categoryID = args[i+1]
 				i++
 			}
+		case "--path":
+			if i+1 < len(args) {
+				configPath = args[i+1]
+				i++
+			}
 		case "--all":
 			removeAll = true
+		case "--help", "-h":
+			showUnassignHelp()
+			return
+		default:
+			if !strings.HasPrefix(args[i], "-") && itemID == "" {
+				itemID = args[i]
+			}
 		}
+	}
+
+	if itemID == "" {
+		fmt.Println("Error: item ID is required")
+		showUnassignHelp()
+		return
 	}
 
 	if categoryID == "" && !removeAll {
@@ -5330,7 +5478,14 @@ func handleUnassignCommand(args []string) {
 		return
 	}
 
-	projectDir := getProjectDir()
+	config, configFilePath, err := loadOrCreateConfig(configPath)
+	if err != nil {
+		fmt.Println("No configuration found. Run 'portunix pft configure' first.")
+		return
+	}
+
+	// Use cross-platform path resolution
+	projectDir := ResolveProjectPath(config, configFilePath, configPath)
 
 	// Find the item file
 	filePath, _, err := findFeedbackItemFile(projectDir, itemID)
@@ -5355,52 +5510,58 @@ func handleUnassignCommand(args []string) {
 }
 
 func showAssignHelp() {
-	fmt.Println("Usage: portunix pft assign <item-id> --category <category-id>")
+	fmt.Println("Usage: portunix pft assign <item-id> --category <category-id> [options]")
 	fmt.Println()
 	fmt.Println("Assign a category to a feedback item.")
 	fmt.Println("Items can have multiple categories (0..N).")
 	fmt.Println()
 	fmt.Println("Options:")
 	fmt.Println("  --category, -c <id>  Category ID to assign")
+	fmt.Println("  --set, -s            Replace all categories (instead of adding)")
+	fmt.Println("  --path <dir>         Path to PFT project directory")
+	fmt.Println("  --help, -h           Show this help")
 	fmt.Println()
 	fmt.Println("Examples:")
-	fmt.Println("  portunix pft assign UC001 --category user-auth")
-	fmt.Println("  portunix pft assign UC001 -c data-export")
+	fmt.Println("  portunix pft assign UC001 --category user-auth        # Add category")
+	fmt.Println("  portunix pft assign UC001 --category A --set          # Replace all with A")
+	fmt.Println("  portunix pft assign P01 -c A -s --path docs/project   # Replace with path")
 }
 
 func showUnassignHelp() {
-	fmt.Println("Usage: portunix pft unassign <item-id> --category <category-id>")
-	fmt.Println("       portunix pft unassign <item-id> --all")
+	fmt.Println("Usage: portunix pft unassign <item-id> --category <category-id> [options]")
+	fmt.Println("       portunix pft unassign <item-id> --all [options]")
 	fmt.Println()
 	fmt.Println("Remove category(s) from a feedback item.")
 	fmt.Println()
 	fmt.Println("Options:")
 	fmt.Println("  --category, -c <id>  Category ID to remove")
 	fmt.Println("  --all                Remove all categories")
+	fmt.Println("  --path <dir>         Path to PFT project directory")
+	fmt.Println("  --help, -h           Show this help")
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  portunix pft unassign UC001 --category user-auth")
 	fmt.Println("  portunix pft unassign UC001 --all")
+	fmt.Println("  portunix pft unassign P01 --category A --path docs/pft-project")
 }
 
 // findFeedbackItemFile finds the file path for a feedback item by ID
 func findFeedbackItemFile(projectDir, itemID string) (string, string, error) {
-	// Search in all areas
+	// Search in all areas using getVoiceDir for proper case handling
 	for _, area := range ValidAreaNames {
-		areaDir := filepath.Join(projectDir, area)
-		entries, err := os.ReadDir(areaDir)
+		areaDir := getVoiceDir(projectDir, area)
+		// Use recursive ScanFeedbackDirectory to find items in subdirectories (needs/, verbatims/, etc.)
+		items, err := ScanFeedbackDirectory(areaDir, area)
 		if err != nil {
 			continue
 		}
 
-		for _, entry := range entries {
-			if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") {
-				continue
-			}
-			// Check if filename starts with the item ID
-			name := strings.TrimSuffix(entry.Name(), ".md")
-			if strings.HasPrefix(name, itemID) || name == itemID {
-				return filepath.Join(areaDir, entry.Name()), area, nil
+		for _, item := range items {
+			// Match by ID from frontmatter or by filename prefix
+			filename := filepath.Base(item.FilePath)
+			name := strings.TrimSuffix(filename, ".md")
+			if item.ID == itemID || strings.HasPrefix(name, itemID+"-") || name == itemID {
+				return item.FilePath, area, nil
 			}
 		}
 	}

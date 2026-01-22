@@ -14,7 +14,7 @@
   h4,
   h5,
   h6 {
-    font-weight: $body-font-weight;
+    font-weight: inherit;
     line-height: 1;
     margin-top: 1.5em;
     margin-bottom: $padding-16;
@@ -22,23 +22,21 @@
     a.anchor {
       opacity: 0;
       font-size: 0.75em;
-      vertical-align: middle;
-      text-decoration: none;
       margin-inline-start: .25em;
     }
 
-    &:hover a.anchor,
-    a.anchor:focus {
+    &:hover a.anchor, a.anchor:focus-visible {
       opacity: initial;
+      text-decoration: none;
     }
   }
 
-  h1 { font-size: $font-size-16 * 2; }
-  h2 { font-size: $font-size-16 * 1.5; }
-  h3 { font-size: $font-size-16 * 1.25; }
-  h4 { font-size: $font-size-16 * 1.125; }
-  h5 { font-size: $font-size-16 * 1; }
-  h6 { font-size: $font-size-16 * 0.875; }
+  h1 { font-size: 2rem; }
+  h2 { font-size: 1.5rem; }
+  h3 { font-size: 1.25rem; }
+  h4 { font-size: 1.125rem; }
+  h5 { font-size: 1rem; }
+  h6 { font-size: 0.875rem; }
 
   b,
   optgroup,
@@ -65,20 +63,27 @@
   code {
     direction: ltr;
     unicode-bidi: embed;
-    padding: 0 $padding-4;
-    background: var(--gray-200);
-    border-radius: $border-radius;
+    padding: .125em .25em;
+    background: var(--gray-100);
+    border: $padding-1 solid var(--gray-200);
+    border-radius: var(--border-radius);
     font-size: 0.875em;
   }
 
   pre {
     padding: $padding-16;
     background: var(--gray-100);
-    border-radius: $border-radius;
+    border: $padding-1 solid var(--gray-200);
+    border-radius: var(--border-radius);
     overflow-x: auto;
+
+    &:focus {
+      @include outline;
+    }
 
     code {
       padding: 0;
+      border: 0;
       background: none;
     }
   }
@@ -92,7 +97,7 @@
     padding: $padding-8 $padding-16 $padding-8 ($padding-16 - $padding-4); //to keep total left space 16dp
 
     border-inline-start: $padding-4 solid var(--gray-200);
-    border-radius: $border-radius;
+    border-radius: var(--border-radius);
 
     :first-child {
       margin-top: 0;
@@ -150,9 +155,17 @@
   .highlight {
     direction: ltr;
     unicode-bidi: embed;
-    border-radius: $border-radius;
+    border-radius: var(--border-radius);
+
+    table tbody {
+      border: $padding-1 solid var(--gray-200);
+    }
 
     table tr {
+      pre {
+        border: 0;
+      }
+
       td pre code > span {
         display: flex;
       }
@@ -161,6 +174,7 @@
         margin: 0;
         padding-inline-end: 0;
       }
+
       td:nth-child(2) pre {
         margin: 0;
         padding-inline-start: 0;
@@ -172,7 +186,7 @@
     padding: $padding-16;
     margin: $padding-16 0;
     border: $padding-1 solid var(--gray-200);
-    border-radius: $border-radius;
+    border-radius: var(--border-radius);
 
     summary {
       line-height: 1;

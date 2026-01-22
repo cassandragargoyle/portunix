@@ -24,7 +24,7 @@ fi
 
 # Check if venv exists
 if [ ! -f "$ACTIVATE_SCRIPT" ]; then
-    echo "Virtual environment not found at $VENV_DIR"
+    echo "Virtual environment not found at $VENV_DIR activate script $ACTIVATE_SCRIPT"
     echo "Run './scripts/setup-venv.sh' first to create it."
     return 1 2>/dev/null || exit 1
 fi

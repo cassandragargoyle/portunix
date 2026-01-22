@@ -244,6 +244,32 @@ func ExtractTarXz(tarFile, destDir string) error {
 	return fmt.Errorf("tar.xz extraction not yet implemented - requires xz-utils")
 }
 
+// FindExtractedRoot finds the actual root directory after extraction
+// Many archives contain a single top-level directory (e.g., graalvm-community-openjdk-21.0.2+13.1/)
+// This function returns the path to that directory, or the original path if multiple items exist
+func FindExtractedRoot(extractDir string) (string, error) {
+	entries, err := os.ReadDir(extractDir)
+	if err != nil {
+		return extractDir, err
+	}
+
+	// If there's exactly one entry and it's a directory, return its path
+	if len(entries) == 1 && entries[0].IsDir() {
+		subDir := filepath.Join(extractDir, entries[0].Name())
+		// Verify it looks like a valid root (has bin/ or lib/ directory)
+		subEntries, err := os.ReadDir(subDir)
+		if err == nil {
+			for _, e := range subEntries {
+				if e.IsDir() && (e.Name() == "bin" || e.Name() == "lib") {
+					return subDir, nil
+				}
+			}
+		}
+	}
+
+	return extractDir, nil
+}
+
 // FindBinaryInExtracted finds a binary file in the extracted directory
 func FindBinaryInExtracted(extractDir, binaryName string) (string, error) {
 	var foundPath string

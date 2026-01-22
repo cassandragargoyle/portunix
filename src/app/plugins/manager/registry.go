@@ -34,6 +34,10 @@ type RegistryPlugin struct {
 	License             string                      `json:"license"`
 	InstallPath         string                      `json:"install_path"`
 	BinaryName          string                      `json:"binary_name"`
+	Mode                string                      `json:"mode"`             // service or helper
+	Runtime             string                      `json:"runtime"`          // native, java, python
+	RuntimeVersion      string                      `json:"runtime_version"`  // e.g., ">=21" for Java
+	JVMArgs             []string                    `json:"jvm_args"`         // JVM arguments for Java plugins
 	Port                int                         `json:"port"`
 	Status              plugins.PluginStatus        `json:"status"`
 	InstallTime         time.Time                   `json:"install_time"`
@@ -93,6 +97,22 @@ func (r *Registry) RegisterPlugin(manifest *plugins.PluginManifest, installPath 
 		})
 	}
 
+	// Determine mode and initial status
+	// Mode can be explicitly set, or derived from Type
+	mode := manifest.Plugin.Mode
+	if mode == "" {
+		// Derive mode from type: helper/executable types -> helper mode, grpc -> service mode
+		if manifest.Plugin.Type == "helper" || manifest.Plugin.Type == "executable" {
+			mode = "helper"
+		} else {
+			mode = "service" // default for grpc plugins
+		}
+	}
+	initialStatus := plugins.PluginStatusStopped
+	if mode == "helper" {
+		initialStatus = plugins.PluginStatusReady
+	}
+
 	// Create registry entry
 	registryPlugin := &RegistryPlugin{
 		Name:                manifest.Name,
@@ -102,8 +122,12 @@ func (r *Registry) RegisterPlugin(manifest *plugins.PluginManifest, installPath 
 		License:             manifest.License,
 		InstallPath:         installPath,
 		BinaryName:          manifest.Plugin.Binary,
+		Mode:                mode,
+		Runtime:             manifest.Plugin.Runtime,
+		RuntimeVersion:      manifest.Plugin.RuntimeVersion,
+		JVMArgs:             manifest.Plugin.JVMArgs,
 		Port:                manifest.Plugin.Port,
-		Status:              plugins.PluginStatusStopped,
+		Status:              initialStatus,
 		InstallTime:         time.Now(),
 		LastSeen:            time.Now(),
 		SupportedOS:         manifest.Dependencies.OSSupport,
@@ -202,6 +226,7 @@ func (r *Registry) GetPlugin(name string) (plugins.PluginInfo, error) {
 		Description:         registryPlugin.Description,
 		Author:              registryPlugin.Author,
 		License:             registryPlugin.License,
+		Mode:                registryPlugin.Mode,
 		SupportedOS:         registryPlugin.SupportedOS,
 		Commands:            registryPlugin.Commands,
 		Capabilities:        registryPlugin.Capabilities,
@@ -224,6 +249,7 @@ func (r *Registry) ListPlugins() ([]plugins.PluginInfo, error) {
 			Description:         registryPlugin.Description,
 			Author:              registryPlugin.Author,
 			License:             registryPlugin.License,
+			Mode:                registryPlugin.Mode,
 			SupportedOS:         registryPlugin.SupportedOS,
 			Commands:            registryPlugin.Commands,
 			Capabilities:        registryPlugin.Capabilities,

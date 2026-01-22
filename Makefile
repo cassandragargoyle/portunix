@@ -1,7 +1,7 @@
 # Portunix Testing and Build Automation
 # Modern testing infrastructure with Go best practices
 
-.PHONY: help benchmark benchmark-docker build build-helpers build-main build-race build-release build-version ci-integration ci-setup ci-test clean clean-all deps dev-setup dist docker-cleanup docker-test-env docs-serve fmt lint mocks security setup-test status test test-cli test-coverage test-coverage-ci test-docker test-docker-unit test-e2e test-fixtures test-integration test-performance test-release test-report test-unit vet watch-test
+.PHONY: help benchmark benchmark-docker build build-helpers build-main build-race build-release build-version ci-integration ci-setup ci-test clean clean-all deploy-local deps dev-setup dist docker-cleanup docker-test-env docs-serve fmt lint mocks security setup-test status test test-cli test-coverage test-coverage-ci test-docker test-docker-unit test-e2e test-fixtures test-integration test-performance test-release test-report test-unit undeploy-local vet watch-test
 
 # Detect OS and set executable extension and commands
 ifeq ($(OS),Windows_NT)
@@ -53,7 +53,8 @@ build-helpers: ## Build all helper binaries
 	@cd src/helpers/ptx-aiops && go build -o ../../../ptx-aiops$(EXE_EXT) .
 	@cd src/helpers/ptx-make && go build -o ../../../ptx-make$(EXE_EXT) .
 	@cd src/helpers/ptx-pft && go build -o ../../../ptx-pft$(EXE_EXT) .
-	@echo "Helper binaries built: ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-prompting, ptx-python, ptx-installer, ptx-aiops, ptx-make, ptx-pft"
+	@cd src/helpers/ptx-credential && go build -o ../../../ptx-credential$(EXE_EXT) .
+	@echo "Helper binaries built: ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-prompting, ptx-python, ptx-installer, ptx-aiops, ptx-make, ptx-pft, ptx-credential"
 
 build-main: ## Build only the main Portunix binary
 	@echo "Building Portunix..."
@@ -86,7 +87,7 @@ ci-test: lint vet test-coverage-ci ## Run CI test suite
 
 clean: ## Clean build artifacts and test files
 	@echo "Cleaning up..."
-	-$(RM) portunix$(EXE_EXT) ptx-container$(EXE_EXT) ptx-mcp$(EXE_EXT) ptx-virt$(EXE_EXT) ptx-ansible$(EXE_EXT) ptx-prompting$(EXE_EXT) ptx-python$(EXE_EXT) ptx-installer$(EXE_EXT) ptx-aiops$(EXE_EXT) ptx-make$(EXE_EXT) ptx-pft$(EXE_EXT) ptx-vocalio$(EXE_EXT)
+	-$(RM) portunix$(EXE_EXT) ptx-container$(EXE_EXT) ptx-mcp$(EXE_EXT) ptx-virt$(EXE_EXT) ptx-ansible$(EXE_EXT) ptx-prompting$(EXE_EXT) ptx-python$(EXE_EXT) ptx-installer$(EXE_EXT) ptx-aiops$(EXE_EXT) ptx-make$(EXE_EXT) ptx-pft$(EXE_EXT) ptx-credential$(EXE_EXT) ptx-vocalio$(EXE_EXT)
 	-$(RM) coverage.out coverage.html
 	-$(RMDIR) test/tmp/
 	go clean -testcache
@@ -95,6 +96,20 @@ clean: ## Clean build artifacts and test files
 clean-all: clean ## Clean everything including dependencies
 	go clean -modcache
 	-$(RMDIR) test/mocks/generated_*
+
+deploy-local: build ## Install Portunix and helpers to local system (auto-detects install path)
+ifeq ($(OS),Windows_NT)
+	@.venv\Scripts\python.exe scripts/deploy-local.py
+else
+	@.venv/bin/python3 scripts/deploy-local.py
+endif
+
+undeploy-local: ## Remove Portunix and helpers from local system (auto-detects install path)
+ifeq ($(OS),Windows_NT)
+	@.venv\Scripts\python.exe scripts/undeploy-local.py
+else
+	@.venv/bin/python3 scripts/undeploy-local.py
+endif
 
 deps: ## Install testing dependencies
 	@echo "Installing testing dependencies..."
@@ -269,6 +284,7 @@ build-all-platforms: ## Build all binaries for all platforms (cross-platform dis
 		cd src/helpers/ptx-aiops && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-aiops$$ext . && cd ../../..; \
 		cd src/helpers/ptx-make && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-make$$ext . && cd ../../..; \
 		cd src/helpers/ptx-pft && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-pft$$ext . && cd ../../..; \
+		cd src/helpers/ptx-credential && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-credential$$ext . && cd ../../..; \
 	done
 	@echo "All platform binaries built in dist/platforms/"
 

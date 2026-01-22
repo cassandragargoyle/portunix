@@ -188,20 +188,59 @@ func (p *GRPCPlugin) IsRunning() bool {
 
 // startPluginBinary starts the plugin binary process
 func (p *GRPCPlugin) startPluginBinary(ctx context.Context) error {
-	args := []string{"--port", strconv.Itoa(p.config.Port)}
+	var cmd string
+	var args []string
 
-	p.cmd = exec.CommandContext(ctx, p.config.BinaryPath, args...)
+	runtime := p.config.Runtime
+	if runtime == "" {
+		runtime = "native"
+	}
+
+	switch runtime {
+	case "java":
+		// For Java plugins, use java -jar to run the JAR file
+		cmd = "java"
+		// Add JVM arguments first
+		if len(p.config.JVMArgs) > 0 {
+			args = append(args, p.config.JVMArgs...)
+		} else {
+			// Default JVM arguments
+			args = append(args, "-Xmx256m", "-Xms64m")
+		}
+		// Add JAR file
+		args = append(args, "-jar", p.config.BinaryPath)
+		// Add plugin arguments
+		args = append(args, "--port", strconv.Itoa(p.config.Port))
+
+	case "python":
+		// For Python plugins, use python to run the script
+		cmd = "python3"
+		args = []string{p.config.BinaryPath, "--port", strconv.Itoa(p.config.Port)}
+
+	default: // native
+		// For native plugins, run the binary directly
+		cmd = p.config.BinaryPath
+		args = []string{"--port", strconv.Itoa(p.config.Port)}
+	}
+
+	p.cmd = exec.CommandContext(ctx, cmd, args...)
 	p.cmd.Dir = p.config.WorkingDir
 
-	// Set environment variables
+	// Inherit current environment
+	p.cmd.Env = os.Environ()
+
+	// Set additional environment variables
 	if p.config.Environment != nil {
 		for key, value := range p.config.Environment {
 			p.cmd.Env = append(p.cmd.Env, fmt.Sprintf("%s=%s", key, value))
 		}
 	}
 
+	// Log plugin startup for debugging
+	log.Printf("Starting %s plugin: %s %v", runtime, cmd, args)
+
 	if err := p.cmd.Start(); err != nil {
-		return fmt.Errorf("failed to start plugin binary: %w", err)
+		return fmt.Errorf("failed to start plugin binary (%s): %w", runtime, err)
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package engine
 
 import (
+	"bufio"
 	"embed"
 	"fmt"
 	"os"
@@ -19,6 +20,68 @@ var EmbeddedScriptsFS embed.FS
 // SetEmbeddedScripts sets the embedded scripts filesystem from the main package
 func SetEmbeddedScripts(scriptsFS embed.FS) {
 	EmbeddedScriptsFS = scriptsFS
+}
+
+// checkExistingDirectory checks if target directory exists and is not empty
+// Returns true if installation should proceed, false if user cancelled
+func checkExistingDirectory(targetDir string, force bool) (bool, error) {
+	// Check if directory exists
+	info, err := os.Stat(targetDir)
+	if os.IsNotExist(err) {
+		return true, nil // Directory doesn't exist, proceed
+	}
+	if err != nil {
+		return false, fmt.Errorf("failed to check directory: %w", err)
+	}
+
+	if !info.IsDir() {
+		return false, fmt.Errorf("target path exists but is not a directory: %s", targetDir)
+	}
+
+	// Check if directory is empty
+	entries, err := os.ReadDir(targetDir)
+	if err != nil {
+		return false, fmt.Errorf("failed to read directory: %w", err)
+	}
+
+	if len(entries) == 0 {
+		return true, nil // Directory is empty, proceed
+	}
+
+	// Directory exists and is not empty
+	fmt.Printf("\n⚠️  Target directory already exists and is not empty:\n")
+	fmt.Printf("   %s\n", targetDir)
+	fmt.Printf("   Contains %d item(s)\n\n", len(entries))
+
+	if force {
+		fmt.Println("🔄 Force mode enabled, removing existing directory...")
+		if err := os.RemoveAll(targetDir); err != nil {
+			return false, fmt.Errorf("failed to remove existing directory: %w", err)
+		}
+		fmt.Println("✅ Existing directory removed")
+		return true, nil
+	}
+
+	// Ask user for confirmation
+	fmt.Print("Do you want to remove the existing directory and reinstall? [y/N]: ")
+	reader := bufio.NewReader(os.Stdin)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		return false, fmt.Errorf("failed to read user input: %w", err)
+	}
+
+	response = strings.TrimSpace(strings.ToLower(response))
+	if response == "y" || response == "yes" {
+		fmt.Println("🔄 Removing existing directory...")
+		if err := os.RemoveAll(targetDir); err != nil {
+			return false, fmt.Errorf("failed to remove existing directory: %w", err)
+		}
+		fmt.Println("✅ Existing directory removed")
+		return true, nil
+	}
+
+	fmt.Println("❌ Installation cancelled by user")
+	return false, nil
 }
 
 // expandEnvVars expands environment variables in a string
@@ -293,10 +356,28 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 		}
 	}
 
+	// Check if target directory already exists and is not empty (after determining final path)
+	proceed, err := checkExistingDirectory(extractTo, options.Force)
+	if err != nil {
+		return fmt.Errorf("directory check failed: %w", err)
+	}
+	if !proceed {
+		return nil // User cancelled installation
+	}
+
 	// Extract archive
 	fmt.Printf("📦 Extracting to: %s\n", extractTo)
 	if err := ExtractArchive(archivePath, extractTo); err != nil {
 		return fmt.Errorf("extraction failed: %w", err)
+	}
+
+	// Find actual root directory (many archives have a single top-level directory)
+	actualRoot, err := FindExtractedRoot(extractTo)
+	if err != nil {
+		fmt.Printf("⚠️  Could not determine extracted root: %v\n", err)
+	} else if actualRoot != extractTo {
+		fmt.Printf("📁 Detected package root: %s\n", actualRoot)
+		extractTo = actualRoot
 	}
 
 	// If binary name specified, find and link it

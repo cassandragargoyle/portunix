@@ -120,6 +120,13 @@ func (d *Dispatcher) registerHelpers() {
 		Binary:   "ptx-pft",
 		Required: false,
 	}
+
+	// Issue #136: PTX-Credential Helper for secure credential storage
+	d.helpers["ptx-credential"] = &HelperConfig{
+		Commands: []string{"credential"},
+		Binary:   "ptx-credential",
+		Required: false,
+	}
 }
 
 // ShouldDispatch checks if a command should be dispatched to a helper binary

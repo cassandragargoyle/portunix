@@ -1,25 +1,23 @@
 package plugins
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
 
-	"gopkg.in/yaml.v3"
 	"portunix.ai/app/version"
 )
 
-// LoadManifest loads a plugin manifest from a YAML file
+// LoadManifest loads a plugin manifest from a JSON file
 func LoadManifest(manifestPath string) (*PluginManifest, error) {
-	file, err := os.Open(manifestPath)
+	data, err := os.ReadFile(manifestPath)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open manifest file: %w", err)
+		return nil, fmt.Errorf("failed to read manifest file: %w", err)
 	}
-	defer file.Close()
 
 	var manifest PluginManifest
-	decoder := yaml.NewDecoder(file)
-	if err := decoder.Decode(&manifest); err != nil {
+	if err := json.Unmarshal(data, &manifest); err != nil {
 		return nil, fmt.Errorf("failed to decode manifest: %w", err)
 	}
 
@@ -31,18 +29,14 @@ func LoadManifest(manifestPath string) (*PluginManifest, error) {
 	return &manifest, nil
 }
 
-// SaveManifest saves a plugin manifest to a YAML file
+// SaveManifest saves a plugin manifest to a JSON file
 func SaveManifest(manifest *PluginManifest, manifestPath string) error {
-	file, err := os.Create(manifestPath)
+	data, err := json.MarshalIndent(manifest, "", "  ")
 	if err != nil {
-		return fmt.Errorf("failed to create manifest file: %w", err)
+		return fmt.Errorf("failed to encode manifest: %w", err)
 	}
-	defer file.Close()
 
-	encoder := yaml.NewEncoder(file)
-	defer encoder.Close()
-
-	return encoder.Encode(manifest)
+	return os.WriteFile(manifestPath, data, 0644)
 }
 
 // ValidateManifest validates a plugin manifest
@@ -64,14 +58,25 @@ func ValidateManifest(manifest *PluginManifest) error {
 		return fmt.Errorf("plugin binary is required")
 	}
 
-	// Validate plugin type
-	if manifest.Plugin.Type != "grpc" {
-		return fmt.Errorf("unsupported plugin type: %s (only 'grpc' is supported)", manifest.Plugin.Type)
+	// Validate plugin type (grpc = long-running service, helper = CLI executable)
+	validTypes := map[string]bool{"grpc": true, "helper": true, "executable": true}
+	if !validTypes[manifest.Plugin.Type] {
+		return fmt.Errorf("unsupported plugin type: %s (supported: grpc, helper, executable)", manifest.Plugin.Type)
 	}
 
-	// Validate port range
-	if manifest.Plugin.Port < 9000 || manifest.Plugin.Port > 9999 {
-		return fmt.Errorf("plugin port must be between 9000-9999, got: %d", manifest.Plugin.Port)
+	// Validate runtime (default to native if not specified)
+	if manifest.Plugin.Runtime == "" {
+		manifest.Plugin.Runtime = "native"
+	}
+	if manifest.Plugin.Runtime != "native" && manifest.Plugin.Runtime != "java" && manifest.Plugin.Runtime != "python" {
+		return fmt.Errorf("unsupported runtime: %s (supported: native, java, python)", manifest.Plugin.Runtime)
+	}
+
+	// Validate port range (only required for gRPC service plugins)
+	if manifest.Plugin.Type == "grpc" {
+		if manifest.Plugin.Port < 9000 || manifest.Plugin.Port > 9999 {
+			return fmt.Errorf("plugin port must be between 9000-9999, got: %d", manifest.Plugin.Port)
+		}
 	}
 
 	// Validate health check interval
@@ -146,6 +151,7 @@ func CreateDefaultManifest(name, description, author string) *PluginManifest {
 		Plugin: PluginBinaryConfig{
 			Type:                "grpc",
 			Binary:              fmt.Sprintf("./%s", name),
+			Runtime:             "native",
 			Port:                9001,
 			HealthCheckInterval: 30 * time.Second,
 		},
@@ -175,50 +181,49 @@ func CreateDefaultManifest(name, description, author string) *PluginManifest {
 	}
 }
 
-// GetManifestTemplate returns a template manifest as YAML string
+// GetManifestTemplate returns a template manifest as JSON string
 func GetManifestTemplate(name, description, author string) string {
-	_ = CreateDefaultManifest(name, description, author) // Future use
-
-	return fmt.Sprintf(`# Plugin identification
-name: "%s"
-version: "1.0.0"
-description: "%s"
-author: "%s"
-license: "MIT"
-
-# Plugin configuration
-plugin:
-  type: "grpc"
-  binary: "./%s"
-  port: 9001
-  health_check_interval: 30s
-  
-# Dependencies
-dependencies:
-  portunix_min_version: "%s"
-  os_support: ["linux", "windows", "darwin"]
-  
-# AI Integration
-ai_integration:
-  mcp_tools:
-    - name: "example_tool"
-      description: "Example MCP tool"
-  
-# Permissions
-permissions:
-  filesystem: ["read"]
-  network: ["outbound"]
-  database: []
-  system: []
-  level: "limited"
-  
-# Commands exposed to Portunix CLI
-commands:
-  - name: "help"
-    description: "Show help for %s plugin"
-    subcommands: []
-    parameters: []
-    examples:
-      - "portunix %s help"
-`, name, description, author, name, version.ProductVersion, name, name)
+	manifest := CreateDefaultManifest(name, description, author)
+	data, err := json.MarshalIndent(manifest, "", "  ")
+	if err != nil {
+		// Fallback to hardcoded template if marshaling fails
+		return fmt.Sprintf(`{
+  "name": "%s",
+  "version": "1.0.0",
+  "description": "%s",
+  "author": "%s",
+  "license": "MIT",
+  "plugin": {
+    "type": "grpc",
+    "binary": "./%s",
+    "runtime": "native",
+    "port": 9001,
+    "health_check_interval": 30000000000
+  },
+  "dependencies": {
+    "portunix_min_version": "%s",
+    "os_support": ["linux", "windows", "darwin"]
+  },
+  "ai_integration": {
+    "mcp_tools": []
+  },
+  "permissions": {
+    "filesystem": ["read"],
+    "network": ["outbound"],
+    "database": [],
+    "system": [],
+    "level": "limited"
+  },
+  "commands": [
+    {
+      "name": "help",
+      "description": "Show help for %s plugin",
+      "subcommands": [],
+      "parameters": [],
+      "examples": ["portunix %s help"]
+    }
+  ]
+}`, name, description, author, name, version.ProductVersion, name, name)
+	}
+	return string(data)
 }
