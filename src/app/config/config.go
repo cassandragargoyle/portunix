@@ -27,14 +27,14 @@ func DefaultConfig() *Config {
 // LoadConfig loads configuration from file with priority order
 func LoadConfig() (*Config, error) {
 	config := DefaultConfig()
-	
+
 	// Try configuration files in priority order
 	configPaths := []string{
-		"./portunix-config.yaml",                    // Project directory
-		filepath.Join(getUserHome(), ".portunix", "config.yaml"), // User directory
+		"./portunix-config.yaml",                                           // Project directory
+		filepath.Join(getUserHome(), ".portunix", "config.yaml"),           // User directory
 		filepath.Join(getUserHome(), ".config", "portunix", "config.yaml"), // Linux standard
 	}
-	
+
 	var loadedFrom string
 	for _, path := range configPaths {
 		if fileExists(path) {
@@ -45,12 +45,12 @@ func LoadConfig() (*Config, error) {
 			break
 		}
 	}
-	
+
 	// If no config file found, use defaults
 	if loadedFrom == "" {
 		// Use built-in defaults
 	}
-	
+
 	return config, nil
 }
 
@@ -60,7 +60,7 @@ func loadConfigFromFile(config *Config, path string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	return yaml.Unmarshal(data, config)
 }
 
@@ -70,13 +70,13 @@ func SaveConfig(config *Config) error {
 	if err := os.MkdirAll(userConfigDir, 0755); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
-	
+
 	configPath := filepath.Join(userConfigDir, "config.yaml")
 	data, err := yaml.Marshal(config)
 	if err != nil {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
-	
+
 	return os.WriteFile(configPath, data, 0644)
 }
 
@@ -86,7 +86,7 @@ func GetConfigValue(key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	switch key {
 	case "container_runtime":
 		return config.ContainerRuntime, nil
@@ -111,7 +111,7 @@ func SetConfigValue(key, value string) error {
 	if err != nil {
 		return err
 	}
-	
+
 	switch key {
 	case "container_runtime":
 		if value != "docker" && value != "podman" {
@@ -125,7 +125,7 @@ func SetConfigValue(key, value string) error {
 	default:
 		return fmt.Errorf("unknown configuration key: %s", key)
 	}
-	
+
 	return SaveConfig(config)
 }
 

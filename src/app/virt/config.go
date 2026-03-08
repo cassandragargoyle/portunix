@@ -18,26 +18,26 @@ type Config struct {
 
 // VirtDefaults contains default VM settings
 type VirtDefaults struct {
-	RAM   string `yaml:"ram"`
-	CPUs  int    `yaml:"cpus"`
-	Disk  string `yaml:"disk"`
+	RAM    string `yaml:"ram"`
+	CPUs   int    `yaml:"cpus"`
+	Disk   string `yaml:"disk"`
 	OSType string `yaml:"os_type"`
 }
 
 // VMTemplate represents a VM template
 type VMTemplate struct {
-	Name              string            `yaml:"name"`
-	Description       string            `yaml:"description"`
-	ISO               string            `yaml:"iso"`
-	OSVariant         string            `yaml:"os_variant"`
-	MinRAM            string            `yaml:"min_ram"`
-	RecommendedRAM    string            `yaml:"recommended_ram"`
-	MinDisk           string            `yaml:"min_disk"`
-	RecommendedDisk   string            `yaml:"recommended_disk"`
-	Features          []string          `yaml:"features"`
-	PostInstall       []string          `yaml:"post_install"`
-	Drivers           []string          `yaml:"drivers,omitempty"`
-	RequiredFeatures  map[string]string `yaml:"required_features,omitempty"`
+	Name             string            `yaml:"name"`
+	Description      string            `yaml:"description"`
+	ISO              string            `yaml:"iso"`
+	OSVariant        string            `yaml:"os_variant"`
+	MinRAM           string            `yaml:"min_ram"`
+	RecommendedRAM   string            `yaml:"recommended_ram"`
+	MinDisk          string            `yaml:"min_disk"`
+	RecommendedDisk  string            `yaml:"recommended_disk"`
+	Features         []string          `yaml:"features"`
+	PostInstall      []string          `yaml:"post_install"`
+	Drivers          []string          `yaml:"drivers,omitempty"`
+	RequiredFeatures map[string]string `yaml:"required_features,omitempty"`
 }
 
 // LoadConfig loads virtualization configuration
@@ -45,9 +45,9 @@ func LoadConfig() (*Config, error) {
 	config := &Config{
 		VirtualizationBackend: "auto",
 		VirtDefaults: VirtDefaults{
-			RAM:   "4G",
-			CPUs:  2,
-			Disk:  "40G",
+			RAM:    "4G",
+			CPUs:   2,
+			Disk:   "40G",
 			OSType: "generic",
 		},
 	}
@@ -235,16 +235,16 @@ func getDefaultTemplates() map[string]*VMTemplate {
 			PostInstall:     []string{"enable-ssh", "install-guest-tools"},
 		},
 		"windows11": {
-			Name:              "Windows 11",
-			Description:       "Windows 11 with TPM and Secure Boot",
-			ISO:               "Win11_24H2_English_x64v2.iso",
-			OSVariant:         "win11",
-			MinRAM:            "4G",
-			RecommendedRAM:    "8G",
-			MinDisk:           "64G",
-			RecommendedDisk:   "100G",
-			Features:          []string{"uefi", "tpm2.0", "secure-boot", "virtio"},
-			Drivers:           []string{"virtio-win.iso"},
+			Name:            "Windows 11",
+			Description:     "Windows 11 with TPM and Secure Boot",
+			ISO:             "Win11_24H2_English_x64v2.iso",
+			OSVariant:       "win11",
+			MinRAM:          "4G",
+			RecommendedRAM:  "8G",
+			MinDisk:         "64G",
+			RecommendedDisk: "100G",
+			Features:        []string{"uefi", "tpm2.0", "secure-boot", "virtio"},
+			Drivers:         []string{"virtio-win.iso"},
 			RequiredFeatures: map[string]string{
 				"tpm":         "2.0",
 				"secure_boot": "true",

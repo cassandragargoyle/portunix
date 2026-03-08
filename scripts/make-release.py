@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Make Release Script for Portunix
-Part of ADR-031: Cross-Platform Binary Distribution Strategy
-Issue #125: Cross-Platform Binary Distribution
+Part of ADR-035: Separate Platforms Distribution Strategy
+(Supersedes ADR-031 partially)
 
 Usage:
     python scripts/make-release.py v1.7.8
@@ -12,7 +12,7 @@ This script:
 2. Updates version in source files
 3. Builds cross-platform binaries using GoReleaser
 4. Creates platform archives for cross-platform distribution
-5. Injects platform archives into release packages
+5. Creates separate platforms bundle (ADR-035)
 6. Generates checksums and release notes
 
 The script automatically uses the project's .venv if available.
@@ -359,59 +359,53 @@ def build_platform_archives() -> bool:
     return True
 
 
-def inject_platform_archives() -> None:
-    """Inject platform archives into release packages"""
-    print_step("Injecting platform archives into release packages...")
+def create_platforms_bundle(version: str) -> None:
+    """Create separate platforms bundle (ADR-035)"""
+    print_step("Creating separate platforms bundle (ADR-035)...")
     project_root = get_project_root()
     dist_dir = project_root / "dist"
     platforms_dir = dist_dir / "platforms"
 
     if not platforms_dir.exists():
-        print_warning("Platforms directory not found, skipping injection")
+        print_warning("Platforms directory not found, skipping bundle creation")
         return
 
-    # Find all release archives
-    for archive_path in list(dist_dir.glob("portunix_*.tar.gz")) + list(dist_dir.glob("portunix_*.zip")):
-        archive_name = archive_path.name
-        print_info(f"Processing {archive_name}...")
+    # Get version number without 'v' prefix
+    version_num = version.lstrip('v')
 
-        # Create temp directory
-        with tempfile.TemporaryDirectory() as temp_dir:
-            temp_path = Path(temp_dir)
+    # Create bundle: portunix-platforms_X.Y.Z.tar.gz
+    bundle_name = f"portunix-platforms_{version_num}.tar.gz"
+    bundle_path = dist_dir / bundle_name
 
-            # Extract archive
-            if archive_name.endswith('.zip'):
-                with zipfile.ZipFile(archive_path, 'r') as zipf:
-                    zipf.extractall(temp_path)
-            else:
-                with tarfile.open(archive_path, 'r:gz') as tar:
-                    tar.extractall(temp_path)
+    print_info(f"Creating {bundle_name}...")
 
-            # Create platforms directory
-            platforms_dest = temp_path / "platforms"
-            platforms_dest.mkdir(exist_ok=True)
+    # Create temp directory for bundle structure
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
 
-            # Copy all platform archives
-            for platform_archive in list(platforms_dir.glob("*.tar.gz")) + list(platforms_dir.glob("*.zip")):
-                shutil.copy2(platform_archive, platforms_dest)
+        # Create platforms/ subdirectory in bundle
+        platforms_dest = temp_path / "platforms"
+        platforms_dest.mkdir(exist_ok=True)
 
-            # Recreate archive
-            archive_path.unlink()
+        # Copy all platform archives
+        for platform_archive in list(platforms_dir.glob("*.tar.gz")) + list(platforms_dir.glob("*.zip")):
+            shutil.copy2(platform_archive, platforms_dest)
+            print_info(f"  Added {platform_archive.name}")
 
-            if archive_name.endswith('.zip'):
-                with zipfile.ZipFile(archive_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                    for item in temp_path.rglob('*'):
-                        if item.is_file():
-                            arcname = item.relative_to(temp_path)
-                            zipf.write(item, arcname)
-            else:
-                with tarfile.open(archive_path, 'w:gz') as tar:
-                    for item in temp_path.iterdir():
-                        tar.add(item, arcname=item.name)
+        # Create the bundle archive
+        with tarfile.open(bundle_path, 'w:gz') as tar:
+            tar.add(platforms_dest, arcname="platforms")
 
-            print_info(f"  ✓ Added platforms/ to {archive_name}")
+    size_mb = bundle_path.stat().st_size / (1024 * 1024)
+    print_info(f"✓ Created {bundle_name} ({size_mb:.1f} MB)")
+    print()
 
-    print_info("✓ Platform archives injected into all release packages")
+
+def inject_platform_archives() -> None:
+    """Legacy function - now a no-op per ADR-035"""
+    # ADR-035: Platform archives are now distributed as separate bundle
+    # This function is kept for backwards compatibility but does nothing
+    print_info("Skipping platform injection (ADR-035: separate bundle)")
     print()
 
 
@@ -465,35 +459,39 @@ def verify_outputs() -> bool:
         print_error("dist/ directory not found")
         return False
 
-    # Count files
-    archives = list(dist_dir.glob("*.tar.gz")) + list(dist_dir.glob("*.zip"))
+    # Count files - separate platform-specific archives from platforms bundle
+    all_archives = list(dist_dir.glob("*.tar.gz")) + list(dist_dir.glob("*.zip"))
+    release_archives = [f for f in all_archives if not f.name.startswith("portunix-platforms")]
+    platforms_bundle = [f for f in all_archives if f.name.startswith("portunix-platforms")]
     checksums = list(dist_dir.glob("*checksums*"))
-    platforms_dir = dist_dir / "platforms"
-    platform_archives = []
-    if platforms_dir.exists():
-        platform_archives = list(platforms_dir.glob("*.tar.gz")) + list(platforms_dir.glob("*.zip"))
 
-    print_info("Generated files:")
-    print(f"   Release archives: {len(archives)}")
-    print(f"   Platform archives: {len(platform_archives)}")
+    print_info("Generated files (ADR-035 structure):")
+    print(f"   Platform-specific archives: {len(release_archives)}")
+    print(f"   Platforms bundle: {len(platforms_bundle)}")
     print(f"   Checksum files: {len(checksums)}")
 
-    if len(archives) == 0:
-        print_error("No archive files generated")
+    if len(release_archives) == 0:
+        print_error("No release archive files generated")
         return False
 
     print()
-    print("📦 Generated release files:")
-    for f in sorted(archives + checksums):
+    print("📦 Platform-specific release files (slim, no bundled platforms/):")
+    for f in sorted(release_archives):
         size_mb = f.stat().st_size / (1024 * 1024)
         print(f"   {f.name} ({size_mb:.1f} MB)")
 
-    if platform_archives:
+    if platforms_bundle:
         print()
-        print("📦 Platform archives (for cross-platform provisioning):")
-        for f in sorted(platform_archives):
+        print("📦 Platforms bundle (separate download for cross-platform users):")
+        for f in sorted(platforms_bundle):
             size_mb = f.stat().st_size / (1024 * 1024)
             print(f"   {f.name} ({size_mb:.1f} MB)")
+
+    if checksums:
+        print()
+        print("🔐 Checksum files:")
+        for f in sorted(checksums):
+            print(f"   {f.name}")
 
     print()
     return True
@@ -584,6 +582,21 @@ cd portunix_{version_num}_darwin_amd64
 ./install.sh
 ```
 
+### Cross-Platform Provisioning (Optional)
+
+If you need to provision containers or VMs with different platforms (e.g., deploy Linux
+binaries from Windows), download the separate platforms bundle:
+
+```bash
+# Download platforms bundle (contains all platform binaries)
+wget https://github.com/cassandragargoyle/Portunix/releases/download/{version}/portunix-platforms_{version_num}.tar.gz
+
+# Extract to Portunix installation directory
+tar -xzf portunix-platforms_{version_num}.tar.gz -C /usr/local/portunix/
+```
+
+This enables cross-platform workflows like `ptx-ansible` provisioning Linux containers from Windows.
+
 ## 🚀 Quick Start
 
 ```bash
@@ -628,29 +641,53 @@ def show_summary(version: str) -> None:
     print_step("🎉 Release preparation complete!")
     project_root = get_project_root()
     dist_dir = project_root / "dist"
+    version_num = version.lstrip('v')
 
-    print(f"{Colors.CYAN}📊 Summary:{Colors.NC}")
+    print(f"{Colors.CYAN}📊 Summary (ADR-035 Structure):{Colors.NC}")
     print(f"   Version: {Colors.GREEN}{version}{Colors.NC}")
     print(f"   Build directory: {Colors.BLUE}dist/{Colors.NC}")
     print()
 
-    print("📦 Generated files:")
-    for f in sorted(dist_dir.iterdir()):
-        if f.is_file():
+    # Separate files by type
+    all_files = sorted([f for f in dist_dir.iterdir() if f.is_file()])
+    release_archives = [f for f in all_files if f.name.startswith("portunix_")]
+    platforms_bundle = [f for f in all_files if f.name.startswith("portunix-platforms")]
+    other_files = [f for f in all_files if not f.name.startswith("portunix")]
+
+    print("📦 Platform-specific packages (for users):")
+    for f in release_archives:
+        size_mb = f.stat().st_size / (1024 * 1024)
+        print(f"   {f.name} ({size_mb:.1f} MB)")
+
+    if platforms_bundle:
+        print()
+        print("📦 Cross-platform bundle (optional, for provisioning):")
+        for f in platforms_bundle:
             size_mb = f.stat().st_size / (1024 * 1024)
             print(f"   {f.name} ({size_mb:.1f} MB)")
-    print()
 
+    if other_files:
+        print()
+        print("📄 Other files:")
+        for f in other_files:
+            size_mb = f.stat().st_size / (1024 * 1024)
+            if size_mb > 0.01:
+                print(f"   {f.name} ({size_mb:.1f} MB)")
+            else:
+                print(f"   {f.name}")
+
+    print()
     print(f"{Colors.GREEN}🚀 Next Steps:{Colors.NC}")
     print("   1. Review files in dist/ directory")
     print("   2. Test installation on different platforms")
     print("   3. Verify version in generated binaries:")
     print("      ./dist/portunix_*/portunix version")
-    print("   4. Create GitHub release:")
+    print("   4. Create release and upload assets:")
     print(f"      - Tag: {version}")
     print(f"      - Title: Portunix {version}")
-    print(f"      - Description: Use dist/RELEASE_NOTES_{version}.md")
-    print("      - Upload all files from dist/")
+    print(f"      - Upload: portunix_*.tar.gz, portunix_*.zip")
+    print(f"      - Upload: portunix-platforms_{version_num}.tar.gz (cross-platform bundle)")
+    print(f"      - Upload: checksums, RELEASE_NOTES_{version}.md")
     print()
 
 
@@ -715,8 +752,8 @@ def main() -> int:
     # Build platform archives
     build_platform_archives()
 
-    # Inject platform archives
-    inject_platform_archives()
+    # Create separate platforms bundle (ADR-035)
+    create_platforms_bundle(version)
 
     # Copy quickstart scripts
     copy_quickstart_scripts()

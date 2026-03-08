@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -193,9 +194,34 @@ func buildJavaCommand(jarPath string, jvmArgs []string, pluginArgs []string) *ex
 
 // buildPythonCommand builds command for Python plugin
 func buildPythonCommand(scriptPath string, pluginArgs []string) *exec.Cmd {
+	ext := strings.ToLower(filepath.Ext(scriptPath))
+
+	// Shell wrapper scripts - execute via appropriate shell
+	if ext == ".sh" || ext == ".ps1" {
+		if runtime.GOOS == "windows" {
+			// On Windows, swap .sh for .ps1 and run via PowerShell
+			ps1Path := strings.TrimSuffix(scriptPath, ".sh") + ".ps1"
+			if ext == ".ps1" {
+				ps1Path = scriptPath
+			}
+			args := []string{"-NoProfile", "-ExecutionPolicy", "Bypass", "-File", ps1Path}
+			args = append(args, pluginArgs...)
+			return exec.Command("powershell.exe", args...)
+		}
+		// On Linux/macOS, run .sh via bash
+		args := []string{scriptPath}
+		args = append(args, pluginArgs...)
+		return exec.Command("bash", args...)
+	}
+
+	// Direct Python script - use python/python3
+	pythonCmd := "python3"
+	if runtime.GOOS == "windows" {
+		pythonCmd = "python"
+	}
 	args := []string{scriptPath}
 	args = append(args, pluginArgs...)
-	return exec.Command("python3", args...)
+	return exec.Command(pythonCmd, args...)
 }
 
 // buildNativeCommand builds command for native plugin

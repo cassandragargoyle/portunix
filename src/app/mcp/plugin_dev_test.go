@@ -189,19 +189,19 @@ func TestPluginDevelopmentTools(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := tt.handler(tt.args)
-			
+
 			if tt.wantErr {
 				if err == nil {
 					t.Errorf("Expected error but got none")
 				}
 				return
 			}
-			
+
 			if err != nil {
 				t.Errorf("Unexpected error: %v", err)
 				return
 			}
-			
+
 			if tt.validate != nil && !tt.validate(result) {
 				t.Errorf("Validation failed for result: %v", result)
 			}
@@ -211,22 +211,22 @@ func TestPluginDevelopmentTools(t *testing.T) {
 
 func TestMCPToolsListContainsPluginDevTools(t *testing.T) {
 	server := &Server{}
-	
+
 	result, err := server.handleToolsList(json.RawMessage{})
 	if err != nil {
 		t.Fatalf("Failed to get tools list: %v", err)
 	}
-	
+
 	resultMap, ok := result.(map[string]interface{})
 	if !ok {
 		t.Fatalf("Expected result to be a map")
 	}
-	
+
 	tools, ok := resultMap["tools"].([]map[string]interface{})
 	if !ok {
 		t.Fatalf("Expected tools to be a slice of maps")
 	}
-	
+
 	expectedTools := []string{
 		"echo",
 		"get_plugin_development_guide",
@@ -235,42 +235,42 @@ func TestMCPToolsListContainsPluginDevTools(t *testing.T) {
 		"validate_plugin_structure",
 		"get_plugin_examples",
 	}
-	
+
 	foundTools := make(map[string]bool)
 	for _, tool := range tools {
 		if name, ok := tool["name"].(string); ok {
 			foundTools[name] = true
 		}
 	}
-	
+
 	for _, expectedTool := range expectedTools {
 		if !foundTools[expectedTool] {
 			t.Errorf("Expected tool '%s' not found in tools list", expectedTool)
 		}
 	}
-	
+
 	t.Logf("Successfully found all %d plugin development tools in MCP tools list", len(expectedTools))
 }
 
 func TestValidatePluginStructureWithValidGoTemplate(t *testing.T) {
 	server := &Server{}
-	
+
 	// Test with the Go template we created
 	templatePath := "docs/plugin-development/languages/go/template"
-	
+
 	result, err := server.handleValidatePluginStructure(map[string]interface{}{
 		"plugin_path": templatePath,
 	})
-	
+
 	if err != nil {
 		t.Fatalf("Unexpected error: %v", err)
 	}
-	
+
 	resultMap, ok := result.(map[string]interface{})
 	if !ok {
 		t.Fatalf("Expected result to be a map")
 	}
-	
+
 	// The template should be valid (though it might have warnings)
 	if valid, ok := resultMap["valid"].(bool); ok {
 		if !valid {
@@ -279,13 +279,13 @@ func TestValidatePluginStructureWithValidGoTemplate(t *testing.T) {
 			}
 		}
 	}
-	
+
 	// Check that the checks were performed
 	if checks, ok := resultMap["checks"].(map[string]interface{}); ok {
 		if manifest, ok := checks["manifest"].(bool); ok && manifest {
 			t.Logf("Manifest check passed")
 		}
-		
+
 		if detectedLangs, ok := checks["detected_languages"].([]string); ok {
 			t.Logf("Detected languages: %v", detectedLangs)
 		}

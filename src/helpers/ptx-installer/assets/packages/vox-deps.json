@@ -1,0 +1,52 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "vox-deps",
+    "displayName": "Vox System Dependencies",
+    "description": "System-level audio dependencies for Vox TTS/STT plugin",
+    "category": "plugins/dependencies",
+    "license": "Various",
+    "maintainer": "CassandraGargoyle"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "apt": {
+            "version": "latest",
+            "packages": ["libasound2-dev", "libsndfile1", "ffmpeg"],
+            "distributions": ["ubuntu", "debian", "mint"],
+            "requiresSudo": true
+          },
+          "dnf": {
+            "type": "dnf",
+            "version": "latest",
+            "packages": ["alsa-lib-devel", "libsndfile", "ffmpeg"],
+            "requiresSudo": true
+          },
+          "pacman": {
+            "type": "pacman",
+            "version": "latest",
+            "packages": ["alsa-lib", "libsndfile", "ffmpeg"],
+            "requiresSudo": true
+          }
+        }
+      },
+      "windows": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "No additional system packages needed on Windows",
+            "installScript": ["echo Vox: No additional system packages needed on Windows"]
+          }
+        }
+      }
+    },
+    "dependencies": [],
+    "templates": ["apt-package"]
+  }
+}

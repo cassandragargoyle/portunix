@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
-	"portunix.ai/app/wizard"
 	"github.com/schollz/progressbar/v3"
+	"portunix.ai/app/wizard"
 )
 
 // ProgressComponent displays progress during task execution

@@ -263,10 +263,10 @@ func truncate(s string, maxLen int) string {
 
 // SyncResult contains the result of a sync operation
 type SyncResult struct {
-	Pushed   int
-	Pulled   int
-	Errors   int
-	Skipped  int
+	Pushed  int
+	Pulled  int
+	Errors  int
+	Skipped int
 }
 
 // GenerateMarkdownFromPost creates markdown content from a Fider post
@@ -362,8 +362,8 @@ func CreateSlugFromTitle(title string) string {
 	lastWasDash := false
 	for _, r := range slug {
 		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') ||
-		   (r >= 'á' && r <= 'ž') || r == 'ě' || r == 'š' || r == 'č' || r == 'ř' ||
-		   r == 'ž' || r == 'ý' || r == 'á' || r == 'í' || r == 'é' || r == 'ú' || r == 'ů' {
+			(r >= 'á' && r <= 'ž') || r == 'ě' || r == 'š' || r == 'č' || r == 'ř' ||
+			r == 'ž' || r == 'ý' || r == 'á' || r == 'í' || r == 'é' || r == 'ú' || r == 'ů' {
 			result.WriteRune(r)
 			lastWasDash = false
 		} else if !lastWasDash {
@@ -554,7 +554,7 @@ func FindFileBySlug(dir string, slug string) (string, bool) {
 			fileSlug := parts[1]
 			// Compare slugs (case-insensitive, partial match)
 			if strings.Contains(strings.ToLower(fileSlug), strings.ToLower(slug)) ||
-			   strings.Contains(strings.ToLower(slug), strings.ToLower(fileSlug)) {
+				strings.Contains(strings.ToLower(slug), strings.ToLower(fileSlug)) {
 				return entry.Name(), true
 			}
 		}

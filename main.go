@@ -25,12 +25,11 @@ var portunixSystemPSScript string
 var version = "dev"
 
 func main() {
-
 	// Set the version for update package and version package
 	update.Version = version
 	appversion.ProductVersion = version
 
-	// Initialize dispatcher 
+	// Initialize dispatcher
 	disp := dispatcher.NewDispatcher(version)
 
 	// Check if we should dispatch to a helper binary

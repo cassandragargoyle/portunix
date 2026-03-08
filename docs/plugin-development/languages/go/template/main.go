@@ -11,11 +11,11 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/health"
 	"google.golang.org/grpc/health/grpc_health_v1"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 
 	"go-plugin-template/internal/config"
 	"go-plugin-template/internal/handlers"
@@ -24,10 +24,10 @@ import (
 
 func main() {
 	var (
-		port       = flag.Int("port", 50051, "gRPC server port")
-		healthPort = flag.Int("health-port", 50052, "Health check port")
+		port        = flag.Int("port", 50051, "gRPC server port")
+		healthPort  = flag.Int("health-port", 50052, "Health check port")
 		metricsPort = flag.Int("metrics-port", 8080, "Metrics port")
-		configPath = flag.String("config", "config.yaml", "Configuration file path")
+		configPath  = flag.String("config", "config.yaml", "Configuration file path")
 	)
 	flag.Parse()
 

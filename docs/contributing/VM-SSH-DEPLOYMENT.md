@@ -15,7 +15,7 @@ This guide describes how to deploy and test Portunix on remote Windows/Linux VMs
 Portunix provides three installation variants for OpenSSH:
 
 | Variant | Description | Requires Admin |
-|---------|-------------|----------------|
+| ------- | ----------- | -------------- |
 | `client` | SSH client only (default) | No |
 | `server` | SSH client + server | Yes |
 | `portable` | Portable installation, no system changes | No |
@@ -182,6 +182,7 @@ ssh user@VM_IP "netsh advfirewall firewall show rule name=sshd"
 ### Path Issues with SCP
 
 Windows paths in SCP:
+
 ```bash
 # Use forward slashes
 scp file.txt user@VM:"C:/Path/To/Dest/"

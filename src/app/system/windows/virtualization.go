@@ -162,16 +162,16 @@ func isSandboxProcessRunning() bool {
 
 // processEntry32W is the PROCESSENTRY32W structure
 type processEntry32W struct {
-	Size              uint32
-	Usage             uint32
-	ProcessID         uint32
-	DefaultHeapID     uintptr
-	ModuleID          uint32
-	Threads           uint32
-	ParentProcessID   uint32
-	PriClassBase      int32
-	Flags             uint32
-	ExeFile           [260]uint16 // MAX_PATH
+	Size            uint32
+	Usage           uint32
+	ProcessID       uint32
+	DefaultHeapID   uintptr
+	ModuleID        uint32
+	Threads         uint32
+	ParentProcessID uint32
+	PriClassBase    int32
+	Flags           uint32
+	ExeFile         [260]uint16 // MAX_PATH
 }
 
 // VirtualizationCapabilities contains virtualization detection results

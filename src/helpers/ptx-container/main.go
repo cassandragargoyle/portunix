@@ -12,6 +12,7 @@ import (
 )
 
 var version = "dev"
+var debugMode = false
 
 // rootCmd represents the base command for ptx-container
 var rootCmd = &cobra.Command{
@@ -40,9 +41,24 @@ with automatic runtime selection and enhanced features for development.
 	},
 }
 
-
 func handleCommand(args []string) {
 	// Handle dispatched commands: container, docker, podman
+	if len(args) == 0 {
+		fmt.Println("No command specified")
+		return
+	}
+
+	// Extract --debug flag from args
+	var filteredArgs []string
+	for _, arg := range args {
+		if arg == "--debug" {
+			debugMode = true
+		} else {
+			filteredArgs = append(filteredArgs, arg)
+		}
+	}
+	args = filteredArgs
+
 	if len(args) == 0 {
 		fmt.Println("No command specified")
 		return
@@ -571,32 +587,48 @@ func handleContainerInfo(args []string) {
 	fmt.Println("🐳 Container Runtime Information")
 	fmt.Println("===============================")
 
-	if isPodmanAvailable() {
-		fmt.Println("✅ Podman: Available")
-		if out, err := exec.Command("podman", "version", "--format", "{{.Client.Version}}").Output(); err == nil {
-			fmt.Printf("   Version: %s", string(out))
+	// Podman status
+	if isPodmanInstalled() {
+		if isPodmanAvailable() {
+			fmt.Println("✅ Podman: Available (running)")
+			if out, err := exec.Command("podman", "version", "--format", "{{.Client.Version}}").Output(); err == nil {
+				fmt.Printf("   Version: %s", string(out))
+			}
+		} else {
+			fmt.Println("⚠️  Podman: Installed but not running")
+			if out, err := exec.Command("podman", "--version").Output(); err == nil {
+				fmt.Printf("   Version: %s", string(out))
+			}
 		}
 	} else {
-		fmt.Println("❌ Podman: Not available")
+		fmt.Println("❌ Podman: Not installed")
 	}
 
-	if isDockerAvailable() {
-		fmt.Println("✅ Docker: Available")
-		if out, err := exec.Command("docker", "version", "--format", "{{.Client.Version}}").Output(); err == nil {
-			fmt.Printf("   Version: %s", string(out))
+	// Docker status
+	if isDockerInstalled() {
+		if isDockerAvailable() {
+			fmt.Println("✅ Docker: Available (running)")
+			if out, err := exec.Command("docker", "version", "--format", "{{.Client.Version}}").Output(); err == nil {
+				fmt.Printf("   Version: %s", string(out))
+			}
+		} else {
+			fmt.Println("⚠️  Docker: Installed but daemon not running")
+			if out, err := exec.Command("docker", "--version").Output(); err == nil {
+				fmt.Printf("   Version: %s", string(out))
+			}
 		}
 	} else {
-		fmt.Println("❌ Docker: Not available")
+		fmt.Println("❌ Docker: Not installed")
 	}
 }
 
 // ComposeStatus represents the status of compose readiness
 type ComposeStatus struct {
-	Ready          bool
-	Runtime        string
-	Version        string
-	DaemonRunning  bool
-	ErrorMessage   string
+	Ready           bool
+	Runtime         string
+	Version         string
+	DaemonRunning   bool
+	ErrorMessage    string
 	FixInstructions string
 }
 
@@ -1065,13 +1097,34 @@ func showCheckHelp() {
 }
 
 // Runtime availability checks
+
+// isPodmanInstalled checks if Podman binary exists in PATH
+func isPodmanInstalled() bool {
+	_, err := exec.LookPath("podman")
+	return err == nil
+}
+
+// isPodmanAvailable checks if Podman is installed AND functional
 func isPodmanAvailable() bool {
-	cmd := exec.Command("podman", "version", "--format", "{{.Client.Version}}")
+	if !isPodmanInstalled() {
+		return false
+	}
+	cmd := exec.Command("podman", "info")
 	return cmd.Run() == nil
 }
 
+// isDockerInstalled checks if Docker binary exists in PATH
+func isDockerInstalled() bool {
+	_, err := exec.LookPath("docker")
+	return err == nil
+}
+
+// isDockerAvailable checks if Docker is installed AND daemon is running
 func isDockerAvailable() bool {
-	cmd := exec.Command("docker", "version", "--format", "{{.Client.Version}}")
+	if !isDockerInstalled() {
+		return false
+	}
+	cmd := exec.Command("docker", "info")
 	return cmd.Run() == nil
 }
 
@@ -1112,12 +1165,18 @@ func runPodmanInContainerImpl(installationType string, imageName string, args []
 	tempPath := "/tmp/portunix-container-test"
 	exec.Command("cp", "./portunix", tempPath).Run()
 
-	// Create and start container with volume mount
-	cmd := exec.Command("podman", "run", "--name", containerName, "-it", "--rm",
-		"-v", fmt.Sprintf("%s:/usr/local/bin/portunix", tempPath),
-		imageName, "/bin/bash", "-c",
+	// Build run arguments with TTY detection
+	var runArgs []string
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		runArgs = []string{"run", "--name", containerName, "-it", "--rm"}
+	} else {
+		runArgs = []string{"run", "--name", containerName, "-i", "--rm"}
+	}
+	runArgs = append(runArgs, "-v", fmt.Sprintf("%s:/usr/local/bin/portunix", tempPath))
+	runArgs = append(runArgs, imageName, "/bin/bash", "-c",
 		fmt.Sprintf("apt-get update && apt-get install -y python3 python3-pip && chmod +x /usr/local/bin/portunix && portunix install %s", installationType))
 
+	cmd := exec.Command("podman", runArgs...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -1163,12 +1222,18 @@ func runDockerInContainerImpl(installationType string, imageName string, args []
 	tempPath := "/tmp/portunix-container-test"
 	exec.Command("cp", "./portunix", tempPath).Run()
 
-	// Create and start container with volume mount
-	cmd := exec.Command("docker", "run", "--name", containerName, "-it", "--rm",
-		"-v", fmt.Sprintf("%s:/usr/local/bin/portunix", tempPath),
-		imageName, "/bin/bash", "-c",
+	// Build run arguments with TTY detection
+	var runArgs []string
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		runArgs = []string{"run", "--name", containerName, "-it", "--rm"}
+	} else {
+		runArgs = []string{"run", "--name", containerName, "-i", "--rm"}
+	}
+	runArgs = append(runArgs, "-v", fmt.Sprintf("%s:/usr/local/bin/portunix", tempPath))
+	runArgs = append(runArgs, imageName, "/bin/bash", "-c",
 		fmt.Sprintf("apt-get update && apt-get install -y python3 python3-pip && chmod +x /usr/local/bin/portunix && portunix install %s", installationType))
 
+	cmd := exec.Command("docker", runArgs...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -1179,8 +1244,26 @@ func runDockerInContainerImpl(installationType string, imageName string, args []
 }
 
 func runPodmanContainer(image string, command []string) {
-	args := []string{"run", "-it", "--rm", image}
+	// Check if running in detached mode (service container)
+	// Detached containers should NOT use --rm as they are persistent services
+	detached := isDetachedMode(image, command)
+
+	// Only use -t flag if stdin is a terminal
+	// This prevents "the input device is not a TTY" error
+	var args []string
+	if detached {
+		args = []string{"run", image}
+	} else if term.IsTerminal(int(os.Stdin.Fd())) {
+		args = []string{"run", "-it", "--rm", image}
+	} else {
+		args = []string{"run", "-i", "--rm", image}
+	}
 	args = append(args, command...)
+
+	if debugMode {
+		fmt.Fprintf(os.Stderr, "🔍 DEBUG podman args: %v\n", args)
+		fmt.Fprintf(os.Stderr, "🔍 DEBUG detached: %v\n", detached)
+	}
 
 	cmd := exec.Command("podman", args...)
 	cmd.Stdin = os.Stdin
@@ -1193,8 +1276,26 @@ func runPodmanContainer(image string, command []string) {
 }
 
 func runDockerContainer(image string, command []string) {
-	args := []string{"run", "-it", "--rm", image}
+	// Check if running in detached mode (service container)
+	// Detached containers should NOT use --rm as they are persistent services
+	detached := isDetachedMode(image, command)
+
+	// Only use -t flag if stdin is a terminal
+	// This prevents "the input device is not a TTY" error
+	var args []string
+	if detached {
+		args = []string{"run", image}
+	} else if term.IsTerminal(int(os.Stdin.Fd())) {
+		args = []string{"run", "-it", "--rm", image}
+	} else {
+		args = []string{"run", "-i", "--rm", image}
+	}
 	args = append(args, command...)
+
+	if debugMode {
+		fmt.Fprintf(os.Stderr, "🔍 DEBUG docker args: %v\n", args)
+		fmt.Fprintf(os.Stderr, "🔍 DEBUG detached: %v\n", detached)
+	}
 
 	cmd := exec.Command("docker", args...)
 	cmd.Stdin = os.Stdin
@@ -1204,6 +1305,20 @@ func runDockerContainer(image string, command []string) {
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("❌ Docker run failed: %v\n", err)
 	}
+}
+
+// isDetachedMode checks if -d or --detach flag is present in image name or command args
+// When called from handleContainerRun, flags like -d end up as the "image" parameter
+func isDetachedMode(image string, command []string) bool {
+	if image == "-d" || image == "--detach" {
+		return true
+	}
+	for _, arg := range command {
+		if arg == "-d" || arg == "--detach" {
+			return true
+		}
+	}
+	return false
 }
 
 // execPodmanCommand executes a command inside an existing Podman container

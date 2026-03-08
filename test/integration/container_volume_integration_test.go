@@ -129,7 +129,7 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_MultipleVolume
 	// Create container with multiple volume mounts
 	req := testcontainers.ContainerRequest{
 		Image: "alpine:latest",
-		Cmd: []string{"sh", "-c", 
+		Cmd: []string{"sh", "-c",
 			"cat /mount1/file1.txt && cat /mount2/file2.txt && sleep 30"},
 		BindMounts: map[string]string{
 			dir1: "/mount1",
@@ -172,10 +172,10 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_ReadOnly_Succe
 	// Create container with read-only volume mount
 	req := testcontainers.ContainerRequest{
 		Image: "alpine:latest",
-		Cmd: []string{"sh", "-c", 
+		Cmd: []string{"sh", "-c",
 			"cat /readonly_mount/readonly_test.txt && " +
-			"echo 'test' > /readonly_mount/write_test.txt 2>&1 || echo 'Write failed as expected' && " +
-			"sleep 30"},
+				"echo 'test' > /readonly_mount/write_test.txt 2>&1 || echo 'Write failed as expected' && " +
+				"sleep 30"},
 		BindMounts: map[string]string{
 			suite.tempHostDir + ":ro": "/readonly_mount",
 		},
@@ -215,10 +215,10 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_ContainerWrite
 	// Create container that writes to mounted volume
 	req := testcontainers.ContainerRequest{
 		Image: "alpine:latest",
-		Cmd: []string{"sh", "-c", 
+		Cmd: []string{"sh", "-c",
 			"echo 'Created by container' > /write_mount/container_file.txt && " +
-			"cat /write_mount/container_file.txt && " +
-			"sleep 30"},
+				"cat /write_mount/container_file.txt && " +
+				"sleep 30"},
 		BindMounts: map[string]string{
 			writeTestDir: "/write_mount",
 		},
@@ -257,10 +257,10 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_NonExistentHos
 	// Create container with volume mount to non-existent path
 	req := testcontainers.ContainerRequest{
 		Image: "alpine:latest",
-		Cmd: []string{"sh", "-c", 
+		Cmd: []string{"sh", "-c",
 			"echo 'Created in new dir' > /new_mount/new_file.txt && " +
-			"cat /new_mount/new_file.txt && " +
-			"sleep 30"},
+				"cat /new_mount/new_file.txt && " +
+				"sleep 30"},
 		BindMounts: map[string]string{
 			nonExistentDir: "/new_mount",
 		},
@@ -280,7 +280,7 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_NonExistentHos
 
 	// Assert - Verify directory was created on host
 	assert.DirExists(t, nonExistentDir)
-	
+
 	hostFilePath := filepath.Join(nonExistentDir, "new_file.txt")
 	assert.FileExists(t, hostFilePath)
 
@@ -306,10 +306,10 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_PermissionHand
 	// Create container that checks permissions
 	req := testcontainers.ContainerRequest{
 		Image: "alpine:latest",
-		Cmd: []string{"sh", "-c", 
+		Cmd: []string{"sh", "-c",
 			"ls -la /perm_mount/ && " +
-			"cat /perm_mount/perm_file.txt && " +
-			"sleep 30"},
+				"cat /perm_mount/perm_file.txt && " +
+				"sleep 30"},
 		BindMounts: map[string]string{
 			permTestDir: "/perm_mount",
 		},
@@ -348,20 +348,20 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_SymbolicLinks_
 
 	originalFile := filepath.Join(symlinkTestDir, "original.txt")
 	symlinkFile := filepath.Join(symlinkTestDir, "symlink.txt")
-	
+
 	err = ioutil.WriteFile(originalFile, []byte("Original content"), 0644)
 	require.NoError(t, err)
-	
+
 	err = os.Symlink("original.txt", symlinkFile)
 	require.NoError(t, err)
 
 	// Create container that reads through symlink
 	req := testcontainers.ContainerRequest{
 		Image: "alpine:latest",
-		Cmd: []string{"sh", "-c", 
+		Cmd: []string{"sh", "-c",
 			"cat /symlink_mount/symlink.txt && " +
-			"ls -la /symlink_mount/ && " +
-			"sleep 30"},
+				"ls -la /symlink_mount/ && " +
+				"sleep 30"},
 		BindMounts: map[string]string{
 			symlinkTestDir: "/symlink_mount",
 		},
@@ -409,10 +409,10 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_Performance_Be
 
 	req := testcontainers.ContainerRequest{
 		Image: "alpine:latest",
-		Cmd: []string{"sh", "-c", 
+		Cmd: []string{"sh", "-c",
 			"wc -l /perf_mount/large_file.txt && " +
-			"head -n 1 /perf_mount/large_file.txt && " +
-			"sleep 30"},
+				"head -n 1 /perf_mount/large_file.txt && " +
+				"sleep 30"},
 		BindMounts: map[string]string{
 			perfTestDir: "/perf_mount",
 		},

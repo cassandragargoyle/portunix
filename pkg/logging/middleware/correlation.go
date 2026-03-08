@@ -14,9 +14,9 @@ import (
 
 // CorrelationID header names
 const (
-	CorrelationIDHeader    = "X-Correlation-ID"
-	RequestIDHeader        = "X-Request-ID"
-	TraceIDHeader          = "X-Trace-ID"
+	CorrelationIDHeader = "X-Correlation-ID"
+	RequestIDHeader     = "X-Request-ID"
+	TraceIDHeader       = "X-Trace-ID"
 )
 
 // CorrelationIDGenerator generates correlation IDs
@@ -233,7 +233,7 @@ func (p *CorrelationIDPropagator) CreateChild(parent context.Context, operation 
 // generateChildSuffix generates a short suffix for child correlation IDs
 func (p *CorrelationIDPropagator) generateChildSuffix() string {
 	bytes := make([]byte, 4)
-	rand.Read(bytes)
+	_, _ = rand.Read(bytes) //nolint:errcheck // crypto/rand.Read never fails on Linux/Windows
 	return hex.EncodeToString(bytes)
 }
 
@@ -255,10 +255,10 @@ func (p *CorrelationIDPropagator) CreateSpan(parent context.Context, operation s
 
 // Global correlation manager
 var (
-	defaultGenerator   CorrelationIDGenerator = &DefaultGenerator{}
-	defaultMiddleware  = NewCorrelationMiddleware(defaultGenerator)
-	defaultContext     = NewCorrelationContext(defaultGenerator)
-	defaultPropagator  = NewCorrelationIDPropagator(defaultGenerator)
+	defaultGenerator  CorrelationIDGenerator = &DefaultGenerator{}
+	defaultMiddleware                        = NewCorrelationMiddleware(defaultGenerator)
+	defaultContext                           = NewCorrelationContext(defaultGenerator)
+	defaultPropagator                        = NewCorrelationIDPropagator(defaultGenerator)
 )
 
 // Helper functions for easy usage

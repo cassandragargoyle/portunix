@@ -17,6 +17,16 @@ portunix install <package-name> --dry-run
 
 ## Package Catalog
 
+### ○ Database / Search
+
+#### `elasticsearch`
+
+Elasticsearch
+
+[Homepage](https://www.elastic.co/elasticsearch/) | [Documentation](https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html) | License: Elastic-2.0 | Maintainer: Elastic
+
+---
+
 ### ◉ AI Tools
 
 #### `claude-code`
@@ -50,6 +60,24 @@ Google Gemini CLI
 Apache Maven
 
 [Homepage](https://maven.apache.org/) | [Documentation](https://maven.apache.org/guides/) | License: Apache-2.0 | Maintainer: Apache Software Foundation
+
+---
+
+#### `ninja`
+
+Ninja Build System
+
+[Homepage](https://ninja-build.org/) | [Documentation](https://ninja-build.org/manual.html) | License: Apache-2.0 | Maintainer: Ninja Contributors
+
+---
+
+### ○ Development / Compilers
+
+#### `clang`
+
+Clang/LLVM Compiler
+
+[Homepage](https://clang.llvm.org/) | [Documentation](https://clang.llvm.org/docs/) | License: Apache-2.0 WITH LLVM-exception | Maintainer: LLVM Project
 
 ---
 
@@ -120,6 +148,14 @@ Node.js JavaScript Runtime
 Python
 
 [Homepage](https://www.python.org/) | [Documentation](https://docs.python.org/) | License: PSF-2.0 | Maintainer: Python Software Foundation
+
+---
+
+#### `rust`
+
+Rust Programming Language
+
+[Homepage](https://www.rust-lang.org/) | [Documentation](https://doc.rust-lang.org/) | License: MIT OR Apache-2.0 | Maintainer: Rust Foundation
 
 ---
 
@@ -217,6 +253,14 @@ Protocol Buffers Compiler
 
 ---
 
+#### `tea`
+
+Tea (Gitea CLI)
+
+[Homepage](https://gitea.com/gitea/tea) | [Documentation](https://gitea.com/gitea/tea/src/branch/main/docs/CLI.md) | License: MIT | Maintainer: Gitea
+
+---
+
 ### ○ Development / Vcs
 
 #### `git`
@@ -242,6 +286,24 @@ Ansible
 Ansible Collections
 
 [Homepage](https://galaxy.ansible.com/) | [Documentation](https://docs.ansible.com/ansible/latest/collections/) | License: GPL-3.0 | Maintainer: Ansible Community
+
+---
+
+### ○ Infrastructure / Storage
+
+#### `minio`
+
+MinIO Server
+
+[Homepage](https://min.io/) | [Documentation](https://docs.min.io/) | License: AGPL-3.0 | Maintainer: MinIO Inc.
+
+---
+
+#### `minio-client`
+
+MinIO Client (mc)
+
+[Homepage](https://min.io/) | [Documentation](https://docs.min.io/docs/minio-client-complete-guide.html) | License: AGPL-3.0 | Maintainer: MinIO Inc.
 
 ---
 
@@ -294,6 +356,34 @@ VirtualBox
 Caddy Web Server
 
 [Homepage](https://caddyserver.com/) | [Documentation](https://caddyserver.com/docs/) | License: Apache-2.0 | Maintainer: Caddy Server
+
+---
+
+### ○ Plugins / Dependencies
+
+#### `vox-deps`
+
+Vox System Dependencies
+
+License: Various | Maintainer: CassandraGargoyle
+
+---
+
+### ○ Plugins / Models
+
+#### `vox-model-tts-czech`
+
+Vox TTS Czech Voice Model
+
+[Homepage](https://huggingface.co/rhasspy/piper-voices) | License: MIT | Maintainer: CassandraGargoyle
+
+---
+
+#### `vox-model-tts-english`
+
+Vox TTS English Voice Model
+
+[Homepage](https://huggingface.co/rhasspy/piper-voices) | License: MIT | Maintainer: CassandraGargoyle
 
 ---
 
@@ -376,7 +466,7 @@ Windows Package Manager
 ---
 
 
-**Total packages available: 40**
+**Total packages available: 50**
 
 ## Getting Package Details
 

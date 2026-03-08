@@ -23,11 +23,11 @@ func NewPromptBuilder() *PromptBuilder {
 
 // BuildOptions contains options for building a prompt
 type BuildOptions struct {
-	TemplateFile      string
-	Variables         map[string]string
-	InteractiveMode   bool
-	AllowIncomplete   bool
-	DefaultValues     map[string]string
+	TemplateFile    string
+	Variables       map[string]string
+	InteractiveMode bool
+	AllowIncomplete bool
+	DefaultValues   map[string]string
 }
 
 // BuildResult contains the result of a prompt build operation
@@ -220,17 +220,17 @@ func (pb *PromptBuilder) promptForVariable(placeholder string, existingVars map[
 // getPlaceholderHelp returns context help for common placeholders
 func getPlaceholderHelp(placeholder string) string {
 	helpMap := map[string]string{
-		"source_file":         "Path to the source file to be processed",
-		"target_file":         "Path where the output will be saved",
-		"source_language":     "Language of the source content (e.g., Czech, English)",
-		"target_language":     "Language to translate/convert to (e.g., English, Czech)",
+		"source_file":          "Path to the source file to be processed",
+		"target_file":          "Path where the output will be saved",
+		"source_language":      "Language of the source content (e.g., Czech, English)",
+		"target_language":      "Language to translate/convert to (e.g., English, Czech)",
 		"programming_language": "Programming language being used (e.g., Go, Python, JavaScript)",
-		"file_path":           "Path to the file being analyzed",
-		"context_description": "Brief description of the context or purpose",
-		"audience":            "Target audience for the content (e.g., developers, users)",
-		"focus_area_1":        "First area to focus on during review",
-		"focus_area_2":        "Second area to focus on during review",
-		"focus_area_3":        "Third area to focus on during review",
+		"file_path":            "Path to the file being analyzed",
+		"context_description":  "Brief description of the context or purpose",
+		"audience":             "Target audience for the content (e.g., developers, users)",
+		"focus_area_1":         "First area to focus on during review",
+		"focus_area_2":         "Second area to focus on during review",
+		"focus_area_3":         "Third area to focus on during review",
 	}
 
 	// Try exact match first
@@ -259,10 +259,10 @@ func getPlaceholderHelp(placeholder string) string {
 func getDefaultValue(placeholder string, existingVars map[string]string) string {
 	// Common defaults
 	defaults := map[string]string{
-		"target_language": "English",
-		"source_language": "Czech",
+		"target_language":      "English",
+		"source_language":      "Czech",
 		"programming_language": "Go",
-		"audience": "developers",
+		"audience":             "developers",
 	}
 
 	if val, exists := defaults[placeholder]; exists {

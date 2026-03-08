@@ -1,0 +1,44 @@
+apiVersion: portunix.ai/v1
+kind: Playbook
+metadata:
+  name: "{{ .Name }}"
+  description: "Static documentation site using Hugo with Docsy theme"
+
+spec:
+  environment:
+    target: {{ .Target }}
+{{- if eq .Target "container" }}
+    runtime: {{ .ContainerRuntime }}
+    image: "ubuntu:22.04"
+    container_name: "{{ .Name }}-docsy"
+    ports:
+      - "1313:1313"
+    volumes:
+      - "./:/workspace"
+{{- end }}
+
+  variables:
+    site_title: "{{ .Name }} Documentation"
+    output_dir: "./public"
+
+  portunix:
+    packages:
+      - name: "hugo"
+        variant: "extended"
+      - name: "go"
+      - name: "git"
+
+  scripts:
+{{- if and (eq .OS "windows") (eq .Target "local") }}
+    init: "hugo.exe new site . --force && cd . && hugo.exe mod init github.com/{{ .Name }}/docs && echo '[module]' >> hugo.toml && echo '[[module.imports]]' >> hugo.toml && echo 'path = \"github.com/google/docsy\"' >> hugo.toml && echo '[[module.imports]]' >> hugo.toml && echo 'path = \"github.com/google/docsy/dependencies\"' >> hugo.toml && hugo.exe mod get && hugo.exe new content docs/_index.md && echo '---' > content/docs/_index.md && echo 'title: \"Documentation\"' >> content/docs/_index.md && echo 'linkTitle: \"Docs\"' >> content/docs/_index.md && echo 'weight: 20' >> content/docs/_index.md && echo '---' >> content/docs/_index.md && echo 'Welcome to {{ .Name }}!' >> content/docs/_index.md"
+    build: "hugo.exe build"
+    serve: "hugo.exe server -D"
+{{- else if eq .Target "container" }}
+    init: "hugo new site . --force && hugo mod init github.com/{{ .Name }}/docs && echo '[module]' >> hugo.toml && echo '[[module.imports]]' >> hugo.toml && echo 'path = \"github.com/google/docsy\"' >> hugo.toml && echo '[[module.imports]]' >> hugo.toml && echo 'path = \"github.com/google/docsy/dependencies\"' >> hugo.toml && hugo mod get && hugo new content docs/_index.md && echo '---' > content/docs/_index.md && echo 'title: \"Documentation\"' >> content/docs/_index.md && echo 'linkTitle: \"Docs\"' >> content/docs/_index.md && echo 'weight: 20' >> content/docs/_index.md && echo '---' >> content/docs/_index.md && echo 'Welcome to {{ .Name }}!' >> content/docs/_index.md"
+    build: "hugo build"
+    serve: "hugo server -D --bind 0.0.0.0"
+{{- else }}
+    init: "hugo new site . --force && hugo mod init github.com/{{ .Name }}/docs && echo '[module]' >> hugo.toml && echo '[[module.imports]]' >> hugo.toml && echo 'path = \"github.com/google/docsy\"' >> hugo.toml && echo '[[module.imports]]' >> hugo.toml && echo 'path = \"github.com/google/docsy/dependencies\"' >> hugo.toml && hugo mod get && hugo new content docs/_index.md && echo '---' > content/docs/_index.md && echo 'title: \"Documentation\"' >> content/docs/_index.md && echo 'linkTitle: \"Docs\"' >> content/docs/_index.md && echo 'weight: 20' >> content/docs/_index.md && echo '---' >> content/docs/_index.md && echo 'Welcome to {{ .Name }}!' >> content/docs/_index.md"
+    build: "hugo build"
+    serve: "hugo server -D"
+{{- end }}

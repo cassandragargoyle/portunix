@@ -389,8 +389,8 @@ func (m *Manager) copyPluginFiles(manifestPath, destDir string) error {
 			return os.MkdirAll(destPath, info.Mode())
 		}
 
-		// Copy file
-		return copyFile(path, destPath)
+		// Copy file preserving permissions
+		return copyFile(path, destPath, info.Mode())
 	})
 }
 
@@ -451,15 +451,15 @@ func (m *Manager) performHealthChecks() {
 	}
 }
 
-// copyFile copies a single file from src to dst
-func copyFile(src, dst string) error {
+// copyFile copies a single file from src to dst preserving file mode (permissions)
+func copyFile(src, dst string, mode os.FileMode) error {
 	sourceFile, err := os.Open(src)
 	if err != nil {
 		return err
 	}
 	defer sourceFile.Close()
 
-	destFile, err := os.Create(dst)
+	destFile, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, mode)
 	if err != nil {
 		return err
 	}

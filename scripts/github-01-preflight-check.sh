@@ -256,6 +256,49 @@ check_large_files() {
     fi
 }
 
+check_go_lint() {
+    echo -e "${YELLOW}🔍 Running Go lint check...${NC}"
+    local target_dir="${1:-.}"
+
+    # Check if golangci-lint is available
+    if ! command -v golangci-lint &> /dev/null; then
+        echo -e "   ${YELLOW}⚠️  golangci-lint not installed, skipping lint check${NC}"
+        echo -e "   ${CYAN}ℹ️  Install with: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest${NC}"
+        return 0
+    fi
+
+    # Check if .golangci.yml exists
+    if [ ! -f "$target_dir/.golangci.yml" ]; then
+        echo -e "   ${YELLOW}⚠️  No .golangci.yml found, skipping lint check${NC}"
+        return 0
+    fi
+
+    # Run golangci-lint
+    echo -e "   ${CYAN}ℹ️  Running golangci-lint...${NC}"
+
+    cd "$target_dir"
+    lint_output=$(golangci-lint run --timeout 5m 2>&1)
+    lint_exit_code=$?
+    cd - > /dev/null
+
+    if [ $lint_exit_code -eq 0 ]; then
+        echo -e "   ${GREEN}✓ Lint check passed${NC}"
+        return 0
+    else
+        echo -e "   ${RED}❌ Lint check failed${NC}"
+        # Show first 20 lines of errors
+        echo "$lint_output" | head -20 | while read -r line; do
+            echo -e "   ${RED}$line${NC}"
+        done
+
+        error_count=$(echo "$lint_output" | grep -c "^[^l]" || echo "0")
+        if [ "$error_count" -gt 20 ]; then
+            echo -e "   ${YELLOW}... and more errors (run 'golangci-lint run' for full output)${NC}"
+        fi
+        return 1
+    fi
+}
+
 generate_report() {
     local target_dir="${1:-.}"
     local report_file="${2:-preflight-report.txt}"
@@ -295,6 +338,9 @@ main() {
     echo
 
     check_large_files "$target_dir" || errors=$((errors + 1))
+    echo
+
+    check_go_lint "$target_dir" || errors=$((errors + 1))
     echo
 
     echo "════════════════════════════════════════"

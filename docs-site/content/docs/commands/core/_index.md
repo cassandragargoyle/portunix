@@ -23,3 +23,6 @@ These are the built-in commands available in Portunix.
 | [package](package/) | Package management and registry |
 | [pft](pft/) | Product feedback tool integration |
 | [playbook](playbook/) | Infrastructure as Code management |
+| [python](python/) | Python development tools |
+| [aiops](aiops/) | AI operations and GPU management |
+| [credential](credential/) | Secure credential storage |

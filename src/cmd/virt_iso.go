@@ -568,7 +568,6 @@ func verifyChecksum(filePath, expectedChecksum string) error {
 	return nil
 }
 
-
 func init() {
 	// Add ISO commands to virt
 	virtCmd.AddCommand(virtISOCmd)

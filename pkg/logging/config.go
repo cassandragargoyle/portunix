@@ -6,25 +6,33 @@ import (
 	"strings"
 )
 
+// Log level and format constants
+const (
+	LevelInfo  = "info"
+	FormatText = "text"
+	FormatJSON = "json"
+	BoolTrue   = "true"
+)
+
 // Config holds the logging configuration
 type Config struct {
-	Level      string              `json:"level" yaml:"level"`           // Log level: trace, debug, info, warn, error
-	Format     string              `json:"format" yaml:"format"`         // Output format: text, json
-	Output     []string            `json:"output" yaml:"output"`         // Output targets: console, file, syslog
-	FilePath   string              `json:"file_path" yaml:"file_path"`   // Path for file output
-	TimeFormat string              `json:"time_format" yaml:"time_format"` // Time format for logs
-	NoColor    bool                `json:"no_color" yaml:"no_color"`     // Disable color output
-	Modules    map[string]string   `json:"modules" yaml:"modules"`       // Per-module log levels
-	MaxSize    int                 `json:"max_size" yaml:"max_size"`     // Max size in MB for log rotation
-	MaxAge     int                 `json:"max_age" yaml:"max_age"`       // Max age in days for log retention
-	MaxBackups int                 `json:"max_backups" yaml:"max_backups"` // Max number of old log files
+	Level      string            `json:"level" yaml:"level"`             // Log level: trace, debug, info, warn, error
+	Format     string            `json:"format" yaml:"format"`           // Output format: text, json
+	Output     []string          `json:"output" yaml:"output"`           // Output targets: console, file, syslog
+	FilePath   string            `json:"file_path" yaml:"file_path"`     // Path for file output
+	TimeFormat string            `json:"time_format" yaml:"time_format"` // Time format for logs
+	NoColor    bool              `json:"no_color" yaml:"no_color"`       // Disable color output
+	Modules    map[string]string `json:"modules" yaml:"modules"`         // Per-module log levels
+	MaxSize    int               `json:"max_size" yaml:"max_size"`       // Max size in MB for log rotation
+	MaxAge     int               `json:"max_age" yaml:"max_age"`         // Max age in days for log retention
+	MaxBackups int               `json:"max_backups" yaml:"max_backups"` // Max number of old log files
 }
 
 // DefaultConfig returns the default logging configuration
 func DefaultConfig() *Config {
 	return &Config{
-		Level:      "info",
-		Format:     "text",
+		Level:      LevelInfo,
+		Format:     FormatText,
 		Output:     []string{"console"},
 		FilePath:   "",
 		TimeFormat: "2006-01-02 15:04:05",
@@ -82,7 +90,7 @@ func (c *Config) LoadFromEnv() {
 	}
 
 	// PORTUNIX_LOG_NO_COLOR
-	if noColor := os.Getenv("PORTUNIX_LOG_NO_COLOR"); noColor == "true" || noColor == "1" {
+	if noColor := os.Getenv("PORTUNIX_LOG_NO_COLOR"); noColor == BoolTrue || noColor == "1" {
 		c.NoColor = true
 	}
 
@@ -118,14 +126,14 @@ func (c *Config) LoadFromFile(path string) error {
 // Validate checks if the configuration is valid
 func (c *Config) Validate() error {
 	// Validate log level
-	validLevels := []string{"trace", "debug", "info", "warn", "warning", "error", "fatal", "panic"}
+	validLevels := []string{"trace", "debug", LevelInfo, "warn", "warning", "error", "fatal", "panic"}
 	if !contains(validLevels, strings.ToLower(c.Level)) {
-		c.Level = "info" // Default to info if invalid
+		c.Level = LevelInfo // Default to info if invalid
 	}
 
 	// Validate format
-	if c.Format != "text" && c.Format != "json" {
-		c.Format = "text"
+	if c.Format != FormatText && c.Format != FormatJSON {
+		c.Format = FormatText
 	}
 
 	// Validate output targets
@@ -176,9 +184,9 @@ func contains(slice []string, str string) bool {
 
 // ConfigManager manages runtime configuration changes
 type ConfigManager struct {
-	config   *Config
-	factory  *Factory
-	loggers  map[string]Logger
+	config  *Config
+	factory *Factory
+	loggers map[string]Logger
 }
 
 // NewConfigManager creates a new configuration manager
@@ -187,7 +195,7 @@ func NewConfigManager(config *Config) *ConfigManager {
 		config = DefaultConfig()
 	}
 	config.LoadFromEnv()
-	config.Validate()
+	_ = config.Validate() //nolint:errcheck // Validate corrects invalid values, error always nil
 
 	return &ConfigManager{
 		config:  config,
@@ -209,7 +217,7 @@ func (cm *ConfigManager) GetLogger(component string) Logger {
 
 // UpdateConfig updates the configuration and recreates all loggers
 func (cm *ConfigManager) UpdateConfig(config *Config) {
-	config.Validate()
+	_ = config.Validate() //nolint:errcheck // Validate corrects invalid values, error always nil
 	cm.config = config
 	cm.factory = NewFactory(config)
 

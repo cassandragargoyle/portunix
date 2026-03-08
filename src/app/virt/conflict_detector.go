@@ -10,10 +10,10 @@ import (
 type ConflictType string
 
 const (
-	ConflictNone         ConflictType = "none"
-	ConflictVBoxKVM      ConflictType = "virtualbox-kvm"
-	ConflictHyperVVBox   ConflictType = "hyperv-virtualbox"
-	ConflictHyperVKVM    ConflictType = "hyperv-kvm"
+	ConflictNone       ConflictType = "none"
+	ConflictVBoxKVM    ConflictType = "virtualbox-kvm"
+	ConflictHyperVVBox ConflictType = "hyperv-virtualbox"
+	ConflictHyperVKVM  ConflictType = "hyperv-kvm"
 )
 
 // VirtualizationConflict represents a detected virtualization conflict

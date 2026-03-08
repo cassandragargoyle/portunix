@@ -1,0 +1,137 @@
+syntax = "proto3";
+
+package portunix.fulltext.v1;
+
+option go_package = "portunix.ai/portunix/src/helpers/ptx-trace/proto/fulltext";
+
+// FulltextService defines the gRPC interface for fulltext search operations
+// This is the client-side definition for communicating with the fulltext plugin
+service FulltextService {
+    // Document indexing
+    rpc IndexDocument(IndexRequest) returns (IndexResponse);
+    rpc IndexBatch(IndexBatchRequest) returns (IndexBatchResponse);
+    rpc DeleteDocument(DeleteDocumentRequest) returns (DeleteDocumentResponse);
+
+    // Search
+    rpc Search(SearchRequest) returns (SearchResponse);
+
+    // Index management
+    rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+    rpc EnsureIndex(EnsureIndexRequest) returns (EnsureIndexResponse);
+    rpc DeleteIndex(DeleteIndexRequest) returns (DeleteIndexResponse);
+
+    // Health
+    rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// IndexRequest represents a single document to index
+message IndexRequest {
+    string id = 1;                          // Document ID (trace event ID)
+    string content = 2;                     // Main searchable content
+    map<string, string> metadata = 3;       // Additional metadata fields
+    string content_type = 4;                // Content type (e.g., "trace_event")
+    string index_name = 5;                  // Target index name
+}
+
+message IndexResponse {
+    bool success = 1;
+    string message = 2;
+    string document_id = 3;
+}
+
+// IndexBatchRequest for bulk indexing
+message IndexBatchRequest {
+    repeated IndexRequest documents = 1;
+    string index_name = 2;
+}
+
+message IndexBatchResponse {
+    bool success = 1;
+    string message = 2;
+    int32 indexed_count = 3;
+    int32 failed_count = 4;
+    repeated string failed_ids = 5;
+}
+
+// DeleteDocumentRequest removes a document from the index
+message DeleteDocumentRequest {
+    string id = 1;
+    string index_name = 2;
+}
+
+message DeleteDocumentResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// SearchRequest for querying the fulltext index
+message SearchRequest {
+    string query = 1;                       // Search query
+    string index_name = 2;                  // Index to search
+    int32 limit = 3;                        // Max results (default: 10)
+    int32 offset = 4;                       // Pagination offset
+    bool highlight = 5;                     // Enable highlighting
+    map<string, string> filters = 6;        // Field filters
+}
+
+message SearchResult {
+    string id = 1;
+    float score = 2;
+    string highlight = 3;
+    map<string, string> metadata = 4;
+    string content = 5;
+}
+
+message SearchResponse {
+    bool success = 1;
+    string message = 2;
+    repeated SearchResult results = 3;
+    int64 total_hits = 4;
+    int64 took_ms = 5;
+}
+
+// GetStatsRequest for index statistics
+message GetStatsRequest {
+    string index_name = 1;                  // Empty for all indices
+}
+
+message GetStatsResponse {
+    bool success = 1;
+    string message = 2;
+    int64 document_count = 3;
+    int64 index_size_bytes = 4;
+    map<string, int64> indices = 5;         // Per-index document counts
+}
+
+// EnsureIndexRequest creates index if not exists
+message EnsureIndexRequest {
+    string index_name = 1;
+    map<string, string> settings = 2;       // Index settings
+}
+
+message EnsureIndexResponse {
+    bool success = 1;
+    string message = 2;
+    bool created = 3;                       // True if newly created
+}
+
+// DeleteIndexRequest removes an entire index
+message DeleteIndexRequest {
+    string index_name = 1;
+}
+
+message DeleteIndexResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+// HealthCheckRequest for service health
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+    bool healthy = 1;
+    string status = 2;
+    string message = 3;
+    string backend = 4;                     // e.g., "elasticsearch", "lucene"
+    string version = 5;
+}

@@ -69,7 +69,7 @@ type ContainerParams struct {
 // Mock parser function (will be replaced with actual implementation)
 func parseContainerArgs(args []string) (*ContainerParams, error) {
 	params := &ContainerParams{}
-	
+
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "-v", "--volume":
@@ -139,7 +139,7 @@ func parseContainerArgs(args []string) (*ContainerParams, error) {
 			i++
 		}
 	}
-	
+
 	return params, nil
 }
 
@@ -148,7 +148,7 @@ func parseVolumeSpec(spec string) (*VolumeMount, error) {
 	if len(parts) < 2 {
 		return nil, assert.AnError
 	}
-	
+
 	return &VolumeMount{
 		HostPath:      parts[0],
 		ContainerPath: parts[1],
@@ -161,7 +161,7 @@ func parsePortSpec(spec string) (*PortMapping, error) {
 	if len(parts) < 2 {
 		return nil, assert.AnError
 	}
-	
+
 	return &PortMapping{
 		HostPort:      parts[0],
 		ContainerPort: parts[1],
@@ -174,7 +174,7 @@ func parseEnvSpec(spec string) (*EnvVar, error) {
 	if len(parts) < 2 {
 		return nil, assert.AnError
 	}
-	
+
 	return &EnvVar{
 		Name:  parts[0],
 		Value: parts[1],
@@ -252,12 +252,12 @@ func (suite *ContainerParamsTestSuite) TestParseVolumeMount_MultipleVolumes_Succ
 	// Assert
 	require.NoError(suite.T(), err)
 	require.Len(suite.T(), params.Volumes, 2)
-	
+
 	// First volume
 	assert.Equal(suite.T(), "/host1", params.Volumes[0].HostPath)
 	assert.Equal(suite.T(), "/container1", params.Volumes[0].ContainerPath)
 	assert.False(suite.T(), params.Volumes[0].ReadOnly)
-	
+
 	// Second volume
 	assert.Equal(suite.T(), "/host2", params.Volumes[1].HostPath)
 	assert.Equal(suite.T(), "/container2", params.Volumes[1].ContainerPath)
@@ -443,20 +443,20 @@ func (suite *ContainerParamsTestSuite) TestParseCombinedParameters_AllParams_Suc
 
 	// Assert
 	require.NoError(suite.T(), err)
-	
+
 	// Verify all parameters were parsed
 	require.Len(suite.T(), params.Volumes, 1)
 	assert.Equal(suite.T(), "/host", params.Volumes[0].HostPath)
 	assert.Equal(suite.T(), "/container", params.Volumes[0].ContainerPath)
-	
+
 	require.Len(suite.T(), params.Ports, 1)
 	assert.Equal(suite.T(), "8080", params.Ports[0].HostPort)
 	assert.Equal(suite.T(), "80", params.Ports[0].ContainerPort)
-	
+
 	require.Len(suite.T(), params.Environment, 1)
 	assert.Equal(suite.T(), "NODE_ENV", params.Environment[0].Name)
 	assert.Equal(suite.T(), "production", params.Environment[0].Value)
-	
+
 	assert.Equal(suite.T(), "/app", params.WorkingDir)
 	assert.Equal(suite.T(), "1000:1000", params.User)
 	assert.True(suite.T(), params.Privileged)
@@ -468,12 +468,12 @@ func (suite *ContainerParamsTestSuite) TestParseCombinedParameters_AllParams_Suc
 // Test Path Validation
 func (suite *ContainerParamsTestSuite) TestValidateVolumePath_ValidPaths_Success() {
 	t := suite.T()
-	
+
 	// Create test files
 	hostPath := filepath.Join(suite.testDir, "host_dir")
 	err := os.MkdirAll(hostPath, 0755)
 	require.NoError(t, err)
-	
+
 	// Test cases
 	testCases := []struct {
 		name        string
@@ -485,7 +485,7 @@ func (suite *ContainerParamsTestSuite) TestValidateVolumePath_ValidPaths_Success
 		{"Invalid relative path", "relative/path", true},
 		{"Non-existent path", "/non/existent/path", true},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			err := validateVolumePath(tc.hostPath)
@@ -517,7 +517,7 @@ func pathExists(path string) bool {
 // Benchmark tests for performance
 func BenchmarkParseContainerArgs_SingleVolume(b *testing.B) {
 	args := []string{"-v", "/host:/container"}
-	
+
 	for i := 0; i < b.N; i++ {
 		_, _ = parseContainerArgs(args)
 	}
@@ -538,7 +538,7 @@ func BenchmarkParseContainerArgs_ComplexArgs(b *testing.B) {
 		"--memory", "2G",
 		"--cpus", "1.5",
 	}
-	
+
 	for i := 0; i < b.N; i++ {
 		_, _ = parseContainerArgs(args)
 	}

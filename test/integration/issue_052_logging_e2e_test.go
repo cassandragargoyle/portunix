@@ -205,9 +205,9 @@ func TestIssue052LoggingE2ECommandExecution(t *testing.T) {
 
 	// Verify log contains expected elements
 	expectedLogElements := []string{
-		"version",        // From version command
-		"level",          // Should have log level indicators
-		"component",      // Should have component fields
+		"version",   // From version command
+		"level",     // Should have log level indicators
+		"component", // Should have component fields
 	}
 
 	for _, element := range expectedLogElements {
@@ -419,8 +419,8 @@ func TestIssue052LoggingE2EErrorScenarios(t *testing.T) {
 
 	// Error information should be present
 	if strings.Contains(stderrOutput, "unknown command") ||
-	   strings.Contains(stderrOutput, "invalid") ||
-	   strings.Contains(stdoutOutput, "unknown command") {
+		strings.Contains(stderrOutput, "invalid") ||
+		strings.Contains(stdoutOutput, "unknown command") {
 		tf.Success(t, "Error message properly displayed")
 	} else {
 		tf.Warning(t, "Error message format may be unexpected")

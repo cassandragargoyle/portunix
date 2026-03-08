@@ -14,9 +14,9 @@ import (
 
 const (
 	// Cryptographic parameters - must match Java TokenStorage.java
-	keyLength      = 32    // AES-256 (256 bits = 32 bytes)
-	ivLength       = 12    // GCM standard IV length
-	gcmTagLength   = 16    // 128-bit authentication tag
+	keyLength        = 32    // AES-256 (256 bits = 32 bytes)
+	ivLength         = 12    // GCM standard IV length
+	gcmTagLength     = 16    // 128-bit authentication tag
 	pbkdf2Iterations = 65536 // Balance security/performance
 )
 

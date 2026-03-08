@@ -383,4 +383,3 @@ func ResolveProjectPath(config *Config, configFilePath string, explicitPath stri
 	// Absolute path - use as-is (may fail on different OS)
 	return config.Path
 }
-

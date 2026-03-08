@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -20,10 +21,10 @@ var pluginManager *manager.Manager
 
 // AvailablePluginInfo represents a plugin available for installation
 type AvailablePluginInfo struct {
-	Name     string
-	Platform string
-	Format   string
-	Size     int64
+	Name      string
+	Platform  string
+	Format    string
+	Size      int64
 	AssetName string
 }
 
@@ -555,7 +556,7 @@ func createPluginTemplate(pluginName, author, description, outputDir string) err
 	fmt.Printf("1. cd %s\n", pluginDir)
 	fmt.Printf("2. Edit plugin.json to configure your plugin\n")
 	fmt.Printf("3. Implement your plugin in main.go\n")
-	fmt.Printf("4. Build: go build -o %s\n", pluginName)
+	fmt.Printf("4. Build: go mod tidy && go build -o %s\n", pluginName)
 	fmt.Printf("5. Install: portunix plugin install .\n")
 
 	return nil
@@ -582,9 +583,9 @@ func validatePlugin(pluginPath string) error {
 func installPluginFromGitHub(pluginName, version string, force bool) error {
 	const defaultOwner = "cassandragargoyle"
 	const defaultRepo = "portunix-plugins"
-	
+
 	var owner, repo string
-	
+
 	// Check if pluginName contains '/' (custom repository)
 	if strings.Contains(pluginName, "/") {
 		// Custom repository format: owner/repo
@@ -615,7 +616,7 @@ func installPluginFromGitHub(pluginName, version string, force bool) error {
 	if err != nil {
 		return handleRepositoryError(owner, repo, err)
 	}
-	
+
 	fmt.Printf("📂 Repository: %s (⭐ %d stars, 🍴 %d forks)\n", repoInfo.Description, repoInfo.Stars, repoInfo.Forks)
 
 	// Get release information
@@ -679,8 +680,8 @@ func installPluginFromGitHub(pluginName, version string, force bool) error {
 	// Download the asset
 	assetPath := filepath.Join(tempDir, asset.Name)
 	progressCallback := func(downloaded, total int64, percentage int) {
-		fmt.Printf("\r📥 Downloading... [%s] %d%% (%s/%s)", 
-			progressBar(percentage, 30), percentage, 
+		fmt.Printf("\r📥 Downloading... [%s] %d%% (%s/%s)",
+			progressBar(percentage, 30), percentage,
 			formatSize(downloaded), formatSize(total))
 	}
 
@@ -728,7 +729,7 @@ func listAvailablePlugins() error {
 	const defaultOwner = "cassandragargoyle"
 	const defaultRepo = "portunix-plugins"
 
-	// Initialize GitHub service with embedded token for default repository  
+	// Initialize GitHub service with embedded token for default repository
 	githubService := github.NewServiceForPortunixPlugins()
 
 	fmt.Printf("🔍 Fetching available plugins from %s/%s...\n", defaultOwner, defaultRepo)
@@ -746,14 +747,14 @@ func listAvailablePlugins() error {
 	}
 
 	fmt.Printf("📦 Latest release: %s (published %s)\n", release.TagName, release.PublishedAt)
-	
+
 	if release.Body != "" {
 		fmt.Printf("📝 Release notes: %s\n\n", release.Body)
 	}
 
 	// Parse available plugins from assets
 	plugins := parsePluginsFromAssets(release.Assets)
-	
+
 	if len(plugins) == 0 {
 		fmt.Println("❌ No plugins found in the latest release.")
 		fmt.Println("\nAvailable assets:")
@@ -825,21 +826,95 @@ func truncateString(s string, maxLen int) string {
 	return s[:maxLen-3] + "..."
 }
 
+// goVersion returns major.minor Go version for go.mod (e.g. "1.24")
+func goVersion() string {
+	v := runtime.Version() // e.g. "go1.24.2"
+	v = strings.TrimPrefix(v, "go")
+	parts := strings.SplitN(v, ".", 3)
+	if len(parts) >= 2 {
+		return parts[0] + "." + parts[1]
+	}
+	return v
+}
+
 // createPluginStructure creates basic plugin file structure
 func createPluginStructure(pluginDir, pluginName string) error {
 	// Create directories
-	dirs := []string{"src", "proto", "examples"}
+	dirs := []string{"src", "proto"}
 	for _, dir := range dirs {
 		if err := os.MkdirAll(filepath.Join(pluginDir, dir), 0755); err != nil {
 			return err
 		}
 	}
 
+	// Create go.mod
+	goModContent := fmt.Sprintf(`module %s
+
+go %s
+
+require (
+	google.golang.org/grpc v1.78.0
+)
+`, pluginName, goVersion())
+
+	if err := os.WriteFile(filepath.Join(pluginDir, "go.mod"), []byte(goModContent), 0644); err != nil {
+		return err
+	}
+
+	// Create .gitignore
+	gitignoreContent := fmt.Sprintf(`# Binary
+%s
+%s.exe
+
+# Go build cache
+*.test
+*.out
+`, pluginName, pluginName)
+
+	if err := os.WriteFile(filepath.Join(pluginDir, ".gitignore"), []byte(gitignoreContent), 0644); err != nil {
+		return err
+	}
+
+	// Create proto/plugin.proto
+	protoContent := fmt.Sprintf(`syntax = "proto3";
+
+package %s;
+
+option go_package = "./%s";
+
+// Plugin service definition
+service PluginService {
+  rpc Execute (ExecuteRequest) returns (ExecuteResponse);
+  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+message ExecuteRequest {
+  string command = 1;
+  map<string, string> parameters = 2;
+}
+
+message ExecuteResponse {
+  bool success = 1;
+  string output = 2;
+  string error = 3;
+}
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  bool healthy = 1;
+  string message = 2;
+}
+`, pluginName, pluginName)
+
+	if err := os.WriteFile(filepath.Join(pluginDir, "proto", "plugin.proto"), []byte(protoContent), 0644); err != nil {
+		return err
+	}
+
 	// Create main.go template
 	mainGoContent := fmt.Sprintf(`package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net"
@@ -848,7 +923,6 @@ import (
 	"syscall"
 
 	"google.golang.org/grpc"
-	// Import your plugin protocol definitions
 )
 
 func main() {
@@ -865,7 +939,7 @@ func main() {
 	}
 
 	server := grpc.NewServer()
-	
+
 	// Register your plugin service
 	// pb.RegisterPluginServiceServer(server, &YourPluginService{})
 
@@ -886,16 +960,14 @@ func main() {
 }
 `, pluginName)
 
-	mainGoPath := filepath.Join(pluginDir, "main.go")
-	if err := os.WriteFile(mainGoPath, []byte(mainGoContent), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(pluginDir, "main.go"), []byte(mainGoContent), 0644); err != nil {
 		return err
 	}
 
 	// Create README.md
-	readmeContent := fmt.Sprintf("# %s Plugin\n\nA Portunix plugin for %s functionality.\n\n## Building\n\n```bash\ngo build -o %s\n```\n\n## Installation\n\n```bash\nportunix plugin install .\n```\n\n## Usage\n\n```bash\nportunix plugin enable %s\nportunix plugin start %s\n```\n", pluginName, pluginName, pluginName, pluginName, pluginName)
+	readmeContent := fmt.Sprintf("# %s Plugin\n\nA Portunix plugin for %s functionality.\n\n## Building\n\n```bash\ngo mod tidy\ngo build -o %s\n```\n\n## Installation\n\n```bash\nportunix plugin install .\n```\n\n## Usage\n\n```bash\nportunix plugin enable %s\nportunix plugin start %s\n```\n", pluginName, pluginName, pluginName, pluginName, pluginName)
 
-	readmePath := filepath.Join(pluginDir, "README.md")
-	return os.WriteFile(readmePath, []byte(readmeContent), 0644)
+	return os.WriteFile(filepath.Join(pluginDir, "README.md"), []byte(readmeContent), 0644)
 }
 
 // Helper functions for GitHub plugin installation
@@ -1019,7 +1091,7 @@ func findPluginManifest(searchDir string) (string, error) {
 func findPluginAssetInRelease(release *github.Release, pluginName, platform string) *github.Asset {
 	// Expected asset naming convention for plugins: pluginName-platform.ext
 	// Examples: agile-software-development-linux-amd64.tar.gz, agile-software-development-windows-amd64.zip
-	
+
 	expectedPatterns := []string{
 		fmt.Sprintf("%s-%s.tar.gz", pluginName, platform),
 		fmt.Sprintf("%s-%s.tgz", pluginName, platform),
@@ -1029,7 +1101,7 @@ func findPluginAssetInRelease(release *github.Release, pluginName, platform stri
 		fmt.Sprintf("%s.tgz", pluginName),
 		fmt.Sprintf("%s.zip", pluginName),
 	}
-	
+
 	// First try exact matches
 	for _, pattern := range expectedPatterns {
 		for _, asset := range release.Assets {
@@ -1038,29 +1110,29 @@ func findPluginAssetInRelease(release *github.Release, pluginName, platform stri
 			}
 		}
 	}
-	
+
 	// Then try partial matches (in case of different naming conventions)
 	for _, asset := range release.Assets {
 		assetLower := strings.ToLower(asset.Name)
 		pluginLower := strings.ToLower(pluginName)
 		platformLower := strings.ToLower(platform)
-		
+
 		// Check if asset contains plugin name and platform
 		if strings.Contains(assetLower, pluginLower) && strings.Contains(assetLower, platformLower) {
 			return asset
 		}
 	}
-	
+
 	// Finally try just plugin name match (for universal assets)
 	for _, asset := range release.Assets {
 		assetLower := strings.ToLower(asset.Name)
 		pluginLower := strings.ToLower(pluginName)
-		
+
 		if strings.Contains(assetLower, pluginLower) {
 			return asset
 		}
 	}
-	
+
 	return nil
 }
 
@@ -1072,13 +1144,13 @@ func findPluginManifestInDefaultRepo(searchDir, pluginName string) (string, erro
 		filepath.Join(searchDir, pluginName, "plugin.json"),
 		filepath.Join(searchDir, "plugin.json"), // Fallback to root
 	}
-	
+
 	for _, path := range possiblePaths {
 		if _, err := os.Stat(path); err == nil {
 			return path, nil
 		}
 	}
-	
+
 	// If not found in expected locations, search recursively
 	return findPluginManifest(searchDir)
 }
@@ -1087,7 +1159,7 @@ func findPluginManifestInDefaultRepo(searchDir, pluginName string) (string, erro
 func parsePluginsFromAssets(assets []*github.Asset) []AvailablePluginInfo {
 	var plugins []AvailablePluginInfo
 	pluginMap := make(map[string]bool) // To avoid duplicates
-	
+
 	for _, asset := range assets {
 		pluginInfo := parsePluginFromAssetName(asset)
 		if pluginInfo != nil {
@@ -1099,26 +1171,26 @@ func parsePluginsFromAssets(assets []*github.Asset) []AvailablePluginInfo {
 			}
 		}
 	}
-	
+
 	return plugins
 }
 
 // parsePluginFromAssetName extracts plugin information from asset name
 func parsePluginFromAssetName(asset *github.Asset) *AvailablePluginInfo {
 	name := asset.Name
-	
+
 	// Expected patterns:
 	// pluginname-platform.ext
 	// pluginname.ext (universal)
-	
+
 	// Remove file extensions
 	var pluginName, platform, format string
-	
+
 	if strings.HasSuffix(name, ".tar.gz") {
 		format = "tar.gz"
 		name = strings.TrimSuffix(name, ".tar.gz")
 	} else if strings.HasSuffix(name, ".tgz") {
-		format = "tgz" 
+		format = "tgz"
 		name = strings.TrimSuffix(name, ".tgz")
 	} else if strings.HasSuffix(name, ".zip") {
 		format = "zip"
@@ -1127,14 +1199,14 @@ func parsePluginFromAssetName(asset *github.Asset) *AvailablePluginInfo {
 		// Unknown format, skip
 		return nil
 	}
-	
+
 	// Try to parse platform
 	platformPatterns := []string{
 		"linux-amd64", "linux-386", "linux-arm64", "linux-arm",
 		"windows-amd64", "windows-386",
 		"darwin-amd64", "darwin-arm64",
 	}
-	
+
 	platform = "universal"
 	for _, p := range platformPatterns {
 		if strings.HasSuffix(name, "-"+p) {
@@ -1143,16 +1215,16 @@ func parsePluginFromAssetName(asset *github.Asset) *AvailablePluginInfo {
 			break
 		}
 	}
-	
+
 	if platform == "universal" {
 		pluginName = name
 	}
-	
+
 	// Skip if plugin name is empty or looks like a system file
 	if pluginName == "" || strings.HasPrefix(pluginName, ".") {
 		return nil
 	}
-	
+
 	return &AvailablePluginInfo{
 		Name:      pluginName,
 		Platform:  platform,
@@ -1167,48 +1239,48 @@ func parsePluginFromAssetName(asset *github.Asset) *AvailablePluginInfo {
 // handleRepositoryError provides user-friendly error messages for repository access issues
 func handleRepositoryError(owner, repo string, err error) error {
 	errMsg := err.Error()
-	
+
 	if strings.Contains(errMsg, "404") || strings.Contains(errMsg, "Not Found") {
 		fmt.Printf("❌ Repository not found: %s/%s\n", owner, repo)
 		fmt.Println("\nPossible issues:")
 		fmt.Println("  • Repository doesn't exist")
 		fmt.Println("  • Repository is private and you don't have access")
 		fmt.Println("  • Repository name is misspelled")
-		
+
 		if owner == "cassandragargoyle" && repo == "portunix-plugins" {
 			fmt.Println("\n💡 The official Portunix plugins repository is not yet created.")
 			fmt.Println("💡 You can install plugins from custom repositories using: owner/repo format")
 			fmt.Println("💡 Example: portunix plugin install-github microsoft/vscode")
 		}
-		
+
 		return fmt.Errorf("repository %s/%s not accessible", owner, repo)
 	}
-	
+
 	if strings.Contains(errMsg, "rate limit") {
 		fmt.Println("❌ GitHub API rate limit exceeded")
 		fmt.Println("\n💡 Set GITHUB_TOKEN environment variable to increase rate limits")
 		fmt.Println("💡 Create token at: https://github.com/settings/tokens")
 		return fmt.Errorf("GitHub API rate limit exceeded")
 	}
-	
+
 	if strings.Contains(errMsg, "timeout") || strings.Contains(errMsg, "connection") {
 		fmt.Println("❌ Network connection error")
 		fmt.Println("\n💡 Check your internet connection")
 		fmt.Println("💡 GitHub might be temporarily unavailable")
 		return fmt.Errorf("network error connecting to GitHub")
 	}
-	
+
 	return fmt.Errorf("failed to access repository %s/%s: %w", owner, repo, err)
 }
 
 // handleReleaseError provides user-friendly error messages for release access issues
 func handleReleaseError(owner, repo string, err error) error {
 	errMsg := err.Error()
-	
+
 	if strings.Contains(errMsg, "no releases found") || strings.Contains(errMsg, "404") {
 		fmt.Printf("📦 Repository %s/%s exists but has no releases\n", owner, repo)
 		fmt.Println("\nThis repository doesn't have any published releases yet.")
-		
+
 		if owner == "cassandragargoyle" && repo == "portunix-plugins" {
 			fmt.Println("\n💡 The official Portunix plugins repository is under development.")
 			fmt.Println("💡 Check back later for available plugins.")
@@ -1216,10 +1288,10 @@ func handleReleaseError(owner, repo string, err error) error {
 			fmt.Println("\n💡 Contact the repository maintainer to publish releases.")
 			fmt.Println("💡 Or try installing from a different repository.")
 		}
-		
+
 		return fmt.Errorf("no releases available in %s/%s", owner, repo)
 	}
-	
+
 	return handleRepositoryError(owner, repo, err)
 }
 

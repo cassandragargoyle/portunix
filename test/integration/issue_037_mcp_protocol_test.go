@@ -44,7 +44,7 @@ type ClientInfo struct {
 func TestIssue037MCPProtocolCommunication(t *testing.T) {
 	suite := &TestMCPProtocolCommunication{}
 	suite.setupBinary(t)
-	
+
 	t.Run("TC_MCP_01_InitializeHandshake", suite.testMCPInitializeHandshake)
 	t.Run("TC_MCP_02_ListToolsRequest", suite.testMCPListToolsRequest)
 	t.Run("TC_MCP_03_InvalidMessageHandling", suite.testMCPInvalidMessageHandling)
@@ -56,7 +56,7 @@ func (suite *TestMCPProtocolCommunication) setupBinary(t *testing.T) {
 	projectRoot := "../.."
 	binaryName := "portunix"
 	suite.binaryPath = filepath.Join(projectRoot, binaryName)
-	
+
 	// Check if binary exists, if not build it
 	if _, err := os.Stat(suite.binaryPath); os.IsNotExist(err) {
 		t.Log("Building portunix binary for MCP protocol testing...")
@@ -71,33 +71,33 @@ func (suite *TestMCPProtocolCommunication) setupBinary(t *testing.T) {
 // TC_MCP_01: Test MCP Initialize Handshake
 func (suite *TestMCPProtocolCommunication) testMCPInitializeHandshake(t *testing.T) {
 	t.Log("Testing MCP Initialize Handshake")
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	// Start MCP server in stdio mode
 	cmd := exec.CommandContext(ctx, suite.binaryPath, "mcp", "serve", "--mode", "stdio")
-	
+
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		t.Fatalf("Failed to get stdin pipe: %v", err)
 	}
-	
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatalf("Failed to get stdout pipe: %v", err)
 	}
-	
+
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		t.Fatalf("Failed to get stderr pipe: %v", err)
 	}
-	
+
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("Failed to start MCP server: %v", err)
 	}
 	defer cmd.Process.Kill()
-	
+
 	// Wait for server to start
 	go func() {
 		scanner := bufio.NewScanner(stderr)
@@ -109,9 +109,9 @@ func (suite *TestMCPProtocolCommunication) testMCPInitializeHandshake(t *testing
 			}
 		}
 	}()
-	
+
 	time.Sleep(1 * time.Second)
-	
+
 	// Send MCP initialize request
 	initRequest := MCPMessage{
 		JSONRpc: "2.0",
@@ -130,16 +130,16 @@ func (suite *TestMCPProtocolCommunication) testMCPInitializeHandshake(t *testing
 			},
 		},
 	}
-	
+
 	// Send request
 	requestBytes, _ := json.Marshal(initRequest)
 	requestLine := string(requestBytes) + "\n"
-	
+
 	t.Logf("Sending initialize request: %s", requestLine)
 	if _, err := stdin.Write([]byte(requestLine)); err != nil {
 		t.Fatalf("Failed to send initialize request: %v", err)
 	}
-	
+
 	// Read response with timeout
 	responseChan := make(chan string, 1)
 	go func() {
@@ -153,33 +153,33 @@ func (suite *TestMCPProtocolCommunication) testMCPInitializeHandshake(t *testing
 		}
 		responseChan <- string(line)
 	}()
-	
+
 	select {
 	case response := <-responseChan:
 		t.Logf("Received response: %s", response)
-		
+
 		// Parse response
 		var responseMsg MCPMessage
 		if err := json.Unmarshal([]byte(response), &responseMsg); err != nil {
 			t.Errorf("Failed to parse response JSON: %v", err)
 			return
 		}
-		
+
 		// Validate response
 		if responseMsg.JSONRpc != "2.0" {
 			t.Errorf("Expected JSON-RPC 2.0, got %s", responseMsg.JSONRpc)
 		}
-		
+
 		if responseMsg.ID != 1 {
 			t.Errorf("Expected ID 1, got %v", responseMsg.ID)
 		}
-		
+
 		if responseMsg.Result == nil {
 			t.Errorf("Expected result in initialize response, got nil")
 		} else {
 			t.Log("Initialize handshake successful")
 		}
-		
+
 	case <-time.After(5 * time.Second):
 		t.Error("Timeout waiting for initialize response")
 	}
@@ -188,33 +188,33 @@ func (suite *TestMCPProtocolCommunication) testMCPInitializeHandshake(t *testing
 // TC_MCP_02: Test MCP List Tools Request
 func (suite *TestMCPProtocolCommunication) testMCPListToolsRequest(t *testing.T) {
 	t.Log("Testing MCP List Tools Request")
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	// Start MCP server
 	cmd := exec.CommandContext(ctx, suite.binaryPath, "mcp", "serve", "--mode", "stdio")
-	
+
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		t.Fatalf("Failed to get stdin pipe: %v", err)
 	}
-	
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatalf("Failed to get stdout pipe: %v", err)
 	}
-	
+
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("Failed to start MCP server: %v", err)
 	}
 	defer cmd.Process.Kill()
-	
+
 	time.Sleep(1 * time.Second)
-	
+
 	// Send initialize first
 	suite.sendInitialize(t, stdin, stdout)
-	
+
 	// Send list tools request
 	listToolsRequest := MCPMessage{
 		JSONRpc: "2.0",
@@ -222,40 +222,40 @@ func (suite *TestMCPProtocolCommunication) testMCPListToolsRequest(t *testing.T)
 		Method:  "tools/list",
 		Params:  map[string]interface{}{},
 	}
-	
+
 	requestBytes, _ := json.Marshal(listToolsRequest)
 	requestLine := string(requestBytes) + "\n"
-	
+
 	t.Logf("Sending list tools request: %s", requestLine)
 	if _, err := stdin.Write([]byte(requestLine)); err != nil {
 		t.Fatalf("Failed to send list tools request: %v", err)
 	}
-	
+
 	// Read response
 	reader := bufio.NewReader(stdout)
 	response, _, err := reader.ReadLine()
 	if err != nil {
 		t.Fatalf("Failed to read list tools response: %v", err)
 	}
-	
+
 	t.Logf("Received tools list: %s", string(response))
-	
+
 	// Parse response
 	var responseMsg MCPMessage
 	if err := json.Unmarshal(response, &responseMsg); err != nil {
 		t.Errorf("Failed to parse response JSON: %v", err)
 		return
 	}
-	
+
 	// Validate response
 	if responseMsg.JSONRpc != "2.0" {
 		t.Errorf("Expected JSON-RPC 2.0, got %s", responseMsg.JSONRpc)
 	}
-	
+
 	if responseMsg.ID != 2 {
 		t.Errorf("Expected ID 2, got %v", responseMsg.ID)
 	}
-	
+
 	if responseMsg.Result == nil {
 		t.Errorf("Expected tools list result, got nil")
 	} else {
@@ -266,54 +266,54 @@ func (suite *TestMCPProtocolCommunication) testMCPListToolsRequest(t *testing.T)
 // TC_MCP_03: Test Invalid Message Handling
 func (suite *TestMCPProtocolCommunication) testMCPInvalidMessageHandling(t *testing.T) {
 	t.Log("Testing MCP Invalid Message Handling")
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	// Start MCP server
 	cmd := exec.CommandContext(ctx, suite.binaryPath, "mcp", "serve", "--mode", "stdio")
-	
+
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		t.Fatalf("Failed to get stdin pipe: %v", err)
 	}
-	
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatalf("Failed to get stdout pipe: %v", err)
 	}
-	
+
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("Failed to start MCP server: %v", err)
 	}
 	defer cmd.Process.Kill()
-	
+
 	time.Sleep(1 * time.Second)
-	
+
 	// Send invalid JSON
 	invalidJSON := "{invalid json}\n"
-	
+
 	t.Logf("Sending invalid JSON: %s", invalidJSON)
 	if _, err := stdin.Write([]byte(invalidJSON)); err != nil {
 		t.Fatalf("Failed to send invalid JSON: %v", err)
 	}
-	
+
 	// Read error response
 	reader := bufio.NewReader(stdout)
 	response, _, err := reader.ReadLine()
 	if err != nil {
 		t.Fatalf("Failed to read error response: %v", err)
 	}
-	
+
 	t.Logf("Received error response: %s", string(response))
-	
+
 	// Parse response
 	var responseMsg MCPMessage
 	if err := json.Unmarshal(response, &responseMsg); err != nil {
 		t.Errorf("Failed to parse error response JSON: %v", err)
 		return
 	}
-	
+
 	// Should contain error
 	if responseMsg.Error == nil {
 		t.Errorf("Expected error response for invalid JSON, got nil")
@@ -325,33 +325,33 @@ func (suite *TestMCPProtocolCommunication) testMCPInvalidMessageHandling(t *test
 // TC_MCP_04: Test Call Tool Request
 func (suite *TestMCPProtocolCommunication) testMCPCallToolRequest(t *testing.T) {
 	t.Log("Testing MCP Call Tool Request")
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	// Start MCP server
 	cmd := exec.CommandContext(ctx, suite.binaryPath, "mcp", "serve", "--mode", "stdio")
-	
+
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		t.Fatalf("Failed to get stdin pipe: %v", err)
 	}
-	
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		t.Fatalf("Failed to get stdout pipe: %v", err)
 	}
-	
+
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("Failed to start MCP server: %v", err)
 	}
 	defer cmd.Process.Kill()
-	
+
 	time.Sleep(1 * time.Second)
-	
+
 	// Send initialize first
 	suite.sendInitialize(t, stdin, stdout)
-	
+
 	// Send call tool request (using correct tool name from list)
 	callToolRequest := MCPMessage{
 		JSONRpc: "2.0",
@@ -362,40 +362,40 @@ func (suite *TestMCPProtocolCommunication) testMCPCallToolRequest(t *testing.T) 
 			"arguments": map[string]interface{}{},
 		},
 	}
-	
+
 	requestBytes, _ := json.Marshal(callToolRequest)
 	requestLine := string(requestBytes) + "\n"
-	
+
 	t.Logf("Sending call tool request: %s", requestLine)
 	if _, err := stdin.Write([]byte(requestLine)); err != nil {
 		t.Fatalf("Failed to send call tool request: %v", err)
 	}
-	
+
 	// Read response
 	reader := bufio.NewReader(stdout)
 	response, _, err := reader.ReadLine()
 	if err != nil {
 		t.Fatalf("Failed to read call tool response: %v", err)
 	}
-	
+
 	t.Logf("Received tool response: %s", string(response))
-	
+
 	// Parse response
 	var responseMsg MCPMessage
 	if err := json.Unmarshal(response, &responseMsg); err != nil {
 		t.Errorf("Failed to parse response JSON: %v", err)
 		return
 	}
-	
+
 	// Validate response structure
 	if responseMsg.JSONRpc != "2.0" {
 		t.Errorf("Expected JSON-RPC 2.0, got %s", responseMsg.JSONRpc)
 	}
-	
+
 	if responseMsg.ID != 3 {
 		t.Errorf("Expected ID 3, got %v", responseMsg.ID)
 	}
-	
+
 	// Either result or error should be present
 	if responseMsg.Result == nil && responseMsg.Error == nil {
 		t.Errorf("Expected either result or error in call tool response")
@@ -423,14 +423,14 @@ func (suite *TestMCPProtocolCommunication) sendInitialize(t *testing.T, stdin io
 			},
 		},
 	}
-	
+
 	requestBytes, _ := json.Marshal(initRequest)
 	requestLine := string(requestBytes) + "\n"
-	
+
 	if _, err := stdin.Write([]byte(requestLine)); err != nil {
 		t.Fatalf("Failed to send initialize request: %v", err)
 	}
-	
+
 	// Read initialize response
 	reader := bufio.NewReader(stdout)
 	_, _, err := reader.ReadLine()

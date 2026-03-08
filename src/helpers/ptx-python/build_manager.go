@@ -28,15 +28,15 @@ func NewBuildManager() (*BuildManager, error) {
 
 // BuildExeOptions holds options for building executables with PyInstaller
 type BuildExeOptions struct {
-	Script     string
-	Name       string
-	Icon       string
-	OneFile    bool
-	Console    bool
-	Windowed   bool
-	VenvName   string
-	OutputDir  string
-	ExtraArgs  []string
+	Script    string
+	Name      string
+	Icon      string
+	OneFile   bool
+	Console   bool
+	Windowed  bool
+	VenvName  string
+	OutputDir string
+	ExtraArgs []string
 }
 
 // BuildFreezeOptions holds options for building with cx_Freeze

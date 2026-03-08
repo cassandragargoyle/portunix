@@ -29,10 +29,10 @@ type PackageRegistry struct {
 
 // Package represents a package definition in the new format
 type Package struct {
-	APIVersion string       `json:"apiVersion"`
-	Kind       string       `json:"kind"`
-	Metadata   Metadata     `json:"metadata"`
-	Spec       PackageSpec  `json:"spec"`
+	APIVersion string      `json:"apiVersion"`
+	Kind       string      `json:"kind"`
+	Metadata   Metadata    `json:"metadata"`
+	Spec       PackageSpec `json:"spec"`
 }
 
 // Metadata contains package metadata
@@ -51,41 +51,41 @@ type Metadata struct {
 
 // PackageSpec contains the package specification
 type PackageSpec struct {
-	HasVariants  bool                      `json:"hasVariants"`
-	Platforms    map[string]PlatformSpec   `json:"platforms"`
-	Sources      map[string]SourceSpec     `json:"sources,omitempty"`
-	Verification *VerificationSpec         `json:"verification,omitempty"`
-	AIPrompts    *AIPrompts                `json:"aiPrompts,omitempty"`
-	Dependencies []string                  `json:"dependencies,omitempty"`
-	Templates    []string                  `json:"templates,omitempty"`
+	HasVariants  bool                    `json:"hasVariants"`
+	Platforms    map[string]PlatformSpec `json:"platforms"`
+	Sources      map[string]SourceSpec   `json:"sources,omitempty"`
+	Verification *VerificationSpec       `json:"verification,omitempty"`
+	AIPrompts    *AIPrompts              `json:"aiPrompts,omitempty"`
+	Dependencies []string                `json:"dependencies,omitempty"`
+	Templates    []string                `json:"templates,omitempty"`
 }
 
 // PlatformSpec represents platform-specific configuration
 type PlatformSpec struct {
-	Type         string                   `json:"type"`
-	Variants     map[string]VariantSpec   `json:"variants"`
-	InstallArgs  []string                 `json:"installArgs,omitempty"`
-	Environment  map[string]string        `json:"environment,omitempty"`
-	Verification *VerificationSpec        `json:"verification,omitempty"`
+	Type         string                 `json:"type"`
+	Variants     map[string]VariantSpec `json:"variants"`
+	InstallArgs  []string               `json:"installArgs,omitempty"`
+	Environment  map[string]string      `json:"environment,omitempty"`
+	Verification *VerificationSpec      `json:"verification,omitempty"`
 }
 
 // VariantSpec represents a specific variant of a package
 type VariantSpec struct {
-	Version       string                `json:"version"`
-	Type          string                `json:"type,omitempty"`
-	URL           string                `json:"url,omitempty"`
-	URLs          map[string]string     `json:"urls,omitempty"`
-	Packages      []string              `json:"packages,omitempty"`
-	InstallScript string                `json:"installScript,omitempty"`
-	InstallPath   string                `json:"installPath,omitempty"`
-	ExtractTo     string                `json:"extractTo,omitempty"`
-	Extract       bool                  `json:"extract,omitempty"`
-	Binary        string                `json:"binary,omitempty"`
-	RequiresSudo  bool                  `json:"requiresSudo,omitempty"`
-	PostInstall   []string              `json:"postInstall,omitempty"`
-	InstallArgs   []string              `json:"installArgs,omitempty"`
-	Distributions interface{}           `json:"distributions,omitempty"`
-	Checksum      map[string]string     `json:"checksum,omitempty"`
+	Version       string            `json:"version"`
+	Type          string            `json:"type,omitempty"`
+	URL           string            `json:"url,omitempty"`
+	URLs          map[string]string `json:"urls,omitempty"`
+	Packages      []string          `json:"packages,omitempty"`
+	InstallScript string            `json:"installScript,omitempty"`
+	InstallPath   string            `json:"installPath,omitempty"`
+	ExtractTo     string            `json:"extractTo,omitempty"`
+	Extract       bool              `json:"extract,omitempty"`
+	Binary        string            `json:"binary,omitempty"`
+	RequiresSudo  bool              `json:"requiresSudo,omitempty"`
+	PostInstall   []string          `json:"postInstall,omitempty"`
+	InstallArgs   []string          `json:"installArgs,omitempty"`
+	Distributions interface{}       `json:"distributions,omitempty"`
+	Checksum      map[string]string `json:"checksum,omitempty"`
 }
 
 // SourceSpec represents source information for a package
@@ -114,9 +114,9 @@ type AIPrompts struct {
 
 // RegistryIndex represents the registry index
 type RegistryIndex struct {
-	APIVersion string           `json:"apiVersion"`
-	Kind       string           `json:"kind"`
-	Metadata   IndexMetadata    `json:"metadata"`
+	APIVersion string            `json:"apiVersion"`
+	Kind       string            `json:"kind"`
+	Metadata   IndexMetadata     `json:"metadata"`
 	Spec       RegistryIndexSpec `json:"spec"`
 }
 

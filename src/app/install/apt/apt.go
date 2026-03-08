@@ -513,12 +513,12 @@ func determineSudoPrefix() string {
 	if isRunningAsRoot() {
 		return "" // No sudo needed
 	}
-	
+
 	// Check if sudo is available
 	if isSudoAvailable() {
 		return "sudo " // Use sudo with space
 	}
-	
+
 	// No sudo available - commands may fail, but try without
 	fmt.Printf("⚠️  Warning: Not running as root and sudo not available. Some operations may fail.\n")
 	return ""
@@ -529,13 +529,13 @@ func isRunningAsRoot() bool {
 	if runtime.GOOS == "windows" {
 		return false // Windows doesn't use UID 0 concept
 	}
-	
+
 	cmd := exec.Command("id", "-u")
 	output, err := cmd.Output()
 	if err != nil {
 		return false
 	}
-	
+
 	uid := strings.TrimSpace(string(output))
 	return uid == "0"
 }
@@ -545,7 +545,7 @@ func isSudoAvailable() bool {
 	if runtime.GOOS == "windows" {
 		return false // Windows doesn't use sudo
 	}
-	
+
 	cmd := exec.Command("which", "sudo")
 	return cmd.Run() == nil
 }

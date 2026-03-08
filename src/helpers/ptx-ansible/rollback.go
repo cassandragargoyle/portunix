@@ -11,21 +11,21 @@ import (
 
 // RollbackManager handles error recovery and rollback operations
 type RollbackManager struct {
-	actions         []ExecutedAction
-	ptxbook         *PtxbookFile
-	rollbackConfig  *PtxbookRollback
-	templateEngine  *TemplateEngine
-	logFile         string
-	enabled         bool
+	actions        []ExecutedAction
+	ptxbook        *PtxbookFile
+	rollbackConfig *PtxbookRollback
+	templateEngine *TemplateEngine
+	logFile        string
+	enabled        bool
 }
 
 // ExecutedAction represents a completed action that may need rollback
 type ExecutedAction struct {
-	Type        string    // "package_install", "ansible_playbook"
-	Target      string    // Package name or playbook path
-	Details     string    // Additional details for rollback
+	Type        string // "package_install", "ansible_playbook"
+	Target      string // Package name or playbook path
+	Details     string // Additional details for rollback
 	Timestamp   time.Time
-	Environment string    // "local", "container", "virt"
+	Environment string // "local", "container", "virt"
 	Success     bool
 }
 

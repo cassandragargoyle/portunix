@@ -73,7 +73,7 @@ func TestContainerRunCommand_RuntimeDelegation(t *testing.T) {
 
 			// Test that the correct runtime method would be called
 			// (This is a simplified test - in real implementation, we'd need dependency injection)
-			
+
 			// Verify runtime selection logic
 			assert.Equal(t, tc.expectedRuntime, tc.mockRuntime, "Runtime selection should match expected")
 		})
@@ -83,15 +83,15 @@ func TestContainerRunCommand_RuntimeDelegation(t *testing.T) {
 // TestContainerRunCommand_OptionsTranslation tests flag-to-options translation
 func TestContainerRunCommand_OptionsTranslation(t *testing.T) {
 	testCases := []struct {
-		name             string
-		detach           bool
-		interactive      bool
-		tty              bool
-		containerName    string
-		ports            []string
-		volumes          []string
-		env              []string
-		expectedOptions  interface{}
+		name            string
+		detach          bool
+		interactive     bool
+		tty             bool
+		containerName   string
+		ports           []string
+		volumes         []string
+		env             []string
+		expectedOptions interface{}
 	}{
 		{
 			name:          "TC-038-I003: Docker options translation",
@@ -192,12 +192,12 @@ func TestContainerRunCommand_ErrorHandling(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			// Test error handling scenarios
 			assert.NotNil(t, tc.mockError, "Mock error should be set for test case")
-			
+
 			// In a real implementation, we would:
 			// 1. Inject the error through dependency injection
 			// 2. Execute the command
 			// 3. Assert that the error is properly handled and propagated
-			
+
 			// For now, we verify the test structure is correct
 			assert.Contains(t, tc.scenario, "error", "Test scenario should indicate error condition")
 		})
@@ -207,12 +207,12 @@ func TestContainerRunCommand_ErrorHandling(t *testing.T) {
 // TestContainerRunCommand_ConfigurationValidation tests configuration and runtime detection
 func TestContainerRunCommand_ConfigurationValidation(t *testing.T) {
 	testCases := []struct {
-		name                string
-		configuredRuntime   string
-		dockerAvailable     bool
-		podmanAvailable     bool
-		expectedRuntime     string
-		expectError         bool
+		name              string
+		configuredRuntime string
+		dockerAvailable   bool
+		podmanAvailable   bool
+		expectedRuntime   string
+		expectError       bool
 	}{
 		{
 			name:              "TC-038-I008: Docker configured and available",

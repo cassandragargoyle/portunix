@@ -1,17 +1,20 @@
 # Go Code Style Guidelines
 
 ## Purpose
+
 This document defines the Go coding standards for CassandraGargoyle projects, based on established patterns from the Portunix project and Go community best practices.
 
 ## General Principles
 
 ### 1. Follow Go Conventions
+
 - Use `go fmt` for all code formatting
 - Follow standard Go naming conventions
 - Use `gofmt`, `go vet`, and `golangci-lint` for code quality
 - Embrace Go idioms: "Don't communicate by sharing memory; share memory by communicating"
 
 ### 2. Code Organization
+
 - Use Go modules for dependency management
 - Organize code into logical packages
 - Keep packages focused and cohesive
@@ -20,8 +23,10 @@ This document defines the Go coding standards for CassandraGargoyle projects, ba
 ## File and Package Naming
 
 ### File Naming
+
 Use **snake_case** with descriptive prefixes:
-```
+
+```text
 ✅ install_linux.go
 ✅ install_windows.go  
 ✅ docker_test.go
@@ -31,7 +36,9 @@ Use **snake_case** with descriptive prefixes:
 ```
 
 ### Platform-Specific Files
+
 Use build tags and descriptive suffixes:
+
 ```go
 // +build linux
 // install_linux.go
@@ -41,6 +48,7 @@ Use build tags and descriptive suffixes:
 ```
 
 ### Package Names
+
 - Use lowercase, single-word names when possible
 - Use descriptive names that reflect the package purpose
 - Examples: `install`, `docker`, `datastore`, `plugins`
@@ -48,7 +56,8 @@ Use build tags and descriptive suffixes:
 ## Package Structure
 
 ### Recommended Hierarchy
-```
+
+```text
 project/
 ├── main.go                 # Application entry point
 ├── cmd/                    # Command implementations (cobra commands)
@@ -68,7 +77,9 @@ project/
 ```
 
 ### Module Organization
+
 Use local module replacements for large projects:
+
 ```go
 // go.mod
 replace project.com/app => ./app
@@ -78,11 +89,13 @@ replace project.com/cmd => ./cmd
 ## Naming Conventions
 
 ### Functions and Methods
+
 - **Exported**: PascalCase (`Install`, `GetOSName`, `LoadConfig`)
 - **Unexported**: camelCase (`loadDefaultConfig`, `parseVersion`)
 - Use descriptive verbs: `Get`, `Set`, `Load`, `Save`, `Create`, `Delete`
 
 ### Variables
+
 - **Constants**: PascalCase or ALL_CAPS for package constants
 - **Package variables**: PascalCase for exported, camelCase for unexported
 - **Local variables**: Concise camelCase
@@ -104,6 +117,7 @@ func processRequest() {
 ```
 
 ### Interfaces
+
 - Use descriptive names with meaningful suffixes
 - Prefer small, focused interfaces
 - Use `Interface` suffix for comprehensive interfaces
@@ -122,6 +136,7 @@ type Writer interface {
 ## Import Organization
 
 ### Standard Import Grouping
+
 ```go
 import (
     // Standard library
@@ -141,7 +156,9 @@ import (
 ```
 
 ### Import Aliases
+
 Use aliases for clarity and conflict resolution:
+
 ```go
 import (
     \"context\"
@@ -153,6 +170,7 @@ import (
 ## Error Handling
 
 ### Standard Patterns
+
 1. **Early Return**: Handle errors immediately and return early
 2. **Error Wrapping**: Use `fmt.Errorf` with `%w` verb
 3. **Nil Checks**: Always check for nil before dereferencing
@@ -185,7 +203,9 @@ func loadOptionalConfig() *Config {
 ```
 
 ### Error Types
+
 Create custom error types for domain-specific errors:
+
 ```go
 type ConfigError struct {
     Field string
@@ -205,6 +225,7 @@ func (e ConfigError) Unwrap() error {
 ## Struct and Interface Design
 
 ### Struct Definition
+
 ```go
 type PluginConfig struct {
     Name            string            `json:\"name\" yaml:\"name\"`
@@ -220,6 +241,7 @@ type PluginConfig struct {
 ```
 
 ### Interface Design Best Practices
+
 - Keep interfaces small and focused
 - Use context.Context as first parameter for long-running operations
 - Return meaningful errors
@@ -237,6 +259,7 @@ type PackageManager interface {
 ## Comments and Documentation
 
 ### Package Documentation
+
 ```go
 // Package install provides cross-platform software installation capabilities.
 // 
@@ -246,6 +269,7 @@ package install
 ```
 
 ### Function Documentation
+
 ```go
 // InstallPackage installs the specified package using the appropriate package manager.
 // It returns an error if the installation fails or if no suitable package manager is found.
@@ -258,6 +282,7 @@ func InstallPackage(ctx context.Context, packageName string) error {
 ```
 
 ### Inline Comments
+
 - Explain complex logic, not obvious code
 - Use comments to explain \"why\", not \"what\"
 - Keep comments up to date with code changes
@@ -273,6 +298,7 @@ if runtime.GOOS == \"windows\" && isWindowsSandbox() {
 ## Code Patterns and Idioms
 
 ### Configuration Pattern
+
 ```go
 type Config struct {
     // Embed default configuration
@@ -297,6 +323,7 @@ func LoadConfig(path string) (*Config, error) {
 ```
 
 ### String Enumeration Pattern
+
 ```go
 type Status int
 
@@ -322,6 +349,7 @@ func (s Status) String() string {
 ```
 
 ### Factory Pattern
+
 ```go
 type PackageManager interface {
     Install(pkg string) error
@@ -344,11 +372,13 @@ func NewPackageManager() PackageManager {
 ## Testing Guidelines
 
 ### Test File Organization
+
 - Use `*_test.go` suffix
 - Keep tests in the same package (prefer whitebox testing)
 - Use `internal/testutils` for shared test utilities
 
 ### Test Function Naming
+
 ```go
 func TestInstallPackage(t *testing.T) {
     // Basic functionality test
@@ -364,6 +394,7 @@ func BenchmarkInstallPackage(b *testing.B) {
 ```
 
 ### Test Structure
+
 ```go
 func TestFunction(t *testing.T) {
     // Arrange
@@ -383,7 +414,9 @@ func TestFunction(t *testing.T) {
 ## Build and Deployment
 
 ### Build Tags
+
 Use build tags for platform-specific code:
+
 ```go
 // +build linux darwin
 
@@ -395,7 +428,9 @@ package windows
 ```
 
 ### Embedded Assets
+
 Use `//go:embed` for static assets:
+
 ```go
 //go:embed assets/*
 var assets embed.FS
@@ -408,6 +443,7 @@ func getAsset(name string) ([]byte, error) {
 ## Security Best Practices
 
 ### Input Validation
+
 - Validate all external input
 - Use path.Clean() for file paths
 - Sanitize command arguments
@@ -426,6 +462,7 @@ func InstallFromPath(userPath string) error {
 ```
 
 ### Secrets Management
+
 - Never log sensitive information
 - Use environment variables for secrets
 - Clear sensitive data from memory when possible
@@ -433,11 +470,13 @@ func InstallFromPath(userPath string) error {
 ## Performance Guidelines
 
 ### Memory Management
+
 - Use sync.Pool for frequently allocated objects
 - Prefer slices over arrays for flexibility
 - Use streaming for large data processing
 
 ### Goroutine Management
+
 - Always provide context for cancellation
 - Use worker pools for bounded concurrency
 - Close channels to signal completion
@@ -470,12 +509,14 @@ func processFiles(ctx context.Context, files []string) error {
 ## Tools and Linting
 
 ### Required Tools
+
 - `gofmt` - Code formatting
 - `go vet` - Static analysis
 - `golangci-lint` - Comprehensive linting
 - `go mod tidy` - Dependency management
 
 ### Recommended golangci-lint Configuration
+
 ```yaml
 # .golangci.yml
 linters:
@@ -493,6 +534,7 @@ linters:
 ```
 
 ### Pre-commit Hooks
+
 ```bash
 #!/bin/sh
 # .git/hooks/pre-commit
@@ -505,6 +547,7 @@ go test -short ./...
 ## Migration Guide
 
 ### Updating Existing Code
+
 When updating existing code to follow these guidelines:
 
 1. Run `go fmt` to fix formatting
@@ -514,6 +557,7 @@ When updating existing code to follow these guidelines:
 5. Add tests for critical functions
 
 ### Legacy Code
+
 - Document deviations from guidelines
 - Create issues for technical debt
 - Refactor incrementally during feature work

@@ -1,0 +1,124 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "minio-client",
+    "displayName": "MinIO Client (mc)",
+    "description": "Command-line tool for managing S3-compatible object storage - builds from source via Go",
+    "category": "infrastructure/storage",
+    "homepage": "https://min.io/",
+    "documentation": "https://docs.min.io/docs/minio-client-complete-guide.html",
+    "license": "AGPL-3.0",
+    "maintainer": "MinIO Inc."
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Build from source via go install (recommended)",
+            "installScript": "go install github.com/minio/mc@latest",
+            "postInstall": [
+              "echo 'MinIO Client installed to $GOPATH/bin/mc (ensure $GOPATH/bin is in PATH)'"
+            ]
+          },
+          "source": {
+            "version": "latest",
+            "description": "Clone repository and build manually",
+            "installScript": "git clone https://github.com/minio/mc.git /tmp/mc-build && cd /tmp/mc-build && go build -o /usr/local/bin/mc . && rm -rf /tmp/mc-build",
+            "postInstall": [
+              "chmod +x /usr/local/bin/mc"
+            ]
+          }
+        },
+        "verification": {
+          "command": "mc --version",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "$HOME/go/bin"
+        }
+      },
+      "darwin": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Build from source via go install (recommended)",
+            "installScript": "go install github.com/minio/mc@latest",
+            "postInstall": [
+              "echo 'MinIO Client installed to $GOPATH/bin/mc (ensure $GOPATH/bin is in PATH)'"
+            ]
+          },
+          "source": {
+            "version": "latest",
+            "description": "Clone repository and build manually",
+            "installScript": "git clone https://github.com/minio/mc.git /tmp/mc-build && cd /tmp/mc-build && go build -o /usr/local/bin/mc . && rm -rf /tmp/mc-build",
+            "postInstall": [
+              "chmod +x /usr/local/bin/mc"
+            ]
+          }
+        },
+        "verification": {
+          "command": "mc --version",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "$HOME/go/bin"
+        }
+      },
+      "windows": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Build from source via go install (recommended)",
+            "installScript": "go install github.com/minio/mc@latest",
+            "postInstall": [
+              "Write-Host 'MinIO Client installed to %GOPATH%\\bin\\mc.exe (ensure %GOPATH%\\bin is in PATH)'"
+            ]
+          },
+          "source": {
+            "version": "latest",
+            "description": "Clone repository and build manually",
+            "installScript": "git clone https://github.com/minio/mc.git %TEMP%\\mc-build && cd %TEMP%\\mc-build && go build -o %GOPATH%\\bin\\mc.exe . && rd /s /q %TEMP%\\mc-build"
+          }
+        },
+        "verification": {
+          "command": "mc --version",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "%GOPATH%\\bin"
+        }
+      }
+    },
+    "sources": {
+      "github": {
+        "type": "github",
+        "url": "https://github.com/minio/mc",
+        "apiEndpoint": "https://api.github.com/repos/minio/mc/releases/latest",
+        "pattern": "RELEASE.{date}"
+      }
+    },
+    "features": [
+      "S3-compatible object storage CLI client",
+      "Build from source via go install",
+      "Manage buckets, objects, and policies",
+      "Support for aliases (multiple S3 endpoints)",
+      "File mirroring and synchronization",
+      "Compatible with AWS S3, MinIO, and other S3-compatible services"
+    ],
+    "aiPrompts": {
+      "versionDiscovery": "Check https://github.com/minio/mc/releases for latest release tags (date-based: RELEASE.YYYY-MM-DDThh-mm-ssZ). MinIO Client is source-only, requires Go to build.",
+      "urlResolution": "Source: go install github.com/minio/mc@latest. Manual build: git clone https://github.com/minio/mc.git",
+      "updateGuidance": "MinIO Client uses rolling date-based releases. Default variant uses @latest which always gets the newest version. Note: mc binary may conflict with Midnight Commander on some Linux systems.",
+      "binaryConflict": "The mc binary name may conflict with Midnight Commander (mc) on Linux. Users should verify which mc is in their PATH after installation. MinIO Client can also be invoked as $GOPATH/bin/mc explicitly."
+    },
+    "dependencies": ["go"],
+    "templates": ["go-install"]
+  }
+}

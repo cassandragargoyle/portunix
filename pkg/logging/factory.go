@@ -241,8 +241,8 @@ func isInContainer() bool {
 	if data, err := os.ReadFile("/proc/1/cgroup"); err == nil {
 		content := string(data)
 		if strings.Contains(content, "docker") ||
-		   strings.Contains(content, "containerd") ||
-		   strings.Contains(content, "kubepods") {
+			strings.Contains(content, "containerd") ||
+			strings.Contains(content, "kubepods") {
 			return true
 		}
 	}

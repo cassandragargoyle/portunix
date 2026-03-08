@@ -1,0 +1,159 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "rust",
+    "displayName": "Rust Programming Language",
+    "description": "Systems programming language focused on safety, speed, and concurrency - installed via rustup toolchain manager",
+    "category": "development/languages",
+    "homepage": "https://www.rust-lang.org/",
+    "documentation": "https://doc.rust-lang.org/",
+    "license": "MIT OR Apache-2.0",
+    "maintainer": "Rust Foundation"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "exe",
+        "variants": {
+          "stable": {
+            "version": "1.84.0",
+            "urls": {
+              "x64": "https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe",
+              "x86": "https://static.rust-lang.org/rustup/dist/i686-pc-windows-msvc/rustup-init.exe"
+            },
+            "installArgs": ["-y", "--default-toolchain", "stable"],
+            "postInstall": [
+              "rustup component add rustfmt clippy rust-analyzer"
+            ]
+          },
+          "beta": {
+            "version": "latest",
+            "urls": {
+              "x64": "https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe",
+              "x86": "https://static.rust-lang.org/rustup/dist/i686-pc-windows-msvc/rustup-init.exe"
+            },
+            "installArgs": ["-y", "--default-toolchain", "beta"],
+            "postInstall": [
+              "rustup component add rustfmt clippy rust-analyzer"
+            ]
+          },
+          "nightly": {
+            "version": "latest",
+            "urls": {
+              "x64": "https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe",
+              "x86": "https://static.rust-lang.org/rustup/dist/i686-pc-windows-msvc/rustup-init.exe"
+            },
+            "installArgs": ["-y", "--default-toolchain", "nightly"],
+            "postInstall": [
+              "rustup component add rustfmt clippy rust-analyzer"
+            ]
+          },
+          "chocolatey": {
+            "type": "chocolatey",
+            "version": "latest",
+            "packages": ["rust"]
+          },
+          "winget": {
+            "type": "winget",
+            "version": "latest",
+            "packages": ["Rustlang.Rustup"]
+          }
+        },
+        "verification": {
+          "command": "rustc --version && cargo --version",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "RUSTUP_HOME": "${USERPROFILE}/.rustup",
+          "CARGO_HOME": "${USERPROFILE}/.cargo",
+          "PATH_APPEND": "${USERPROFILE}/.cargo/bin"
+        }
+      },
+      "linux": {
+        "type": "script",
+        "variants": {
+          "stable": {
+            "version": "1.84.0",
+            "installScript": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain stable",
+            "postInstall": [
+              ". \"$HOME/.cargo/env\"",
+              "rustup component add rustfmt clippy rust-analyzer"
+            ]
+          },
+          "beta": {
+            "version": "latest",
+            "installScript": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain beta",
+            "postInstall": [
+              ". \"$HOME/.cargo/env\"",
+              "rustup component add rustfmt clippy rust-analyzer"
+            ]
+          },
+          "nightly": {
+            "version": "latest",
+            "installScript": "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain nightly",
+            "postInstall": [
+              ". \"$HOME/.cargo/env\"",
+              "rustup component add rustfmt clippy rust-analyzer"
+            ]
+          },
+          "apt": {
+            "type": "apt",
+            "version": "latest",
+            "packages": ["rustc", "cargo"],
+            "distributions": ["ubuntu", "debian", "mint", "elementary"],
+            "requiresSudo": true
+          },
+          "dnf": {
+            "type": "dnf",
+            "version": "latest",
+            "packages": ["rust", "cargo"],
+            "distributions": ["fedora", "rocky", "almalinux", "centos"],
+            "requiresSudo": true
+          },
+          "pacman": {
+            "type": "pacman",
+            "version": "latest",
+            "packages": ["rust"],
+            "requiresSudo": true
+          }
+        },
+        "verification": {
+          "command": "rustc --version && cargo --version",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "RUSTUP_HOME": "$HOME/.rustup",
+          "CARGO_HOME": "$HOME/.cargo",
+          "PATH_APPEND": "$HOME/.cargo/bin"
+        }
+      }
+    },
+    "sources": {
+      "official": {
+        "type": "direct",
+        "url": "https://www.rust-lang.org/tools/install",
+        "apiEndpoint": "https://static.rust-lang.org/dist/channel-rust-stable.toml",
+        "pattern": "rust-{version}"
+      },
+      "github": {
+        "type": "github",
+        "url": "https://github.com/rust-lang/rust",
+        "apiEndpoint": "https://api.github.com/repos/rust-lang/rust/releases/latest",
+        "pattern": "rust-{version}"
+      }
+    },
+    "verification": {
+      "checksumType": "sha256",
+      "checksumUrl": "https://static.rust-lang.org/dist/"
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check https://static.rust-lang.org/dist/channel-rust-stable.toml for latest stable Rust version. Parse version from [pkg.rust] section. Verify rustup-init binaries at https://static.rust-lang.org/rustup/dist/ for supported platforms. GitHub releases at https://github.com/rust-lang/rust/releases track stable versions.",
+      "urlResolution": "Rustup installers: Linux/macOS use https://sh.rustup.rs shell script. Windows x64: https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe. Windows x86: https://static.rust-lang.org/rustup/dist/i686-pc-windows-msvc/rustup-init.exe",
+      "updateGuidance": "Monitor Rust releases (approximately every 6 weeks). Update stable version number in package definition. Rustup-init URLs are version-independent (always latest rustup). Toolchain channel selection (stable/beta/nightly) is handled by rustup flags, not URLs."
+    },
+    "dependencies": [],
+    "templates": ["script-installer"]
+  }
+}

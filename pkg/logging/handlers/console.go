@@ -18,14 +18,14 @@ type ConsoleHandler struct {
 
 // ConsoleConfig holds configuration for console output
 type ConsoleConfig struct {
-	Output      io.Writer // Output destination (stdout, stderr)
-	TimeFormat  string    // Time format for timestamps
-	NoColor     bool      // Disable color output
-	ShowCaller  bool      // Show caller information
-	ShowLevel   bool      // Show log level
-	ShowTime    bool      // Show timestamp
-	Compact     bool      // Use compact format
-	JSONFormat  bool      // Use JSON format instead of pretty console
+	Output     io.Writer // Output destination (stdout, stderr)
+	TimeFormat string    // Time format for timestamps
+	NoColor    bool      // Disable color output
+	ShowCaller bool      // Show caller information
+	ShowLevel  bool      // Show log level
+	ShowTime   bool      // Show timestamp
+	Compact    bool      // Use compact format
+	JSONFormat bool      // Use JSON format instead of pretty console
 }
 
 // DefaultConsoleConfig returns default console configuration

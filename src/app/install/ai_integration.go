@@ -40,11 +40,11 @@ type VersionDiscoveryResult struct {
 
 // PackageUpdateContext contains context for AI-guided updates
 type PackageUpdateContext struct {
-	Package         *Package                `json:"package"`
-	CurrentVersions map[string]string       `json:"currentVersions"` // variant -> version
-	Sources         map[string]SourceSpec   `json:"sources"`
-	AIPrompts       *AIPrompts              `json:"aiPrompts"`
-	LastUpdate      time.Time               `json:"lastUpdate"`
+	Package         *Package              `json:"package"`
+	CurrentVersions map[string]string     `json:"currentVersions"` // variant -> version
+	Sources         map[string]SourceSpec `json:"sources"`
+	AIPrompts       *AIPrompts            `json:"aiPrompts"`
+	LastUpdate      time.Time             `json:"lastUpdate"`
 }
 
 // DiscoverLatestVersions uses AI prompts to discover latest versions for a package
@@ -203,11 +203,11 @@ func (ai *AIPackageManager) isVersionNewer(v1, v2 string) bool {
 
 // GitHubRelease represents a GitHub release response
 type GitHubRelease struct {
-	TagName     string    `json:"tag_name"`
-	Name        string    `json:"name"`
-	PublishedAt time.Time `json:"published_at"`
-	Body        string    `json:"body"`
-	HTMLURL     string    `json:"html_url"`
+	TagName     string        `json:"tag_name"`
+	Name        string        `json:"name"`
+	PublishedAt time.Time     `json:"published_at"`
+	Body        string        `json:"body"`
+	HTMLURL     string        `json:"html_url"`
 	Assets      []GitHubAsset `json:"assets"`
 }
 

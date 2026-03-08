@@ -304,7 +304,7 @@ func TestIssue052LoggingContainerIntegration(t *testing.T) {
 	dockerCmd := exec.Command(binaryPath, "docker", "--help")
 
 	outputBytes, err := dockerCmd.CombinedOutput()
-	output := string(outputBytes)
+	output = string(outputBytes)
 	if err != nil {
 		tf.Warning(t, "Docker help command failed", err.Error(), output)
 		// This is expected if Docker is not installed

@@ -172,7 +172,7 @@ func TestMainWithoutArguments(t *testing.T) {
 	// Run the application without arguments
 	cmd := exec.Command("./portunix_test")
 	output, err := cmd.CombinedOutput()
-	
+
 	// The application should exit successfully and show help
 	if err != nil {
 		// Check if it's just a non-zero exit code (which is expected for help)
@@ -187,7 +187,7 @@ func TestMainWithoutArguments(t *testing.T) {
 	}
 
 	outputStr := string(output)
-	
+
 	// Verify that help content is displayed
 	expectedHelpContent := []string{
 		"Usage:",
@@ -206,7 +206,7 @@ func TestMainWithoutArguments(t *testing.T) {
 	if strings.Contains(outputStr, "MCP stdio mode active") {
 		t.Error("Application should not enter MCP stdio mode when run without arguments")
 	}
-	
+
 	if strings.Contains(outputStr, "MCP Server starting") {
 		t.Error("Application should not start MCP server when run without arguments")
 	}
@@ -223,7 +223,7 @@ func TestMCPServeCommand(t *testing.T) {
 	// Test that mcp serve command exists
 	cmd := exec.Command("./portunix_test", "mcp", "serve", "--help")
 	output, err := cmd.CombinedOutput()
-	
+
 	if err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			// Help command typically exits with code 0, but some cobra apps exit with 1
@@ -236,14 +236,14 @@ func TestMCPServeCommand(t *testing.T) {
 	}
 
 	outputStr := string(output)
-	
+
 	// Verify that mcp serve help content is displayed
 	expectedContent := []string{
 		"serve",
 		"Start Model Context Protocol",
 		"Communication Modes:",
 		"stdio",
-		"tcp", 
+		"tcp",
 		"unix",
 		"--mode",
 		"--port",
@@ -268,14 +268,14 @@ func TestMCPServerCommandRemoved(t *testing.T) {
 	// Test that old mcp serve command no longer exists
 	cmd := exec.Command("./portunix_test", "mcp serve", "--help")
 	output, err := cmd.CombinedOutput()
-	
+
 	// This should fail since the command no longer exists
 	if err == nil {
 		t.Error("mcp serve command should not exist anymore, but it does")
 	}
 
 	outputStr := string(output)
-	
+
 	// Should contain error about unknown command
 	if !strings.Contains(outputStr, "unknown command") && !strings.Contains(outputStr, "Unknown command") {
 		t.Errorf("Expected error about unknown command for 'mcp serve', got: %s", outputStr)

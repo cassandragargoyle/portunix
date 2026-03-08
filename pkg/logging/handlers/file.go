@@ -33,7 +33,7 @@ func DefaultFileConfig(filePath string) FileConfig {
 	return FileConfig{
 		FilePath:   filePath,
 		MaxSize:    100 * 1024 * 1024, // 100 MB
-		MaxAge:     30,                 // 30 days
+		MaxAge:     30,                // 30 days
 		MaxBackups: 10,
 		Compress:   false,
 		JSONFormat: true,

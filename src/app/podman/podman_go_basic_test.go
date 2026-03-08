@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-// Test basic Podman configuration structure for Go installations  
+// Test basic Podman configuration structure for Go installations
 func TestPodmanConfig_GoInstallationType(t *testing.T) {
 	config := PodmanConfig{
 		Image:            "ubuntu:22.04",
@@ -150,9 +150,9 @@ func TestPodmanConfig_GoDevEnvironment(t *testing.T) {
 		InstallationType: "go",
 		EnableSSH:        true,
 		KeepRunning:      true,
-		Rootless:         true, // Podman security feature
+		Rootless:         true,                               // Podman security feature
 		Ports:            []string{"8080:8080", "9000:9000"}, // Typical Go web server ports
-		Volumes:          []string{"/workspace:/app"},         // Mount workspace
+		Volumes:          []string{"/workspace:/app"},        // Mount workspace
 		Environment:      []string{"GOPATH=/app/go", "GO111MODULE=on"},
 		Pod:              "", // Can be empty for single container
 		Network:          "bridge",

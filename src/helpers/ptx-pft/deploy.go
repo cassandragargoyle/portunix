@@ -34,29 +34,29 @@ type PackageMetadata struct {
 }
 
 type PackageSpec struct {
-	Type      string         `json:"type"`
-	Container ContainerSpec  `json:"container"`
+	Type      string            `json:"type"`
+	Container ContainerSpec     `json:"container"`
 	Defaults  map[string]string `json:"defaults"`
 }
 
 type ContainerSpec struct {
-	Provider    string                    `json:"provider"`
-	ProjectName string                    `json:"projectName"`
-	Services    map[string]ServiceSpec    `json:"services"`
-	Volumes     map[string]interface{}    `json:"volumes"`
-	Networks    map[string]NetworkSpec    `json:"networks"`
+	Provider    string                 `json:"provider"`
+	ProjectName string                 `json:"projectName"`
+	Services    map[string]ServiceSpec `json:"services"`
+	Volumes     map[string]interface{} `json:"volumes"`
+	Networks    map[string]NetworkSpec `json:"networks"`
 }
 
 type ServiceSpec struct {
-	Image         string            `json:"image"`
-	PullPolicy    string            `json:"pullPolicy"`
-	ContainerName string            `json:"containerName"`
-	Ports         []string          `json:"ports"`
-	Environment   map[string]string `json:"environment"`
-	Volumes       []string          `json:"volumes"`
-	Healthcheck   *HealthcheckSpec  `json:"healthcheck"`
+	Image         string                   `json:"image"`
+	PullPolicy    string                   `json:"pullPolicy"`
+	ContainerName string                   `json:"containerName"`
+	Ports         []string                 `json:"ports"`
+	Environment   map[string]string        `json:"environment"`
+	Volumes       []string                 `json:"volumes"`
+	Healthcheck   *HealthcheckSpec         `json:"healthcheck"`
 	DependsOn     map[string]DependsOnSpec `json:"dependsOn"`
-	Restart       string            `json:"restart"`
+	Restart       string                   `json:"restart"`
 }
 
 type HealthcheckSpec struct {
@@ -76,23 +76,23 @@ type NetworkSpec struct {
 
 // Docker Compose YAML structures
 type ComposeFile struct {
-	Version  string                     `yaml:"version,omitempty"`
-	Services map[string]ComposeService  `yaml:"services"`
-	Volumes  map[string]interface{}     `yaml:"volumes,omitempty"`
-	Networks map[string]ComposeNetwork  `yaml:"networks,omitempty"`
+	Version  string                    `yaml:"version,omitempty"`
+	Services map[string]ComposeService `yaml:"services"`
+	Volumes  map[string]interface{}    `yaml:"volumes,omitempty"`
+	Networks map[string]ComposeNetwork `yaml:"networks,omitempty"`
 }
 
 type ComposeService struct {
-	Image         string                 `yaml:"image"`
-	PullPolicy    string                 `yaml:"pull_policy,omitempty"`
-	ContainerName string                 `yaml:"container_name,omitempty"`
-	Ports         []string               `yaml:"ports,omitempty"`
-	Environment   map[string]string      `yaml:"environment,omitempty"`
-	Volumes       []string               `yaml:"volumes,omitempty"`
-	Healthcheck   *ComposeHealthcheck    `yaml:"healthcheck,omitempty"`
-	DependsOn     interface{}            `yaml:"depends_on,omitempty"`
-	Restart       string                 `yaml:"restart,omitempty"`
-	Networks      []string               `yaml:"networks,omitempty"`
+	Image         string              `yaml:"image"`
+	PullPolicy    string              `yaml:"pull_policy,omitempty"`
+	ContainerName string              `yaml:"container_name,omitempty"`
+	Ports         []string            `yaml:"ports,omitempty"`
+	Environment   map[string]string   `yaml:"environment,omitempty"`
+	Volumes       []string            `yaml:"volumes,omitempty"`
+	Healthcheck   *ComposeHealthcheck `yaml:"healthcheck,omitempty"`
+	DependsOn     interface{}         `yaml:"depends_on,omitempty"`
+	Restart       string              `yaml:"restart,omitempty"`
+	Networks      []string            `yaml:"networks,omitempty"`
 }
 
 type ComposeHealthcheck struct {

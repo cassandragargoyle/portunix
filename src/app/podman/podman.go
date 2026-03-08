@@ -217,7 +217,7 @@ func RunInContainerWithArgs(installationType string, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse arguments: %w", err)
 	}
-	
+
 	return RunInContainer(config)
 }
 
@@ -444,7 +444,7 @@ func ExecCommandWithOptions(containerID string, command []string, interactive bo
 	cmd := exec.Command("podman", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	if interactive {
 		cmd.Stdin = os.Stdin
 	}
@@ -1226,7 +1226,7 @@ func installSoftwareInPodmanContainer(containerName string, installationType str
 // copyPortunixToPodmanContainer copies the current Portunix binary to the container
 func copyPortunixToPodmanContainer(containerName string) error {
 	fmt.Println("📄 Copying Portunix binary to container...")
-	
+
 	// Get current executable path
 	execPath, err := os.Executable()
 	if err != nil {
@@ -1252,7 +1252,7 @@ func copyPortunixToPodmanContainer(containerName string) error {
 // runPortunixInstallInPodmanContainer runs standard Portunix install command inside container
 func runPortunixInstallInPodmanContainer(containerName string, installationType string) error {
 	fmt.Printf("🚀 Running 'portunix install %s' inside container...\n", installationType)
-	
+
 	// Run portunix install command
 	installCmd := []string{"portunix", "install", installationType}
 	if err := execInPodmanContainer(containerName, installCmd); err != nil {
@@ -1271,7 +1271,6 @@ func execInPodmanContainer(containerName string, command []string) error {
 	return cmd.Run()
 }
 
-
 // ValidatePodmanConfig validates the Podman configuration parameters
 func ValidatePodmanConfig(config *PodmanConfig) error {
 	// Convert PodmanConfig to DockerConfig to reuse validation logic
@@ -1284,7 +1283,7 @@ func ValidatePodmanConfig(config *PodmanConfig) error {
 		Memory:      config.Memory,
 		CPUs:        config.CPUs,
 	}
-	
+
 	// Use Docker validation functions
 	if err := docker.ValidateDockerConfig(dockerConfig); err != nil {
 		return err
@@ -2140,18 +2139,18 @@ Categories=Development;
 // parsePodmanArgs parses command line arguments into PodmanConfig
 func parsePodmanArgs(installationType string, args []string) (PodmanConfig, error) {
 	config := PodmanConfig{
-		Image:             "ubuntu:22.04", // Default image
-		InstallationType:  installationType,
+		Image:            "ubuntu:22.04", // Default image
+		InstallationType: installationType,
 		EnableSSH:        true,
 		KeepRunning:      false,
 		Disposable:       false,
 		Privileged:       false,
 	}
-	
+
 	// Parse arguments
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
-		
+
 		switch {
 		case arg == "-v" || arg == "--volume":
 			if i+1 < len(args) {
@@ -2204,12 +2203,12 @@ func parsePodmanArgs(installationType string, args []string) (PodmanConfig, erro
 			fmt.Printf("⚠️  Warning: Unknown argument '%s' ignored\n", arg)
 		}
 	}
-	
+
 	// Generate container name if not provided
 	if config.ContainerName == "" {
 		config.ContainerName = fmt.Sprintf("portunix-%s-%d", installationType, time.Now().Unix())
 	}
-	
+
 	return config, nil
 }
 
@@ -2274,7 +2273,7 @@ type ContainerRunOptions struct {
 func RunContainer(image string, command []string, options ContainerRunOptions) error {
 	// Build podman run command
 	args := []string{"run"}
-	
+
 	// Add flags based on options
 	if options.Detach {
 		args = append(args, "-d")
@@ -2288,65 +2287,65 @@ func RunContainer(image string, command []string, options ContainerRunOptions) e
 	if options.Name != "" {
 		args = append(args, "--name", options.Name)
 	}
-	
+
 	// Add port mappings
 	for _, port := range options.Ports {
 		args = append(args, "-p", port)
 	}
-	
+
 	// Add volume mounts
 	for _, volume := range options.Volumes {
 		args = append(args, "-v", volume)
 	}
-	
+
 	// Add environment variables
 	for _, env := range options.Environment {
 		args = append(args, "-e", env)
 	}
-	
+
 	// Add image
 	args = append(args, image)
-	
+
 	// Add command
 	if len(command) > 0 {
 		args = append(args, command...)
 	}
-	
+
 	// Execute podman command
 	fmt.Printf("Running Podman container: podman %s\n", strings.Join(args, " "))
-	
+
 	cmd := exec.Command("podman", args...)
-	
+
 	// If not detached, inherit stdio for interactive containers
 	if !options.Detach {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
 	}
-	
+
 	err := cmd.Run()
 	if err != nil {
 		return fmt.Errorf("failed to run Podman container: %w", err)
 	}
-	
+
 	if options.Detach {
 		fmt.Println("✅ Container started successfully in detached mode")
 	} else {
 		fmt.Println("✅ Container execution completed")
 	}
-	
+
 	return nil
 }
 
 // CopyFiles copies files between host and Podman container
 func CopyFiles(source, destination string) error {
 	cmd := exec.Command("podman", "cp", source, destination)
-	
+
 	// Run the command and capture output
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to copy files: %v - %s", err, string(output))
 	}
-	
+
 	return nil
 }

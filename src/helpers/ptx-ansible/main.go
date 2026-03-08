@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package main
 
 import (
@@ -20,7 +24,7 @@ var rootCmd = &cobra.Command{
 It provides .ptxbook file parsing, validation, and execution for unified infrastructure management.
 
 This binary is typically invoked by the main portunix dispatcher and should not be used directly.`,
-	Version: version,
+	Version:            version,
 	DisableFlagParsing: true, // Let us handle flags manually
 	Run: func(cmd *cobra.Command, args []string) {
 		// Handle the dispatched command directly

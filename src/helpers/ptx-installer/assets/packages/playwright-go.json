@@ -1,0 +1,72 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "playwright-go",
+    "displayName": "Playwright for Go",
+    "description": "Go driver and browser binaries for Playwright browser automation (playwright-go)",
+    "category": "development/testing",
+    "homepage": "https://github.com/playwright-community/playwright-go",
+    "documentation": "https://playwright-community.github.io/playwright-go/",
+    "license": "MIT",
+    "maintainer": "CassandraGargoyle"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Go driver + Chromium browser binary (~200 MB)",
+            "installScript": "go run github.com/playwright-community/playwright-go/cmd/playwright@latest install --with-deps chromium"
+          },
+          "all": {
+            "version": "latest",
+            "description": "Go driver + all browser binaries: Chromium + Firefox + WebKit (~600 MB)",
+            "installScript": "go run github.com/playwright-community/playwright-go/cmd/playwright@latest install --with-deps"
+          }
+        },
+        "verification": {
+          "command": "go run github.com/playwright-community/playwright-go/cmd/playwright@latest --version",
+          "expectedExitCode": 0
+        }
+      },
+      "windows": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Go driver + Chromium browser binary (~200 MB)",
+            "installScript": "go run github.com/playwright-community/playwright-go/cmd/playwright@latest install chromium"
+          },
+          "all": {
+            "version": "latest",
+            "description": "Go driver + all browser binaries: Chromium + Firefox + WebKit (~600 MB)",
+            "installScript": "go run github.com/playwright-community/playwright-go/cmd/playwright@latest install"
+          }
+        },
+        "verification": {
+          "command": "go run github.com/playwright-community/playwright-go/cmd/playwright@latest --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "github": {
+        "type": "github",
+        "url": "https://github.com/playwright-community/playwright-go",
+        "apiEndpoint": "https://api.github.com/repos/playwright-community/playwright-go/releases/latest",
+        "pattern": "v{version}"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check GitHub releases for playwright-community/playwright-go. The Go module version tracks upstream Playwright versions.",
+      "urlResolution": "Driver and browser binaries are downloaded automatically by the playwright CLI tool via 'go run github.com/playwright-community/playwright-go/cmd/playwright@latest install'.",
+      "updateGuidance": "The @latest tag always fetches the newest version. For pinned versions use @v{version} suffix. The Go driver and browser binaries are always installed in compatible versions."
+    },
+    "dependencies": ["go"],
+    "templates": ["go-install"]
+  }
+}

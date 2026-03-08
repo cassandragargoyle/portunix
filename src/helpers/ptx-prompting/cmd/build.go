@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	noCopy            bool    // --no-copy flag to disable clipboard
-	quiet             bool    // --quiet flag to disable stdout
+	noCopy            bool // --no-copy flag to disable clipboard
+	quiet             bool // --quiet flag to disable stdout
 	outputFile        string
 	templateVars      map[string]string
 	interactiveMode   bool
@@ -81,11 +81,11 @@ func buildPrompt(templateFile string, cmd *cobra.Command, args []string) error {
 
 	// Build options
 	options := &prompt.BuildOptions{
-		TemplateFile:      templateFile,
-		Variables:         allVars,
-		InteractiveMode:   interactiveMode,
-		AllowIncomplete:   allowIncomplete,
-		DefaultValues:     defaultVals,
+		TemplateFile:    templateFile,
+		Variables:       allVars,
+		InteractiveMode: interactiveMode,
+		AllowIncomplete: allowIncomplete,
+		DefaultValues:   defaultVals,
 	}
 
 	// Show preview if requested

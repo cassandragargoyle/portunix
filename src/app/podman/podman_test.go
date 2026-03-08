@@ -233,7 +233,7 @@ func (suite *PodmanGoTestSuite) TestInstallSoftwareInPodmanContainer_EmptyType()
 	// Mock execInPodmanContainer to avoid actual Podman calls
 	originalExec := execInPodmanContainer
 	defer func() { execInPodmanContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInPodmanContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -241,7 +241,7 @@ func (suite *PodmanGoTestSuite) TestInstallSoftwareInPodmanContainer_EmptyType()
 	}
 
 	err := installSoftwareInPodmanContainer("test-container", "empty", pkgManager)
-	
+
 	suite.NoError(err)
 	suite.Empty(executedCommands) // No commands should be executed for empty type
 }
@@ -254,7 +254,7 @@ func (suite *PodmanGoTestSuite) TestInstallSoftwareInPodmanContainer_GoType() {
 	// Mock execInPodmanContainer to avoid actual Podman calls
 	originalExec := execInPodmanContainer
 	defer func() { execInPodmanContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInPodmanContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -263,7 +263,7 @@ func (suite *PodmanGoTestSuite) TestInstallSoftwareInPodmanContainer_GoType() {
 
 	// Test will fail on actual copy, but we can test the logic flow
 	err := installSoftwareInPodmanContainer("test-container", "go", pkgManager)
-	
+
 	// Error expected because we can't actually copy files in unit test
 	suite.Error(err)
 	suite.Contains(err.Error(), "failed to copy Portunix binary")
@@ -277,7 +277,7 @@ func (suite *PodmanGoTestSuite) TestInstallSoftwareInPodmanContainer_InvalidType
 	// Mock execInPodmanContainer to track calls
 	originalExec := execInPodmanContainer
 	defer func() { execInPodmanContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInPodmanContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -285,7 +285,7 @@ func (suite *PodmanGoTestSuite) TestInstallSoftwareInPodmanContainer_InvalidType
 	}
 
 	err := installSoftwareInPodmanContainer("test-container", "invalid-type", pkgManager)
-	
+
 	// Should fail on copy step before reaching invalid type check
 	suite.Error(err)
 }
@@ -295,7 +295,7 @@ func (suite *PodmanGoTestSuite) TestCopyPortunixToPodmanContainer_MockedSuccess(
 	// Mock execInPodmanContainer to avoid actual Podman calls
 	originalExec := execInPodmanContainer
 	defer func() { execInPodmanContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInPodmanContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -305,7 +305,7 @@ func (suite *PodmanGoTestSuite) TestCopyPortunixToPodmanContainer_MockedSuccess(
 	// This will still fail because we can't mock os.Executable and podman cp easily
 	// But we can test the function structure
 	err := copyPortunixToPodmanContainer("test-container")
-	
+
 	// Expected to fail on podman cp command in unit test environment
 	suite.Error(err)
 	suite.Contains(err.Error(), "failed to copy Portunix binary")
@@ -316,7 +316,7 @@ func (suite *PodmanGoTestSuite) TestRunPortunixInstallInPodmanContainer_Success(
 	// Mock execInPodmanContainer to avoid actual Podman calls
 	originalExec := execInPodmanContainer
 	defer func() { execInPodmanContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInPodmanContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -324,7 +324,7 @@ func (suite *PodmanGoTestSuite) TestRunPortunixInstallInPodmanContainer_Success(
 	}
 
 	err := runPortunixInstallInPodmanContainer("test-container", "go")
-	
+
 	suite.NoError(err)
 	suite.Len(executedCommands, 1)
 	suite.Equal([]string{"portunix", "install", "go"}, executedCommands[0])
@@ -334,7 +334,7 @@ func (suite *PodmanGoTestSuite) TestRunPortunixInstallInPodmanContainer_Python()
 	// Mock execInPodmanContainer
 	originalExec := execInPodmanContainer
 	defer func() { execInPodmanContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInPodmanContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -342,7 +342,7 @@ func (suite *PodmanGoTestSuite) TestRunPortunixInstallInPodmanContainer_Python()
 	}
 
 	err := runPortunixInstallInPodmanContainer("test-container", "python")
-	
+
 	suite.NoError(err)
 	suite.Len(executedCommands, 1)
 	suite.Equal([]string{"portunix", "install", "python"}, executedCommands[0])
@@ -352,7 +352,7 @@ func (suite *PodmanGoTestSuite) TestRunPortunixInstallInPodmanContainer_Default(
 	// Mock execInPodmanContainer
 	originalExec := execInPodmanContainer
 	defer func() { execInPodmanContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInPodmanContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -360,7 +360,7 @@ func (suite *PodmanGoTestSuite) TestRunPortunixInstallInPodmanContainer_Default(
 	}
 
 	err := runPortunixInstallInPodmanContainer("test-container", "default")
-	
+
 	suite.NoError(err)
 	suite.Len(executedCommands, 1)
 	suite.Equal([]string{"portunix", "install", "default"}, executedCommands[0])
@@ -370,13 +370,13 @@ func (suite *PodmanGoTestSuite) TestRunPortunixInstallInPodmanContainer_ExecErro
 	// Mock execInPodmanContainer to return error
 	originalExec := execInPodmanContainer
 	defer func() { execInPodmanContainer = originalExec }()
-	
+
 	execInPodmanContainer = func(containerName string, command []string) error {
 		return fmt.Errorf("container not found")
 	}
 
 	err := runPortunixInstallInPodmanContainer("test-container", "go")
-	
+
 	suite.Error(err)
 	suite.Contains(err.Error(), "failed to run 'portunix install go'")
 	suite.Contains(err.Error(), "container not found")
@@ -387,7 +387,7 @@ func (suite *PodmanGoTestSuite) TestExecInPodmanContainer_CommandConstruction() 
 	// Mock execInPodmanContainer to capture command construction
 	originalExec := execInPodmanContainer
 	defer func() { execInPodmanContainer = originalExec }()
-	
+
 	var capturedCommands []string
 	execInPodmanContainer = func(containerName string, command []string) error {
 		// Simulate the command construction that happens in the real function
@@ -397,7 +397,7 @@ func (suite *PodmanGoTestSuite) TestExecInPodmanContainer_CommandConstruction() 
 	}
 
 	err := execInPodmanContainer("test-container", []string{"portunix", "install", "go"})
-	
+
 	suite.NoError(err)
 	expectedCmd := []string{"exec", "test-container", "portunix", "install", "go"}
 	suite.Equal(expectedCmd, capturedCommands)

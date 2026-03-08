@@ -19,25 +19,25 @@ type ClearFlaskClient struct {
 
 // ClearFlaskUser represents a user in ClearFlask
 type ClearFlaskUser struct {
-	UserID      string `json:"userId"`
-	Name        string `json:"name"`
-	Email       string `json:"email,omitempty"`
-	IsMod       bool   `json:"isMod,omitempty"`
-	Created     string `json:"created,omitempty"`
+	UserID  string `json:"userId"`
+	Name    string `json:"name"`
+	Email   string `json:"email,omitempty"`
+	IsMod   bool   `json:"isMod,omitempty"`
+	Created string `json:"created,omitempty"`
 }
 
 // ClearFlaskCategory represents a category/board in ClearFlask
 type ClearFlaskCategory struct {
-	CategoryID  string `json:"categoryId"`
-	Name        string `json:"name"`
-	Slug        string `json:"slug,omitempty"`
+	CategoryID string `json:"categoryId"`
+	Name       string `json:"name"`
+	Slug       string `json:"slug,omitempty"`
 }
 
 // ClearFlaskStatus represents a status in ClearFlask
 type ClearFlaskStatus struct {
-	StatusID    string `json:"statusId"`
-	Name        string `json:"name"`
-	Color       string `json:"color,omitempty"`
+	StatusID      string   `json:"statusId"`
+	Name          string   `json:"name"`
+	Color         string   `json:"color,omitempty"`
 	NextStatusIDs []string `json:"nextStatusIds,omitempty"`
 }
 

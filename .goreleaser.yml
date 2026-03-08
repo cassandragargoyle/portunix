@@ -269,6 +269,27 @@ builds:
     env:
       - CGO_ENABLED=0
 
+  # Helper binary: ptx-trace (Universal tracing system for software development, Issue #141)
+  - id: ptx-trace
+    binary: ptx-trace
+    main: ./
+    dir: ./src/helpers/ptx-trace/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
 archives:
   - id: default
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{- tolower .Os }}_{{ .Arch }}"
@@ -291,6 +312,7 @@ archives:
       - ptx-credential
       - ptx-python
       - ptx-installer
+      - ptx-trace
     files:
       - src: scripts/install.sh
         dst: install.sh
@@ -338,12 +360,13 @@ release:
     - ptx-credential helper (Secure credential storage)
     - ptx-python helper (Python environment management)
     - ptx-installer helper (Package installation engine)
+    - ptx-trace helper (Universal tracing system for software development)
 
   footer: |
     ## Installation
 
     Download and extract the appropriate archive for your platform, then run the installation script.
-    The archive contains all necessary binaries (portunix, ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-make, ptx-aiops, ptx-pft, ptx-prompting, ptx-credential, ptx-python, ptx-installer).
+    The archive contains all necessary binaries (portunix, ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-make, ptx-aiops, ptx-pft, ptx-prompting, ptx-credential, ptx-python, ptx-installer, ptx-trace).
 
     ### Linux/macOS
     ```bash

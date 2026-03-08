@@ -127,7 +127,7 @@ func RunInContainerWithArgs(installationType string, args []string) error {
 	if err != nil {
 		return fmt.Errorf("failed to parse arguments: %w", err)
 	}
-	
+
 	return RunInContainer(config)
 }
 
@@ -351,7 +351,7 @@ func ExecCommandWithOptions(containerID string, command []string, interactive bo
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	
+
 	if interactive {
 		cmd.Stdin = os.Stdin
 	}
@@ -1343,7 +1343,7 @@ func validateMemorySpec(spec string) error {
 	// Check if it ends with valid units
 	validUnits := []string{"b", "k", "m", "g", "kb", "mb", "gb", "tb"}
 	spec = strings.ToLower(spec)
-	
+
 	hasValidUnit := false
 	for _, unit := range validUnits {
 		if strings.HasSuffix(spec, unit) {
@@ -1410,18 +1410,18 @@ func isValidVolumeName(name string) bool {
 	if len(name) == 0 {
 		return false
 	}
-	
+
 	if !isAlphaNumeric(name[0]) {
 		return false
 	}
-	
+
 	for i := 1; i < len(name); i++ {
 		c := name[i]
 		if !isAlphaNumeric(c) && c != '_' && c != '.' && c != '-' {
 			return false
 		}
 	}
-	
+
 	return true
 }
 
@@ -1464,7 +1464,7 @@ func InstallSoftwareInContainer(containerName string, installationType string, p
 // copyPortunixToContainer copies the current Portunix binary to the container
 func copyPortunixToContainer(containerName string) error {
 	fmt.Println("📄 Copying Portunix binary to container...")
-	
+
 	// Get current executable path
 	execPath, err := os.Executable()
 	if err != nil {
@@ -1490,7 +1490,7 @@ func copyPortunixToContainer(containerName string) error {
 // runPortunixInstallInContainer runs standard Portunix install command inside container
 func runPortunixInstallInContainer(containerName string, installationType string) error {
 	fmt.Printf("🚀 Running 'portunix install %s' inside container...\n", installationType)
-	
+
 	// Run portunix install command
 	installCmd := []string{"portunix", "install", installationType}
 	if err := execInContainer(containerName, installCmd); err != nil {
@@ -1514,7 +1514,7 @@ func installDefaultSoftware(containerName string, pkgManager *PackageManagerInfo
 // installPythonInContainer installs Python development environment
 func installPythonInContainer(containerName string, pkgManager *PackageManagerInfo) error {
 	fmt.Println("🐍 Installing Python development environment...")
-	
+
 	var installCmd []string
 	switch pkgManager.Manager {
 	case "apt-get":
@@ -1540,7 +1540,7 @@ func installPythonInContainer(containerName string, pkgManager *PackageManagerIn
 // installJavaInContainer installs Java development environment
 func installJavaInContainer(containerName string, pkgManager *PackageManagerInfo) error {
 	fmt.Println("☕ Installing Java development environment...")
-	
+
 	var installCmd []string
 	switch pkgManager.Manager {
 	case "apt-get":
@@ -1566,7 +1566,7 @@ func installJavaInContainer(containerName string, pkgManager *PackageManagerInfo
 // installGoInContainer installs Go development environment
 func installGoInContainer(containerName string, pkgManager *PackageManagerInfo) error {
 	fmt.Println("🐹 Installing Go development environment...")
-	
+
 	// Install Go from official binary distribution for better version control
 	var installCmd []string
 	switch pkgManager.Manager {
@@ -1622,7 +1622,7 @@ func installGoInContainer(containerName string, pkgManager *PackageManagerInfo) 
 func installVSCodeInContainer(containerName string, pkgManager *PackageManagerInfo) error {
 	fmt.Println("💻 Installing Visual Studio Code...")
 	fmt.Println("⚠️  Note: VSCode requires GUI environment, installing code-server instead")
-	
+
 	var installCmd []string
 	switch pkgManager.Manager {
 	case "apt-get":
@@ -1923,18 +1923,18 @@ func CheckRequirements() error {
 // parseDockerArgs parses command line arguments into DockerConfig
 func parseDockerArgs(installationType string, args []string) (DockerConfig, error) {
 	config := DockerConfig{
-		Image:             "ubuntu:22.04", // Default image
-		InstallationType:  installationType,
+		Image:            "ubuntu:22.04", // Default image
+		InstallationType: installationType,
 		EnableSSH:        true,
 		KeepRunning:      false,
 		Disposable:       false,
 		Privileged:       false,
 	}
-	
+
 	// Parse arguments
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
-		
+
 		switch {
 		case arg == "-v" || arg == "--volume":
 			if i+1 < len(args) {
@@ -1980,33 +1980,33 @@ func parseDockerArgs(installationType string, args []string) (DockerConfig, erro
 			fmt.Printf("⚠️  Warning: Unknown argument '%s' ignored\n", arg)
 		}
 	}
-	
+
 	// Generate container name if not provided
 	if config.ContainerName == "" {
 		config.ContainerName = fmt.Sprintf("portunix-%s-%d", installationType, time.Now().Unix())
 	}
-	
+
 	return config, nil
 }
 
 // setupContainerCertificates installs CA certificates in container for HTTPS downloads
 func setupContainerCertificates(containerName string, pkgManager *PackageManagerInfo) error {
 	fmt.Println("📋 Setting up CA certificates in container...")
-	
+
 	// Update package manager first
 	updateCmd := generateUpdateCommand(pkgManager)
 	fmt.Printf("Updating package manager (%s)...\n", pkgManager.Manager)
 	if err := execInContainer(containerName, updateCmd); err != nil {
 		return fmt.Errorf("failed to update package manager: %w", err)
 	}
-	
+
 	// Install ca-certificates package
 	certCmd := generateCertificateCommand(pkgManager)
 	fmt.Printf("Installing CA certificates (%s)...\n", pkgManager.Manager)
 	if err := execInContainer(containerName, certCmd); err != nil {
 		return fmt.Errorf("failed to install certificates: %w", err)
 	}
-	
+
 	// Update certificate bundle
 	updateCertCmd := generateCertificateUpdateCommand(pkgManager)
 	fmt.Println("Updating certificate bundle...")
@@ -2014,7 +2014,7 @@ func setupContainerCertificates(containerName string, pkgManager *PackageManager
 		fmt.Printf("⚠️ Warning: Failed to update certificates: %v\n", err)
 		// Continue anyway - some environments may not support this
 	}
-	
+
 	// Test HTTPS connectivity
 	testCmd := []string{"curl", "-I", "https://go.dev/dl/"}
 	fmt.Println("Testing HTTPS connectivity...")
@@ -2024,7 +2024,7 @@ func setupContainerCertificates(containerName string, pkgManager *PackageManager
 	} else {
 		fmt.Println("✅ HTTPS connectivity verified")
 	}
-	
+
 	fmt.Println("✅ CA certificates setup completed")
 	return nil
 }
@@ -2102,7 +2102,7 @@ type ContainerRunOptions struct {
 func RunContainer(image string, command []string, options ContainerRunOptions) error {
 	// Build docker run command
 	args := []string{"run"}
-	
+
 	// Add flags based on options
 	if options.Detach {
 		args = append(args, "-d")
@@ -2116,65 +2116,65 @@ func RunContainer(image string, command []string, options ContainerRunOptions) e
 	if options.Name != "" {
 		args = append(args, "--name", options.Name)
 	}
-	
+
 	// Add port mappings
 	for _, port := range options.Ports {
 		args = append(args, "-p", port)
 	}
-	
+
 	// Add volume mounts
 	for _, volume := range options.Volumes {
 		args = append(args, "-v", volume)
 	}
-	
+
 	// Add environment variables
 	for _, env := range options.Environment {
 		args = append(args, "-e", env)
 	}
-	
+
 	// Add image
 	args = append(args, image)
-	
+
 	// Add command
 	if len(command) > 0 {
 		args = append(args, command...)
 	}
-	
+
 	// Execute docker command
 	fmt.Printf("🐳 Running Docker container: docker %s\n", strings.Join(args, " "))
-	
+
 	cmd := exec.Command("docker", args...)
-	
+
 	// If not detached, inherit stdio for interactive containers
 	if !options.Detach {
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Stdin = os.Stdin
 	}
-	
+
 	err := cmd.Run()
 	if err != nil {
 		return fmt.Errorf("failed to run Docker container: %w", err)
 	}
-	
+
 	if options.Detach {
 		fmt.Println("✅ Container started successfully in detached mode")
 	} else {
 		fmt.Println("✅ Container execution completed")
 	}
-	
+
 	return nil
 }
 
 // CopyFiles copies files between host and Docker container
 func CopyFiles(source, destination string) error {
 	cmd := exec.Command("docker", "cp", source, destination)
-	
+
 	// Run the command and capture output
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("failed to copy files: %v - %s", err, string(output))
 	}
-	
+
 	return nil
 }

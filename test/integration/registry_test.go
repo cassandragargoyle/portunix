@@ -1,10 +1,10 @@
-package main
+package integration
 
 import (
 	"path/filepath"
-	"testing"
-	"portunix.ai/portunix/test/testframework"
 	"portunix.ai/app/install"
+	"portunix.ai/portunix/test/testframework"
+	"testing"
 )
 
 // TestRegistryLoading tests the basic registry loading functionality

@@ -1,17 +1,21 @@
 # Testing Methodology - Portunix
 
 ## Overview
+
 This methodology defines standard procedures for testing in the Portunix project with emphasis on detailed logging and debugging.
 
 ## Test Framework
 
 ### Important Notes
+
 - **TestFramework Package**: Tests using `testframework.NewTestFramework()` use the `testframework` package
 - **Simple Usage**: `go test ./test/integration/test_file.go -v` (single file execution)
 - **Package Import**: Tests must import `"portunix.ai/portunix/test/testframework"`
 
 ### Verbose Logging System
+
 We have implemented `TestFramework` which provides:
+
 - **Detailed logging** with emoji indicators
 - **Verbose mode** activated by parameter
 - **Structured steps** with numbering
@@ -21,6 +25,7 @@ We have implemented `TestFramework` which provides:
 ### Verbose Mode Activation
 
 #### Method 1: Single Test File (Recommended)
+
 ```bash
 # Run single test with verbose output
 go test ./test/integration/issue_037_mcp_serve_test.go -v
@@ -30,18 +35,21 @@ go test ./test/integration/issue_037_mcp_serve_test.go -v -run TC001
 ```
 
 #### Method 2: All Integration Tests
+
 ```bash
 # Run all tests in integration package
 go test ./test/integration/ -v
 ```
 
 #### Method 3: Specific Test Pattern
+
 ```bash
 # Run tests matching pattern
 go test ./test/integration/ -v -run "MCP"
 ```
 
 #### Method 4: With Timeout for E2E Tests
+
 ```bash
 # For longer E2E tests (container-based)
 go test ./test/integration/claude_code_container_install_test.go -v -timeout 10m
@@ -50,9 +58,11 @@ go test ./test/integration/claude_code_container_install_test.go -v -timeout 10m
 ## Container-Based Testing
 
 ### Portunix Container Integration
+
 **MANDATORY**: All software installation testing MUST use Portunix native container commands instead of direct Docker/Podman calls.
 
 #### Rationale
+
 - **Universal compatibility**: Portunix automatically selects Docker or Podman based on availability
 - **Integrated functionality**: Uses Portunix's container management system
 - **Consistent environment**: Standardized container setup across all tests
@@ -61,6 +71,7 @@ go test ./test/integration/claude_code_container_install_test.go -v -timeout 10m
 #### Container Commands for Testing
 
 ##### Method 1: Portunix Container Run (Recommended)
+
 ```bash
 # Use Portunix native container management
 ./portunix docker run-in-container default --image ubuntu:22.04
@@ -68,6 +79,7 @@ go test ./test/integration/claude_code_container_install_test.go -v -timeout 10m
 ```
 
 ##### Method 2: Container Installation Testing
+
 ```go
 // In Go tests - use Portunix container commands
 tf.Command(t, binaryPath, []string{"docker", "run-in-container", "nodejs", "--image", "ubuntu:22.04"})
@@ -75,6 +87,7 @@ tf.Command(t, binaryPath, []string{"podman", "run", "alpine:latest"})
 ```
 
 #### Test Implementation Pattern
+
 ```go
 // ✅ CORRECT: Use Portunix container commands
 func runContainerTest(t *testing.T, tf *testframework.TestFramework, binaryPath string) bool {
@@ -105,6 +118,7 @@ func runContainerTest(t *testing.T, tf *testframework.TestFramework, binaryPath 
    - Specify container requirements via Portunix flags
 
 2. **Installation Testing**
+
    ```go
    // Test package installation in container
    tf.Command(t, binaryPath, []string{"docker", "run-in-container", "python", "--image", "ubuntu:22.04"})
@@ -112,12 +126,14 @@ func runContainerTest(t *testing.T, tf *testframework.TestFramework, binaryPath 
    ```
 
 3. **Verification Testing**
+
    ```go
    // Verify installation worked inside container
    // Container automatically includes SSH access for verification
    ```
 
 4. **Multi-Platform Testing**
+
    ```go
    // Test across different base images
    platforms := []string{"ubuntu:22.04", "debian:bookworm", "alpine:latest"}
@@ -131,14 +147,16 @@ func runContainerTest(t *testing.T, tf *testframework.TestFramework, binaryPath 
 ### Output with Verbose Mode
 
 **Without verbose:**
-```
+
+```text
 === RUN   TestIssue037WithFramework
 --- PASS: TestIssue037WithFramework (2.34s)
 PASS
 ```
 
 **With verbose mode:**
-```
+
+```text
 ================================================================================
 🚀 STARTING: Issue037_MCP_Serve
 Description: Test MCP serve command implementation with detailed logging
@@ -178,6 +196,7 @@ Steps: 5
 ## Framework API
 
 ### Basic Usage
+
 ```go
 package integration
 
@@ -207,18 +226,21 @@ func TestExample(t *testing.T) {
 ### Available Methods
 
 #### Structural
+
 - `testframework.NewTestFramework(name string)` - Create new framework
 - `Start(t, description)` - Start test with header
 - `Finish(t, success)` - End test with summary
 - `Step(t, description, details...)` - New test step
 
 #### Logging
+
 - `Success(t, message, details...)` - ✅ Success
 - `Error(t, message, details...)` - ❌ Error
 - `Warning(t, message, details...)` - ⚠️ Warning
 - `Info(t, message, details...)` - ℹ️ Information
 
 #### Special
+
 - `Command(t, cmd, args)` - 🔧 Command logging
 - `Output(t, output, maxLength)` - 📄 Command output
 - `Separator()` - Visual separator
@@ -227,6 +249,7 @@ func TestExample(t *testing.T) {
 ## Recommended Practices
 
 ### 1. Structured Test
+
 ```go
 package integration
 
@@ -262,6 +285,7 @@ func TestFeature(t *testing.T) {
 ```
 
 ### 2. Command Testing Pattern
+
 ```go
 tf.Step(t, "Execute command")
 tf.Command(t, binaryPath, []string{"arg1", "arg2"})
@@ -280,6 +304,7 @@ tf.Success(t, "Command successful")
 ```
 
 ### 3. Assertion Pattern
+
 ```go
 if expected != actual {
     tf.Error(t, "Assertion failed",
@@ -294,6 +319,7 @@ if expected != actual {
 ## Existing Tests
 
 ### Upgrading Existing Tests
+
 1. **Keep original logic** - framework is additive
 2. **Add framework wrapper** around existing code
 3. **Gradually extend** with more detailed steps
@@ -302,6 +328,7 @@ if expected != actual {
 ### Upgrade Examples
 
 **Before:**
+
 ```go
 func TestBasic(t *testing.T) {
     cmd := exec.Command("./portunix", "--help")
@@ -316,6 +343,7 @@ func TestBasic(t *testing.T) {
 ```
 
 **After:**
+
 ```go
 package integration
 
@@ -361,6 +389,7 @@ func TestBasic(t *testing.T) {
 ### Common Errors
 
 #### "undefined: testframework"
+
 ```bash
 # ERROR - Missing import
 package integration
@@ -374,6 +403,7 @@ tf := testframework.NewTestFramework("TestName") // CORRECT
 ```
 
 #### Module path issues
+
 ```bash
 # ERROR - Wrong module path
 import "portunix.ai/test/testframework"
@@ -383,6 +413,7 @@ import "portunix.ai/portunix/test/testframework"
 ```
 
 #### Verbose output not showing
+
 ```bash
 # Verbose output is controlled by Go's -v flag
 go test ./test/integration/test_file.go -v
@@ -394,6 +425,7 @@ go test ./test/integration/test_file.go -v
 ## Debug Specific Problems
 
 ### For "invisible" tests
+
 ```bash
 # If test seems to "not run"
 go test ./path/to/test.go -v -timeout=30s
@@ -403,12 +435,14 @@ go test ./path/to/test.go -v -race -timeout=60s
 ```
 
 ### For Performance Problems
+
 ```bash
 # With profiling
 go test ./path/to/test.go -v -cpuprofile=cpu.prof -memprofile=mem.prof
 ```
 
 ### Testing New testframework Package
+
 ```bash
 # Test single file with testframework
 go test ./test/integration/issue_037_mcp_serve_test.go -v
@@ -423,6 +457,7 @@ go test ./test/integration/claude_code_container_install_test.go -v -timeout 10m
 ## CI/CD Integration
 
 ### GitHub Actions
+
 ```yaml
 - name: Run integration tests with TestFramework
   run: |
@@ -430,6 +465,7 @@ go test ./test/integration/claude_code_container_install_test.go -v -timeout 10m
 ```
 
 ### Local Development
+
 ```bash
 # Aliases for convenience
 alias gotest-verbose='go test -v'
@@ -444,7 +480,8 @@ gotest-e2e ./test/integration/claude_code_container_install_test.go
 ## TestFramework Package
 
 ### Package Structure
-```
+
+```text
 test/
 ├── testframework/
 │   └── framework.go          # Main TestFramework implementation
@@ -454,6 +491,7 @@ test/
 ```
 
 ### Key Features
+
 - **Single File Execution**: No need to specify multiple files
 - **Automatic Verbose Detection**: Uses Go's `testing.Verbose()`
 - **Clean Package Structure**: Import once, use everywhere
@@ -462,6 +500,7 @@ test/
 - **Error Handling**: Proper success/failure tracking
 
 ### Migration from Old Framework
+
 ```go
 // OLD (required two files)
 // go test ./test.go ./test_framework.go
@@ -476,6 +515,7 @@ tf := testframework.NewTestFramework("TestName")
 ### Usage Examples
 
 #### Simple Test
+
 ```go
 func TestSimple(t *testing.T) {
     tf := testframework.NewTestFramework("SimpleTest")
@@ -491,6 +531,7 @@ func TestSimple(t *testing.T) {
 ```
 
 #### E2E Container Test
+
 ```go
 func TestE2E(t *testing.T) {
     tf := testframework.NewTestFramework("E2E_Container_Test")
@@ -520,4 +561,4 @@ func TestE2E(t *testing.T) {
 **Created:** 2025-01-12  
 **Updated:** 2025-09-12 (testframework package)  
 **Version:** 2.0  
-**Author:** Claude Code Assistant
+**Author:** Zdeněk

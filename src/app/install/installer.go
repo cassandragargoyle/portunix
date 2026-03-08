@@ -26,22 +26,24 @@ func InstallPackage(packageName, variant string) error {
 // This function is called when users use the enhanced installation parameters:
 //
 // Examples of CLI commands that trigger this function:
-//   portunix install hugo --method=apt              # Override default installation method to use APT
-//   portunix install hugo --method=snap             # Override default installation method to use Snap
-//   portunix install hugo --version=latest          # Install latest stable release (e.g., v1.0.0, not beta/rc versions)
-//   portunix install hugo --version=prerelease      # Install latest prerelease (beta, rc, or development versions)
-//   portunix install hugo --version=v0.140.0        # Install specific version number
-//   portunix install hugo --list-methods            # Show available methods (handled before this function)
-//   portunix install hugo --dry-run                 # Preview installation without executing
-//   portunix install hugo --method=apt --dry-run    # Combine method override with dry-run
+//
+//	portunix install hugo --method=apt              # Override default installation method to use APT
+//	portunix install hugo --method=snap             # Override default installation method to use Snap
+//	portunix install hugo --version=latest          # Install latest stable release (e.g., v1.0.0, not beta/rc versions)
+//	portunix install hugo --version=prerelease      # Install latest prerelease (beta, rc, or development versions)
+//	portunix install hugo --version=v0.140.0        # Install specific version number
+//	portunix install hugo --list-methods            # Show available methods (handled before this function)
+//	portunix install hugo --dry-run                 # Preview installation without executing
+//	portunix install hugo --method=apt --dry-run    # Combine method override with dry-run
 //
 // The function flow:
 // 1. Load package configuration from assets/install-packages.json
 // 2. Resolve the appropriate variant based on:
-//    - Current OS platform (windows/linux/darwin) - each OS has different available methods
-//    - Method override (if --method specified) - must exist for current OS
-//    - Version requirements (if --version specified) - selects method capable of that version
-//    - Default/preferred variant for the OS if no overrides
+//   - Current OS platform (windows/linux/darwin) - each OS has different available methods
+//   - Method override (if --method specified) - must exist for current OS
+//   - Version requirements (if --version specified) - selects method capable of that version
+//   - Default/preferred variant for the OS if no overrides
+//
 // 3. Delegate to InstallPackageWithDryRun with resolved variant
 //
 // Parameters are passed through InstallOptions struct which contains:
@@ -57,6 +59,11 @@ func InstallPackageWithOptions(options *InstallOptions) error {
 		// Check if package exists in new registry
 		pkg, err := registry.GetPackage(options.PackageName)
 		if err == nil {
+			// Resolve and install dependencies first
+			if err := installDependencies(registry, options.PackageName, options.DryRun); err != nil {
+				return fmt.Errorf("failed to install dependencies: %w", err)
+			}
+
 			// Package found in new registry, use it
 			variant, err := resolveVariantFromRegistry(pkg, options)
 			if err != nil {
@@ -79,6 +86,78 @@ func InstallPackageWithOptions(options *InstallOptions) error {
 	}
 
 	return InstallPackageWithDryRun(options.PackageName, variant, options.DryRun)
+}
+
+// installDependencies resolves and installs package dependencies before the main package
+func installDependencies(registry *PackageRegistry, packageName string, dryRun bool) error {
+	deps, err := registry.ResolveDependencies(packageName)
+	if err != nil {
+		return err
+	}
+
+	// ResolveDependencies returns all packages in order including the target,
+	// so we skip the last one (the package itself)
+	if len(deps) <= 1 {
+		return nil
+	}
+	deps = deps[:len(deps)-1]
+
+	for _, depName := range deps {
+		depPkg, err := registry.GetPackage(depName)
+		if err != nil {
+			return fmt.Errorf("dependency '%s' not found in registry: %w", depName, err)
+		}
+
+		// Check if dependency is already installed via verification command
+		if isDependencyInstalled(depPkg) {
+			fmt.Printf("✅ Dependency '%s' is already installed, skipping\n", depName)
+			continue
+		}
+
+		fmt.Printf("\n📦 Installing dependency: %s\n", depName)
+		depOptions := &InstallOptions{
+			PackageName: depName,
+			DryRun:      dryRun,
+		}
+		depVariant, err := resolveVariantFromRegistry(depPkg, depOptions)
+		if err != nil {
+			return fmt.Errorf("failed to resolve variant for dependency '%s': %w", depName, err)
+		}
+		if err := installPackageFromRegistry(depPkg, depVariant, dryRun); err != nil {
+			return fmt.Errorf("failed to install dependency '%s': %w", depName, err)
+		}
+		fmt.Printf("✅ Dependency '%s' installed successfully\n\n", depName)
+	}
+
+	return nil
+}
+
+// isDependencyInstalled checks if a package is already installed using its verification command
+func isDependencyInstalled(pkg *Package) bool {
+	currentOS := GetOperatingSystem()
+	platform, exists := pkg.Spec.Platforms[currentOS]
+	if !exists {
+		if currentOS == "windows_sandbox" {
+			platform, exists = pkg.Spec.Platforms["windows"]
+		}
+		if !exists {
+			return false
+		}
+	}
+
+	if platform.Verification == nil || platform.Verification.Command == "" {
+		return false
+	}
+
+	var cmd *exec.Cmd
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("cmd", "/C", platform.Verification.Command)
+	} else {
+		cmd = exec.Command("sh", "-c", platform.Verification.Command)
+	}
+
+	err := cmd.Run()
+	return err == nil && platform.Verification.ExpectedExitCode == 0
 }
 
 // resolveVariantWithMethodAndVersion determines the effective variant based on method and version overrides
@@ -185,7 +264,7 @@ func findVariantWithPrereleaseCapability(platform *PlatformConfig) (string, erro
 
 		// Check if variant name suggests prerelease capability
 		if strings.Contains(strings.ToLower(variantName), "latest") ||
-		   strings.Contains(strings.ToLower(variantName), "prerelease") {
+			strings.Contains(strings.ToLower(variantName), "prerelease") {
 			return variantName, nil
 		}
 	}
@@ -568,9 +647,9 @@ func installArchive(platform *PlatformConfig, variant *VariantConfig) error {
 
 	// Run post-install commands
 	extraVariables := map[string]string{
-		"downloaded_file":    cachedFile,
-		"extract_to":         extractTo,
-		"actual_extract_to":  actualExtractTo,
+		"downloaded_file":   cachedFile,
+		"extract_to":        extractTo,
+		"actual_extract_to": actualExtractTo,
 	}
 	if err := runPostInstallCommands(variant, extraVariables); err != nil {
 		return fmt.Errorf("post-install commands failed: %w", err)
@@ -586,7 +665,7 @@ func installApt(platform *PlatformConfig, variant *VariantConfig) error {
 	}
 
 	aptMgr := apt.NewAptManager()
-	
+
 	// Set dry-run mode if we're in dry-run mode
 	// (This needs to be passed from the main function - for now defaulting to false)
 	aptMgr.DryRun = false // TODO: Pass dry-run flag from main installer
@@ -636,7 +715,7 @@ func installDnf(platform *PlatformConfig, variant *VariantConfig) error {
 		return fmt.Errorf("DNF is not available on this system")
 	}
 
-	// Update package list first  
+	// Update package list first
 	fmt.Println("📋 Updating package metadata...")
 	updateCmd := exec.Command("sudo", "dnf", "check-update")
 	updateCmd.Stdout = os.Stdout
@@ -908,7 +987,7 @@ func extractTarXz(tarFile, destDir string) error {
 		checkCmd := exec.Command("which", "xz")
 		if err := checkCmd.Run(); err != nil {
 			fmt.Println("🔧 Installing xz-utils for .tar.xz extraction...")
-			
+
 			// Try to install xz-utils based on available package manager
 			installCmd := exec.Command("apt-get", "update", "&&", "apt-get", "install", "-y", "xz-utils")
 			if isRunningAsRoot() {
@@ -916,13 +995,13 @@ func extractTarXz(tarFile, destDir string) error {
 			} else {
 				installCmd = exec.Command("sh", "-c", "sudo apt-get update && sudo apt-get install -y xz-utils")
 			}
-			
+
 			installCmd.Stdout = os.Stdout
 			installCmd.Stderr = os.Stderr
 			if err := installCmd.Run(); err != nil {
 				// If apt-get fails, try other package managers
 				fmt.Println("⚠️  apt-get failed, trying alternative package managers...")
-				
+
 				// Try dnf/yum for RedHat-based systems
 				if isRunningAsRoot() {
 					installCmd = exec.Command("sh", "-c", "dnf install -y xz || yum install -y xz")
@@ -1329,7 +1408,7 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 	case "arch":
 		// Determine sudo prefix
 		sudoPrefix := determineSudoPrefix()
-		
+
 		// Update package database first
 		fmt.Println("📋 Updating package database...")
 		if sudoPrefix == "" {
@@ -1386,7 +1465,6 @@ func installRepository(platform *PlatformConfig, variant *VariantConfig) error {
 	return nil
 }
 
-
 // installDirectDownload installs a package by directly downloading from URL
 func installDirectDownload(platform *PlatformConfig, variant *VariantConfig) error {
 	// Get URL from variant (should be in URL field for direct_download type)
@@ -1439,7 +1517,7 @@ func installDirectDownload(platform *PlatformConfig, variant *VariantConfig) err
 
 		// Install to target path
 		targetPath := filepath.Join(variant.InstallPath, variant.Binary)
-		
+
 		// Create target directory
 		if err := os.MkdirAll(variant.InstallPath, 0755); err != nil {
 			return fmt.Errorf("failed to create install directory: %w", err)
@@ -1452,7 +1530,7 @@ func installDirectDownload(platform *PlatformConfig, variant *VariantConfig) err
 			if output, err := cmd.CombinedOutput(); err != nil {
 				return fmt.Errorf("failed to install binary: %w, output: %s", err, output)
 			}
-			
+
 			// Make executable
 			cmd = exec.Command("sudo", "chmod", "+x", targetPath)
 			if output, err := cmd.CombinedOutput(); err != nil {
@@ -1463,7 +1541,7 @@ func installDirectDownload(platform *PlatformConfig, variant *VariantConfig) err
 			if err := copyFile(binaryPath, targetPath); err != nil {
 				return fmt.Errorf("failed to copy binary: %w", err)
 			}
-			
+
 			// Make executable
 			if err := os.Chmod(targetPath, 0755); err != nil {
 				return fmt.Errorf("failed to make binary executable: %w", err)
@@ -1482,11 +1560,10 @@ func installDirectDownload(platform *PlatformConfig, variant *VariantConfig) err
 	return nil
 }
 
-
 // extractArchive extracts an archive to target directory
 func extractArchive(archivePath, targetDir string) error {
 	var cmd *exec.Cmd
-	
+
 	if strings.HasSuffix(archivePath, ".tar.gz") || strings.HasSuffix(archivePath, ".tgz") {
 		cmd = exec.Command("tar", "-xzf", archivePath, "-C", targetDir)
 	} else if strings.HasSuffix(archivePath, ".tar") {
@@ -1496,11 +1573,11 @@ func extractArchive(archivePath, targetDir string) error {
 	} else {
 		return fmt.Errorf("unsupported archive format: %s", archivePath)
 	}
-	
+
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("extraction failed: %w, output: %s", err, output)
 	}
-	
+
 	return nil
 }
 
@@ -1596,7 +1673,7 @@ func isPackageInstalled(config *InstallConfig, packageName string) bool {
 // downloadFile downloads a file from URL and saves it to the specified path
 func downloadFile(filepath string, url string) error {
 	fmt.Printf("Downloading %s...\n", url)
-	
+
 	// Create HTTP request
 	resp, err := http.Get(url)
 	if err != nil {
@@ -1737,12 +1814,12 @@ func determineSudoPrefix() string {
 	if isRunningAsRoot() {
 		return "" // No sudo needed
 	}
-	
+
 	// Check if sudo is available
 	if isSudoAvailable() {
 		return "sudo " // Use sudo with space
 	}
-	
+
 	// No sudo available - commands may fail, but try without
 	fmt.Printf("⚠️  Warning: Not running as root and sudo not available. Some operations may fail.\n")
 	return ""
@@ -1753,13 +1830,13 @@ func isRunningAsRoot() bool {
 	if runtime.GOOS == "windows" {
 		return false // Windows doesn't use UID 0 concept
 	}
-	
+
 	cmd := exec.Command("id", "-u")
 	output, err := cmd.Output()
 	if err != nil {
 		return false
 	}
-	
+
 	uid := strings.TrimSpace(string(output))
 	return uid == "0"
 }
@@ -1933,7 +2010,7 @@ func runPostInstallCommands(variant *VariantConfig, extraVariables map[string]st
 
 	// Prepare variables for template resolution
 	variables := make(map[string]string)
-	
+
 	// Add sudo prefix based on current execution context
 	// If actual_extract_to is in user directory, don't use sudo
 	actualExtractTo, hasActualExtractTo := extraVariables["actual_extract_to"]
@@ -1942,7 +2019,7 @@ func runPostInstallCommands(variant *VariantConfig, extraVariables map[string]st
 	} else {
 		variables["sudo_prefix"] = determineSudoPrefix()
 	}
-	
+
 	// Add any extra variables provided by caller
 	for key, value := range extraVariables {
 		variables[key] = value
@@ -1952,7 +2029,7 @@ func runPostInstallCommands(variant *VariantConfig, extraVariables map[string]st
 	for i, cmdTemplate := range variant.PostInstall {
 		// Resolve template variables
 		resolvedCmd := ResolveVariables(cmdTemplate, variables)
-		
+
 		fmt.Printf("   📌 Step %d/%d: %s\n", i+1, len(variant.PostInstall))
 		fmt.Printf("   Template: %s\n", cmdTemplate)
 		if resolvedCmd != cmdTemplate {
@@ -1966,15 +2043,15 @@ func runPostInstallCommands(variant *VariantConfig, extraVariables map[string]st
 		} else {
 			cmd = exec.Command("sh", "-c", resolvedCmd)
 		}
-		
+
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		
+
 		if err := cmd.Run(); err != nil {
 			fmt.Printf("   ❌ Command failed: %v\n", err)
 			return fmt.Errorf("post-install command %d failed: %w", i+1, err)
 		}
-		
+
 		fmt.Printf("   ✅ Step %d completed successfully\n", i+1)
 	}
 
@@ -2200,15 +2277,15 @@ func findBestVariantForLinux(platform PlatformSpec) (string, error) {
 
 	// Priority mapping for different distributions
 	distributionPreferences := map[string][]string{
-		"ubuntu":      {"apt", "snap", "deb"},
-		"debian":      {"apt", "deb", "snap"},
-		"mint":        {"apt", "snap", "deb"},
-		"elementary":  {"apt", "snap", "deb"},
-		"fedora":      {"dnf", "rpm", "snap"},
-		"rocky":       {"dnf", "rpm", "yum", "snap"},
-		"almalinux":   {"dnf", "rpm", "yum", "snap"},
-		"centos":      {"dnf", "rpm", "yum", "snap"},
-		"arch":        {"pacman", "snap"},
+		"ubuntu":     {"apt", "snap", "deb"},
+		"debian":     {"apt", "deb", "snap"},
+		"mint":       {"apt", "snap", "deb"},
+		"elementary": {"apt", "snap", "deb"},
+		"fedora":     {"dnf", "rpm", "snap"},
+		"rocky":      {"dnf", "rpm", "yum", "snap"},
+		"almalinux":  {"dnf", "rpm", "yum", "snap"},
+		"centos":     {"dnf", "rpm", "yum", "snap"},
+		"arch":       {"pacman", "snap"},
 	}
 
 	// Get preferred variants for current distribution

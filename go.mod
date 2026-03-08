@@ -27,7 +27,7 @@ require (
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.11.1
 	github.com/testcontainers/testcontainers-go v0.38.0
-	golang.org/x/crypto v0.46.0
+	golang.org/x/crypto v0.47.0
 	google.golang.org/grpc v1.78.0
 	gopkg.in/yaml.v3 v3.0.1
 	portunix.ai/app v0.0.0-00010101000000-000000000000
@@ -102,13 +102,13 @@ require (
 	go.opentelemetry.io/otel/metric v1.38.0 // indirect
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
-	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/net v0.49.0 // indirect
 	golang.org/x/oauth2 v0.32.0 // indirect
-	golang.org/x/sys v0.39.0 // indirect
-	golang.org/x/term v0.38.0 // indirect
-	golang.org/x/text v0.32.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20251029180050-ab9386a59fda // indirect
-	google.golang.org/protobuf v1.36.10 // indirect
+	golang.org/x/sys v0.40.0 // indirect
+	golang.org/x/term v0.39.0 // indirect
+	golang.org/x/text v0.33.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260126211449-d11affda4bed // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 	portunix.ai/app/github v0.0.0-00010101000000-000000000000 // indirect
 	portunix.ai/app/wizard v0.0.0-00010101000000-000000000000 // indirect
 )

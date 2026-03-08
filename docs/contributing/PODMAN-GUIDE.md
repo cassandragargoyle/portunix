@@ -1,6 +1,7 @@
 # Podman Guide
 
 ## Purpose
+
 This document provides comprehensive guidance for using Podman as a container engine in CassandraGargoyle projects. Podman is a daemonless, rootless container engine that provides Docker-compatible commands while offering enhanced security features.
 
 ## What is Podman?
@@ -8,6 +9,7 @@ This document provides comprehensive guidance for using Podman as a container en
 **Podman** (Pod Manager) is an open-source container management tool that allows you to manage OCI containers and pods. Unlike Docker, Podman doesn't require a daemon and can run containers as a non-root user, providing better security isolation.
 
 ### Key Features
+
 - **Daemonless Architecture** - No background service required
 - **Rootless Containers** - Run containers without root privileges
 - **Docker Compatible** - Supports Docker CLI commands and Dockerfiles
@@ -18,6 +20,7 @@ This document provides comprehensive guidance for using Podman as a container en
 ## Installation
 
 ### Windows
+
 ```powershell
 # Using Chocolatey
 choco install podman-desktop
@@ -32,6 +35,7 @@ portunix install podman
 ### Linux
 
 #### Ubuntu/Debian
+
 ```bash
 # Add repository
 sudo apt update
@@ -42,6 +46,7 @@ portunix install podman
 ```
 
 #### Fedora/RHEL/Rocky Linux
+
 ```bash
 # Install from default repository
 sudo dnf install -y podman
@@ -51,6 +56,7 @@ portunix install podman
 ```
 
 #### Arch Linux
+
 ```bash
 # Install from community repository
 sudo pacman -S podman
@@ -60,6 +66,7 @@ portunix install podman
 ```
 
 ### macOS
+
 ```bash
 # Using Homebrew
 brew install podman
@@ -77,6 +84,7 @@ portunix install podman
 ### Container Management
 
 #### Pull an Image
+
 ```bash
 # Pull from Docker Hub (default)
 podman pull ubuntu:22.04
@@ -89,6 +97,7 @@ podman pull quay.io/podman/hello
 ```
 
 #### Run a Container
+
 ```bash
 # Run interactive container
 podman run -it ubuntu:22.04 /bin/bash
@@ -107,6 +116,7 @@ podman run --userns=keep-id ubuntu
 ```
 
 #### List Containers
+
 ```bash
 # List running containers
 podman ps
@@ -119,6 +129,7 @@ podman ps --format "table {{.Names}}\t{{.Status}}\t{{.Image}}"
 ```
 
 #### Stop and Remove
+
 ```bash
 # Stop container
 podman stop container_name
@@ -137,6 +148,7 @@ podman image prune
 ### Image Management
 
 #### Build Images
+
 ```bash
 # Build from Dockerfile
 podman build -t myapp:latest .
@@ -149,6 +161,7 @@ podman build --build-arg VERSION=1.0 -t myapp:1.0 .
 ```
 
 #### Manage Images
+
 ```bash
 # List images
 podman images
@@ -172,6 +185,7 @@ podman load -i myapp.tar
 ### Pod Management
 
 #### Create and Manage Pods
+
 ```bash
 # Create a pod
 podman pod create --name mypod -p 8080:80
@@ -195,6 +209,7 @@ podman generate kube mypod > pod.yaml
 ## Rootless Configuration
 
 ### Setup Rootless Podman
+
 ```bash
 # Enable lingering for user (allows containers to run after logout)
 loginctl enable-linger $USER
@@ -208,6 +223,7 @@ podman unshare cat /proc/self/uid_map
 ```
 
 ### Storage Configuration
+
 ```bash
 # Configure storage location
 mkdir -p ~/.config/containers
@@ -220,6 +236,7 @@ EOF
 ```
 
 ### Network Configuration
+
 ```bash
 # List networks
 podman network ls
@@ -237,6 +254,7 @@ podman run -d --network mynetwork nginx
 ## Docker Compatibility
 
 ### Alias Setup
+
 ```bash
 # Add to ~/.bashrc or ~/.zshrc
 alias docker=podman
@@ -247,6 +265,7 @@ sudo apt install podman-docker   # Debian/Ubuntu
 ```
 
 ### Docker Compose Alternative
+
 ```bash
 # Install podman-compose
 pip install podman-compose
@@ -258,6 +277,7 @@ docker-compose up
 ```
 
 ### Migration from Docker
+
 ```bash
 # Export from Docker
 docker save myapp:latest -o myapp.tar
@@ -274,6 +294,7 @@ podman-compose -f docker-compose.yml up
 ### Systemd Integration
 
 #### Generate Systemd Units
+
 ```bash
 # Generate systemd unit for container
 podman generate systemd --name mycontainer > ~/.config/systemd/user/mycontainer.service
@@ -288,6 +309,7 @@ systemctl --user start mycontainer.service
 ```
 
 #### Auto-update Containers
+
 ```bash
 # Label container for auto-update
 podman run -d --name web --label io.containers.autoupdate=registry nginx
@@ -303,6 +325,7 @@ podman auto-update
 ### Security Features
 
 #### SELinux Labels
+
 ```bash
 # Run with SELinux context
 podman run -v /host/path:/container/path:Z ubuntu  # Private label
@@ -313,6 +336,7 @@ ls -Z /var/lib/containers
 ```
 
 #### User Namespace Mapping
+
 ```bash
 # Run with specific UID/GID mapping
 podman run --uidmap 0:100000:65536 --gidmap 0:100000:65536 ubuntu
@@ -322,6 +346,7 @@ podman run --userns=keep-id ubuntu
 ```
 
 #### Capabilities Management
+
 ```bash
 # Drop all capabilities
 podman run --cap-drop=all ubuntu
@@ -336,6 +361,7 @@ podman run --privileged ubuntu
 ### Registry Configuration
 
 #### Configure Registries
+
 ```bash
 # Edit registries.conf
 sudo vi /etc/containers/registries.conf
@@ -350,6 +376,7 @@ registries = ['docker.io', 'quay.io', 'registry.fedoraproject.org']
 ```
 
 #### Authentication
+
 ```bash
 # Login to registry
 podman login docker.io
@@ -364,6 +391,7 @@ podman logout docker.io
 ## Integration with Development Tools
 
 ### Visual Studio Code
+
 ```json
 // .devcontainer/devcontainer.json
 {
@@ -382,6 +410,7 @@ podman logout docker.io
 ```
 
 ### Jenkins Integration
+
 ```groovy
 pipeline {
     agent {
@@ -398,6 +427,7 @@ pipeline {
 ```
 
 ### GitHub Actions
+
 ```yaml
 name: Podman Build
 on: [push]
@@ -428,6 +458,7 @@ jobs:
 ### Common Issues
 
 #### Permission Denied
+
 ```bash
 # Fix storage permissions
 podman system reset
@@ -438,6 +469,7 @@ systemctl --user restart podman.socket
 ```
 
 #### Networking Issues
+
 ```bash
 # Reset network
 podman network reload --all
@@ -450,6 +482,7 @@ sudo sysctl net.ipv4.ip_forward=1
 ```
 
 #### Storage Issues
+
 ```bash
 # Clean up storage
 podman system prune -a
@@ -464,6 +497,7 @@ podman system reset
 ### Debugging
 
 #### Container Logs
+
 ```bash
 # View logs
 podman logs container_name
@@ -476,6 +510,7 @@ podman logs --tail 50 container_name
 ```
 
 #### Inspect Resources
+
 ```bash
 # Inspect container
 podman inspect container_name
@@ -488,6 +523,7 @@ podman stats
 ```
 
 #### Execute Commands
+
 ```bash
 # Execute command in running container
 podman exec -it container_name /bin/bash
@@ -499,6 +535,7 @@ podman exec -u 1000 container_name whoami
 ## Best Practices
 
 ### Security
+
 1. **Always run rootless** when possible
 2. **Use specific image tags** instead of latest
 3. **Scan images for vulnerabilities**: `podman scan image_name`
@@ -506,6 +543,7 @@ podman exec -u 1000 container_name whoami
 5. **Use read-only containers** when possible: `--read-only`
 
 ### Performance
+
 1. **Use overlay storage driver** for better performance
 2. **Limit container resources**: `--memory`, `--cpus`
 3. **Use volume mounts** instead of bind mounts
@@ -513,6 +551,7 @@ podman exec -u 1000 container_name whoami
 5. **Use multi-stage builds** to reduce image size
 
 ### Development Workflow
+
 1. **Use podman-compose** for multi-container apps
 2. **Generate Kubernetes YAML** for production
 3. **Automate with systemd** for production services
@@ -522,7 +561,7 @@ podman exec -u 1000 container_name whoami
 ## Comparison with Docker
 
 | Feature | Podman | Docker |
-|---------|--------|--------|
+| ------- | ------ | ------ |
 | Architecture | Daemonless | Daemon-based |
 | Root requirement | Rootless by default | Requires root/sudo |
 | Security | Better isolation | Standard isolation |
@@ -535,16 +574,19 @@ podman exec -u 1000 container_name whoami
 ## Resources
 
 ### Official Documentation
+
 - [Podman Documentation](https://docs.podman.io/)
 - [Podman Desktop](https://podman-desktop.io/)
 - [Container Registry](https://quay.io/)
 
 ### Community Resources
+
 - [Podman GitHub](https://github.com/containers/podman)
 - [Podman Blog](https://podman.io/blogs/)
 - [Red Hat Developer](https://developers.redhat.com/topics/podman)
 
 ### Related Tools
+
 - [Buildah](https://buildah.io/) - Build container images
 - [Skopeo](https://github.com/containers/skopeo) - Work with container images
 - [CRI-O](https://cri-o.io/) - Kubernetes container runtime

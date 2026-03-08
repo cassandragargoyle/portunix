@@ -11,7 +11,7 @@ QFD originated in Japan in the late 1960s and has become a fundamental tool for 
 ISO 16355 consists of multiple parts:
 
 | Part | Title | Description |
-|------|-------|-------------|
+| ---- | ----- | ----------- |
 | ISO 16355-1 | General guidelines | Introduction and principles of QFD |
 | ISO 16355-2 | VoC/VoS acquisition (non-quantitative) | Interviews, focus groups, observation |
 | ISO 16355-3 | VoC/VoS acquisition (quantitative) | Surveys, statistical sampling, analytics |
@@ -28,11 +28,13 @@ ISO 16355 consists of multiple parts:
 The foundation of QFD is systematically capturing what customers and stakeholders want.
 
 **Voice of Customer (VoC)** - direct customer/user requirements:
+
 - **Stated needs** - explicitly expressed requirements
 - **Implied needs** - expected but not stated
 - **Latent needs** - unrecognized desires that delight customers
 
 **Voice of Stakeholder (VoS)** - requirements from other stakeholders:
+
 - **Regulatory** - compliance, legal requirements, standards
 - **Business** - profitability, market positioning, strategy
 - **Technical** - maintainability, scalability, security
@@ -43,7 +45,7 @@ The foundation of QFD is systematically capturing what customers and stakeholder
 
 The primary tool of QFD is a matrix called "House of Quality":
 
-```
+```text
 ┌─────────────────────────────────┐
 │     Correlation Matrix          │  ← Technical correlations
 │         (roof)                  │
@@ -74,7 +76,7 @@ The primary tool of QFD is a matrix called "House of Quality":
 QFD principles apply to software products:
 
 | QFD Concept | Software Application |
-|-------------|---------------------|
+| ----------- | ------------------- |
 | Customer needs | User stories, feature requests, feedback |
 | Quality characteristics | Functional requirements, NFRs |
 | Technical requirements | Architecture decisions, API design |
@@ -90,7 +92,7 @@ QFD supports iterative development through MVP approach:
 3. **Iterative Refinement** - Each MVP iteration feeds new VoC back into QFD process
 4. **Risk Reduction** - Early validation of prioritized requirements
 
-```
+```text
 MVP Cycle with QFD:
 
   VoC/VoS → [QFD Prioritization] → MVP Features → Build → Release
@@ -103,16 +105,19 @@ MVP Cycle with QFD:
 The `ptx-pft` helper implements QFD principles:
 
 ### Voice of Customer and Stakeholder Collection (VoC/VoS)
+
 - Integration with feedback tools (Fider.io, Canny, ProductBoard)
 - Systematic collection of user and stakeholder feedback
 - Categorization and prioritization
 
 ### Requirements Traceability
+
 - Bidirectional sync between feedback and documentation
 - Linking customer requests to implementation
 - Status tracking from request to delivery
 
 ### Continuous Improvement
+
 - Feedback loop from users to developers
 - Metrics and reporting on feedback handling
 - Prioritization based on customer value
@@ -129,8 +134,8 @@ The `ptx-pft` helper implements QFD principles:
 ## References
 
 - ISO 16355-1:2015 - Application of statistical and related methods to new technology and product development process
-- QFD Institute: https://www.qfdi.org/
-- American Society for Quality (ASQ): https://asq.org/quality-resources/qfd-quality-function-deployment
+- QFD Institute: <https://www.qfdi.org/>
+- American Society for Quality (ASQ): <https://asq.org/quality-resources/qfd-quality-function-deployment>
 
 ## See Also
 

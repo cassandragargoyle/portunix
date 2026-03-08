@@ -136,7 +136,7 @@ func TestDockerConfig_GoDevEnvironment(t *testing.T) {
 		EnableSSH:        true,
 		KeepRunning:      true,
 		Ports:            []string{"8080:8080", "9000:9000"}, // Typical Go web server ports
-		Volumes:          []string{"/workspace:/app"},         // Mount workspace
+		Volumes:          []string{"/workspace:/app"},        // Mount workspace
 		Environment:      []string{"GOPATH=/app/go", "GO111MODULE=on"},
 		Privileged:       false,
 		Network:          "bridge",

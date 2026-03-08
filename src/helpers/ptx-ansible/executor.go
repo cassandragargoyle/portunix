@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package main
 
 import (
@@ -631,16 +635,16 @@ func substituteVariables(text string, variables map[string]interface{}) string {
 
 // EnvironmentContext holds context information for non-local environments
 type EnvironmentContext struct {
-	Type        string // "container" or "virt"
-	Target      string // Container ID or VM name
-	Runtime     string // Container runtime: "docker" or "podman"
-	SSHHost     string // SSH connection host
-	SSHPort     string // SSH connection port
-	SSHUser     string // SSH username
-	SSHKeyPath  string // Path to SSH private key
-	TempDir     string // Temporary directory for environment setup (also stores runtime for containers)
-	Inventory   string // Generated Ansible inventory content
-	WorkDir     string // Working directory for script execution
+	Type       string // "container" or "virt"
+	Target     string // Container ID or VM name
+	Runtime    string // Container runtime: "docker" or "podman"
+	SSHHost    string // SSH connection host
+	SSHPort    string // SSH connection port
+	SSHUser    string // SSH username
+	SSHKeyPath string // Path to SSH private key
+	TempDir    string // Temporary directory for environment setup (also stores runtime for containers)
+	Inventory  string // Generated Ansible inventory content
+	WorkDir    string // Working directory for script execution
 }
 
 // setupEnvironment prepares the environment for playbook execution
@@ -1188,8 +1192,8 @@ func findDockerDesktopPath(verbose bool) string {
 			}
 			// docker.exe is typically in Docker\Docker\resources\bin\docker.exe
 			// Docker Desktop.exe is in Docker\Docker\Docker Desktop.exe (not in resources!)
-			dockerDir := filepath.Dir(dockerExePath) // .../resources/bin
-			resourcesDir := filepath.Dir(dockerDir)  // .../resources
+			dockerDir := filepath.Dir(dockerExePath)      // .../resources/bin
+			resourcesDir := filepath.Dir(dockerDir)       // .../resources
 			dockerDockerDir := filepath.Dir(resourcesDir) // .../Docker\Docker
 			dockerDesktop := filepath.Join(dockerDockerDir, "Docker Desktop.exe")
 			if verbose {

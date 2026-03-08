@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package main
 
 import (
@@ -61,7 +65,7 @@ type PipelineDefinition struct {
 
 // PipelineTrigger defines when a pipeline should be triggered
 type PipelineTrigger struct {
-	Type       string            `json:"type"`        // "push", "pr", "schedule", "manual"
+	Type       string            `json:"type"` // "push", "pr", "schedule", "manual"
 	Branches   []string          `json:"branches,omitempty"`
 	Paths      []string          `json:"paths,omitempty"`
 	Schedule   string            `json:"schedule,omitempty"` // Cron format
@@ -84,21 +88,21 @@ type PipelineStageConfig struct {
 
 // PipelineExecution represents a pipeline execution instance
 type PipelineExecution struct {
-	ID          string                    `json:"id"`
-	PipelineID  string                    `json:"pipeline_id"`
-	Status      PipelineStatus            `json:"status"`
-	StartedAt   time.Time                 `json:"started_at"`
-	FinishedAt  *time.Time                `json:"finished_at,omitempty"`
-	Duration    time.Duration             `json:"duration"`
-	Trigger     PipelineTrigger           `json:"trigger"`
-	Stages      []PipelineStageExecution  `json:"stages"`
-	Variables   map[string]interface{}    `json:"variables,omitempty"`
-	Artifacts   []PipelineArtifact        `json:"artifacts,omitempty"`
-	Logs        []string                  `json:"logs,omitempty"`
-	User        string                    `json:"user"`
-	Branch      string                    `json:"branch,omitempty"`
-	Commit      string                    `json:"commit,omitempty"`
-	Environment string                    `json:"environment"`
+	ID          string                   `json:"id"`
+	PipelineID  string                   `json:"pipeline_id"`
+	Status      PipelineStatus           `json:"status"`
+	StartedAt   time.Time                `json:"started_at"`
+	FinishedAt  *time.Time               `json:"finished_at,omitempty"`
+	Duration    time.Duration            `json:"duration"`
+	Trigger     PipelineTrigger          `json:"trigger"`
+	Stages      []PipelineStageExecution `json:"stages"`
+	Variables   map[string]interface{}   `json:"variables,omitempty"`
+	Artifacts   []PipelineArtifact       `json:"artifacts,omitempty"`
+	Logs        []string                 `json:"logs,omitempty"`
+	User        string                   `json:"user"`
+	Branch      string                   `json:"branch,omitempty"`
+	Commit      string                   `json:"commit,omitempty"`
+	Environment string                   `json:"environment"`
 }
 
 // PipelineStageExecution represents a stage execution within a pipeline
@@ -150,15 +154,15 @@ type CICDConfig struct {
 
 // WebhookPayload represents a webhook payload from CI/CD systems
 type WebhookPayload struct {
-	Provider    CICDProvider           `json:"provider"`
-	Event       string                 `json:"event"`
-	Repository  string                 `json:"repository"`
-	Branch      string                 `json:"branch"`
-	Commit      string                 `json:"commit"`
-	Author      string                 `json:"author"`
-	Message     string                 `json:"message"`
-	Timestamp   time.Time              `json:"timestamp"`
-	Payload     map[string]interface{} `json:"payload"`
+	Provider   CICDProvider           `json:"provider"`
+	Event      string                 `json:"event"`
+	Repository string                 `json:"repository"`
+	Branch     string                 `json:"branch"`
+	Commit     string                 `json:"commit"`
+	Author     string                 `json:"author"`
+	Message    string                 `json:"message"`
+	Timestamp  time.Time              `json:"timestamp"`
+	Payload    map[string]interface{} `json:"payload"`
 }
 
 // NewCICDManager creates a new CI/CD manager
@@ -260,15 +264,15 @@ func (cicd *CICDManager) ExecutePipeline(user, pipelineName, environment, branch
 
 	// Create execution
 	execution := &PipelineExecution{
-		ID:         generateExecutionID(),
-		PipelineID: pipelineName,
-		Status:     StatusPending,
-		StartedAt:  time.Now(),
-		User:       user,
-		Branch:     branch,
-		Commit:     commit,
+		ID:          generateExecutionID(),
+		PipelineID:  pipelineName,
+		Status:      StatusPending,
+		StartedAt:   time.Now(),
+		User:        user,
+		Branch:      branch,
+		Commit:      commit,
 		Environment: environment,
-		Variables:  variables,
+		Variables:   variables,
 		Trigger: PipelineTrigger{
 			Type: "manual",
 		},
@@ -300,13 +304,13 @@ func (cicd *CICDManager) HandleWebhook(payload *WebhookPayload) error {
 		if cicd.shouldTriggerPipeline(pipeline, payload) {
 			// Create execution from webhook
 			execution := &PipelineExecution{
-				ID:         generateExecutionID(),
-				PipelineID: pipeline.Name,
-				Status:     StatusPending,
-				StartedAt:  time.Now(),
-				User:       payload.Author,
-				Branch:     payload.Branch,
-				Commit:     payload.Commit,
+				ID:          generateExecutionID(),
+				PipelineID:  pipeline.Name,
+				Status:      StatusPending,
+				StartedAt:   time.Now(),
+				User:        payload.Author,
+				Branch:      payload.Branch,
+				Commit:      payload.Commit,
 				Environment: cicd.determineEnvironment(payload),
 				Trigger: PipelineTrigger{
 					Type: payload.Event,
@@ -334,8 +338,8 @@ func (cicd *CICDManager) HandleWebhook(payload *WebhookPayload) error {
 func (cicd *CICDManager) GetPipelineExecution(user, executionID string) (*PipelineExecution, error) {
 	// Check RBAC permissions
 	accessResult := cicd.rbacMgr.CheckAccess(&AccessRequest{
-		User:       user,
-		Permission: PermissionCICDRead,
+		User:        user,
+		Permission:  PermissionCICDRead,
 		Environment: "cicd",
 	})
 
@@ -355,8 +359,8 @@ func (cicd *CICDManager) GetPipelineExecution(user, executionID string) (*Pipeli
 func (cicd *CICDManager) ListPipelineExecutions(user, pipelineName string, limit int) ([]*PipelineExecution, error) {
 	// Check RBAC permissions
 	accessResult := cicd.rbacMgr.CheckAccess(&AccessRequest{
-		User:       user,
-		Permission: PermissionCICDRead,
+		User:        user,
+		Permission:  PermissionCICDRead,
 		Environment: "cicd",
 	})
 
@@ -384,8 +388,8 @@ func (cicd *CICDManager) ListPipelineExecutions(user, pipelineName string, limit
 func (cicd *CICDManager) GenerateProviderConfig(user, pipelineName string, provider CICDProvider) (string, error) {
 	// Check RBAC permissions
 	accessResult := cicd.rbacMgr.CheckAccess(&AccessRequest{
-		User:       user,
-		Permission: PermissionCICDRead,
+		User:        user,
+		Permission:  PermissionCICDRead,
 		Environment: "cicd",
 	})
 
@@ -463,9 +467,9 @@ func (cicd *CICDManager) executeStagePlaybook(stageConfig PipelineStageConfig, e
 	// For now, we'll simulate execution
 
 	cicd.auditMgr.LogSystemEvent(AuditLevelInfo, "cicd.stage.execute", execution.User, execution.Environment, map[string]interface{}{
-		"execution_id":   execution.ID,
-		"stage_name":     stageConfig.Name,
-		"playbook_path":  stageConfig.PlaybookPath,
+		"execution_id":  execution.ID,
+		"stage_name":    stageConfig.Name,
+		"playbook_path": stageConfig.PlaybookPath,
 	})
 
 	// TODO: Integrate with actual playbook execution

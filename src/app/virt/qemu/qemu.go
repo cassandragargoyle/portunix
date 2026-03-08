@@ -15,7 +15,6 @@ import (
 	"portunix.ai/app/virt/types"
 )
 
-
 // Backend implements the QEMU/KVM backend
 type Backend struct {
 	vmDir string
@@ -609,13 +608,13 @@ func findOVMFCode() string {
 
 // QEMUVMConfig represents QEMU VM configuration
 type QEMUVMConfig struct {
-	Name     string                 `json:"name"`
-	DiskPath string                 `json:"disk_path"`
-	RAM      string                 `json:"ram"`
-	CPUs     int                    `json:"cpus"`
-	OSType   string                 `json:"os_type"`
-	ISO      string                 `json:"iso,omitempty"`
-	Network  types.NetworkConfig     `json:"network"`
-	Features map[string]string      `json:"features,omitempty"`
-	Created  time.Time              `json:"created"`
+	Name     string              `json:"name"`
+	DiskPath string              `json:"disk_path"`
+	RAM      string              `json:"ram"`
+	CPUs     int                 `json:"cpus"`
+	OSType   string              `json:"os_type"`
+	ISO      string              `json:"iso,omitempty"`
+	Network  types.NetworkConfig `json:"network"`
+	Features map[string]string   `json:"features,omitempty"`
+	Created  time.Time           `json:"created"`
 }
