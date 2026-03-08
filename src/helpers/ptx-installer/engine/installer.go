@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package engine
 
 import (
@@ -10,6 +14,7 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 
 	"portunix.ai/portunix/src/helpers/ptx-installer/registry"
 )
@@ -144,8 +149,8 @@ type InstallOptions struct {
 
 // Installer handles package installation operations
 type Installer struct {
-	registry  *registry.PackageRegistry
-	cacheDir  string
+	registry   *registry.PackageRegistry
+	cacheDir   string
 	assetsPath string
 }
 
@@ -246,6 +251,12 @@ func (i *Installer) Install(options *InstallOptions) error {
 		if variantSpec.URL != "" {
 			fmt.Printf("   Download URL: %s\n", variantSpec.URL)
 		}
+		if len(variantSpec.AdditionalFiles) > 0 {
+			fmt.Printf("   Additional files: %d\n", len(variantSpec.AdditionalFiles))
+			for _, af := range variantSpec.AdditionalFiles {
+				fmt.Printf("     - %s\n", af.URL)
+			}
+		}
 
 		return nil
 	}
@@ -291,8 +302,12 @@ func (i *Installer) Install(options *InstallOptions) error {
 		return i.installChocolatey(&platformSpec, &variantSpec, options)
 	case "winget":
 		return i.installWinget(&platformSpec, &variantSpec, options)
+	case "download":
+		return i.installDownload(&platformSpec, &variantSpec, options)
 	case "script":
 		return i.installScript(&platformSpec, &variantSpec, options)
+	case "container":
+		return i.installContainer(&platformSpec, &variantSpec, options)
 	default:
 		return fmt.Errorf("installation type %s not yet implemented in ptx-installer", effectiveType)
 	}
@@ -470,6 +485,116 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 	return nil
 }
 
+// installDownload downloads files directly to a target directory (no extraction)
+func (i *Installer) installDownload(platform *registry.PlatformSpec, variant *registry.VariantSpec, options *InstallOptions) error {
+	// Determine download URL
+	downloadURL := variant.URL
+	if downloadURL == "" && len(variant.URLs) > 0 {
+		arch := GetArchitecture()
+		var ok bool
+		downloadURL, ok = variant.URLs[arch]
+		if !ok {
+			return fmt.Errorf("no download URL found for architecture %s", arch)
+		}
+	}
+
+	if downloadURL == "" && len(variant.AdditionalFiles) == 0 {
+		return fmt.Errorf("no download URL specified for download installation")
+	}
+
+	// Determine target directory
+	targetDir := expandEnvVars(variant.ExtractTo)
+	homeDir, _ := os.UserHomeDir()
+
+	if targetDir == "" {
+		if runtime.GOOS == "windows" {
+			targetDir = filepath.Join(homeDir, "AppData", "Local", "Programs", options.PackageName)
+		} else {
+			targetDir = filepath.Join(homeDir, ".local", "share", "portunix", "packages", options.PackageName)
+		}
+	}
+
+	// Ensure target directory exists
+	if err := os.MkdirAll(targetDir, 0755); err != nil {
+		return fmt.Errorf("failed to create target directory %s: %w", targetDir, err)
+	}
+
+	// Collect all URLs to download
+	type fileDownload struct {
+		url      string
+		filename string
+	}
+	var downloads []fileDownload
+
+	// Main file
+	if downloadURL != "" {
+		filename := ""
+		parts := strings.Split(downloadURL, "/")
+		if len(parts) > 0 {
+			filename = parts[len(parts)-1]
+			// Strip query parameters
+			if idx := strings.Index(filename, "?"); idx != -1 {
+				filename = filename[:idx]
+			}
+		}
+		downloads = append(downloads, fileDownload{url: downloadURL, filename: filename})
+	}
+
+	// Additional files
+	for _, af := range variant.AdditionalFiles {
+		filename := af.Filename
+		if filename == "" {
+			parts := strings.Split(af.URL, "/")
+			if len(parts) > 0 {
+				filename = parts[len(parts)-1]
+				if idx := strings.Index(filename, "?"); idx != -1 {
+					filename = filename[:idx]
+				}
+			}
+		}
+		downloads = append(downloads, fileDownload{url: af.URL, filename: filename})
+	}
+
+	fmt.Printf("📁 Target directory: %s\n", targetDir)
+	fmt.Printf("📥 Files to download: %d\n", len(downloads))
+
+	// Download all files
+	for idx, dl := range downloads {
+		destPath := filepath.Join(targetDir, dl.filename)
+		fmt.Printf("\n[%d/%d] %s\n", idx+1, len(downloads), dl.filename)
+		if err := DownloadFile(destPath, dl.url); err != nil {
+			return fmt.Errorf("failed to download %s: %w", dl.filename, err)
+		}
+	}
+
+	// Run post-install commands if specified
+	if len(variant.PostInstall) > 0 {
+		fmt.Println("\n🔧 Running post-install commands...")
+		for _, cmd := range variant.PostInstall {
+			cmd = expandEnvVars(cmd)
+			cmd = strings.ReplaceAll(cmd, "${install_path}", targetDir)
+			cmd = strings.ReplaceAll(cmd, "%install_path%", targetDir)
+
+			fmt.Printf("   Running: %s\n", cmd)
+
+			var execCmd *exec.Cmd
+			if runtime.GOOS == "windows" {
+				execCmd = exec.Command("cmd", "/C", cmd)
+			} else {
+				execCmd = exec.Command("sh", "-c", cmd)
+			}
+			execCmd.Stdout = os.Stdout
+			execCmd.Stderr = os.Stderr
+			if err := execCmd.Run(); err != nil {
+				return fmt.Errorf("post-install command failed: %s (error: %w)", cmd, err)
+			}
+		}
+	}
+
+	fmt.Printf("\n✅ Downloaded %d file(s) to %s\n", len(downloads), targetDir)
+	return nil
+}
+
 // installDeb installs a .deb package
 func (i *Installer) installDeb(platform *registry.PlatformSpec, variant *registry.VariantSpec, options *InstallOptions) error {
 	// Determine download URL (support both single URL and architecture-specific URLs)
@@ -577,6 +702,43 @@ func (i *Installer) installWinget(platform *registry.PlatformSpec, variant *regi
 	return InstallViaWinget(variant.Packages)
 }
 
+// runCommandWithSpinner executes an external command with a brief startup
+// spinner followed by direct terminal I/O. Stdin, stdout, and stderr are
+// connected directly to the terminal so interactive prompts (e.g. sudo),
+// progress bars using \r, and all terminal escape sequences work correctly.
+func runCommandWithSpinner(cmd *exec.Cmd, label string) error {
+	spinnerChars := []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+
+	// Show brief spinner animation before starting the command
+	for i := 0; i < 10; i++ {
+		fmt.Printf("\r   %s %s", spinnerChars[i], label)
+		time.Sleep(80 * time.Millisecond)
+	}
+	// Clear spinner line before command takes over
+	fmt.Print("\r\033[K")
+
+	// Connect all streams directly to terminal
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		fmt.Printf("   ❌ %s\n", label)
+		return err
+	}
+
+	fmt.Printf("   ✅ %s\n", label)
+	return nil
+}
+
+// truncateCommand shortens a command string for display in spinner label
+func truncateCommand(cmd string, maxLen int) string {
+	if len(cmd) <= maxLen {
+		return cmd
+	}
+	return cmd[:maxLen-3] + "..."
+}
+
 // installScript installs via custom script (for npm-based tools like docusaurus)
 // Supports two modes:
 // 1. Embedded script: installScript contains a path like "windows/Install-Script.ps1"
@@ -616,7 +778,8 @@ func (i *Installer) installScript(platform *registry.PlatformSpec, variant *regi
 			continue
 		}
 
-		fmt.Printf("   Running: %s\n", expandedScript)
+		// Build a short label for the spinner
+		spinnerLabel := fmt.Sprintf("Running: %s", truncateCommand(expandedScript, 80))
 
 		var cmd *exec.Cmd
 		if runtime.GOOS == "windows" {
@@ -625,10 +788,7 @@ func (i *Installer) installScript(platform *registry.PlatformSpec, variant *regi
 			cmd = exec.Command("sh", "-c", expandedScript)
 		}
 
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-
-		if err := cmd.Run(); err != nil {
+		if err := runCommandWithSpinner(cmd, spinnerLabel); err != nil {
 			return fmt.Errorf("script failed: %w", err)
 		}
 	}

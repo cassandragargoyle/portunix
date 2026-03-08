@@ -12,10 +12,10 @@ import (
 
 // PtxbookFile represents the top-level structure of a .ptxbook file
 type PtxbookFile struct {
-	APIVersion string           `yaml:"apiVersion" json:"apiVersion"`
-	Kind       string           `yaml:"kind" json:"kind"`
-	Metadata   PtxbookMetadata  `yaml:"metadata" json:"metadata"`
-	Spec       PtxbookSpec      `yaml:"spec" json:"spec"`
+	APIVersion string          `yaml:"apiVersion" json:"apiVersion"`
+	Kind       string          `yaml:"kind" json:"kind"`
+	Metadata   PtxbookMetadata `yaml:"metadata" json:"metadata"`
+	Spec       PtxbookSpec     `yaml:"spec" json:"spec"`
 }
 
 // PtxbookMetadata represents the metadata section
@@ -26,23 +26,23 @@ type PtxbookMetadata struct {
 
 // PtxbookSpec represents the spec section
 type PtxbookSpec struct {
-	Variables    map[string]interface{} `yaml:"variables,omitempty" json:"variables,omitempty"`
-	Requirements *PtxbookRequirements   `yaml:"requirements,omitempty" json:"requirements,omitempty"`
-	Portunix     *PtxbookPortunix       `yaml:"portunix,omitempty" json:"portunix,omitempty"`
-	Ansible      *PtxbookAnsible        `yaml:"ansible,omitempty" json:"ansible,omitempty"`
-	Scripts      map[string]string      `yaml:"scripts,omitempty" json:"scripts,omitempty"`       // Custom scripts (init, build, serve, etc.)
+	Variables    map[string]interface{}  `yaml:"variables,omitempty" json:"variables,omitempty"`
+	Requirements *PtxbookRequirements    `yaml:"requirements,omitempty" json:"requirements,omitempty"`
+	Portunix     *PtxbookPortunix        `yaml:"portunix,omitempty" json:"portunix,omitempty"`
+	Ansible      *PtxbookAnsible         `yaml:"ansible,omitempty" json:"ansible,omitempty"`
+	Scripts      map[string]string       `yaml:"scripts,omitempty" json:"scripts,omitempty"`         // Custom scripts (init, build, serve, etc.)
 	ScriptsExt   map[string]ScriptConfig `yaml:"scripts_ext,omitempty" json:"scripts_ext,omitempty"` // Extended scripts with conditions (Issue #128)
 	// Phase 3: Advanced features
-	Rollback     *PtxbookRollback       `yaml:"rollback,omitempty" json:"rollback,omitempty"`     // Rollback configuration
-	Environment  map[string]interface{} `yaml:"environment,omitempty" json:"environment,omitempty"` // Environment configuration (target, runtime, image)
+	Rollback    *PtxbookRollback       `yaml:"rollback,omitempty" json:"rollback,omitempty"`       // Rollback configuration
+	Environment map[string]interface{} `yaml:"environment,omitempty" json:"environment,omitempty"` // Environment configuration (target, runtime, image)
 	// Phase 4: Enterprise features
-	Secrets      map[string]interface{} `yaml:"secrets,omitempty" json:"secrets,omitempty"`     // Secret references
+	Secrets map[string]interface{} `yaml:"secrets,omitempty" json:"secrets,omitempty"` // Secret references
 }
 
 // ScriptConfig represents a script with optional condition (Issue #128 Phase 3)
 type ScriptConfig struct {
-	Command     string `yaml:"command" json:"command"`                           // The command to execute
-	Condition   string `yaml:"condition,omitempty" json:"condition,omitempty"`   // Shell condition to evaluate (e.g., "! -d ./site")
+	Command     string `yaml:"command" json:"command"`                             // The command to execute
+	Condition   string `yaml:"condition,omitempty" json:"condition,omitempty"`     // Shell condition to evaluate (e.g., "! -d ./site")
 	Description string `yaml:"description,omitempty" json:"description,omitempty"` // Optional description for --list-scripts
 }
 
@@ -65,8 +65,8 @@ type PtxbookPortunix struct {
 type PtxbookPackage struct {
 	Name    string                 `yaml:"name" json:"name"`
 	Variant string                 `yaml:"variant,omitempty" json:"variant,omitempty"`
-	When    string                 `yaml:"when,omitempty" json:"when,omitempty"`     // Phase 3: Conditional execution
-	Vars    map[string]interface{} `yaml:"vars,omitempty" json:"vars,omitempty"`     // Phase 3: Package-specific variables
+	When    string                 `yaml:"when,omitempty" json:"when,omitempty"` // Phase 3: Conditional execution
+	Vars    map[string]interface{} `yaml:"vars,omitempty" json:"vars,omitempty"` // Phase 3: Package-specific variables
 }
 
 // PtxbookAnsible represents the Ansible playbooks section
@@ -77,8 +77,8 @@ type PtxbookAnsible struct {
 // AnsiblePlaybook represents an Ansible playbook reference
 type AnsiblePlaybook struct {
 	Path string                 `yaml:"path" json:"path"`
-	When string                 `yaml:"when,omitempty" json:"when,omitempty"`     // Phase 3: Conditional execution
-	Vars map[string]interface{} `yaml:"vars,omitempty" json:"vars,omitempty"`     // Phase 3: Playbook-specific variables
+	When string                 `yaml:"when,omitempty" json:"when,omitempty"` // Phase 3: Conditional execution
+	Vars map[string]interface{} `yaml:"vars,omitempty" json:"vars,omitempty"` // Phase 3: Playbook-specific variables
 }
 
 // ParsePtxbookFile parses a .ptxbook file and returns the structured data
@@ -178,8 +178,8 @@ func RequiresAnsible(ptxbook *PtxbookFile) bool {
 // GetMinAnsibleVersion returns the minimum required Ansible version, if specified
 func GetMinAnsibleVersion(ptxbook *PtxbookFile) string {
 	if ptxbook.Spec.Requirements != nil &&
-	   ptxbook.Spec.Requirements.Ansible != nil &&
-	   ptxbook.Spec.Requirements.Ansible.MinVersion != "" {
+		ptxbook.Spec.Requirements.Ansible != nil &&
+		ptxbook.Spec.Requirements.Ansible.MinVersion != "" {
 		return ptxbook.Spec.Requirements.Ansible.MinVersion
 	}
 	return "2.15.0" // Default minimum version

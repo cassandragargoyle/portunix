@@ -120,7 +120,7 @@ func getCapabilities(forceRefresh bool) (*ContainerCapabilities, error) {
 
 	// Detect Docker
 	caps.DockerInfo = detectDocker()
-	
+
 	// Detect Podman
 	caps.PodmanInfo = detectPodman()
 
@@ -206,16 +206,16 @@ func detectDocker() *RuntimeInfo {
 
 	// Check for Docker Compose
 	info.Features["compose"] = checkDockerCompose()
-	
+
 	// Check for BuildKit/Buildx
 	info.Features["buildx"] = checkDockerBuildx()
-	
+
 	// Check for volume support (always true if Docker is available)
 	info.Features["volumes"] = true
-	
+
 	// Check for network support
 	info.Features["networks"] = true
-	
+
 	// Check if Docker daemon is running
 	cmd = exec.Command("docker", "info")
 	if err := cmd.Run(); err == nil {
@@ -265,16 +265,16 @@ func detectPodman() *RuntimeInfo {
 
 	// Check for Podman Compose
 	info.Features["compose"] = checkPodmanCompose()
-	
+
 	// Check for BuildKit support (Podman uses buildah)
 	info.Features["buildx"] = false // Podman doesn't have buildx
-	
+
 	// Check for volume support
 	info.Features["volumes"] = true
-	
+
 	// Check for network support
 	info.Features["networks"] = true
-	
+
 	// Check if Podman is functional
 	cmd = exec.Command("podman", "info")
 	if err := cmd.Run(); err == nil {
@@ -296,12 +296,12 @@ func checkDockerCompose() bool {
 	if err := cmd.Run(); err == nil {
 		return true
 	}
-	
+
 	// Check for docker-compose (v1)
 	if path, err := exec.LookPath("docker-compose"); err == nil && path != "" {
 		return true
 	}
-	
+
 	return false
 }
 
@@ -315,7 +315,7 @@ func checkPodmanCompose() bool {
 	if path, err := exec.LookPath("podman-compose"); err == nil && path != "" {
 		return true
 	}
-	
+
 	// Check for podman compose (integrated)
 	cmd := exec.Command("podman", "compose", "version")
 	return cmd.Run() == nil
@@ -324,9 +324,9 @@ func checkPodmanCompose() bool {
 // FormatCapabilities returns a formatted string representation of capabilities
 func (c *ContainerCapabilities) FormatCapabilities() string {
 	var buf bytes.Buffer
-	
+
 	buf.WriteString("Container Runtime Status:\n")
-	
+
 	// Docker status
 	if c.DockerInfo != nil {
 		if c.DockerInfo.Available {
@@ -337,7 +337,7 @@ func (c *ContainerCapabilities) FormatCapabilities() string {
 	} else {
 		buf.WriteString("  Docker: ✗ Not detected\n")
 	}
-	
+
 	// Podman status
 	if c.PodmanInfo != nil {
 		if c.PodmanInfo.Available {
@@ -348,12 +348,12 @@ func (c *ContainerCapabilities) FormatCapabilities() string {
 	} else {
 		buf.WriteString("  Podman: ✗ Not detected\n")
 	}
-	
+
 	// Preferred runtime
 	if c.Available {
 		buf.WriteString(fmt.Sprintf("  Preferred: %s\n", c.Preferred))
 	}
-	
+
 	// Capabilities
 	if len(c.Features) > 0 {
 		buf.WriteString("\nCapabilities:\n")
@@ -366,7 +366,7 @@ func (c *ContainerCapabilities) FormatCapabilities() string {
 			}
 		}
 	}
-	
+
 	return buf.String()
 }
 

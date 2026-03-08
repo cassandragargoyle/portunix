@@ -231,8 +231,8 @@ func (suite *HugoContainerTestSuite) testHugoStandard() bool {
 	}
 
 	if !strings.Contains(dryRunOutput, "📦 INSTALLING: Hugo Static Site Generator") ||
-	   !strings.Contains(dryRunOutput, "🔧 Variant: standard") ||
-	   !strings.Contains(dryRunOutput, "v0.150.1") {
+		!strings.Contains(dryRunOutput, "🔧 Variant: standard") ||
+		!strings.Contains(dryRunOutput, "v0.150.1") {
 		suite.tf.Error(suite.t, "Dry-run output missing expected Hugo standard info")
 		suite.tf.Output(suite.t, dryRunOutput, 500)
 		return false
@@ -284,9 +284,9 @@ func (suite *HugoContainerTestSuite) testHugoExtended() bool {
 	}
 
 	if !strings.Contains(dryRunOutput, "📦 INSTALLING: Hugo Static Site Generator") ||
-	   !strings.Contains(dryRunOutput, "🔧 Variant: extended") ||
-	   !strings.Contains(dryRunOutput, "v0.150.1") ||
-	   !strings.Contains(dryRunOutput, "hugo_extended_0.150.1_linux-amd64.tar.gz") {
+		!strings.Contains(dryRunOutput, "🔧 Variant: extended") ||
+		!strings.Contains(dryRunOutput, "v0.150.1") ||
+		!strings.Contains(dryRunOutput, "hugo_extended_0.150.1_linux-amd64.tar.gz") {
 		suite.tf.Error(suite.t, "Dry-run output missing expected Hugo extended info")
 		suite.tf.Output(suite.t, dryRunOutput, 500)
 		return false
@@ -350,7 +350,7 @@ func (suite *HugoContainerTestSuite) testHugoExtendedAlias() bool {
 	}
 
 	if !strings.Contains(dryRunOutput, "📦 INSTALLING: Hugo Extended Static Site Generator") ||
-	   !strings.Contains(dryRunOutput, "🏗️  Installation type: redirect") {
+		!strings.Contains(dryRunOutput, "🏗️  Installation type: redirect") {
 		suite.tf.Error(suite.t, "Dry-run output missing expected hugo-extended alias info")
 		suite.tf.Output(suite.t, dryRunOutput, 500)
 		return false

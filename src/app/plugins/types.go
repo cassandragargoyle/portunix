@@ -176,10 +176,10 @@ type PluginManifest struct {
 type PluginBinaryConfig struct {
 	Type                string        `json:"type"`
 	Binary              string        `json:"binary"`
-	Mode                string        `json:"mode,omitempty"`             // service (default) or helper
-	Runtime             string        `json:"runtime,omitempty"`          // native, java, python
-	RuntimeVersion      string        `json:"runtime_version,omitempty"`  // e.g., ">=21" for Java
-	JVMArgs             []string      `json:"jvm_args,omitempty"`         // JVM arguments for Java plugins
+	Mode                string        `json:"mode,omitempty"`            // service (default) or helper
+	Runtime             string        `json:"runtime,omitempty"`         // native, java, python
+	RuntimeVersion      string        `json:"runtime_version,omitempty"` // e.g., ">=21" for Java
+	JVMArgs             []string      `json:"jvm_args,omitempty"`        // JVM arguments for Java plugins
 	Port                int           `json:"port"`
 	HealthCheckInterval time.Duration `json:"health_check_interval"`
 }

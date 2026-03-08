@@ -11,17 +11,17 @@ import (
 
 // WindowsVersion contains Windows version information
 type WindowsVersion struct {
-	Major        uint32
-	Minor        uint32
-	Build        uint32
-	UBR          uint32 // Update Build Revision
-	ProductName  string
-	EditionID    string
-	DisplayVer   string // e.g., "23H2"
-	BuildLabEx   string
-	IsWindows11  bool
-	IsWindows10  bool
-	IsServer     bool
+	Major       uint32
+	Minor       uint32
+	Build       uint32
+	UBR         uint32 // Update Build Revision
+	ProductName string
+	EditionID   string
+	DisplayVer  string // e.g., "23H2"
+	BuildLabEx  string
+	IsWindows11 bool
+	IsWindows10 bool
+	IsServer    bool
 }
 
 // GetWindowsVersion returns comprehensive Windows version information
@@ -90,7 +90,7 @@ func (v *WindowsVersion) GetFullBuildString() string {
 // Architecture detection using GetNativeSystemInfo
 
 var (
-	modkernel32            = windows.NewLazySystemDLL("kernel32.dll")
+	modkernel32             = windows.NewLazySystemDLL("kernel32.dll")
 	procGetNativeSystemInfo = modkernel32.NewProc("GetNativeSystemInfo")
 )
 

@@ -1,0 +1,78 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "playwright-browsers",
+    "displayName": "Playwright Browser Binaries",
+    "description": "Chromium and other browser binaries for Playwright browser automation",
+    "category": "development/testing",
+    "homepage": "https://playwright.dev/",
+    "documentation": "https://playwright.dev/docs/browsers",
+    "license": "Apache-2.0",
+    "maintainer": "CassandraGargoyle"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Chromium browser binary (~200 MB)",
+            "installScript": "npx playwright install chromium",
+            "postInstall": [
+              "npx playwright install-deps chromium"
+            ]
+          },
+          "all": {
+            "version": "latest",
+            "description": "All browser binaries: Chromium + Firefox + WebKit (~600 MB)",
+            "installScript": "npx playwright install",
+            "postInstall": [
+              "npx playwright install-deps"
+            ]
+          }
+        },
+        "verification": {
+          "command": "npx playwright --version",
+          "expectedExitCode": 0
+        }
+      },
+      "windows": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Chromium browser binary (~200 MB)",
+            "installScript": "npx playwright install chromium"
+          },
+          "all": {
+            "version": "latest",
+            "description": "All browser binaries: Chromium + Firefox + WebKit (~600 MB)",
+            "installScript": "npx playwright install"
+          }
+        },
+        "verification": {
+          "command": "npx playwright --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "npm": {
+        "type": "npm",
+        "url": "https://www.npmjs.com/package/playwright",
+        "apiEndpoint": "https://registry.npmjs.org/playwright",
+        "pattern": "playwright@{version}"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check npm registry for playwright package versions using npm view playwright version.",
+      "urlResolution": "Browser binaries are downloaded automatically by npx playwright install from Playwright CDN (playwright.azureedge.net).",
+      "updateGuidance": "Monitor Playwright releases through npm registry. Browser binary versions are pinned to the Playwright package version."
+    },
+    "dependencies": ["nodejs"],
+    "templates": ["script"]
+  }
+}

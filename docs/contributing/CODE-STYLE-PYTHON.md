@@ -337,6 +337,7 @@ class PackageInstaller:
 ```
 
 ### Property Usage
+
 Use properties for getter/setter behavior:
 ```python
 class ConfigurationManager:
@@ -367,7 +368,9 @@ class ConfigurationManager:
 ## Error Handling
 
 ### Exception Hierarchy
+
 Create domain-specific exceptions:
+
 ```python
 class CassandraGargoyleError(Exception):
     \"\"\"Base exception for CassandraGargoyle project.\"\"\"
@@ -392,6 +395,7 @@ class UnsupportedPlatformError(CassandraGargoyleError):
 ```
 
 ### Exception Handling Patterns
+
 ```python
 import logging
 from pathlib import Path
@@ -441,6 +445,7 @@ def install_package_safe(package_name: str) -> bool:
 ## Documentation
 
 ### Module Docstrings
+
 ```python
 \"\"\"
 Package installer module for cross-platform software installation.
@@ -471,7 +476,9 @@ Attributes:
 ```
 
 ### Function and Method Docstrings
+
 Use Google-style docstrings:
+
 ```python
 def install_package(
     package_name: str, 
@@ -524,7 +531,9 @@ def install_package(
 ## Testing
 
 ### Test Structure
+
 Use pytest for testing with descriptive test names:
+
 ```python
 import pytest
 from pathlib import Path
@@ -612,6 +621,7 @@ class TestPackageInstaller:
 ```
 
 ### Test Fixtures and Utilities
+
 ```python
 # conftest.py
 import pytest
@@ -646,6 +656,7 @@ def reset_logging():
 ## Logging
 
 ### Logging Configuration
+
 ```python
 import logging
 import sys
@@ -710,6 +721,7 @@ class PackageInstaller:
 ## Configuration Management
 
 ### Configuration with dataclasses
+
 ```python
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -783,6 +795,7 @@ class ApplicationConfig:
 ## Async Programming
 
 ### Async/Await Patterns
+
 ```python
 import asyncio
 import aiohttp
@@ -864,6 +877,7 @@ if __name__ == \"__main__\":
 ## CLI Development
 
 ### Click Framework Usage
+
 ```python
 import click
 from pathlib import Path
@@ -937,6 +951,7 @@ if __name__ == '__main__':
 ## Package Distribution
 
 ### pyproject.toml Configuration
+
 ```toml
 [build-system]
 requires = [\"hatchling\"]
@@ -1051,6 +1066,7 @@ exclude_lines = [
 ## Code Quality Tools
 
 ### Pre-commit Configuration
+
 ```yaml
 # .pre-commit-config.yaml
 repos:
@@ -1088,6 +1104,7 @@ repos:
 ```
 
 ### Makefile for Development
+
 ```makefile
 .PHONY: install dev-install test lint format type-check clean docs
 

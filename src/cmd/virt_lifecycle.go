@@ -293,9 +293,9 @@ var virtDeleteCmd = &cobra.Command{
 
 // virtListCmdFallback represents the virt list command (fallback implementation)
 var virtListCmdFallback = &cobra.Command{
-	Use:   "list",
-	Short: "List all virtual machines",
-	Long:  `List all virtual machines managed by the current backend.`,
+	Use:     "list",
+	Short:   "List all virtual machines",
+	Long:    `List all virtual machines managed by the current backend.`,
 	Aliases: []string{"ls"},
 	Run: func(cmd *cobra.Command, args []string) {
 		manager, err := virt.NewManager()
@@ -332,11 +332,11 @@ var virtListCmdFallback = &cobra.Command{
 
 // virtListCmd represents the virt list command with helper delegation
 var virtListCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all virtual machines",
-	Long:  `List all virtual machines managed by the current backend.`,
+	Use:     "list",
+	Short:   "List all virtual machines",
+	Long:    `List all virtual machines managed by the current backend.`,
 	Aliases: []string{"ls"},
-	Run:   virtWithHelperCheck(virtListCmdFallback),
+	Run:     virtWithHelperCheck(virtListCmdFallback),
 }
 
 // virtInfoCmd represents the virt info command

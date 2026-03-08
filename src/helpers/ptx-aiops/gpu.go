@@ -15,28 +15,28 @@ import (
 
 // GPUInfo represents NVIDIA GPU information
 type GPUInfo struct {
-	Index            int
-	Name             string
-	DriverVersion    string
-	CUDAVersion      string
-	UtilizationGPU   int    // percent
-	UtilizationMem   int    // percent
-	MemoryUsed       int64  // bytes
-	MemoryTotal      int64  // bytes
-	Temperature      int    // celsius
-	PowerDraw        int    // watts
-	PowerLimit       int    // watts
-	FanSpeed         int    // percent
-	ComputeMode      string
-	PersistenceMode  string
+	Index           int
+	Name            string
+	DriverVersion   string
+	CUDAVersion     string
+	UtilizationGPU  int   // percent
+	UtilizationMem  int   // percent
+	MemoryUsed      int64 // bytes
+	MemoryTotal     int64 // bytes
+	Temperature     int   // celsius
+	PowerDraw       int   // watts
+	PowerLimit      int   // watts
+	FanSpeed        int   // percent
+	ComputeMode     string
+	PersistenceMode string
 }
 
 // ProcessInfo represents a process using GPU
 type ProcessInfo struct {
-	PID        int
-	Name       string
-	GPUMemory  int64  // bytes
-	GPUUsage   int    // percent (if available)
+	PID       int
+	Name      string
+	GPUMemory int64 // bytes
+	GPUUsage  int   // percent (if available)
 }
 
 // ContainerToolkitInfo represents NVIDIA Container Toolkit status

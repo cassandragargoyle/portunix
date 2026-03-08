@@ -76,12 +76,12 @@ func TestConfigClone(t *testing.T) {
 func TestConfigLoadFromEnv(t *testing.T) {
 	// Save original environment
 	originalEnv := map[string]string{
-		"PORTUNIX_LOG_LEVEL":        os.Getenv("PORTUNIX_LOG_LEVEL"),
-		"PORTUNIX_LOG_FORMAT":       os.Getenv("PORTUNIX_LOG_FORMAT"),
-		"PORTUNIX_LOG_OUTPUT":       os.Getenv("PORTUNIX_LOG_OUTPUT"),
-		"PORTUNIX_LOG_FILE":         os.Getenv("PORTUNIX_LOG_FILE"),
-		"PORTUNIX_LOG_NO_COLOR":     os.Getenv("PORTUNIX_LOG_NO_COLOR"),
-		"PORTUNIX_LOG_MODULE_TEST":  os.Getenv("PORTUNIX_LOG_MODULE_TEST"),
+		"PORTUNIX_LOG_LEVEL":       os.Getenv("PORTUNIX_LOG_LEVEL"),
+		"PORTUNIX_LOG_FORMAT":      os.Getenv("PORTUNIX_LOG_FORMAT"),
+		"PORTUNIX_LOG_OUTPUT":      os.Getenv("PORTUNIX_LOG_OUTPUT"),
+		"PORTUNIX_LOG_FILE":        os.Getenv("PORTUNIX_LOG_FILE"),
+		"PORTUNIX_LOG_NO_COLOR":    os.Getenv("PORTUNIX_LOG_NO_COLOR"),
+		"PORTUNIX_LOG_MODULE_TEST": os.Getenv("PORTUNIX_LOG_MODULE_TEST"),
 	}
 
 	// Set test environment variables
@@ -126,6 +126,7 @@ func TestConfigLoadFromEnv(t *testing.T) {
 	}
 }
 
+//nolint:funlen // Table-driven test with multiple cases
 func TestConfigValidate(t *testing.T) {
 	testCases := []struct {
 		name           string
@@ -317,7 +318,7 @@ func BenchmarkConfigValidate(b *testing.B) {
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		config.Validate()
+		_ = config.Validate() //nolint:errcheck // benchmark
 	}
 }
 

@@ -10,13 +10,13 @@ import (
 
 const (
 	// Directory and file names
-	credentialDir     = "credentials"
-	defaultStoreName  = "default"
-	storeExtension    = ".enc"
-	passwordMarker    = ".password-protected"
-	m365TokenFile     = ".portunix-m365-tokens.enc"
-	portunixDir       = ".portunix"
-	currentVersion    = 1
+	credentialDir    = "credentials"
+	defaultStoreName = "default"
+	storeExtension   = ".enc"
+	passwordMarker   = ".password-protected"
+	m365TokenFile    = ".portunix-m365-tokens.enc"
+	portunixDir      = ".portunix"
+	currentVersion   = 1
 )
 
 // Credential represents a single stored credential

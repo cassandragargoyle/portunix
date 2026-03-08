@@ -25,14 +25,14 @@ func TestIssue047NodeJSPackageManagerDetection(t *testing.T) {
 
 	// Test 1: Basic Node.js Installation Detection (Current Platform)
 	tf.Step(t, "Test Node.js package manager detection on current platform")
-	
+
 	tf.Command(t, binaryPath, []string{"install", "nodejs", "--dry-run"})
-	
+
 	cmd := exec.Command(binaryPath, "install", "nodejs", "--dry-run")
 	output, err := cmd.CombinedOutput()
-	
+
 	tf.Output(t, string(output), 100)
-	
+
 	if err != nil {
 		tf.Error(t, "Node.js detection command failed", err.Error())
 		success = false
@@ -40,7 +40,7 @@ func TestIssue047NodeJSPackageManagerDetection(t *testing.T) {
 	}
 
 	outputStr := string(output)
-	
+
 	// Check that some package manager is detected
 	if !strings.Contains(outputStr, "Installation type:") {
 		tf.Error(t, "No installation type detected in output")
@@ -61,14 +61,14 @@ func TestIssue047NodeJSPackageManagerDetection(t *testing.T) {
 
 	// Test 2: Manual Pacman Variant Override
 	tf.Step(t, "Test manual pacman variant selection")
-	
+
 	tf.Command(t, binaryPath, []string{"install", "nodejs", "--variant", "pacman", "--dry-run"})
-	
+
 	pacmanCmd := exec.Command(binaryPath, "install", "nodejs", "--variant", "pacman", "--dry-run")
 	pacmanOutput, pacmanErr := pacmanCmd.CombinedOutput()
-	
+
 	tf.Output(t, string(pacmanOutput), 100)
-	
+
 	if pacmanErr != nil {
 		tf.Error(t, "Manual pacman variant test failed", pacmanErr.Error())
 		success = false
@@ -94,16 +94,16 @@ func TestIssue047NodeJSPackageManagerDetection(t *testing.T) {
 
 	tf.Separator()
 
-	// Test 3: Manual APT Variant Override 
+	// Test 3: Manual APT Variant Override
 	tf.Step(t, "Test manual apt variant selection for regression")
-	
+
 	tf.Command(t, binaryPath, []string{"install", "nodejs", "--variant", "apt", "--dry-run"})
-	
+
 	aptCmd := exec.Command(binaryPath, "install", "nodejs", "--variant", "apt", "--dry-run")
 	aptOutput, aptErr := aptCmd.CombinedOutput()
-	
+
 	tf.Output(t, string(aptOutput), 100)
-	
+
 	if aptErr != nil {
 		tf.Error(t, "Manual apt variant test failed", aptErr.Error())
 		success = false
@@ -122,22 +122,22 @@ func TestIssue047NodeJSPackageManagerDetection(t *testing.T) {
 
 	// Test 4: Verify Available Variants
 	tf.Step(t, "Test that both apt and pacman variants are available")
-	
+
 	// Test that pacman variant exists (should not fail)
 	pacmanTestCmd := exec.Command(binaryPath, "install", "nodejs", "--variant", "pacman", "--dry-run")
 	_, pacmanTestErr := pacmanTestCmd.CombinedOutput()
-	
+
 	if pacmanTestErr != nil {
 		tf.Error(t, "Pacman variant not available", pacmanTestErr.Error())
 		success = false
 	} else {
 		tf.Success(t, "Pacman variant is available")
 	}
-	
+
 	// Test that apt variant exists (should not fail)
 	aptTestCmd := exec.Command(binaryPath, "install", "nodejs", "--variant", "apt", "--dry-run")
 	_, aptTestErr := aptTestCmd.CombinedOutput()
-	
+
 	if aptTestErr != nil {
 		tf.Error(t, "APT variant not available", aptTestErr.Error())
 		success = false
@@ -239,7 +239,7 @@ func TestIssue047DistributionDetectionLogic(t *testing.T) {
 	binaryPath := tf.MustVerifyPortunixBinary(t)
 
 	tf.Separator()
-	
+
 	// This test verifies that the detection logic exists by testing variant selection
 	tf.Step(t, "Verify variant selection logic works for different package managers")
 
@@ -255,7 +255,7 @@ func TestIssue047DistributionDetectionLogic(t *testing.T) {
 			description: "Pacman variant should use pacman package manager",
 		},
 		{
-			variant:     "apt", 
+			variant:     "apt",
 			expectedPM:  "apt",
 			description: "APT variant should use apt package manager",
 		},
@@ -276,14 +276,14 @@ func TestIssue047DistributionDetectionLogic(t *testing.T) {
 		lines := strings.Split(outputStr, "\n")
 		var relevantLines []string
 		for _, line := range lines {
-			if strings.Contains(line, "Installation type:") || 
-			   strings.Contains(line, "Packages:") ||
-			   strings.Contains(line, "ERROR") ||
-			   strings.Contains(line, "Failed") {
+			if strings.Contains(line, "Installation type:") ||
+				strings.Contains(line, "Packages:") ||
+				strings.Contains(line, "ERROR") ||
+				strings.Contains(line, "Failed") {
 				relevantLines = append(relevantLines, line)
 			}
 		}
-		
+
 		if len(relevantLines) > 0 {
 			tf.Output(t, strings.Join(relevantLines, "\n"), 200)
 		}

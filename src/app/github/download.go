@@ -131,7 +131,7 @@ func FormatBytes(bytes int64) string {
 func SimpleProgressBar(downloaded, total int64, percentage int) {
 	const barWidth = 50
 	pos := percentage * barWidth / 100
-	
+
 	bar := "["
 	for i := 0; i < barWidth; i++ {
 		if i < pos {
@@ -143,7 +143,7 @@ func SimpleProgressBar(downloaded, total int64, percentage int) {
 		}
 	}
 	bar += fmt.Sprintf("] %d%% (%s/%s)", percentage, FormatBytes(downloaded), FormatBytes(total))
-	
+
 	fmt.Printf("\r%s", bar)
 	if percentage >= 100 {
 		fmt.Println() // New line when complete

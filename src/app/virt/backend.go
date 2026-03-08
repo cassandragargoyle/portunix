@@ -175,9 +175,9 @@ type VirtualizationStatus struct {
 	RecommendedBackend     string   `json:"recommended_backend"`
 
 	// Linux specific
-	KVMSupport        bool `json:"kvm_support,omitempty"`
-	LibvirtInstalled  bool `json:"libvirt_installed,omitempty"`
-	QEMUInstalled     bool `json:"qemu_installed,omitempty"`
+	KVMSupport       bool `json:"kvm_support,omitempty"`
+	LibvirtInstalled bool `json:"libvirt_installed,omitempty"`
+	QEMUInstalled    bool `json:"qemu_installed,omitempty"`
 
 	// Windows specific
 	HyperVEnabled bool `json:"hyperv_enabled,omitempty"`

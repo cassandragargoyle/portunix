@@ -5,6 +5,7 @@ This document describes the complete workflow for publishing Portunix to the Arc
 ## Prerequisites
 
 1. **SSH Access to AUR**
+   
    ```bash
    # Generate SSH key (if you don't have one)
    ssh-keygen -t ed25519 -C "your_email@example.com"
@@ -23,6 +24,7 @@ This document describes the complete workflow for publishing Portunix to the Arc
    - URL format: `https://github.com/cassandragargoyle/Portunix/archive/refs/tags/v1.7.5.tar.gz`
 
 3. **Portunix Binary Built**
+   
    ```bash
    make build
    ```
@@ -32,6 +34,7 @@ This document describes the complete workflow for publishing Portunix to the Arc
 ### Step 1: Create GitHub Release
 
 **Option A: Quick manual tag (recommended for testing)**
+
 ```bash
 # Create and push tag
 git tag -a v1.7.5 -m "Release v1.7.5"
@@ -41,6 +44,7 @@ git push origin v1.7.5
 ```
 
 **Option B: Use make-release.sh (for full release)**
+
 ```bash
 # Build cross-platform binaries
 ./scripts/make-release.sh v1.7.5
@@ -54,6 +58,7 @@ git push origin v1.7.5
 ```
 
 **Option C: GitHub web interface**
+
 1. Go to: https://github.com/cassandragargoyle/Portunix/releases/new
 2. Create new tag: `v1.7.5`
 3. Add release title: "Release v1.7.5"
@@ -75,6 +80,7 @@ git push origin v1.7.5
 ```
 
 **What happens:**
+
 1. ✅ Checks if GitHub tag v1.7.5 exists (HTTP 200)
 2. ✅ Downloads tarball: `Portunix/archive/refs/tags/v1.7.5.tar.gz`
 3. ✅ Compiles inside Arch Linux container
@@ -83,6 +89,7 @@ git push origin v1.7.5
 6. ⚠️ Asks if you want to test build (recommended!)
 
 **Output:**
+
 - Container: `portunix_aur` (reusable)
 - Files inside container:
   - `/aur-portunix/PKGBUILD`
@@ -102,6 +109,7 @@ git push origin v1.7.5
 ```
 
 **What happens:**
+
 1. ✅ Copies files from container to `aur-package/`
 2. ✅ Clones AUR repo to `aur-repo/` (or updates if exists)
 3. ✅ Copies PKGBUILD files to AUR repo
@@ -115,6 +123,7 @@ git push origin v1.7.5
 **Important:** Script uses Arch Linux container for `updpkgsums` and `makepkg`, so it works on **any Linux distro** (Debian, Ubuntu, etc.)!
 
 **Output:**
+
 - `aur-package/` - Extracted files from container
 - `aur-repo/` - AUR git repository (pushed to AUR)
 
@@ -134,6 +143,7 @@ git push origin v1.7.5
 ```
 
 **What happens:**
+
 1. ✅ Creates clean `portunix_aur_test` container
 2. ✅ Installs base-devel, git, go
 3. ✅ Installs yay from AUR
@@ -145,6 +155,7 @@ git push origin v1.7.5
 ## Quick Reference
 
 ### Full workflow (one version, all steps)
+
 ```bash
 # 1. Create and push tag
 git tag -a v1.7.5 -m "Release v1.7.5"
@@ -161,6 +172,7 @@ git push origin v1.7.5
 ```
 
 ### Container management
+
 ```bash
 # List containers
 ./portunix container list -a
@@ -180,9 +192,11 @@ rm -rf aur-package/ aur-repo/
 ## Troubleshooting
 
 ### "GitHub tag not found" (HTTP 404)
+
 **Problem:** Tag doesn't exist on GitHub yet
 
 **Solution:**
+
 ```bash
 # Create and push tag
 git tag -a v1.7.5 -m "Release v1.7.5"
@@ -194,9 +208,11 @@ curl -I -L https://github.com/cassandragargoyle/Portunix/archive/refs/tags/v1.7.
 ```
 
 ### "Cannot connect to AUR via SSH"
+
 **Problem:** SSH key not configured for AUR
 
 **Solution:**
+
 ```bash
 # Test connection - should see "Welcome" or "Hi"
 ssh -T aur@aur.archlinux.org
@@ -208,12 +224,14 @@ cat ~/.ssh/id_ed25519.pub
 ```
 
 ### "updpkgsums failed"
+
 **Problem:** Can't download tarball from GitHub
 
 **Solution:**
 Script now runs `updpkgsums` in Arch container automatically, so this should work on any distro!
 
 If it still fails:
+
 ```bash
 # Check if GitHub release exists
 curl -I -L https://github.com/cassandragargoyle/Portunix/archive/refs/tags/v1.7.5.tar.gz
@@ -223,9 +241,11 @@ curl -I -L https://github.com/cassandragargoyle/Portunix/archive/refs/tags/v1.7.
 ```
 
 ### "yay -S portunix failed"
+
 **Problem:** Package not yet on AUR or build failure
 
 **Solution:**
+
 ```bash
 # Check if package is published
 yay -Ss portunix
@@ -246,25 +266,32 @@ makepkg -f  # Manual build for debugging
 ## Important Notes
 
 ### Why aur-prepare.sh downloads from GitHub?
+
 AUR packages MUST be buildable from public sources. The script ensures:
+
 1. ✅ Source is downloaded from GitHub (public URL)
 2. ✅ Same source that AUR users will download
 3. ✅ Build process is reproducible
 4. ✅ No dependency on local development files
 
 ### What's the difference between containers?
+
 - **portunix_aur** - Build container for PKGBUILD preparation (reusable)
 - **portunix_aur_test** - Fresh test container for installation verification (recreated each time)
 
 ### Why test after publishing?
+
 To ensure users can actually install from AUR! The test:
+
 1. Uses fresh Arch Linux environment (no cached files)
 2. Downloads PKGBUILD from AUR
 3. Downloads source from GitHub
 4. Compiles and installs like a real user would
 
 ### Cross-platform support
+
 **Works on any Linux distro!** Scripts use Arch Linux container for:
+
 - ✅ Building packages (`aur-prepare.sh`)
 - ✅ Calculating checksums (`aur-publish.sh` - runs `updpkgsums` in container)
 - ✅ Generating .SRCINFO (`aur-publish.sh` - runs `makepkg` in container)

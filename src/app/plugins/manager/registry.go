@@ -34,10 +34,10 @@ type RegistryPlugin struct {
 	License             string                      `json:"license"`
 	InstallPath         string                      `json:"install_path"`
 	BinaryName          string                      `json:"binary_name"`
-	Mode                string                      `json:"mode"`             // service or helper
-	Runtime             string                      `json:"runtime"`          // native, java, python
-	RuntimeVersion      string                      `json:"runtime_version"`  // e.g., ">=21" for Java
-	JVMArgs             []string                    `json:"jvm_args"`         // JVM arguments for Java plugins
+	Mode                string                      `json:"mode"`            // service or helper
+	Runtime             string                      `json:"runtime"`         // native, java, python
+	RuntimeVersion      string                      `json:"runtime_version"` // e.g., ">=21" for Java
+	JVMArgs             []string                    `json:"jvm_args"`        // JVM arguments for Java plugins
 	Port                int                         `json:"port"`
 	Status              plugins.PluginStatus        `json:"status"`
 	InstallTime         time.Time                   `json:"install_time"`

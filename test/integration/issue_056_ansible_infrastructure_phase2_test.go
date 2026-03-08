@@ -5,9 +5,9 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
-	"path/filepath"
 
 	"portunix.ai/portunix/test/testframework"
 )
@@ -37,22 +37,34 @@ func TestIssue056AnsibleInfrastructurePhase2(t *testing.T) {
 	// Run subtests and track their success
 	subTestSuccess := true
 	subTestSuccess = subTestSuccess && t.Run("TC009_ContainerEnvironmentFlag", func(t *testing.T) {
-		if !suite.testContainerEnvironmentFlag(t) { t.Fail() }
+		if !suite.testContainerEnvironmentFlag(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC010_VirtEnvironmentFlag", func(t *testing.T) {
-		if !suite.testVirtEnvironmentFlag(t) { t.Fail() }
+		if !suite.testVirtEnvironmentFlag(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC011_EnvironmentValidation", func(t *testing.T) {
-		if !suite.testEnvironmentValidation(t) { t.Fail() }
+		if !suite.testEnvironmentValidation(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC012_ContainerInventoryGeneration", func(t *testing.T) {
-		if !suite.testContainerInventoryGeneration(t) { t.Fail() }
+		if !suite.testContainerInventoryGeneration(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC013_VirtInventoryGeneration", func(t *testing.T) {
-		if !suite.testVirtInventoryGeneration(t) { t.Fail() }
+		if !suite.testVirtInventoryGeneration(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC014_PlaybookHelpEnhanced", func(t *testing.T) {
-		if !suite.testPlaybookHelpEnhanced(t) { t.Fail() }
+		if !suite.testPlaybookHelpEnhanced(t) {
+			t.Fail()
+		}
 	})
 
 	success = success && subTestSuccess

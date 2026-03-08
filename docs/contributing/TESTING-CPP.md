@@ -1,16 +1,19 @@
 # C++ Testing Guidelines
 
 ## Purpose
+
 This document defines the testing strategy, structure, and best practices for C++ projects in the CassandraGargoyle ecosystem.
 
 ## Testing Philosophy
 
 ### Testing Pyramid
+
 1. **Unit Tests** (70%) - Fast, isolated tests for individual classes/functions
 2. **Integration Tests** (20%) - Test component interactions and system integration
 3. **System Tests** (10%) - Full application workflow and performance tests
 
 ### Key Principles
+
 - Follow Test-Driven Development (TDD) when applicable
 - Tests should be fast, reliable, and deterministic
 - Each test should verify one specific behavior
@@ -21,7 +24,8 @@ This document defines the testing strategy, structure, and best practices for C+
 ## Project Structure
 
 ### Directory Layout
-```
+
+```text
 project/
 ├── include/
 │   └── cassandragargoyle/
@@ -68,6 +72,7 @@ project/
 ## Test Dependencies
 
 ### CMake Configuration
+
 ```cmake
 # CMakeLists.txt
 cmake_minimum_required(VERSION 3.20)
@@ -133,6 +138,7 @@ endif()
 ```
 
 ### Conan Dependencies
+
 ```ini
 # conanfile.txt
 [requires]
@@ -154,12 +160,15 @@ catch2:with_main=True
 ## Test Naming Conventions
 
 ### Test Files
+
 - Unit tests: `test_class_name.cpp`
 - Integration tests: `test_feature_integration.cpp`
 - System tests: `test_system_workflow.cpp`
 
 ### Test Cases
+
 Use descriptive names with underscores:
+
 ```cpp
 TEST_CASE(\"PackageInstaller should install package successfully with valid input\", \"[unit][installer]\") {
     // Test implementation
@@ -171,7 +180,9 @@ TEST_CASE(\"PackageInstaller should throw exception when package name is empty\"
 ```
 
 ### Test Structure Pattern
+
 Use **Given/When/Then** sections with comments:
+
 ```cpp
 TEST_CASE(\"ConfigurationManager should load valid configuration file\", \"[unit][config]\")
 {
@@ -192,6 +203,7 @@ TEST_CASE(\"ConfigurationManager should load valid configuration file\", \"[unit
 ## Unit Testing with Catch2
 
 ### Basic Unit Test Example
+
 ```cpp
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
@@ -249,6 +261,7 @@ TEST_CASE(\"PackageInstaller unit tests\", \"[unit][installer]\")
 ```
 
 ### Template and Parameterized Tests
+
 ```cpp
 #include <catch2/catch_template_test_macros.hpp>
 #include <catch2/generators/catch_generators.hpp>
@@ -291,6 +304,7 @@ TEST_CASE(\"OS detection mapping\", \"[unit][system]\")
 ## Mocking with Trompeloeil
 
 ### Interface Definition
+
 ```cpp
 // include/cassandragargoyle/project/install/package_manager.hpp
 #pragma once
@@ -314,6 +328,7 @@ public:
 ```
 
 ### Mock Implementation
+
 ```cpp
 // test/mocks/mock_package_manager.hpp
 #pragma once
@@ -332,6 +347,7 @@ public:
 ```
 
 ### Using Mocks in Tests
+
 ```cpp
 #include <trompeloeil.hpp>
 #include \"test/mocks/mock_package_manager.hpp\"
@@ -383,6 +399,7 @@ TEST_CASE(\"PackageInstaller with mocked dependencies\", \"[unit][installer]\")
 ## Integration Testing
 
 ### Integration Test Example
+
 ```cpp
 // test/integration/test_install_workflow.cpp
 #include <catch2/catch_test_macros.hpp>
@@ -435,6 +452,7 @@ void create_test_config_file(const std::filesystem::path& path)
 ```
 
 ### Docker-based Integration Tests
+
 ```cpp
 #include <catch2/catch_test_macros.hpp>
 #include <cstdlib>
@@ -524,6 +542,7 @@ TEST_CASE(\"Docker-based integration tests\", \"[integration][docker]\")
 ## Memory Management and RAII Testing
 
 ### Resource Management Tests
+
 ```cpp
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
@@ -613,6 +632,7 @@ TEST_CASE(\"RAII resource management\", \"[unit][raii]\")
 ```
 
 ### Memory Leak Testing
+
 ```cpp
 #include <catch2/catch_test_macros.hpp>
 #include <memory>
@@ -659,6 +679,7 @@ TEST_CASE(\"Memory management\", \"[unit][memory]\")
 ## Performance and Benchmark Testing
 
 ### Basic Performance Tests
+
 ```cpp
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/benchmark/catch_benchmark.hpp>
@@ -701,6 +722,7 @@ TEST_CASE(\"Performance tests\", \"[performance]\")
 ```
 
 ### Stress Testing
+
 ```cpp
 TEST_CASE(\"Stress tests\", \"[stress]\")
 {
@@ -735,6 +757,7 @@ TEST_CASE(\"Stress tests\", \"[stress]\")
 ## Test Fixtures and Utilities
 
 ### Test Helper Classes
+
 ```cpp
 // test/utils/test_helpers.hpp
 #pragma once
@@ -780,6 +803,7 @@ private:
 ```
 
 ### Test Helper Implementation
+
 ```cpp
 // test/utils/test_helpers.cpp
 #include \"test_helpers.hpp\"
@@ -869,6 +893,7 @@ std::filesystem::path ConfigFileBuilder::write_to_temp_file() const
 ```
 
 ### Using Test Helpers
+
 ```cpp
 #include \"test/utils/test_helpers.hpp\"
 
@@ -916,6 +941,7 @@ TEST_CASE(\"Configuration loading with helpers\", \"[unit][config]\")
 ## Coverage and Quality
 
 ### Code Coverage with gcov/lcov
+
 ```cmake
 # CMakeLists.txt - Coverage configuration
 option(ENABLE_COVERAGE \"Enable coverage reporting\" OFF)
@@ -929,6 +955,7 @@ endif()
 ```
 
 ### Coverage Script
+
 ```bash
 #!/bin/bash
 # scripts/coverage.sh
@@ -971,6 +998,7 @@ fi
 ## CI/CD Integration
 
 ### GitHub Actions Example
+
 ```yaml
 name: C++ Test Suite
 
@@ -1074,24 +1102,28 @@ echo -e \"${GREEN}All tests passed!${NC}\"
 ## Best Practices Summary
 
 ### Test Organization
+
 1. Use clear directory structure separating unit and integration tests
 2. Follow consistent naming conventions for test files and functions
 3. Use descriptive test names that explain the scenario
 4. Group related tests using Catch2 sections
 
 ### Test Quality
+
 1. Each test should verify one specific behavior
 2. Use RAII for resource management in tests
 3. Mock external dependencies appropriately
 4. Write tests that are fast, reliable, and independent
 
 ### Modern C++ Practices
+
 1. Use smart pointers for memory management
 2. Leverage RAII for resource cleanup
 3. Use move semantics where appropriate
 4. Follow const-correctness principles
 
 ### Performance and Maintainability
+
 1. Keep unit tests fast (< 100ms each)
 2. Use appropriate build configurations for testing
 3. Monitor test execution times and resource usage

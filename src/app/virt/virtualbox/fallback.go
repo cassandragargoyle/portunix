@@ -87,11 +87,11 @@ func (b *Backend) parseVBoxFile(vmPath string) (*types.VMInfo, error) {
 
 	// Convert to VMInfo
 	info := &types.VMInfo{
-		Name:     vboxMachine.Machine.Name,
-		Backend:  "virtualbox",
-		OSType:   vboxMachine.Machine.OSType,
-		CPUs:     vboxMachine.Machine.Hardware.CPU.Count,
-		State:    types.VMStateUnknown, // Will be determined separately
+		Name:    vboxMachine.Machine.Name,
+		Backend: "virtualbox",
+		OSType:  vboxMachine.Machine.OSType,
+		CPUs:    vboxMachine.Machine.Hardware.CPU.Count,
+		State:   types.VMStateUnknown, // Will be determined separately
 	}
 
 	// Convert RAM from MB to human-readable format
@@ -227,6 +227,6 @@ func (b *Backend) GetInfoWithFallback(vmName string) (*types.VMInfo, error) {
 // detectAccessDeniedError checks if error output contains E_ACCESSDENIED
 func (b *Backend) detectAccessDeniedError(output string) bool {
 	return strings.Contains(output, "E_ACCESSDENIED") ||
-	       strings.Contains(output, "0x80070005") ||
-	       strings.Contains(output, "The object functionality is limited")
+		strings.Contains(output, "0x80070005") ||
+		strings.Contains(output, "The object functionality is limited")
 }

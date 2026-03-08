@@ -1,0 +1,184 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "elasticsearch",
+    "displayName": "Elasticsearch",
+    "description": "Distributed search and analytics engine - runs as container service",
+    "category": "database/search",
+    "homepage": "https://www.elastic.co/elasticsearch/",
+    "documentation": "https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html",
+    "license": "Elastic-2.0",
+    "maintainer": "Elastic"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "container",
+        "variants": {
+          "default": {
+            "version": "8.17.0",
+            "description": "Elasticsearch 8.x single-node development mode",
+            "container": {
+              "image": "docker.elastic.co/elasticsearch/elasticsearch",
+              "tag": "8.17.0",
+              "name": "portunix-elasticsearch",
+              "ports": ["9200:9200", "9300:9300"],
+              "environment": {
+                "discovery.type": "single-node",
+                "xpack.security.enabled": "false",
+                "ES_JAVA_OPTS": "-Xms512m -Xmx512m"
+              },
+              "volumes": ["elasticsearch-data:/usr/share/elasticsearch/data"],
+              "detach": true,
+              "healthCheck": {
+                "endpoint": "http://localhost:9200/_cluster/health",
+                "timeout": 120,
+                "interval": 5,
+                "retries": 24
+              }
+            }
+          },
+          "8.12": {
+            "version": "8.12.0",
+            "description": "Elasticsearch 8.12.0 (LTS)",
+            "container": {
+              "image": "docker.elastic.co/elasticsearch/elasticsearch",
+              "tag": "8.12.0",
+              "name": "portunix-elasticsearch",
+              "ports": ["9200:9200", "9300:9300"],
+              "environment": {
+                "discovery.type": "single-node",
+                "xpack.security.enabled": "false",
+                "ES_JAVA_OPTS": "-Xms512m -Xmx512m"
+              },
+              "volumes": ["elasticsearch-data:/usr/share/elasticsearch/data"],
+              "detach": true,
+              "healthCheck": {
+                "endpoint": "http://localhost:9200/_cluster/health",
+                "timeout": 120,
+                "interval": 5,
+                "retries": 24
+              }
+            }
+          },
+          "7.17": {
+            "version": "7.17.18",
+            "description": "Elasticsearch 7.17.x (legacy compatibility)",
+            "container": {
+              "image": "docker.elastic.co/elasticsearch/elasticsearch",
+              "tag": "7.17.18",
+              "name": "portunix-elasticsearch",
+              "ports": ["9200:9200", "9300:9300"],
+              "environment": {
+                "discovery.type": "single-node",
+                "xpack.security.enabled": "false",
+                "ES_JAVA_OPTS": "-Xms512m -Xmx512m"
+              },
+              "volumes": ["elasticsearch-data:/usr/share/elasticsearch/data"],
+              "detach": true,
+              "healthCheck": {
+                "endpoint": "http://localhost:9200/_cluster/health",
+                "timeout": 120,
+                "interval": 5,
+                "retries": 24
+              }
+            }
+          }
+        },
+        "verification": {
+          "command": "curl -s http://localhost:9200/_cluster/health",
+          "expectedExitCode": 0
+        }
+      },
+      "darwin": {
+        "type": "container",
+        "variants": {
+          "default": {
+            "version": "8.17.0",
+            "description": "Elasticsearch 8.x single-node development mode",
+            "container": {
+              "image": "docker.elastic.co/elasticsearch/elasticsearch",
+              "tag": "8.17.0",
+              "name": "portunix-elasticsearch",
+              "ports": ["9200:9200", "9300:9300"],
+              "environment": {
+                "discovery.type": "single-node",
+                "xpack.security.enabled": "false",
+                "ES_JAVA_OPTS": "-Xms512m -Xmx512m"
+              },
+              "volumes": ["elasticsearch-data:/usr/share/elasticsearch/data"],
+              "detach": true,
+              "healthCheck": {
+                "endpoint": "http://localhost:9200/_cluster/health",
+                "timeout": 120,
+                "interval": 5,
+                "retries": 24
+              }
+            }
+          }
+        },
+        "verification": {
+          "command": "curl -s http://localhost:9200/_cluster/health",
+          "expectedExitCode": 0
+        }
+      },
+      "windows": {
+        "type": "container",
+        "variants": {
+          "default": {
+            "version": "8.17.0",
+            "description": "Elasticsearch 8.x single-node development mode (requires Docker Desktop)",
+            "container": {
+              "image": "docker.elastic.co/elasticsearch/elasticsearch",
+              "tag": "8.17.0",
+              "name": "portunix-elasticsearch",
+              "ports": ["9200:9200", "9300:9300"],
+              "environment": {
+                "discovery.type": "single-node",
+                "xpack.security.enabled": "false",
+                "ES_JAVA_OPTS": "-Xms512m -Xmx512m"
+              },
+              "volumes": ["elasticsearch-data:/usr/share/elasticsearch/data"],
+              "detach": true,
+              "healthCheck": {
+                "endpoint": "http://localhost:9200/_cluster/health",
+                "timeout": 120,
+                "interval": 5,
+                "retries": 24
+              }
+            }
+          }
+        },
+        "verification": {
+          "command": "curl -s http://localhost:9200/_cluster/health",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "official": {
+        "type": "docker",
+        "url": "https://www.docker.elastic.co/",
+        "apiEndpoint": "https://www.elastic.co/downloads/elasticsearch",
+        "pattern": "elasticsearch:{version}"
+      }
+    },
+    "features": [
+      "Container-based installation (Docker/Podman)",
+      "Single-node development mode",
+      "Persistent data volume",
+      "Health check monitoring",
+      "REST API on port 9200",
+      "Works with portunix fulltext plugin"
+    ],
+    "aiPrompts": {
+      "versionDiscovery": "Check Elasticsearch releases at https://www.elastic.co/downloads/past-releases#elasticsearch and Docker images at https://www.docker.elastic.co/",
+      "urlResolution": "Elasticsearch runs as container: docker.elastic.co/elasticsearch/elasticsearch:8.17.0",
+      "updateGuidance": "Elasticsearch installation uses portunix container commands. Use 'portunix install elasticsearch --variant 8.12' for specific version."
+    },
+    "dependencies": [],
+    "templates": []
+  }
+}

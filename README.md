@@ -6,21 +6,52 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/cassandragargoyle/Portunix)](https://goreportcard.com/report/github.com/cassandragargoyle/Portunix)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Universal development environment management tool with intelligent OS detection, Docker container support, and automated software installation.
+**Universal development environment management tool** with intelligent OS detection, Docker container support, and automated software installation.
 
-## 🚀 Features
+> Simplify your development workflow across Windows, Linux, and macOS with a single, powerful CLI tool.
+
+## Why Portunix?
+
+- **One Tool, All Platforms**: Consistent experience across Windows, Linux, and macOS
+- **Smart Automation**: Intelligent OS detection and automatic configuration
+- **Container-First**: First-class Docker and Podman support with SSH-enabled containers
+- **Developer-Focused**: Built by developers, for developers
+
+## Quick Install
+
+### From Releases (Recommended)
+
+```bash
+# Linux (amd64)
+wget https://github.com/cassandragargoyle/Portunix/releases/latest/download/portunix_linux_amd64.tar.gz
+tar -xzf portunix_linux_amd64.tar.gz
+sudo mv portunix /usr/local/bin/
+
+# Verify installation
+portunix version
+```
+
+### From Source
+
+```bash
+git clone https://github.com/cassandragargoyle/Portunix.git
+cd Portunix
+make build
+```
+
+## Features
 
 ### Core Capabilities
 
-- **🔧 Universal Installation System**: Install development tools across Windows, Linux, and macOS
-- **🐳 Docker Management**: Complete Docker container lifecycle management with SSH support
-- **🔐 Certificate Management**: Automatic CA certificate installation and HTTPS connectivity verification
-- **🪟 Windows Sandbox Integration**: Isolated development environments on Windows
-- **🧠 Intelligent OS Detection**: Automatic platform detection and optimization with certificate bundle detection
-- **⚡ Cross-Platform Support**: Native support for Windows, Linux, and macOS
-- **💻 VM Management**: QEMU/KVM virtualization with Windows 11 support and snapshots
+- **Universal Installation System**: Install development tools across Windows, Linux, and macOS
+- **Docker Management**: Complete Docker container lifecycle management with SSH support
+- **Certificate Management**: Automatic CA certificate installation and HTTPS connectivity verification
+- **Windows Sandbox Integration**: Isolated development environments on Windows
+- **Intelligent OS Detection**: Automatic platform detection and optimization with certificate bundle detection
+- **Cross-Platform Support**: Native support for Windows, Linux, and macOS
+- **VM Management**: QEMU/KVM virtualization with Windows 11 support and snapshots
 
-### Docker Management (Issue #2)
+### Docker Management
 
 - **Intelligent Docker Installation**: OS-specific Docker installation with storage optimization
 - **Multi-Platform Containers**: Support for Ubuntu, Alpine, CentOS, Debian, and custom images
@@ -29,150 +60,150 @@ Universal development environment management tool with intelligent OS detection,
 - **Cache Directory Mounting**: Persistent storage for downloads and packages
 - **Flexible Base Images**: Choose from various Linux distributions
 
-### Certificate Management (Issue #30) 
+### Certificate Management
 
 - **Automatic CA Certificate Setup**: Installs CA certificates in containers before software installation
 - **HTTPS Connectivity Verification**: Tests HTTPS connections after certificate installation
-- **Multi-Distribution Support**: Works with apt, yum, dnf, apk, pacman, zypper package managers  
+- **Multi-Distribution Support**: Works with apt, yum, dnf, apk, pacman, zypper package managers
 - **System Certificate Detection**: Shows certificate bundle status in system information
 - **Standalone Certificate Installation**: `portunix install ca-certificates` command
+
+### Documentation Environment
+
+- **Playbook Template System**: Generate documentation sites with a single command
+- **Supported Engines**: Docusaurus, Hugo, Docsy (Hugo + Google Docsy theme), Docsify
+- **Container-Based**: Run documentation environments in Docker/Podman containers
+- **Shared Folder Workflow**: Edit locally, see changes instantly via live-reload
+- **Auto-Dependency Resolution**: `portunix install docusaurus` auto-installs Node.js
+- **Quickstart Script**: One-liner PowerShell script for Windows users
+
+### Plugin System
+
+- **gRPC-Based Architecture**: High-performance plugin communication
+- **Plugin Lifecycle**: Install, enable, disable, start, stop, uninstall
+- **Plugin Creation**: Generate new plugin templates with `portunix plugin create`
+- **Plugin Registry**: Centralized plugin discovery and management
+
+### Self-Update System
+
+- **Automatic Updates**: `portunix update` checks and installs latest version
+- **SHA256 Verification**: Secure checksum verification of downloads
+- **Backup & Rollback**: Automatic backup before update with rollback on failure
 
 ### Installation Types
 
 - **`default`**: Python + Java + VSCode (recommended)
 - **`empty`**: Clean environment without packages
 - **`python`**: Python development environment
-- **`java`**: Java development environment  
+- **`java`**: Java development environment
 - **`vscode`**: Visual Studio Code setup
 
-## 📦 Installation
-
-### Prerequisites
-
-- **Go 1.21+** for building from source
-- **Docker** (optional, for container features)
-- **Windows 10/11 Pro/Enterprise** (for Windows Sandbox features)
-
-> **📝 Windows Users:** For proper emoji display in PowerShell, see [Windows Setup Guide](docs/WINDOWS-SETUP.md) to configure UTF-8 encoding.
-
-### Quick Install
-
-```bash
-# Clone repository
-git clone https://github.com/cassandragargoyle/Portunix.git
-cd Portunix
-
-# Build
-make build
-
-# Or build manually
-go build -o portunix .
-```
-
-## 🎯 Quick Start
+## Quick Start
 
 ### Basic Usage
 
 ```bash
 # Show help
-./portunix --help
+portunix --help
 
 # Install Docker with intelligent OS detection
-./portunix install docker
+portunix install docker
 
 # Install Docker with auto-accept recommended storage
-./portunix install docker -y
+portunix install docker -y
 
 # Install other software
-./portunix install python java vscode
+portunix install python java vscode
 
 # Install CA certificates for HTTPS connectivity
-./portunix install ca-certificates
+portunix install ca-certificates
 
 # Show system information with certificate status
-./portunix system info
+portunix system info
 ```
 
 ### Docker Container Management
 
 ```bash
 # Run Python environment in Ubuntu container
-./portunix docker run-in-container python
+portunix docker run-in-container python
 
-# Run Java environment in Alpine container  
-./portunix docker run-in-container java --image alpine:3.18
+# Run Java environment in Alpine container
+portunix docker run-in-container java --image alpine:3.18
 
 # Run development environment with custom settings
-./portunix docker run-in-container default \
+portunix docker run-in-container default \
   --image ubuntu:20.04 \
   --name my-dev-env \
   --port 8080:8080 \
   --keep-running
 
 # Container management
-./portunix docker list
-./portunix docker logs <container-id>
-./portunix docker stop <container-id>
-./portunix docker remove <container-id>
+portunix docker list
+portunix docker logs <container-id>
+portunix docker stop <container-id>
+portunix docker remove <container-id>
+```
+
+### Documentation Site Setup
+
+```bash
+# Create a Docusaurus documentation site in a container
+portunix playbook init my-docs --template static-docs --engine docusaurus --target container
+portunix playbook run my-docs.ptxbook --script create
+portunix playbook run my-docs.ptxbook --script dev
+# -> Open http://localhost:3000
+
+# Or use Hugo / Docsy / Docsify
+portunix playbook init my-docs --template static-docs --engine hugo --target container
+
+# Direct install (auto-installs dependencies)
+portunix install docusaurus
+portunix install hugo
 ```
 
 ### Windows Sandbox
 
 ```bash
 # Run in Windows Sandbox with SSH
-./portunix sandbox run-in-sandbox python
+portunix sandbox run-in-sandbox python
 
 # Generate custom sandbox configuration
-./portunix sandbox generate --enable-ssh
+portunix sandbox generate --enable-ssh
 ```
 
 ### Virtual Machines (QEMU/KVM & VirtualBox)
 
 ```bash
 # Install QEMU/KVM virtualization stack
-./portunix vm install-qemu
+portunix vm install-qemu
 
 # Check virtualization support
-./portunix vm check
+portunix vm check
 
-# Method 1: Using new VM commands (recommended for QEMU)
-./portunix vm create win11-vm \
+# Create Windows 11 VM
+portunix vm create win11-vm \
   --iso ~/Downloads/Win11.iso \
   --disk-size 80G \
   --ram 8G \
   --cpus 4 \
   --os windows11
 
-# Method 2: Using create vm command (supports both QEMU and VirtualBox)
-./portunix create vm \
-  --vmtype qemu \
-  --vmname ubuntu-dev \
-  --iso ~/Downloads/ubuntu-22.04.iso \
-  --basefolder ~/VMs
-
-# VirtualBox VM (requires VBox preprocessor)
-./portunix create vm \
-  --vmtype vbox \
-  --vmname win10-dev \
-  --iso ~/Downloads/Win10.iso \
-  --basefolder ~/VMs
-
 # VM lifecycle management
-./portunix vm start win11-vm
-./portunix vm list --all
-./portunix vm info win11-vm
-./portunix vm console win11-vm
-./portunix vm stop win11-vm
+portunix vm start win11-vm
+portunix vm list --all
+portunix vm info win11-vm
+portunix vm console win11-vm
+portunix vm stop win11-vm
 
 # Snapshot management for trial software testing
-./portunix vm snapshot create win11-vm clean-install \
+portunix vm snapshot create win11-vm clean-install \
   --description "Fresh Windows 11 after updates"
-./portunix vm snapshot list win11-vm
-./portunix vm snapshot revert win11-vm clean-install
-./portunix vm snapshot delete win11-vm old-snapshot
+portunix vm snapshot list win11-vm
+portunix vm snapshot revert win11-vm clean-install
 ```
 
-## 💻 VM Management (QEMU/KVM)
+## VM Management (QEMU/KVM)
 
 ### Core Features
 
@@ -191,33 +222,7 @@ go build -o portunix .
 - **Linux**: Ubuntu, Debian, CentOS, Fedora, Arch, and more
 - **Custom**: Any OS that supports QEMU/KVM
 
-### VM Workflow
-
-#### QEMU/KVM (Linux)
-
-1. **Prerequisites Check**: Verify hardware virtualization support (Intel VT-x/AMD-V)
-2. **Installation**: `portunix vm install-qemu` - Install QEMU, KVM, libvirt, and management tools
-3. **VM Creation**: 
-   - Method 1: `portunix vm create` (advanced options)
-   - Method 2: `portunix create vm --vmtype qemu` (simple creation)
-4. **Snapshot Management**: Create restore points for easy rollback
-5. **Lifecycle Management**: Start, stop, monitor, and manage VMs
-
-#### VirtualBox (Windows/macOS/Linux)
-
-1. **Prerequisites**: VirtualBox installed and preprocessor configured
-2. **VM Creation**: `portunix create vm --vmtype vbox`
-3. **Management**: Through VirtualBox GUI or preprocessor commands
-
-### Use Cases
-
-- **Enterprise Software Trials**: Test software like Enterprise Architect repeatedly
-- **Development Environments**: Isolated development environments
-- **OS Testing**: Test different operating systems safely
-- **Security Research**: Isolated environment for security testing
-- **Cross-Platform Development**: Test applications on different OS versions
-
-## 🐳 Docker Features
+## Docker Features
 
 ### Supported Base Images
 
@@ -238,51 +243,7 @@ go build -o portunix .
 5. **Software Installation**: Install requested packages using detected package manager
 6. **Ready for Development**: SSH access with shared workspace and cache
 
-### Example Workflows
-
-**Python Development:**
-
-```bash
-# Lightweight Alpine Python environment
-./portunix docker run-in-container python --image alpine:3.18
-
-# Full Ubuntu Python environment
-./portunix docker run-in-container python --image ubuntu:22.04
-```
-
-**Java Development:**
-
-```bash
-# Java on CentOS (enterprise environment)
-./portunix docker run-in-container java --image centos:8
-
-# Java on Ubuntu (standard environment)
-./portunix docker run-in-container java
-```
-
-**Full Development Environment:**
-
-```bash
-# Complete development setup
-./portunix docker run-in-container default \
-  --name full-dev \
-  --port 3000:3000 \
-  --port 8080:8080 \
-  --env "NODE_ENV=development" \
-  --keep-running
-```
-
-## 🛠️ Development and Testing
-
-### Modern Testing Architecture
-
-Portunix includes a comprehensive testing strategy with modern Go testing practices:
-
-- **Unit Tests**: Fast, isolated tests with mocking
-- **Integration Tests**: Real Docker container testing
-- **CI/CD Pipeline**: Automated testing with GitHub Actions
-- **Coverage Reporting**: Comprehensive coverage analysis
-- **Quality Gates**: Linting, security scanning, cross-platform testing
+## Development and Testing
 
 ### Quick Testing
 
@@ -316,34 +277,14 @@ make deploy-local
 make undeploy-local
 ```
 
-The `deploy-local` target automatically detects where Portunix is installed using `which portunix`. If no installation exists, it runs the interactive install script (`scripts/install.sh`). For updates, it copies binaries to the detected location.
+## Documentation
 
-### Testing Documentation
-
-- **[Testing Guide](TEST_GUIDE.md)**: Comprehensive testing documentation
-- **[Testing Architecture](TESTING.md)**: Modern testing strategy and standards
-
-## 📚 Documentation
-
-### User Guides
-
-- **[Windows Setup Guide](docs/WINDOWS-SETUP.md)**: Windows-specific setup and UTF-8 configuration ⭐
+- **[Windows Setup Guide](docs/WINDOWS-SETUP.md)**: Windows-specific setup and UTF-8 configuration
 - **[TEST_GUIDE.md](TEST_GUIDE.md)**: Complete testing guide for developers
 - **[TESTING.md](TESTING.md)**: Testing architecture and standards
-
-### Issue Tracking
-
 - **[Issues Documentation](docs/issues/README.md)**: GitHub issues mirror and tracking
 
-### Examples
-
-```bash
-# View examples
-ls examples/
-cat examples/user-install-config.json
-```
-
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -363,27 +304,39 @@ export PORTUNIX_CACHE_DIR=/custom/cache/path
 - **Install packages**: `assets/install-packages.json`
 - **User config**: `examples/user-install-config.json`
 
-## 🚀 CI/CD and Quality
+## Roadmap
 
-### GitHub Actions Pipeline
+### Current Status
 
-- **Lint**: Code quality and formatting checks
-- **Unit Tests**: Fast isolated testing
-- **Integration Tests**: Real Docker container testing
-- **Security**: Vulnerability scanning with gosec
-- **Cross-Platform**: Windows, Linux, macOS testing
-- **Coverage**: Automated coverage reporting
+- Cross-platform OS detection system
+- Docker/Podman management with intelligent installation
+- Multi-platform container support with SSH-enabled development containers
+- Container orchestration with docker-compose/podman-compose
+- MCP server for AI assistant integration
+- Package registry system with automatic discovery
+- Multi-level help system (basic, expert, AI)
+- QEMU/KVM virtualization with Windows 11 support and snapshots
+- Product feedback tool (ptx-pft) with Fider/ClearFlask/Eververse providers
+- AIOps helper for GPU/AI container workloads
+- Make helper for cross-platform builds
+- Ansible infrastructure as code integration
+- Self-update system with rollback capability
+- Comprehensive testing architecture and CI/CD pipeline
+- Python development helper with project-local venv support
+- Plugin system with gRPC architecture (#7)
+- Playbook template system for documentation environments
+- Auto-dependency resolution for package installation
+- Docusaurus, Hugo, Docsy, Docsify support
 
-### Quality Metrics
+### Upcoming Features
 
-- **Test Coverage**: Target ≥80% for unit tests
-- **Code Quality**: golangci-lint with comprehensive rules
-- **Security**: gosec security scanning
-- **Performance**: Benchmark testing for Docker operations
+- Virtual development disk management (#8)
+- Configurable datastore backends (#9)
+- Interactive wizard framework (#14)
+- AI assistant installation support (#35)
+- VSCode development containers integration
 
-## 🤝 Contributing
-
-### Development Setup
+## Contributing
 
 ```bash
 # Clone and setup
@@ -400,8 +353,8 @@ make status
 
 ### Guidelines
 
-1. Follow existing code conventions (see [TODO:](TODO:.md))
-2. Write tests for new features (see [TEST_GUIDE.md](TEST_GUIDE.md))
+1. Follow existing code conventions
+2. Write tests for new features
 3. Update documentation
 4. Run quality checks: `make lint`
 5. Ensure all tests pass: `make test`
@@ -414,110 +367,44 @@ make status
 4. Submit pull request
 5. Automated CI/CD pipeline will validate changes
 
-## 📈 Roadmap
-
-### Current Status ✅
-
-- ✅ Cross-platform OS detection system
-- ✅ Docker/Podman management with intelligent installation
-- ✅ Multi-platform container support with SSH-enabled development containers
-- ✅ Container orchestration with docker-compose/podman-compose
-- ✅ MCP server for AI assistant integration
-- ✅ Package registry system with automatic discovery
-- ✅ Multi-level help system (basic, expert, AI)
-- ✅ QEMU/KVM virtualization with Windows 11 support and snapshots
-- ✅ Product feedback tool (ptx-pft) with Fider/ClearFlask/Eververse providers
-- ✅ AIOps helper for GPU/AI container workloads
-- ✅ Make helper for cross-platform builds
-- ✅ Ansible infrastructure as code integration
-- ✅ Self-update system with rollback capability
-- ✅ Comprehensive testing architecture and CI/CD pipeline
-- ✅ Python development helper with project-local venv support
-
-### Upcoming Features 🚧
-
-- [ ] Plugin system with gRPC architecture (#7)
-- [ ] Virtual development disk management (#8)
-- [ ] Configurable datastore backends (#9)
-- [ ] Interactive wizard framework (#14)
-- [ ] AI assistant installation support (#35)
-- [ ] VSCode development containers integration
-
-## 📦 Creating a Release
-
-To create a new release, use the provided release script:
+## Creating a Release
 
 ```bash
-# Create release with version tag
-./scripts/make-release.sh v1.7.6
+# Create release (builds all platforms, generates notes, checksums)
+python3 scripts/make-release.py v1.10.7
+
+# Upload to GitHub
+python3 scripts/upload-release-to-github.py v1.10.7
 ```
 
-The script automatically:
+The release script automatically:
 
 - Updates version in source files and `portunix.rc`
 - Creates git tag
 - Builds cross-platform binaries using GoReleaser
+- Creates platform-specific archives (Linux, Windows, macOS)
 - Generates release notes and checksums
-- Publishes to GitHub Releases
 
-For manual builds without release:
-
-```bash
-# Build with embedded version
-./build-with-version.sh v1.7.6
-
-# Or use Makefile targets
-make build-release
-make test-release
-```
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## 🔗 Links
-
-- **GitHub**: [cassandragargoyle/Portunix](https://github.com/cassandragargoyle/Portunix)
-- **Issues**: [GitHub Issues](https://github.com/cassandragargoyle/Portunix/issues)
-- **Documentation**: [docs/](docs/)
-
-## 🤝 External Partnerships & Collaboration
+## External Partnerships
 
 ### act - GitHub Actions Local Runner
 
 Portunix integrates with and contributes to the **[nektos/act](https://github.com/nektos/act)** project for local GitHub Actions testing.
 
-- **Project**: [nektos/act](https://github.com/nektos/act) - Run GitHub Actions locally 🚀
+- **Project**: [nektos/act](https://github.com/nektos/act) - Run GitHub Actions locally
 - **Website**: [nektosact.com](https://nektosact.com/)
-- **Partnership**: CassandraGargoyle team collaborates on act development and integration
 - **Integration**: Portunix provides seamless act installation and GitHub Actions workflow testing capabilities
 
-The collaboration enhances both projects by providing better local development workflows and testing capabilities for GitHub Actions users.
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
+
+## Links
+
+- **GitHub**: [cassandragargoyle/Portunix](https://github.com/cassandragargoyle/Portunix)
+- **Issues**: [GitHub Issues](https://github.com/cassandragargoyle/Portunix/issues)
+- **Documentation**: [docs/](docs/)
 
 ---
 
-**🎯 Universal development environment management made simple.**
-
-## Command Line Reference
-
-Usage:
-  portunix [command]
-
-Available Commands:
-  choco       Chocolatey package manager operations (Windows only)
-  completion  Generate the autocompletion script for the specified shell
-  create      Creates a new resource (including VMs with --vmtype)
-  docker      Manages Docker containers and Docker installation.
-  help        Help about any command
-  install     Installs specified software.
-  sandbox     Manages Windows Sandbox instances.
-  unzip       Extracts a ZIP file.
-  vm          Manage virtual machines with QEMU/KVM (advanced)
-  winget      Windows Package Manager operations and information
-  wizard      Starts an interactive wizard.
-
-Flags:
-  -h, --help      help for portunix
-  -v, --version   version for portunix
-
-Use "portunix [command] --help" for more information about a command.
+**Universal development environment management made simple.**

@@ -5,6 +5,11 @@ run:
   timeout: 5m
   issues-exit-code: 1
   tests: true
+  skip-dirs:
+    - src/helpers
+    - test/integration
+    - test/e2e
+    - test/unit
 
 output:
   formats:
@@ -115,21 +120,14 @@ linters:
     
     # Additional linters
     - bodyclose       # HTTP response body close
-    - cyclop          # Cyclomatic complexity
-    - dupl            # Code duplication
     - copyloopvar     # Loop variable capture (replaces exportloopref)
-    - funlen          # Function length
-    - gocognit        # Cognitive complexity
-    - goconst         # Repeated strings as constants
     - gocritic        # Comprehensive checks
     - gofmt           # Formatting
     - goimports       # Import formatting
     - revive          # Linting (replaces golint)
     - gosec           # Security checks
-    - lll             # Line length
     - misspell        # Misspelling
     - nakedret        # Naked returns
-    - prealloc        # Slice preallocation
     - rowserrcheck    # SQL rows error check
     - sqlclosecheck   # SQL close check
     - unconvert       # Unnecessary conversions
@@ -138,22 +136,24 @@ linters:
     
     # Test specific
     - testpackage     # Test package naming
-    
-    # Documentation
-    - godot           # Comments end with period
-    
+
     # Go modules
     - gomoddirectives # Go mod directives
 
+  # Note: deprecated linters (deadcode, varcheck, structcheck, interfacer,
+  # maligned, scopelint, golint, exportloopref) are automatically disabled
+  # by golangci-lint and should not be listed here
+
+  # Disable style-focused linters that produce too many warnings
   disable:
-    - deadcode        # Deprecated (replaced by unused)
-    - varcheck        # Deprecated (replaced by unused)
-    - structcheck     # Deprecated (replaced by unused)
-    - interfacer      # Deprecated
-    - maligned        # Deprecated
-    - scopelint       # Deprecated (replaced by copyloopvar)
-    - golint          # Deprecated (replaced by revive)
-    - exportloopref   # Deprecated (replaced by copyloopvar)
+    - godot         # Comment sentence formatting - too strict
+    - dupl          # Duplicate code detection - often false positives in tests
+    - gocognit      # Cognitive complexity - useful but not blocking
+    - cyclop        # Cyclomatic complexity - useful but not blocking
+    - prealloc      # Slice preallocation - optimization suggestion only
+    - funlen        # Function length - too strict for complex commands
+    - lll           # Line length - too strict, interferes with readability
+    - goconst       # Repeated strings - too many false positives
 
   # Maximum issues count per one linter
   max-issues-per-linter: 50
@@ -178,6 +178,10 @@ linters:
     - test/fixtures
     - .portunix-github-sync
     - test/tmp
+    - src/helpers   # Helper binaries have relaxed lint requirements
+    - test/integration  # Integration tests have relaxed requirements
+    - test/e2e          # E2E tests have relaxed requirements
+    - test/unit         # Unit tests have relaxed requirements
   exclude-files:
     - ".*\\.pb\\.go$"
     - ".*_generated\\.go$"

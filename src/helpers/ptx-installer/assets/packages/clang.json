@@ -1,0 +1,132 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "clang",
+    "displayName": "Clang/LLVM Compiler",
+    "description": "Production-quality C/C++/Objective-C compiler built on LLVM infrastructure with expressive diagnostics and rich tooling ecosystem",
+    "category": "development/compilers",
+    "homepage": "https://clang.llvm.org/",
+    "documentation": "https://clang.llvm.org/docs/",
+    "license": "Apache-2.0 WITH LLVM-exception",
+    "maintainer": "LLVM Project"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "exe",
+        "variants": {
+          "latest": {
+            "version": "21.0.0",
+            "urls": {
+              "x64": "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.0.0/LLVM-21.0.0-win64.exe"
+            },
+            "installArgs": ["/S"],
+            "postInstall": [
+              "setx PATH \"%PATH%;C:\\Program Files\\LLVM\\bin\" /m"
+            ]
+          },
+          "chocolatey": {
+            "type": "chocolatey",
+            "version": "latest",
+            "packages": ["llvm"]
+          },
+          "winget": {
+            "type": "winget",
+            "version": "latest",
+            "packages": ["LLVM.LLVM"]
+          }
+        },
+        "verification": {
+          "command": "clang --version",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "CC": "clang",
+          "CXX": "clang++",
+          "PATH_APPEND": "C:\\Program Files\\LLVM\\bin"
+        }
+      },
+      "linux": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "21",
+            "installScript": "apt-get update && apt-get install -y wget lsb-release software-properties-common gnupg && wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 21",
+            "distributions": ["ubuntu", "debian", "mint", "elementary"],
+            "requiresSudo": true,
+            "postInstall": [
+              "update-alternatives --install /usr/bin/clang clang /usr/bin/clang-21 100",
+              "update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-21 100"
+            ]
+          },
+          "full": {
+            "version": "21",
+            "installScript": "apt-get update && apt-get install -y wget lsb-release software-properties-common gnupg && wget -qO- https://apt.llvm.org/llvm.sh | bash -s -- 21 all",
+            "distributions": ["ubuntu", "debian", "mint", "elementary"],
+            "requiresSudo": true,
+            "postInstall": [
+              "update-alternatives --install /usr/bin/clang clang /usr/bin/clang-21 100",
+              "update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-21 100",
+              "update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-21 100",
+              "update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-21 100",
+              "update-alternatives --install /usr/bin/clangd clangd /usr/bin/clangd-21 100",
+              "update-alternatives --install /usr/bin/lld lld /usr/bin/lld-21 100",
+              "update-alternatives --install /usr/bin/lldb lldb /usr/bin/lldb-21 100"
+            ]
+          },
+          "apt": {
+            "type": "apt",
+            "version": "latest",
+            "packages": ["clang"],
+            "distributions": ["ubuntu", "debian", "mint", "elementary"],
+            "requiresSudo": true
+          },
+          "dnf": {
+            "type": "dnf",
+            "version": "latest",
+            "packages": ["clang", "clang-tools-extra"],
+            "distributions": ["fedora", "rocky", "almalinux", "centos"],
+            "requiresSudo": true
+          },
+          "pacman": {
+            "type": "pacman",
+            "version": "latest",
+            "packages": ["clang"],
+            "requiresSudo": true
+          }
+        },
+        "verification": {
+          "command": "clang --version && clang++ --version",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "CC": "clang",
+          "CXX": "clang++"
+        }
+      }
+    },
+    "sources": {
+      "official": {
+        "type": "direct",
+        "url": "https://apt.llvm.org/",
+        "apiEndpoint": "https://api.github.com/repos/llvm/llvm-project/releases/latest",
+        "pattern": "LLVM-{version}"
+      },
+      "github": {
+        "type": "github",
+        "url": "https://github.com/llvm/llvm-project",
+        "apiEndpoint": "https://api.github.com/repos/llvm/llvm-project/releases/latest",
+        "pattern": "LLVM-{version}"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check GitHub API for LLVM releases at https://api.github.com/repos/llvm/llvm-project/releases/latest. Parse version from tag (llvmorg-XX.Y.Z). For Debian/Ubuntu, LLVM APT script at https://apt.llvm.org/llvm.sh supports latest major version as argument.",
+      "urlResolution": "Linux (Debian/Ubuntu): Use LLVM APT script https://apt.llvm.org/llvm.sh with version argument. Pre-built binaries: https://github.com/llvm/llvm-project/releases/download/llvmorg-{version}/LLVM-{version}-Linux-X64.tar.xz (x64) or LLVM-{version}-Linux-AArch64.tar.xz (arm64). Windows: LLVM-{version}-win64.exe",
+      "updateGuidance": "Monitor LLVM releases (approximately 2 major releases per year). Update version number in default/full variants. LLVM APT script argument is major version only (e.g. 21, not 21.0.0). The llvm.sh script with 'all' argument installs full toolchain including clang-tidy, clang-format, clangd, lld, lldb."
+    },
+    "dependencies": [],
+    "templates": ["script-installer"]
+  }
+}

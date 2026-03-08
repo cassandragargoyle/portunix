@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package main
 
 import (
@@ -17,25 +21,25 @@ import (
 
 // SecretStore represents a secure secret storage system
 type SecretStore struct {
-	Type       string                 `json:"type"`        // "file", "env", "vault", "aws", "azure"
-	Config     map[string]interface{} `json:"config"`      // Store-specific configuration
-	Encryption *EncryptionConfig      `json:"encryption"`  // Encryption settings
+	Type       string                 `json:"type"`       // "file", "env", "vault", "aws", "azure"
+	Config     map[string]interface{} `json:"config"`     // Store-specific configuration
+	Encryption *EncryptionConfig      `json:"encryption"` // Encryption settings
 }
 
 // EncryptionConfig holds encryption configuration
 type EncryptionConfig struct {
 	Enabled   bool   `json:"enabled"`
-	Algorithm string `json:"algorithm"` // "aes-256-gcm"
+	Algorithm string `json:"algorithm"`  // "aes-256-gcm"
 	KeySource string `json:"key_source"` // "env", "file", "prompt"
 	KeyPath   string `json:"key_path,omitempty"`
 }
 
 // SecretManager handles secure secret operations
 type SecretManager struct {
-	stores          map[string]*SecretStore
-	defaultStore    string
-	encryptionKey   []byte
-	auditMgr        *AuditManager
+	stores        map[string]*SecretStore
+	defaultStore  string
+	encryptionKey []byte
+	auditMgr      *AuditManager
 }
 
 // SecretValue represents an encrypted secret
@@ -68,9 +72,9 @@ func (sm *SecretManager) LoadSecretStores(configPath string) error {
 	}
 
 	var config struct {
-		DefaultStore string                    `json:"default_store"`
-		Stores       map[string]*SecretStore   `json:"stores"`
-		Encryption   *EncryptionConfig         `json:"encryption"`
+		DefaultStore string                  `json:"default_store"`
+		Stores       map[string]*SecretStore `json:"stores"`
+		Encryption   *EncryptionConfig       `json:"encryption"`
 	}
 
 	if err := json.Unmarshal(data, &config); err != nil {
@@ -573,9 +577,9 @@ type ExecutionContext struct {
 
 // SecretConfig represents the configuration for the secret management system
 type SecretConfig struct {
-	DefaultStore  string                    `json:"default_store"`
-	Stores        map[string]*SecretStore   `json:"stores"`
-	Encryption    *EncryptionConfig         `json:"encryption"`
+	DefaultStore string                  `json:"default_store"`
+	Stores       map[string]*SecretStore `json:"stores"`
+	Encryption   *EncryptionConfig       `json:"encryption"`
 }
 
 // GetDefaultSecretConfig returns the default secret management configuration
@@ -598,7 +602,7 @@ func GetDefaultSecretConfig() *SecretConfig {
 				},
 			},
 			"env": {
-				Type: "env",
+				Type:   "env",
 				Config: map[string]interface{}{},
 				Encryption: &EncryptionConfig{
 					Enabled:   false,

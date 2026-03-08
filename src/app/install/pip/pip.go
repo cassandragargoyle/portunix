@@ -150,8 +150,8 @@ func (p *PipManager) readOutput(pipe io.ReadCloser, prefix string) {
 		} else {
 			// Show important lines even in non-debug mode
 			if strings.Contains(strings.ToLower(line), "error") ||
-			   strings.Contains(strings.ToLower(line), "failed") ||
-			   strings.Contains(strings.ToLower(line), "successfully installed") {
+				strings.Contains(strings.ToLower(line), "failed") ||
+				strings.Contains(strings.ToLower(line), "successfully installed") {
 				fmt.Printf("   %s\n", line)
 			}
 		}

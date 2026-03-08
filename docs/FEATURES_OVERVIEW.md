@@ -75,6 +75,7 @@ This document provides an overview of features available in the Portunix core an
   - Multi-platform containers (Ubuntu, Alpine, CentOS, Debian)
   - Cache directory mounting
   - Package manager auto-detection
+
 - **Podman support**:
   - Podman Desktop integration
   - Container management
@@ -140,6 +141,31 @@ This document provides an overview of features available in the Portunix core an
   - `track_agile_tasks`
   - `analyze_flow_metrics`
 
+### 📄 Text Extractor Plugin
+
+- **Document parsing**: Extract text from 50+ document formats using Apache Tika
+- **Format support**: PDF, Office (DOCX, XLSX, PPTX), OpenDocument, HTML, RTF, LaTeX, EPUB
+- **Markdown conversion**: Convert documents to Markdown format (Excel → MD tables)
+- **Metadata extraction**: Extract document metadata and properties
+- **OCR support**: Optional Tesseract OCR for scanned documents
+- **CLI commands**:
+  - `portunix text-extractor extract <file>` - Extract text
+  - `portunix text-extractor convert <file> --output file.md` - Convert to Markdown
+  - `portunix text-extractor metadata <file>` - Extract metadata
+
+### 🔍 Fulltext Search Plugin
+
+- **Document indexing**: Index files and directories with text-extractor integration
+- **ElasticSearch backend**: Enterprise-grade search powered by ElasticSearch 8.x
+- **Fulltext search**: Query syntax (AND, OR, phrases, wildcards), highlighting, pagination
+- **Format support**: PDF, Office documents, text files (via text-extractor)
+- **Index management**: Create/delete indices, status, statistics, re-indexing
+- **CLI commands**:
+  - `portunix fulltext index /path` - Index documents
+  - `portunix fulltext search "query"` - Search indexed documents
+  - `portunix fulltext status` - Index statistics
+  - `portunix fulltext config` - Configuration management
+
 ## Architecture Overview
 
 ### Core Components
@@ -163,10 +189,12 @@ portunix/
 
 ### Plugin Architecture
 
-```
+```text
 portunix-plugins/
 ├── plugins/          # Plugin implementations
-│   └── agile-software-development/
+│   ├── agile-software-development/
+│   ├── fulltext/
+│   └── text-extractor/
 └── registry/         # Plugin registry
 ```
 
@@ -204,6 +232,8 @@ portunix-plugins/
 ### Plugin Commands
 
 - `portunix agile` - Agile development tools (via plugin)
+- `portunix fulltext` - Document indexing and fulltext search (via plugin)
+- `portunix text-extractor` - Text extraction and document conversion (via plugin)
 
 ## Future Roadmap
 

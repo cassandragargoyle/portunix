@@ -54,7 +54,8 @@ build-helpers: ## Build all helper binaries
 	@cd src/helpers/ptx-make && go build -o ../../../ptx-make$(EXE_EXT) .
 	@cd src/helpers/ptx-pft && go build -o ../../../ptx-pft$(EXE_EXT) .
 	@cd src/helpers/ptx-credential && go build -o ../../../ptx-credential$(EXE_EXT) .
-	@echo "Helper binaries built: ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-prompting, ptx-python, ptx-installer, ptx-aiops, ptx-make, ptx-pft, ptx-credential"
+	@cd src/helpers/ptx-trace && go build -o ../../../ptx-trace$(EXE_EXT) .
+	@echo "Helper binaries built: ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-prompting, ptx-python, ptx-installer, ptx-aiops, ptx-make, ptx-pft, ptx-credential, ptx-trace"
 
 build-main: ## Build only the main Portunix binary
 	@echo "Building Portunix..."
@@ -87,7 +88,7 @@ ci-test: lint vet test-coverage-ci ## Run CI test suite
 
 clean: ## Clean build artifacts and test files
 	@echo "Cleaning up..."
-	-$(RM) portunix$(EXE_EXT) ptx-container$(EXE_EXT) ptx-mcp$(EXE_EXT) ptx-virt$(EXE_EXT) ptx-ansible$(EXE_EXT) ptx-prompting$(EXE_EXT) ptx-python$(EXE_EXT) ptx-installer$(EXE_EXT) ptx-aiops$(EXE_EXT) ptx-make$(EXE_EXT) ptx-pft$(EXE_EXT) ptx-credential$(EXE_EXT) ptx-vocalio$(EXE_EXT)
+	-$(RM) portunix$(EXE_EXT) ptx-container$(EXE_EXT) ptx-mcp$(EXE_EXT) ptx-virt$(EXE_EXT) ptx-ansible$(EXE_EXT) ptx-prompting$(EXE_EXT) ptx-python$(EXE_EXT) ptx-installer$(EXE_EXT) ptx-aiops$(EXE_EXT) ptx-make$(EXE_EXT) ptx-pft$(EXE_EXT) ptx-credential$(EXE_EXT) ptx-trace$(EXE_EXT) ptx-vocalio$(EXE_EXT)
 	-$(RM) coverage.out coverage.html
 	-$(RMDIR) test/tmp/
 	go clean -testcache
@@ -97,7 +98,7 @@ clean-all: clean ## Clean everything including dependencies
 	go clean -modcache
 	-$(RMDIR) test/mocks/generated_*
 
-deploy-local: build ## Install Portunix and helpers to local system (auto-detects install path)
+deploy-local: ## Deploy pre-built binaries to local system (run build-with-version.sh first)
 ifeq ($(OS),Windows_NT)
 	@.venv\Scripts\python.exe scripts/deploy-local.py
 else
@@ -285,6 +286,7 @@ build-all-platforms: ## Build all binaries for all platforms (cross-platform dis
 		cd src/helpers/ptx-make && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-make$$ext . && cd ../../..; \
 		cd src/helpers/ptx-pft && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-pft$$ext . && cd ../../..; \
 		cd src/helpers/ptx-credential && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-credential$$ext . && cd ../../..; \
+		cd src/helpers/ptx-trace && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-trace$$ext . && cd ../../..; \
 	done
 	@echo "All platform binaries built in dist/platforms/"
 

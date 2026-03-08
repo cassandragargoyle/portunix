@@ -8,11 +8,11 @@ Portunix supports both Docker and Podman as container runtimes. This document ex
 
 **Container** is a lightweight, isolated environment for running applications. Unlike virtual machines, containers share the host operating system's kernel, making them faster to start and more resource-efficient.
 
-```
+```text
 ┌─────────────────────────────────────────────────────┐
 │                    Host OS                          │
 ├─────────────────────────────────────────────────────┤
-│              Container Runtime                       │
+│              Container Runtime                      │
 │         (Docker, Podman, containerd)                │
 ├─────────────┬─────────────┬─────────────────────────┤
 │ Container 1 │ Container 2 │ Container 3             │
@@ -24,6 +24,7 @@ Portunix supports both Docker and Podman as container runtimes. This document ex
 ```
 
 **Key benefits:**
+
 - **Isolation**: Each container has its own filesystem, network, and processes
 - **Portability**: "Works on my machine" → "Works everywhere"
 - **Reproducibility**: Same container = same environment every time
@@ -36,6 +37,7 @@ Portunix supports both Docker and Podman as container runtimes. This document ex
 ### Why Compose Exists
 
 Without Compose (manual approach):
+
 ```bash
 # Start database
 docker run -d --name db \
@@ -57,12 +59,14 @@ docker run -d --name frontend \
 ```
 
 **Problems:**
+
 - Long, error-prone commands
 - Must remember correct order
 - Hard to share with team
 - Manual cleanup needed
 
 With Compose (declarative approach):
+
 ```yaml
 # docker-compose.yml
 services:
@@ -92,6 +96,7 @@ volumes:
 ```
 
 Then just run:
+
 ```bash
 portunix container compose up -d    # Start everything
 portunix container compose down     # Stop and cleanup
@@ -100,7 +105,7 @@ portunix container compose down     # Stop and cleanup
 ### Compose Features
 
 | Feature | Description |
-|---------|-------------|
+| ------- | ----------- |
 | **Services** | Define multiple containers as services |
 | **Networks** | Automatic networking between services |
 | **Volumes** | Persistent data storage |
@@ -158,7 +163,7 @@ volumes:
 ## Quick Comparison
 
 | Feature | Docker | Podman |
-|---------|--------|--------|
+| ------- | ------ | ------ |
 | Architecture | Client-server (daemon) | Daemonless |
 | Root access | Requires root daemon | Rootless by default |
 | Compose | Docker Compose (built-in V2) | podman compose / podman-compose |
@@ -172,7 +177,7 @@ volumes:
 
 ### Docker Architecture
 
-```
+```text
 ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
 │   Client    │────>│   Daemon    │────>│  Container  │
 │ (docker CLI)│     │ (dockerd)   │     │  Runtime    │
@@ -189,7 +194,7 @@ volumes:
 
 ### Podman Architecture
 
-```
+```text
 ┌─────────────┐     ┌─────────────┐
 │   Client    │────>│  Container  │
 │ (podman CLI)│     │  Runtime    │
@@ -211,6 +216,7 @@ volumes:
 Docker Compose manages multi-container applications using YAML configuration.
 
 **Versions:**
+
 - **V1** (deprecated): Standalone Python tool (`docker-compose`)
 - **V2** (current): Built into Docker CLI (`docker compose`)
 
@@ -229,6 +235,7 @@ docker-compose up -d
 Podman offers two compose solutions:
 
 **1. Built-in `podman compose` (Podman 3.0+)**
+
 - Native integration with Podman
 - Uses podman-compose under the hood or custom implementation
 - Recommended for most users
@@ -240,6 +247,7 @@ podman compose down
 ```
 
 **2. Standalone `podman-compose`**
+
 - Python-based tool
 - Works with older Podman versions
 - Install: `pip install podman-compose`
@@ -293,12 +301,12 @@ The `ptx-container` helper automatically:
 3. **Selects appropriate compose tool**
 4. **Executes command with correct binary**
 
-```
+```text
 portunix container compose up
         │
         ▼
 ┌───────────────────────────────────────────┐
-│            ptx-container                   │
+│            ptx-container                  │
 │                                           │
 │  1. Check Docker (docker info)            │
 │     └─> If OK: use docker compose         │
@@ -363,6 +371,7 @@ Type:         Podman Compose v2.39.2 (ready)
 ```
 
 Possible states:
+
 - `(running)` / `(ready)` - Runtime and compose ready to use
 - `(daemon not running)` - Docker installed but daemon not started
 - `(socket not running)` - Podman installed but socket not started

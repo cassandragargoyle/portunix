@@ -160,7 +160,7 @@ func (s *Server) StartStdio() error {
 func (s *Server) StartStdioNewline() error {
 	// CRITICAL: Redirect ALL logs to stderr to keep stdout clean for JSON-RPC
 	log.SetOutput(os.Stderr)
-	
+
 	// Setup graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -393,7 +393,7 @@ func (s *Server) registerHandlers() {
 // StartTCP starts the MCP server in TCP mode
 func (s *Server) StartTCP(port int) error {
 	log.SetOutput(os.Stderr)
-	
+
 	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 	if err != nil {
 		return fmt.Errorf("failed to start TCP listener: %w", err)
@@ -439,7 +439,7 @@ func (s *Server) StartTCP(port int) error {
 // StartUnix starts the MCP server in Unix socket mode
 func (s *Server) StartUnix(socketPath string) error {
 	log.SetOutput(os.Stderr)
-	
+
 	// Remove existing socket if it exists
 	if _, err := os.Stat(socketPath); err == nil {
 		if err := os.Remove(socketPath); err != nil {
@@ -494,9 +494,9 @@ func (s *Server) StartUnix(socketPath string) error {
 func (s *Server) handleTCPConnection(conn net.Conn) {
 	defer conn.Close()
 	fmt.Fprintf(os.Stderr, "New TCP client connected from %s\n", conn.RemoteAddr())
-	
+
 	s.handleGenericConnection(conn)
-	
+
 	fmt.Fprintf(os.Stderr, "TCP client disconnected from %s\n", conn.RemoteAddr())
 }
 
@@ -504,9 +504,9 @@ func (s *Server) handleTCPConnection(conn net.Conn) {
 func (s *Server) handleSocketConnection(conn net.Conn) {
 	defer conn.Close()
 	fmt.Fprintf(os.Stderr, "New Unix socket client connected\n")
-	
+
 	s.handleGenericConnection(conn)
-	
+
 	fmt.Fprintf(os.Stderr, "Unix socket client disconnected\n")
 }
 
@@ -519,7 +519,7 @@ func (s *Server) handleGenericConnection(conn net.Conn) {
 	for {
 		// Set read timeout
 		conn.SetReadDeadline(time.Now().Add(30 * time.Second))
-		
+
 		// Read one line (newline-delimited JSON-RPC message)
 		line, err := reader.ReadString('\n')
 		if err != nil {

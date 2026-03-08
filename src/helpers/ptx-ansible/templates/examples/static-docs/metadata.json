@@ -7,7 +7,7 @@
       "name": "engine",
       "required": false,
       "type": "choice",
-      "choices": ["hugo", "docusaurus", "docsify"],
+      "choices": ["hugo", "docusaurus", "docsify", "docsy"],
       "default": "docusaurus",
       "description": "Documentation engine to use"
     },

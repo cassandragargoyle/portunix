@@ -50,27 +50,27 @@ type LinuxInfo struct {
 
 // Capabilities shows what the system can do
 type Capabilities struct {
-	PowerShell            bool                   `json:"powershell"`
-	Docker                bool                   `json:"docker"`
-	DockerVersion         string                 `json:"docker_version,omitempty"`
-	DockerDaemonRunning   bool                   `json:"docker_daemon_running,omitempty"`
-	Podman                bool                   `json:"podman"`
-	PodmanVersion         string                 `json:"podman_version,omitempty"`
-	PodmanSocketRunning   bool                   `json:"podman_socket_running,omitempty"`
-	ContainerAvailable    bool                   `json:"container_available"`
-	ComposeInfo           *ComposeInfo           `json:"compose,omitempty"`
-	Admin                 bool                   `json:"admin"`
-	CertificateInfo       *CertificateInfo       `json:"certificate_bundle,omitempty"`
-	VirtualizationInfo    *VirtualizationInfo    `json:"virtualization,omitempty"`
+	PowerShell          bool                `json:"powershell"`
+	Docker              bool                `json:"docker"`
+	DockerVersion       string              `json:"docker_version,omitempty"`
+	DockerDaemonRunning bool                `json:"docker_daemon_running,omitempty"`
+	Podman              bool                `json:"podman"`
+	PodmanVersion       string              `json:"podman_version,omitempty"`
+	PodmanSocketRunning bool                `json:"podman_socket_running,omitempty"`
+	ContainerAvailable  bool                `json:"container_available"`
+	ComposeInfo         *ComposeInfo        `json:"compose,omitempty"`
+	Admin               bool                `json:"admin"`
+	CertificateInfo     *CertificateInfo    `json:"certificate_bundle,omitempty"`
+	VirtualizationInfo  *VirtualizationInfo `json:"virtualization,omitempty"`
 }
 
 // ComposeInfo contains container compose tool information
 type ComposeInfo struct {
-	Available       bool   `json:"available"`
-	Type            string `json:"type,omitempty"`            // "Docker Compose", "Podman Compose", "podman-compose"
-	Version         string `json:"version,omitempty"`
-	DaemonReady     bool   `json:"daemon_ready"`              // true if the underlying daemon/socket is running
-	WarningMessage  string `json:"warning,omitempty"`         // warning if daemon not running
+	Available      bool   `json:"available"`
+	Type           string `json:"type,omitempty"` // "Docker Compose", "Podman Compose", "podman-compose"
+	Version        string `json:"version,omitempty"`
+	DaemonReady    bool   `json:"daemon_ready"`      // true if the underlying daemon/socket is running
+	WarningMessage string `json:"warning,omitempty"` // warning if daemon not running
 }
 
 // VirtualizationInfo contains virtualization capabilities

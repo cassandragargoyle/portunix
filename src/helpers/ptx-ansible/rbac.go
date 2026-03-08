@@ -94,12 +94,12 @@ type RBACManager struct {
 
 // RBACConfig represents RBAC system configuration
 type RBACConfig struct {
-	Enabled              bool     `json:"enabled"`
-	DefaultRole          string   `json:"default_role"`
-	AdminUsers           []string `json:"admin_users"`
-	EnvironmentIsolation bool     `json:"environment_isolation"`
+	Enabled               bool     `json:"enabled"`
+	DefaultRole           string   `json:"default_role"`
+	AdminUsers            []string `json:"admin_users"`
+	EnvironmentIsolation  bool     `json:"environment_isolation"`
 	RequireAuthentication bool     `json:"require_authentication"`
-	DataDir              string   `json:"data_dir"`
+	DataDir               string   `json:"data_dir"`
 }
 
 // RBACData represents the persisted RBAC data

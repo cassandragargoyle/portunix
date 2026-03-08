@@ -17,12 +17,12 @@ const (
 
 // SMBIOS structure types
 const (
-	SMBIOSTypeBIOS        = 0
-	SMBIOSTypeSystem      = 1
-	SMBIOSTypeBaseboard   = 2
-	SMBIOSTypeChassis     = 3
-	SMBIOSTypeProcessor   = 4
-	SMBIOSTypeEndOfTable  = 127
+	SMBIOSTypeBIOS       = 0
+	SMBIOSTypeSystem     = 1
+	SMBIOSTypeBaseboard  = 2
+	SMBIOSTypeChassis    = 3
+	SMBIOSTypeProcessor  = 4
+	SMBIOSTypeEndOfTable = 127
 )
 
 var procGetSystemFirmwareTable = modkernel32.NewProc("GetSystemFirmwareTable")

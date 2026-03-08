@@ -34,13 +34,13 @@ var configGetCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		key := args[0]
-		
+
 		value, err := config.GetConfigValue(key)
 		if err != nil {
 			fmt.Printf("❌ Error: %v\n", err)
 			return
 		}
-		
+
 		fmt.Printf("%s\n", value)
 	},
 }
@@ -54,13 +54,13 @@ var configSetCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		key := args[0]
 		value := args[1]
-		
+
 		err := config.SetConfigValue(key, value)
 		if err != nil {
 			fmt.Printf("❌ Error: %v\n", err)
 			return
 		}
-		
+
 		fmt.Printf("✅ Configuration updated: %s = %s\n", key, value)
 	},
 }
@@ -76,13 +76,13 @@ var configShowCmd = &cobra.Command{
 			fmt.Printf("❌ Error loading configuration: %v\n", err)
 			return
 		}
-		
+
 		fmt.Println("⚙️  Portunix Configuration")
 		fmt.Println("========================")
 		fmt.Printf("Container Runtime: %s\n", cfg.ContainerRuntime)
 		fmt.Printf("Verbose: %v\n", cfg.Verbose)
 		fmt.Printf("Auto Update: %v\n", cfg.AutoUpdate)
-		
+
 		fmt.Println("\n💡 Configuration file locations (in priority order):")
 		fmt.Println("  1. ./portunix-config.yaml (project directory)")
 		fmt.Println("  2. ~/.portunix/config.yaml (user directory)")

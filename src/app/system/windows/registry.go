@@ -12,8 +12,8 @@ import (
 
 // RegistryKey represents a registry key path
 type RegistryKey struct {
-	Root    registry.Key
-	SubKey  string
+	Root   registry.Key
+	SubKey string
 }
 
 // Common registry paths
@@ -160,8 +160,8 @@ func GetProcessorMHz() uint32 {
 // This bypasses the compatibility shim that GetVersionEx uses
 
 var (
-	modntdll           = windows.NewLazySystemDLL("ntdll.dll")
-	procRtlGetVersion  = modntdll.NewProc("RtlGetVersion")
+	modntdll          = windows.NewLazySystemDLL("ntdll.dll")
+	procRtlGetVersion = modntdll.NewProc("RtlGetVersion")
 )
 
 // RTL_OSVERSIONINFOW structure

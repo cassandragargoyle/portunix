@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/rs/zerolog"
 	"portunix.ai/portunix/pkg/logging"
 	"portunix.ai/portunix/test/testframework"
-	"github.com/rs/zerolog"
 )
 
 func TestIssue052LoggingUnitValidation(t *testing.T) {

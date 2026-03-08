@@ -4,9 +4,9 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"portunix.ai/portunix/test/testframework"
 	"strings"
 	"testing"
-	"portunix.ai/portunix/test/testframework"
 )
 
 // TestIssue056Phase3_ConditionalExecution tests conditional execution features
@@ -578,10 +578,10 @@ spec:
 
 	// Verify advanced features are working
 	featureChecks := map[string]bool{
-		"rollback protection": strings.Contains(output2Str, "Rollback") || strings.Contains(output2Str, "rollback"),
+		"rollback protection":   strings.Contains(output2Str, "Rollback") || strings.Contains(output2Str, "rollback"),
 		"conditional execution": strings.Contains(output2Str, "Installing java") || strings.Contains(output2Str, "Would install: java"),
-		"template variables": strings.Contains(output2Str, "variant: 17") || strings.Contains(output2Str, "java"),
-		"conditional skipping": !strings.Contains(output2Str, "docker") && !strings.Contains(output2Str, "Docker"),
+		"template variables":    strings.Contains(output2Str, "variant: 17") || strings.Contains(output2Str, "java"),
+		"conditional skipping":  !strings.Contains(output2Str, "docker") && !strings.Contains(output2Str, "Docker"),
 	}
 
 	for feature, passed := range featureChecks {

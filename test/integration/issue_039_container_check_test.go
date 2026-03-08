@@ -66,7 +66,7 @@ func TestIssue039ContainerCheck(t *testing.T) {
 		tf.Success(t, "✓ Docker detected as available")
 		dockerDetected = true
 	} else if strings.Contains(outputStr, "Docker: ✗ Not available") ||
-	          strings.Contains(outputStr, "Docker: ✗ Not detected") {
+		strings.Contains(outputStr, "Docker: ✗ Not detected") {
 		tf.Success(t, "✓ Docker detected as not available")
 	} else {
 		tf.Error(t, "Docker status line not found or malformed")
@@ -81,7 +81,7 @@ func TestIssue039ContainerCheck(t *testing.T) {
 		tf.Success(t, "✓ Podman detected as available")
 		podmanDetected = true
 	} else if strings.Contains(outputStr, "Podman: ✗ Not available") ||
-	          strings.Contains(outputStr, "Podman: ✗ Not detected") {
+		strings.Contains(outputStr, "Podman: ✗ Not detected") {
 		tf.Success(t, "✓ Podman detected as not available")
 	} else {
 		tf.Error(t, "Podman status line not found or malformed")
@@ -116,7 +116,7 @@ func TestIssue039ContainerCheck(t *testing.T) {
 
 		// Should show installation suggestion
 		if strings.Contains(outputStr, "portunix install docker") ||
-		   strings.Contains(outputStr, "portunix install podman") {
+			strings.Contains(outputStr, "portunix install podman") {
 			tf.Success(t, "✓ Installation suggestion provided")
 		}
 	}
@@ -249,7 +249,7 @@ func TestIssue039ContainerCheck(t *testing.T) {
 		tf.Output(t, helpStr, 500)
 
 		if strings.Contains(helpStr, "Check container runtime capabilities") ||
-		   strings.Contains(helpStr, "container runtime") {
+			strings.Contains(helpStr, "container runtime") {
 			tf.Success(t, "✓ Help text available and descriptive")
 		} else {
 			tf.Warning(t, "Help text may need improvement")

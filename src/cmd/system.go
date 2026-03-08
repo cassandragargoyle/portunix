@@ -192,7 +192,7 @@ the Git-like architecture implementation.`,
 			output := map[string]interface{}{
 				"dispatcher_version": version,
 				"executable_dir":     disp.GetExecutableDir(),
-				"helpers":           helpers,
+				"helpers":            helpers,
 			}
 
 			jsonData, err := json.MarshalIndent(output, "", "  ")

@@ -1,14 +1,16 @@
 # Translation Workflow
 
 ## Purpose
+
 This document defines the standardized workflow for translating project documentation into team members' native languages using Claude Code.
 
 ## Translation Structure
 
 ### Directory Layout
+
 All translations are stored in the `.translated/` directory with the following structure:
 
-```
+```text
 .translated/
 ├── [language-code]/
 │   └── [original-path]/
@@ -16,7 +18,8 @@ All translations are stored in the `.translated/` directory with the following s
 ```
 
 ### Examples
-```
+
+```text
 .translated/
 ├── cs/                           # Czech
 │   └── docs/
@@ -38,7 +41,7 @@ All translations are stored in the `.translated/` directory with the following s
 Use ISO 639-1 two-letter language codes:
 
 | Language | Code | Example Path |
-|----------|------|-------------|
+| -------- | ---- | ----------- |
 | Czech | `cs` | `.translated/cs/docs/contributing/README.md` |
 | German | `de` | `.translated/de/docs/contributing/README.md` |
 | French | `fr` | `.translated/fr/docs/contributing/README.md` |
@@ -50,15 +53,18 @@ Use ISO 639-1 two-letter language codes:
 ## Claude Code Instructions
 
 ### Translation Commands
+
 When you receive a translation request, follow this workflow:
 
 #### Command Patterns
+
 - `"Translate docs/contributing/README.md to Czech"`
 - `"Translate to German: docs/contributing/AI-ASSISTANTS.md"`
 - `"Translate docs/contributing/ to Czech"` (directory translation)
 - `"Přelož mi docs/contributing/README.md do češtiny"`
 
 #### Translation Process
+
 1. **Identify source path**: Extract the file/directory path from the request
 2. **Identify target language**: Determine language code from request
 3. **Check for directory translation**: If path ends with `/`, ask user for scope:
@@ -72,6 +78,7 @@ When you receive a translation request, follow this workflow:
 6. **Save translated file**: Use same filename in translated directory
 
 #### Example Workflow
+
 Request: `"Translate docs/contributing/README.md to Czech"`
 
 1. Source: `docs/contributing/README.md`
@@ -83,6 +90,7 @@ Request: `"Translate docs/contributing/README.md to Czech"`
 ### Translation Guidelines
 
 #### What to Translate
+
 - ✅ All text content
 - ✅ Headings and titles
 - ✅ Descriptions and explanations
@@ -90,6 +98,7 @@ Request: `"Translate docs/contributing/README.md to Czech"`
 - ✅ Error messages and warnings
 
 #### What NOT to Translate
+
 - ❌ Code examples and syntax
 - ❌ File paths and URLs
 - ❌ Command line examples
@@ -98,6 +107,7 @@ Request: `"Translate docs/contributing/README.md to Czech"`
 - ❌ Proper names (GitHub, Claude Code, etc.)
 
 #### Preserve Structure
+
 - Keep all markdown formatting intact
 - Maintain heading hierarchy
 - Preserve code block languages
@@ -105,6 +115,7 @@ Request: `"Translate docs/contributing/README.md to Czech"`
 - Maintain table structure
 
 #### Quality Standards
+
 - Use natural, professional language
 - Maintain technical accuracy
 - Be consistent with terminology
@@ -114,6 +125,7 @@ Request: `"Translate docs/contributing/README.md to Czech"`
 ## File Management
 
 ### Git Integration
+
 The `.translated/` directory should be ignored by Git:
 
 ```gitignore
@@ -122,11 +134,13 @@ The `.translated/` directory should be ignored by Git:
 ```
 
 ### Refresh Strategy
+
 - Translations are temporary and can be regenerated
 - Delete `.translated/` folder when source documents change significantly
 - Regenerate translations as needed by team members
 
 ### AI Context Exclusion
+
 - Claude Code should NOT read from `.translated/` directories for project context
 - Only use original English documentation for understanding project structure
 - `.translated/` is output-only directory for translation tasks
@@ -134,7 +148,8 @@ The `.translated/` directory should be ignored by Git:
 ## Usage Examples
 
 ### Individual File Translation
-```
+
+```text
 User: "Translate docs/contributing/AI-ASSISTANTS.md to Czech"
 Claude Code: 
 1. Reads docs/contributing/AI-ASSISTANTS.md
@@ -144,7 +159,8 @@ Claude Code:
 ```
 
 ### Directory Translation
-```
+
+```text
 User: "Translate docs/contributing/ to Czech"
 Claude Code:
 1. Asks: "Do you want to translate all files (including existing translations) or only new/missing translations?"
@@ -156,7 +172,8 @@ Claude Code:
 ```
 
 ### Batch Translation
-```
+
+```text
 User: "Create Czech translations for the entire docs/ directory"
 Claude Code:
 1. Recursively finds all .md files in docs/
@@ -167,12 +184,14 @@ Claude Code:
 ## Quality Assurance
 
 ### Post-Translation Checks
+
 - Verify all links still work (relative paths)
 - Ensure code examples remain functional
 - Check that technical terms are consistent
 - Validate markdown rendering
 
 ### Team Feedback
+
 - Team members can provide feedback on translation quality
 - Update this workflow based on common translation issues
 - Maintain glossary of preferred technical term translations
@@ -180,13 +199,16 @@ Claude Code:
 ## Maintenance
 
 ### Regular Updates
+
 - Review translation workflow quarterly
 - Update language codes list as team grows
 - Refresh translation guidelines based on usage patterns
 - Archive unused language translations
 
 ### Documentation Updates
+
 When source documentation changes:
+
 1. Update English original first
 2. Delete affected translations from `.translated/`
 3. Regenerate translations on demand

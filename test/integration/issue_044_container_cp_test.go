@@ -144,7 +144,7 @@ func runTestCase_VerifyCommand(t *testing.T, tf *testframework.TestFramework, bi
 	}
 
 	tf.Output(t, string(output), 200)
-	
+
 	requiredTexts := []string{
 		"Copy files or directories",
 		"CONTAINER AND HOST",
@@ -166,7 +166,7 @@ func runTestCase_VerifyCommand(t *testing.T, tf *testframework.TestFramework, bi
 func runTestCase_CreateTestContainer(t *testing.T, tf *testframework.TestFramework, binaryPath, containerName string) bool {
 	tf.Info(t, "TC002: Creating test container for cp operations")
 	tf.Command(t, binaryPath, []string{"container", "run", "-d", "--name", containerName, "ubuntu:22.04", "sleep", "300"})
-	
+
 	cmd := exec.Command(binaryPath, "container", "run", "-d", "--name", containerName, "ubuntu:22.04", "sleep", "300")
 	output, err := cmd.CombinedOutput()
 	if err != nil {
@@ -198,11 +198,11 @@ func runTestCase_CreateTestContainer(t *testing.T, tf *testframework.TestFramewo
 // Test Case TC003: Copy file from host to container
 func runTestCase_CopyFileToContainer(t *testing.T, tf *testframework.TestFramework, binaryPath, containerName string) bool {
 	tf.Info(t, "TC003: Copy file from host to container")
-	
+
 	// Create test file
 	testContent := "Hello from host!\nThis is test content for container cp command.\n"
 	testFile := "test-host-to-container.txt"
-	
+
 	err := ioutil.WriteFile(testFile, []byte(testContent), 0644)
 	if err != nil {
 		tf.Error(t, "Failed to create test file", err.Error())
@@ -231,7 +231,7 @@ func runTestCase_CopyFileToContainer(t *testing.T, tf *testframework.TestFramewo
 	}
 
 	if string(output) != testContent {
-		tf.Error(t, "File content mismatch", 
+		tf.Error(t, "File content mismatch",
 			fmt.Sprintf("Expected: %s", testContent),
 			fmt.Sprintf("Got: %s", string(output)))
 		return false
@@ -244,10 +244,10 @@ func runTestCase_CopyFileToContainer(t *testing.T, tf *testframework.TestFramewo
 // Test Case TC004: Copy file from container to host
 func runTestCase_CopyFileFromContainer(t *testing.T, tf *testframework.TestFramework, binaryPath, containerName string) bool {
 	tf.Info(t, "TC004: Copy file from container to host")
-	
+
 	// Create file in container using simple approach
 	testContent := "Hello from container!"
-	
+
 	// First write content to temp file on host
 	tempFile := "temp-container-content.txt"
 	err := ioutil.WriteFile(tempFile, []byte(testContent), 0644)
@@ -256,7 +256,7 @@ func runTestCase_CopyFileFromContainer(t *testing.T, tf *testframework.TestFrame
 		return false
 	}
 	defer os.Remove(tempFile)
-	
+
 	// Copy temp file to container
 	tf.Command(t, binaryPath, []string{"container", "cp", tempFile, containerName + ":/tmp/container-generated.txt"})
 	cmd := exec.Command(binaryPath, "container", "cp", tempFile, containerName+":/tmp/container-generated.txt")
@@ -300,7 +300,7 @@ func runTestCase_CopyFileFromContainer(t *testing.T, tf *testframework.TestFrame
 // Test Case TC005: Copy directory from host to container
 func runTestCase_CopyDirectoryToContainer(t *testing.T, tf *testframework.TestFramework, binaryPath, containerName string) bool {
 	tf.Info(t, "TC005: Copy directory from host to container")
-	
+
 	// Create test directory with files
 	testDir := "test-dir-to-container"
 	err := os.MkdirAll(testDir, 0755)
@@ -312,8 +312,8 @@ func runTestCase_CopyDirectoryToContainer(t *testing.T, tf *testframework.TestFr
 
 	// Create files in directory
 	files := map[string]string{
-		"file1.txt": "Content of file 1\n",
-		"file2.txt": "Content of file 2\n",
+		"file1.txt":        "Content of file 1\n",
+		"file2.txt":        "Content of file 2\n",
 		"subdir/file3.txt": "Content of file 3 in subdirectory\n",
 	}
 
@@ -324,7 +324,7 @@ func runTestCase_CopyDirectoryToContainer(t *testing.T, tf *testframework.TestFr
 			tf.Error(t, "Failed to create subdirectory", err.Error())
 			return false
 		}
-		
+
 		err = ioutil.WriteFile(filePath, []byte(content), 0644)
 		if err != nil {
 			tf.Error(t, "Failed to create test file", fileName, err.Error())
@@ -363,10 +363,10 @@ func runTestCase_CopyDirectoryToContainer(t *testing.T, tf *testframework.TestFr
 // Test Case TC006: Copy directory from container to host
 func runTestCase_CopyDirectoryFromContainer(t *testing.T, tf *testframework.TestFramework, binaryPath, containerName string) bool {
 	tf.Info(t, "TC006: Copy directory from container to host")
-	
+
 	// Create directory structure in container using host files first
 	containerDir := "/tmp/container-generated-dir"
-	
+
 	// Create temporary directory on host
 	tempDir := "temp-container-dir"
 	err := os.MkdirAll(tempDir+"/subdir", 0755)
@@ -375,14 +375,14 @@ func runTestCase_CopyDirectoryFromContainer(t *testing.T, tf *testframework.Test
 		return false
 	}
 	defer os.RemoveAll(tempDir)
-	
+
 	// Create files in temp directory
 	files := map[string]string{
-		"cfile1.txt": "Container file 1",
-		"cfile2.txt": "Container file 2", 
+		"cfile1.txt":        "Container file 1",
+		"cfile2.txt":        "Container file 2",
 		"subdir/cfile3.txt": "Container file 3",
 	}
-	
+
 	for fileName, content := range files {
 		filePath := filepath.Join(tempDir, fileName)
 		err = ioutil.WriteFile(filePath, []byte(content), 0644)
@@ -391,7 +391,7 @@ func runTestCase_CopyDirectoryFromContainer(t *testing.T, tf *testframework.Test
 			return false
 		}
 	}
-	
+
 	// Copy entire directory to container
 	tf.Command(t, binaryPath, []string{"container", "cp", tempDir, containerName + ":" + containerDir})
 	cmd := exec.Command(binaryPath, "container", "cp", tempDir, containerName+":"+containerDir)
@@ -417,7 +417,7 @@ func runTestCase_CopyDirectoryFromContainer(t *testing.T, tf *testframework.Test
 	// Verify directory structure on host - need to account for copied directory name
 	expectedFiles := []string{
 		filepath.Join(hostDir, "cfile1.txt"),
-		filepath.Join(hostDir, "cfile2.txt"), 
+		filepath.Join(hostDir, "cfile2.txt"),
 		filepath.Join(hostDir, "subdir", "cfile3.txt"),
 	}
 
@@ -435,7 +435,7 @@ func runTestCase_CopyDirectoryFromContainer(t *testing.T, tf *testframework.Test
 // Test Case TC007: Error handling scenarios
 func runTestCase_ErrorHandling(t *testing.T, tf *testframework.TestFramework, binaryPath, containerName string) bool {
 	tf.Info(t, "TC007: Test error handling scenarios")
-	
+
 	// TC007-1: Copy nonexistent file to container
 	tf.Info(t, "TC007-1: Copy nonexistent file to container")
 	tf.Command(t, binaryPath, []string{"container", "cp", "nonexistent-file.txt", containerName + ":/tmp/"})
@@ -489,7 +489,7 @@ func runTestCase_ErrorHandling(t *testing.T, tf *testframework.TestFramework, bi
 // Test Case TC008: Permission preservation
 func runTestCase_PermissionPreservation(t *testing.T, tf *testframework.TestFramework, binaryPath, containerName string) bool {
 	tf.Info(t, "TC008: Test file permission preservation")
-	
+
 	// Create file with specific permissions
 	testFile := "permission-test.txt"
 	err := ioutil.WriteFile(testFile, []byte("Permission test content"), 0755)
@@ -537,7 +537,7 @@ func cleanupContainer(binaryPath, containerName string) {
 	// Stop container
 	cmd := exec.Command(binaryPath, "container", "stop", containerName)
 	cmd.Run() // Ignore errors
-	
+
 	// Remove container
 	cmd = exec.Command(binaryPath, "container", "rm", containerName, "--force")
 	cmd.Run() // Ignore errors

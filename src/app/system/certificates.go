@@ -32,21 +32,21 @@ func (c CertificateInfo) MarshalJSON() ([]byte, error) {
 func DetectCertificateBundle() (CertificateInfo, error) {
 	// Default certificate paths for different systems
 	certPaths := []string{
-		"/etc/ssl/certs/ca-certificates.crt",        // Ubuntu/Debian
-		"/etc/pki/tls/certs/ca-bundle.crt",         // RHEL/CentOS
-		"/etc/ssl/ca-bundle.pem",                   // openSUSE
-		"/usr/local/share/certs/ca-root-nss.crt",  // FreeBSD
+		"/etc/ssl/certs/ca-certificates.crt",                // Ubuntu/Debian
+		"/etc/pki/tls/certs/ca-bundle.crt",                  // RHEL/CentOS
+		"/etc/ssl/ca-bundle.pem",                            // openSUSE
+		"/usr/local/share/certs/ca-root-nss.crt",            // FreeBSD
 		"/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem", // Modern RHEL/CentOS
-		"/system/etc/security/cacerts",             // Android (if applicable)
+		"/system/etc/security/cacerts",                      // Android (if applicable)
 	}
-	
+
 	return DetectCertificateBundleWithPaths(certPaths)
 }
 
 // DetectCertificateBundleWithPaths detects certificate bundle with custom paths (for testing)
 func DetectCertificateBundleWithPaths(certPaths []string) (CertificateInfo, error) {
 	var certInfo CertificateInfo
-	
+
 	// Check each certificate path
 	for _, path := range certPaths {
 		if fileExists(path) {
@@ -56,15 +56,15 @@ func DetectCertificateBundleWithPaths(certPaths []string) (CertificateInfo, erro
 				certInfo.Path = path
 				certInfo.Size = stat.Size()
 				certInfo.ModTime = stat.ModTime()
-				
+
 				// Test HTTPS connectivity
 				certInfo.HTTPSWorking = testHTTPSConnectivity()
-				
+
 				break
 			}
 		}
 	}
-	
+
 	return certInfo, nil
 }
 
@@ -74,13 +74,13 @@ func testHTTPSConnectivity() bool {
 	client := &http.Client{
 		Timeout: 10 * time.Second,
 	}
-	
+
 	testURLs := []string{
 		"https://go.dev/dl/",
 		"https://www.google.com",
 		"https://github.com",
 	}
-	
+
 	for _, url := range testURLs {
 		resp, err := client.Get(url)
 		if err == nil {
@@ -88,7 +88,7 @@ func testHTTPSConnectivity() bool {
 			return true
 		}
 	}
-	
+
 	return false
 }
 

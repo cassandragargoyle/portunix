@@ -50,9 +50,9 @@ type VariantConfig struct {
 	InstallScript          string                `json:"install_script,omitempty"` // for powershell/script installs
 	InstallPath            string                `json:"install_path,omitempty"`
 	ExtractTo              string                `json:"extract_to,omitempty"`
-	Extract                bool                  `json:"extract,omitempty"`            // whether to extract archive for direct_download
-	Binary                 string                `json:"binary,omitempty"`             // binary name to install for direct_download
-	RequiresSudo           bool                  `json:"requires_sudo,omitempty"`      // whether installation requires sudo
+	Extract                bool                  `json:"extract,omitempty"`       // whether to extract archive for direct_download
+	Binary                 string                `json:"binary,omitempty"`        // binary name to install for direct_download
+	RequiresSudo           bool                  `json:"requires_sudo,omitempty"` // whether installation requires sudo
 	PostInstall            []string              `json:"post_install,omitempty"`
 	InstallArgs            []string              `json:"install_args,omitempty"`
 	Distributions          interface{}           `json:"distributions,omitempty"`            // supported Linux distributions ([]string or map[string]interface{})
@@ -71,7 +71,7 @@ func (v *VariantConfig) GetDistributionsList() []string {
 	if v.Distributions == nil {
 		return nil
 	}
-	
+
 	// Handle []string format (old format)
 	if distList, ok := v.Distributions.([]interface{}); ok {
 		result := make([]string, len(distList))
@@ -82,7 +82,7 @@ func (v *VariantConfig) GetDistributionsList() []string {
 		}
 		return result
 	}
-	
+
 	// Handle map[string]interface{} format (new format with apt/dnf keys)
 	if distMap, ok := v.Distributions.(map[string]interface{}); ok {
 		var result []string
@@ -91,7 +91,7 @@ func (v *VariantConfig) GetDistributionsList() []string {
 		}
 		return result
 	}
-	
+
 	return nil
 }
 
@@ -393,15 +393,15 @@ func GetLinuxDistribution() (string, string, error) {
 // GeneratePackageListDescription generates a formatted list of available packages with descriptions
 func (config *InstallConfig) GeneratePackageListDescription() string {
 	var result strings.Builder
-	
+
 	result.WriteString("Available software packages:\n")
-	
+
 	// Sort packages by name for consistent output
 	var packageNames []string
 	for name := range config.Packages {
 		packageNames = append(packageNames, name)
 	}
-	
+
 	// Simple sorting without importing sort package
 	for i := 0; i < len(packageNames); i++ {
 		for j := i + 1; j < len(packageNames); j++ {
@@ -410,24 +410,24 @@ func (config *InstallConfig) GeneratePackageListDescription() string {
 			}
 		}
 	}
-	
+
 	// Generate formatted output
 	for _, name := range packageNames {
 		pkg := config.Packages[name]
 		result.WriteString(fmt.Sprintf("  %-15s - %s\n", name, pkg.Description))
 	}
-	
+
 	return result.String()
 }
 
 // GeneratePresetListDescription generates a formatted list of available presets
 func (config *InstallConfig) GeneratePresetListDescription() string {
 	var result strings.Builder
-	
+
 	// Find presets by category
 	aiPresets := make(map[string]PresetConfig)
 	otherPresets := make(map[string]PresetConfig)
-	
+
 	for name, preset := range config.Presets {
 		// Check if preset has "AI" category or contains AI-related packages
 		isAIPreset := false
@@ -437,14 +437,14 @@ func (config *InstallConfig) GeneratePresetListDescription() string {
 				break
 			}
 		}
-		
+
 		if isAIPreset || strings.Contains(strings.ToLower(name), "ai") || strings.Contains(strings.ToLower(name), "mcp") {
 			aiPresets[name] = preset
 		} else {
 			otherPresets[name] = preset
 		}
 	}
-	
+
 	// Add AI Assistant Presets section if any exist
 	if len(aiPresets) > 0 {
 		result.WriteString("\nAI Assistant Presets:\n")
@@ -452,7 +452,7 @@ func (config *InstallConfig) GeneratePresetListDescription() string {
 			result.WriteString(fmt.Sprintf("  %-20s - %s\n", name, preset.Description))
 		}
 	}
-	
+
 	// Add other presets if any exist
 	if len(otherPresets) > 0 {
 		result.WriteString("\nOther Presets:\n")
@@ -460,22 +460,22 @@ func (config *InstallConfig) GeneratePresetListDescription() string {
 			result.WriteString(fmt.Sprintf("  %-20s - %s\n", name, preset.Description))
 		}
 	}
-	
+
 	return result.String()
 }
 
 // GenerateVariantListDescription generates a formatted list of package variants
 func (config *InstallConfig) GenerateVariantListDescription() string {
 	var result strings.Builder
-	
+
 	result.WriteString("\nPackage variants (use with --variant):\n")
-	
+
 	// Sort packages by name
 	var packageNames []string
 	for name := range config.Packages {
 		packageNames = append(packageNames, name)
 	}
-	
+
 	// Simple sorting
 	for i := 0; i < len(packageNames); i++ {
 		for j := i + 1; j < len(packageNames); j++ {
@@ -484,12 +484,12 @@ func (config *InstallConfig) GenerateVariantListDescription() string {
 			}
 		}
 	}
-	
+
 	// Generate variant info for each package
 	currentOS := GetOperatingSystem()
 	for _, name := range packageNames {
 		pkg := config.Packages[name]
-		
+
 		// Get platform config for current OS
 		platform, exists := pkg.Platforms[currentOS]
 		if !exists && currentOS == "windows_sandbox" {
@@ -502,13 +502,13 @@ func (config *InstallConfig) GenerateVariantListDescription() string {
 		if !exists {
 			continue // Skip packages without suitable platform
 		}
-		
+
 		if len(platform.Variants) > 1 {
 			var variants []string
 			for variant := range platform.Variants {
 				variants = append(variants, variant)
 			}
-			
+
 			// Simple sorting for variants
 			for i := 0; i < len(variants); i++ {
 				for j := i + 1; j < len(variants); j++ {
@@ -517,17 +517,17 @@ func (config *InstallConfig) GenerateVariantListDescription() string {
 					}
 				}
 			}
-			
+
 			variantList := strings.Join(variants, ", ")
 			defaultVariant := pkg.DefaultVariant
 			if defaultVariant != "" {
 				variantList += fmt.Sprintf(" (default: %s)", defaultVariant)
 			}
-			
+
 			result.WriteString(fmt.Sprintf("  %s: %s\n", name, variantList))
 		}
 	}
-	
+
 	return result.String()
 }
 

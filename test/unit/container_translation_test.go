@@ -41,7 +41,7 @@ type PodmanTranslator struct{}
 // Docker translator implementation
 func (d *DockerTranslator) TranslateParams(params *ContainerParams) ([]string, error) {
 	var args []string
-	
+
 	// Volume translation
 	for _, vol := range params.Volumes {
 		volumeSpec := vol.HostPath + ":" + vol.ContainerPath
@@ -50,48 +50,48 @@ func (d *DockerTranslator) TranslateParams(params *ContainerParams) ([]string, e
 		}
 		args = append(args, "-v", volumeSpec)
 	}
-	
+
 	// Port translation
 	for _, port := range params.Ports {
 		portSpec := port.HostPort + ":" + port.ContainerPort
 		args = append(args, "-p", portSpec)
 	}
-	
+
 	// Environment variables
 	for _, env := range params.Environment {
 		args = append(args, "-e", env.Name+"="+env.Value)
 	}
-	
+
 	// Working directory
 	if params.WorkingDir != "" {
 		args = append(args, "-w", params.WorkingDir)
 	}
-	
+
 	// User
 	if params.User != "" {
 		args = append(args, "--user", params.User)
 	}
-	
+
 	// Privileged
 	if params.Privileged {
 		args = append(args, "--privileged")
 	}
-	
+
 	// Network
 	if params.Network != "" {
 		args = append(args, "--network", params.Network)
 	}
-	
+
 	// Memory limit
 	if params.Memory != "" {
 		args = append(args, "--memory", params.Memory)
 	}
-	
+
 	// CPU limit
 	if params.CPUs != "" {
 		args = append(args, "--cpus", params.CPUs)
 	}
-	
+
 	return args, nil
 }
 
@@ -101,13 +101,13 @@ func (d *DockerTranslator) ValidateParam(param string, value string) error {
 		"-p": true, "--port": true,
 		"-e": true, "--env": true,
 		"-w": true, "--workdir": true,
-		"--user": true,
+		"--user":       true,
 		"--privileged": true,
-		"--network": true,
-		"--memory": true,
-		"--cpus": true,
+		"--network":    true,
+		"--memory":     true,
+		"--cpus":       true,
 	}
-	
+
 	if !supportedParams[param] {
 		return assert.AnError
 	}
@@ -125,7 +125,7 @@ func (d *DockerTranslator) SupportedParams() []string {
 // Podman translator implementation
 func (p *PodmanTranslator) TranslateParams(params *ContainerParams) ([]string, error) {
 	var args []string
-	
+
 	// Volume translation (same as Docker for basic cases)
 	for _, vol := range params.Volumes {
 		volumeSpec := vol.HostPath + ":" + vol.ContainerPath
@@ -134,33 +134,33 @@ func (p *PodmanTranslator) TranslateParams(params *ContainerParams) ([]string, e
 		}
 		args = append(args, "-v", volumeSpec)
 	}
-	
+
 	// Port translation (same as Docker)
 	for _, port := range params.Ports {
 		portSpec := port.HostPort + ":" + port.ContainerPort
 		args = append(args, "-p", portSpec)
 	}
-	
+
 	// Environment variables (same as Docker)
 	for _, env := range params.Environment {
 		args = append(args, "-e", env.Name+"="+env.Value)
 	}
-	
+
 	// Working directory (same as Docker)
 	if params.WorkingDir != "" {
 		args = append(args, "-w", params.WorkingDir)
 	}
-	
+
 	// User (same as Docker)
 	if params.User != "" {
 		args = append(args, "--user", params.User)
 	}
-	
+
 	// Privileged (same as Docker)
 	if params.Privileged {
 		args = append(args, "--privileged")
 	}
-	
+
 	// Network (Podman has different default network behavior)
 	if params.Network != "" {
 		if params.Network == "bridge" {
@@ -170,17 +170,17 @@ func (p *PodmanTranslator) TranslateParams(params *ContainerParams) ([]string, e
 			args = append(args, "--network", params.Network)
 		}
 	}
-	
+
 	// Memory limit (same as Docker)
 	if params.Memory != "" {
 		args = append(args, "--memory", params.Memory)
 	}
-	
+
 	// CPU limit (Podman might use different syntax for some cases)
 	if params.CPUs != "" {
 		args = append(args, "--cpus", params.CPUs)
 	}
-	
+
 	return args, nil
 }
 
@@ -190,17 +190,17 @@ func (p *PodmanTranslator) ValidateParam(param string, value string) error {
 		"-p": true, "--port": true,
 		"-e": true, "--env": true,
 		"-w": true, "--workdir": true,
-		"--user": true,
+		"--user":       true,
 		"--privileged": true,
-		"--network": true,
-		"--memory": true,
-		"--cpus": true,
+		"--network":    true,
+		"--memory":     true,
+		"--cpus":       true,
 	}
-	
+
 	if !supportedParams[param] {
 		return assert.AnError
 	}
-	
+
 	// Podman-specific validation
 	if param == "--network" && value == "host" {
 		// Podman requires root for host networking on some systems
@@ -208,7 +208,7 @@ func (p *PodmanTranslator) ValidateParam(param string, value string) error {
 			// Would check if running as root in real implementation
 		}
 	}
-	
+
 	return nil
 }
 
@@ -517,7 +517,7 @@ func (suite *ContainerTranslationTestSuite) TestCrossRuntimeCompatibility_SamePa
 	// Arrange
 	dockerTranslator := &DockerTranslator{}
 	podmanTranslator := &PodmanTranslator{}
-	
+
 	params := &ContainerParams{
 		Volumes:     []VolumeMount{{HostPath: "/host", ContainerPath: "/container"}},
 		Ports:       []PortMapping{{HostPort: "8080", ContainerPort: "80"}},
@@ -535,10 +535,10 @@ func (suite *ContainerTranslationTestSuite) TestCrossRuntimeCompatibility_SamePa
 	// Assert
 	require.NoError(suite.T(), dockerErr)
 	require.NoError(suite.T(), podmanErr)
-	
+
 	// Both should have same number of arguments (for this basic case)
 	assert.Equal(suite.T(), len(dockerArgs), len(podmanArgs))
-	
+
 	// Both should contain the same volume, port, and env specs
 	assert.Contains(suite.T(), dockerArgs, "/host:/container")
 	assert.Contains(suite.T(), podmanArgs, "/host:/container")
@@ -555,7 +555,7 @@ func BenchmarkDockerTranslator_SimpleTranslation(b *testing.B) {
 		Volumes: []VolumeMount{{HostPath: "/host", ContainerPath: "/container"}},
 		Ports:   []PortMapping{{HostPort: "8080", ContainerPort: "80"}},
 	}
-	
+
 	for i := 0; i < b.N; i++ {
 		_, _ = translator.TranslateParams(params)
 	}
@@ -567,7 +567,7 @@ func BenchmarkPodmanTranslator_SimpleTranslation(b *testing.B) {
 		Volumes: []VolumeMount{{HostPath: "/host", ContainerPath: "/container"}},
 		Ports:   []PortMapping{{HostPort: "8080", ContainerPort: "80"}},
 	}
-	
+
 	for i := 0; i < b.N; i++ {
 		_, _ = translator.TranslateParams(params)
 	}
@@ -598,7 +598,7 @@ func BenchmarkTranslator_ComplexTranslation(b *testing.B) {
 		Memory:     "4G",
 		CPUs:       "2.0",
 	}
-	
+
 	for i := 0; i < b.N; i++ {
 		_, _ = translator.TranslateParams(params)
 	}

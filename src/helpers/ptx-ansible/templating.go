@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package main
 
 import (
@@ -250,8 +254,8 @@ func isRunningInContainer() bool {
 	if content, err := os.ReadFile("/proc/1/cgroup"); err == nil {
 		contentStr := string(content)
 		return strings.Contains(contentStr, "docker") ||
-			   strings.Contains(contentStr, "containerd") ||
-			   strings.Contains(contentStr, "lxc")
+			strings.Contains(contentStr, "containerd") ||
+			strings.Contains(contentStr, "lxc")
 	}
 
 	return false
@@ -270,11 +274,11 @@ func isRunningInVM() bool {
 			if content, err := os.ReadFile(path); err == nil {
 				contentStr := strings.ToLower(string(content))
 				if strings.Contains(contentStr, "vmware") ||
-				   strings.Contains(contentStr, "virtualbox") ||
-				   strings.Contains(contentStr, "qemu") ||
-				   strings.Contains(contentStr, "kvm") ||
-				   strings.Contains(contentStr, "xen") ||
-				   strings.Contains(contentStr, "microsoft") {
+					strings.Contains(contentStr, "virtualbox") ||
+					strings.Contains(contentStr, "qemu") ||
+					strings.Contains(contentStr, "kvm") ||
+					strings.Contains(contentStr, "xen") ||
+					strings.Contains(contentStr, "microsoft") {
 					return true
 				}
 			}
@@ -291,7 +295,7 @@ func isRunningInWSL() bool {
 		if content, err := os.ReadFile("/proc/version"); err == nil {
 			contentStr := strings.ToLower(string(content))
 			return strings.Contains(contentStr, "microsoft") ||
-				   strings.Contains(contentStr, "wsl")
+				strings.Contains(contentStr, "wsl")
 		}
 
 		// Check for WSL environment variable

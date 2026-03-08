@@ -20,11 +20,11 @@ type HelperConfig struct {
 
 // Dispatcher manages the Git-like dispatch architecture
 type Dispatcher struct {
-	version     string
-	execDir     string
-	helpers     map[string]*HelperConfig
-	binSuffix   string
-	discovery   *shared.HelperDiscovery
+	version   string
+	execDir   string
+	helpers   map[string]*HelperConfig
+	binSuffix string
+	discovery *shared.HelperDiscovery
 }
 
 // NewDispatcher creates a new dispatcher instance
@@ -125,6 +125,13 @@ func (d *Dispatcher) registerHelpers() {
 	d.helpers["ptx-credential"] = &HelperConfig{
 		Commands: []string{"credential"},
 		Binary:   "ptx-credential",
+		Required: false,
+	}
+
+	// Issue #141: PTX-Trace Helper - universal tracing system for software development
+	d.helpers["ptx-trace"] = &HelperConfig{
+		Commands: []string{"trace"},
+		Binary:   "ptx-trace",
 		Required: false,
 	}
 }

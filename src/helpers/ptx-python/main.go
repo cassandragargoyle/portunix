@@ -27,8 +27,8 @@ Supported features:
 - Build & distribution (PyInstaller, cx_Freeze)
 - Code quality tools (linting, formatting, type checking)
 - Multi-version Python management`,
-	Version:               version,
-	DisableFlagParsing:    true, // Disable automatic flag parsing to handle custom flags
+	Version:            version,
+	DisableFlagParsing: true, // Disable automatic flag parsing to handle custom flags
 	Run: func(cmd *cobra.Command, args []string) {
 		// Handle the dispatched command directly
 		handleCommand(args)

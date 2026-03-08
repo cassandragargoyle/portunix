@@ -303,11 +303,9 @@ func TestGlobalLogger(t *testing.T) {
 	SetGlobalLevel(zerolog.WarnLevel)
 
 	// The global level change affects new loggers
-	newLogger := New("test")
-	if newLogger.GetLevel() != zerolog.WarnLevel {
-		// Note: The level might not be directly comparable due to zerolog internals
-		// This test mainly ensures the function doesn't panic
-	}
+	// Note: The level might not be directly comparable due to zerolog internals
+	// This test mainly ensures the function doesn't panic
+	_ = New("test")
 
 	// Restore original level
 	SetGlobalLevel(originalLevel)

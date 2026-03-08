@@ -11,12 +11,12 @@ import (
 
 // EververseProvider implements FeedbackProvider interface for Eververse/Supabase
 type EververseProvider struct {
-	client    *http.Client
-	config    ProviderConfig
-	supaURL   string
-	anonKey   string
+	client     *http.Client
+	config     ProviderConfig
+	supaURL    string
+	anonKey    string
 	serviceKey string
-	projectID string
+	projectID  string
 }
 
 // NewEververseProvider creates a new Eververse provider

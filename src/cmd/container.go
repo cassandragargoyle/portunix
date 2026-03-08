@@ -239,20 +239,20 @@ Use this command to troubleshoot container runtime issues or verify installation
 
 		fmt.Println()
 
-		// Show availability of all runtimes
-		info, err := container.GetRuntimeInfo()
-		if err != nil {
-			fmt.Printf("❌ Error getting runtime info: %v\n", err)
-			return
-		}
+		// Show detailed availability of all runtimes
+		info := container.GetRuntimeDetailedInfo()
 
 		fmt.Println("Runtime Availability:")
-		for runtimeName, available := range info {
-			status := "❌ Not available"
-			if available {
-				status = "✅ Available"
+		for runtimeName, status := range info {
+			var statusText string
+			if status.Installed && status.Running {
+				statusText = "✅ Available (running)"
+			} else if status.Installed && !status.Running {
+				statusText = "⚠️  Installed but not running"
+			} else {
+				statusText = "❌ Not installed"
 			}
-			fmt.Printf("  %s: %s\n", runtimeName, status)
+			fmt.Printf("  %s: %s\n", runtimeName, statusText)
 		}
 
 		fmt.Println("\n💡 Configuration:")

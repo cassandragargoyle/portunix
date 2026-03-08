@@ -1,0 +1,51 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "vox-model-tts-czech",
+    "displayName": "Vox TTS Czech Voice Model",
+    "description": "Czech text-to-speech voice model (cs_CZ-jirka-medium) for Vox plugin",
+    "category": "plugins/models",
+    "homepage": "https://huggingface.co/rhasspy/piper-voices",
+    "license": "MIT",
+    "maintainer": "CassandraGargoyle"
+  },
+  "spec": {
+    "platforms": {
+      "linux": {
+        "type": "download",
+        "variants": {
+          "default": {
+            "version": "1.0.0",
+            "description": "Czech TTS voice cs_CZ-jirka-medium (~61 MB)",
+            "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/cs/cs_CZ/jirka/medium/cs_CZ-jirka-medium.onnx",
+            "additionalFiles": [
+              {
+                "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/cs/cs_CZ/jirka/medium/cs_CZ-jirka-medium.onnx.json"
+              }
+            ],
+            "extractTo": "${HOME}/.portunix/models/vox/tts/cs_CZ-jirka-medium"
+          }
+        }
+      },
+      "windows": {
+        "type": "download",
+        "variants": {
+          "default": {
+            "version": "1.0.0",
+            "description": "Czech TTS voice cs_CZ-jirka-medium (~61 MB)",
+            "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/cs/cs_CZ/jirka/medium/cs_CZ-jirka-medium.onnx",
+            "additionalFiles": [
+              {
+                "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/cs/cs_CZ/jirka/medium/cs_CZ-jirka-medium.onnx.json"
+              }
+            ],
+            "extractTo": "${LOCALAPPDATA}/portunix/models/vox/tts/cs_CZ-jirka-medium"
+          }
+        }
+      }
+    },
+    "dependencies": ["vox-deps"],
+    "templates": ["download"]
+  }
+}

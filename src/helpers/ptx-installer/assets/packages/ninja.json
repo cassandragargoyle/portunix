@@ -1,0 +1,95 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "ninja",
+    "displayName": "Ninja Build System",
+    "description": "Small, fast build system with a focus on speed, used by CMake, Meson and GN",
+    "category": "development/build-tools",
+    "homepage": "https://ninja-build.org/",
+    "documentation": "https://ninja-build.org/manual.html",
+    "license": "Apache-2.0",
+    "maintainer": "Ninja Contributors"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "zip",
+        "variants": {
+          "latest": {
+            "version": "1.12.1",
+            "urls": {
+              "x64": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip"
+            },
+            "extractTo": "C:/Program Files/ninja",
+            "postInstall": [
+              "setx PATH \"%PATH%;C:\\Program Files\\ninja\" /m"
+            ]
+          },
+          "chocolatey": {
+            "type": "chocolatey",
+            "version": "latest",
+            "packages": ["ninja"]
+          }
+        },
+        "verification": {
+          "command": "ninja --version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "zip",
+        "variants": {
+          "latest": {
+            "version": "1.12.1",
+            "urls": {
+              "x64": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux.zip",
+              "arm64": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-linux-aarch64.zip"
+            },
+            "extractTo": "/usr/local/bin",
+            "postInstall": [
+              "sudo chmod +x /usr/local/bin/ninja"
+            ]
+          },
+          "apt": {
+            "type": "apt",
+            "version": "latest",
+            "packages": ["ninja-build"],
+            "requiresSudo": true
+          },
+          "dnf": {
+            "type": "dnf",
+            "version": "latest",
+            "packages": ["ninja-build"],
+            "requiresSudo": true
+          },
+          "pacman": {
+            "type": "pacman",
+            "version": "latest",
+            "packages": ["ninja"]
+          }
+        },
+        "verification": {
+          "command": "ninja --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "github": {
+        "type": "github",
+        "url": "https://github.com/ninja-build/ninja",
+        "apiEndpoint": "https://api.github.com/repos/ninja-build/ninja/releases/latest",
+        "pattern": "ninja-{os}.zip"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check GitHub API for Ninja releases at https://api.github.com/repos/ninja-build/ninja/releases/latest. Parse version tag and verify binary packages for Windows, Linux, and macOS.",
+      "urlResolution": "ninja-{os}.zip where os=win/linux/mac, with ninja-linux-aarch64.zip for ARM64 Linux",
+      "updateGuidance": "Monitor Ninja releases for new versions. Ninja uses simple version numbering. Single static binary, no runtime dependencies."
+    },
+    "dependencies": [],
+    "templates": ["zip-archive"]
+  }
+}

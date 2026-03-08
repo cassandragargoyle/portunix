@@ -14,16 +14,16 @@ import (
 
 // InstallOptions holds parsed install command options
 type InstallOptions struct {
-	PackageName  string
-	Method       string
-	Version      string
-	DryRun       bool
-	ListMethods  bool
-	Variant      string
-	AutoAccept   bool
-	GUI          bool
-	Embeddable   bool
-	OtherArgs    []string
+	PackageName string
+	Method      string
+	Version     string
+	DryRun      bool
+	ListMethods bool
+	Variant     string
+	AutoAccept  bool
+	GUI         bool
+	Embeddable  bool
+	OtherArgs   []string
 }
 
 func ToArguments(what string) []string {
@@ -339,7 +339,7 @@ func showChromeHelp() error {
 	fmt.Println("Description:")
 	fmt.Println("  Install Google Chrome web browser with automatic repository configuration")
 	fmt.Println()
-	
+
 	if runtime.GOOS == "linux" {
 		fmt.Println("Available variants for Linux:")
 		fmt.Println("  ubuntu      - Official APT repository (Ubuntu/Kubuntu/Lubuntu/Xubuntu)")
@@ -364,7 +364,7 @@ func showChromeHelp() error {
 		fmt.Println("Available variants for macOS:")
 		fmt.Println("  stable      - Stable release channel (default)")
 	}
-	
+
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  portunix install chrome")

@@ -260,9 +260,9 @@ func TestDetectAllConflicts(t *testing.T) {
 	}
 
 	remoteItems := []FeedbackItem{
-		{ID: "ext1", Title: "Local 1", Description: "Desc", Status: "open"},     // No conflict
-		{ID: "ext2", Title: "Remote 2", Description: "Desc", Status: "open"},    // Title conflict
-		{ID: "ext3", Title: "Remote 3", Description: "Desc", Status: "closed"},  // No local match
+		{ID: "ext1", Title: "Local 1", Description: "Desc", Status: "open"},    // No conflict
+		{ID: "ext2", Title: "Remote 2", Description: "Desc", Status: "open"},   // Title conflict
+		{ID: "ext3", Title: "Remote 3", Description: "Desc", Status: "closed"}, // No local match
 	}
 
 	conflicts := DetectAllConflicts(localItems, remoteItems)

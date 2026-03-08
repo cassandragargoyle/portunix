@@ -5,9 +5,9 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
-	"path/filepath"
 
 	"portunix.ai/portunix/test/testframework"
 )
@@ -37,28 +37,44 @@ func TestIssue056AnsibleInfrastructureAsCode(t *testing.T) {
 	// Run subtests and track their success
 	subTestSuccess := true
 	subTestSuccess = subTestSuccess && t.Run("TC001_PtxAnsibleHelperAvailable", func(t *testing.T) {
-		if !suite.testPtxAnsibleHelperAvailable(t) { t.Fail() }
+		if !suite.testPtxAnsibleHelperAvailable(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC002_PlaybookCommandDispatch", func(t *testing.T) {
-		if !suite.testPlaybookCommandDispatch(t) { t.Fail() }
+		if !suite.testPlaybookCommandDispatch(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC003_PtxbookValidationSimple", func(t *testing.T) {
-		if !suite.testPtxbookValidationSimple(t) { t.Fail() }
+		if !suite.testPtxbookValidationSimple(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC004_PtxbookValidationWithAnsible", func(t *testing.T) {
-		if !suite.testPtxbookValidationWithAnsible(t) { t.Fail() }
+		if !suite.testPtxbookValidationWithAnsible(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC005_PtxbookValidationErrors", func(t *testing.T) {
-		if !suite.testPtxbookValidationErrors(t) { t.Fail() }
+		if !suite.testPtxbookValidationErrors(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC006_PtxbookDryRunExecution", func(t *testing.T) {
-		if !suite.testPtxbookDryRunExecution(t) { t.Fail() }
+		if !suite.testPtxbookDryRunExecution(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC007_PtxbookPortunixOnlyExecution", func(t *testing.T) {
-		if !suite.testPtxbookPortunixOnlyExecution(t) { t.Fail() }
+		if !suite.testPtxbookPortunixOnlyExecution(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC008_AnsiblePackageDefinition", func(t *testing.T) {
-		if !suite.testAnsiblePackageDefinition(t) { t.Fail() }
+		if !suite.testAnsiblePackageDefinition(t) {
+			t.Fail()
+		}
 	})
 
 	success = success && subTestSuccess

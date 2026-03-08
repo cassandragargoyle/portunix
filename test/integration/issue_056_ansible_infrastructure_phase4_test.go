@@ -37,28 +37,44 @@ func TestIssue056AnsibleInfrastructurePhase4(t *testing.T) {
 	// Run subtests and track their success
 	subTestSuccess := true
 	subTestSuccess = subTestSuccess && t.Run("TC015_SecretsManagementIntegration", func(t *testing.T) {
-		if !suite.testSecretsManagementIntegration(t) { t.Fail() }
+		if !suite.testSecretsManagementIntegration(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC016_AuditLoggingSystem", func(t *testing.T) {
-		if !suite.testAuditLoggingSystem(t) { t.Fail() }
+		if !suite.testAuditLoggingSystem(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC017_RoleBasedAccessControl", func(t *testing.T) {
-		if !suite.testRoleBasedAccessControl(t) { t.Fail() }
+		if !suite.testRoleBasedAccessControl(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC018_CICDPipelineIntegration", func(t *testing.T) {
-		if !suite.testCICDPipelineIntegration(t) { t.Fail() }
+		if !suite.testCICDPipelineIntegration(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC019_EnterpriseSecurityValidation", func(t *testing.T) {
-		if !suite.testEnterpriseSecurityValidation(t) { t.Fail() }
+		if !suite.testEnterpriseSecurityValidation(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC020_MultiUserEnvironment", func(t *testing.T) {
-		if !suite.testMultiUserEnvironment(t) { t.Fail() }
+		if !suite.testMultiUserEnvironment(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC021_ComplianceReporting", func(t *testing.T) {
-		if !suite.testComplianceReporting(t) { t.Fail() }
+		if !suite.testComplianceReporting(t) {
+			t.Fail()
+		}
 	})
 	subTestSuccess = subTestSuccess && t.Run("TC022_EnterpriseIntegrationWorkflow", func(t *testing.T) {
-		if !suite.testEnterpriseIntegrationWorkflow(t) { t.Fail() }
+		if !suite.testEnterpriseIntegrationWorkflow(t) {
+			t.Fail()
+		}
 	})
 
 	success = success && subTestSuccess

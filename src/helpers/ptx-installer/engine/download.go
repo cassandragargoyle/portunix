@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package engine
 
 import (
@@ -126,8 +130,8 @@ func DownloadFile(destPath string, url string) error {
 
 	// Create progress writer
 	progress := &ProgressWriter{
-		Total:     size,
-		StartTime: time.Now(),
+		Total:      size,
+		StartTime:  time.Now(),
 		LastUpdate: time.Now(),
 	}
 
@@ -270,14 +274,14 @@ func GenerateFilenameFromContentType(contentType string) string {
 
 	// Map common content types to extensions
 	extensions := map[string]string{
-		"application/zip":             ".zip",
-		"application/x-tar":           ".tar",
-		"application/gzip":            ".gz",
-		"application/x-gzip":          ".gz",
-		"application/x-compressed":    ".tar.gz",
-		"application/x-msdownload":    ".exe",
-		"application/vnd.ms-cab":      ".cab",
-		"application/octet-stream":    ".bin",
+		"application/zip":          ".zip",
+		"application/x-tar":        ".tar",
+		"application/gzip":         ".gz",
+		"application/x-gzip":       ".gz",
+		"application/x-compressed": ".tar.gz",
+		"application/x-msdownload": ".exe",
+		"application/vnd.ms-cab":   ".cab",
+		"application/octet-stream": ".bin",
 	}
 
 	if ext, ok := extensions[contentType]; ok {

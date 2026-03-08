@@ -12,13 +12,13 @@ import (
 
 // CommandInfo represents a command with all its metadata
 type CommandInfo struct {
-	Name        string           `json:"name"`
-	Brief       string           `json:"brief"`        // For basic help
-	Description string           `json:"description"`   // For expert help
-	Category    string           `json:"category"`      // For AI help categorization
-	Parameters  []ParameterInfo  `json:"parameters,omitempty"`
-	Examples    []string         `json:"examples,omitempty"`
-	SubCommands []CommandInfo    `json:"subcommands,omitempty"`
+	Name        string          `json:"name"`
+	Brief       string          `json:"brief"`       // For basic help
+	Description string          `json:"description"` // For expert help
+	Category    string          `json:"category"`    // For AI help categorization
+	Parameters  []ParameterInfo `json:"parameters,omitempty"`
+	Examples    []string        `json:"examples,omitempty"`
+	SubCommands []CommandInfo   `json:"subcommands,omitempty"`
 }
 
 // ParameterInfo represents a command parameter

@@ -27,7 +27,7 @@ func TestContainerGoIntegrationSuite(t *testing.T) {
 	if !container.HasPodman() {
 		t.Skip("Podman not available - skipping integration tests")
 	}
-	
+
 	suite.Run(t, new(ContainerGoIntegrationTestSuite))
 }
 
@@ -124,7 +124,7 @@ func (suite *ContainerGoIntegrationTestSuite) TestPodmanGoInstallationWorkflow()
 // Test installSoftwareInPodmanContainer integration
 func (suite *ContainerGoIntegrationTestSuite) TestInstallSoftwareInPodmanContainer_Integration() {
 	suite.testContainerName = fmt.Sprintf("portunix-podman-install-integration-test-%d", time.Now().Unix())
-	
+
 	// Compile Portunix binary
 	err := compilePortunixBinary()
 	suite.Require().NoError(err)
@@ -162,7 +162,7 @@ func (suite *ContainerGoIntegrationTestSuite) TestInstallSoftwareInPodmanContain
 // Test Go installation with Alpine (different package manager)
 func (suite *ContainerGoIntegrationTestSuite) TestGoInstallationAlpine() {
 	suite.testContainerName = fmt.Sprintf("portunix-go-podman-alpine-test-%d", time.Now().Unix())
-	
+
 	// Compile Portunix binary
 	err := compilePortunixBinary()
 	suite.Require().NoError(err)

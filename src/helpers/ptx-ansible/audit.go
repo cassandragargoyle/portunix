@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package main
 
 import (
@@ -64,13 +68,13 @@ type FileAuditLogger struct {
 
 // AuditStats represents audit statistics
 type AuditStats struct {
-	TotalEvents    int64                    `json:"total_events"`
-	EventsByLevel  map[AuditLevel]int64     `json:"events_by_level"`
-	EventsByAction map[string]int64         `json:"events_by_action"`
-	SuccessRate    float64                  `json:"success_rate"`
-	LastEvent      *time.Time               `json:"last_event,omitempty"`
-	OldestEvent    *time.Time               `json:"oldest_event,omitempty"`
-	FileSizes      map[string]int64         `json:"file_sizes"`
+	TotalEvents    int64                `json:"total_events"`
+	EventsByLevel  map[AuditLevel]int64 `json:"events_by_level"`
+	EventsByAction map[string]int64     `json:"events_by_action"`
+	SuccessRate    float64              `json:"success_rate"`
+	LastEvent      *time.Time           `json:"last_event,omitempty"`
+	OldestEvent    *time.Time           `json:"oldest_event,omitempty"`
+	FileSizes      map[string]int64     `json:"file_sizes"`
 }
 
 // AuditManager manages audit logging with multiple backends
@@ -342,7 +346,7 @@ func (am *AuditManager) LogRoleAccess(user, environment, requiredRole, action st
 		Environment: environment,
 		Success:     success,
 		Details: map[string]interface{}{
-			"required_role": requiredRole,
+			"required_role":    requiredRole,
 			"attempted_action": action,
 		},
 	}
@@ -496,7 +500,7 @@ func GetDefaultAuditConfig() *AuditConfig {
 	return &AuditConfig{
 		Enabled:     true,
 		LogDir:      logDir,
-		MaxFileSize: 10 * 1024 * 1024, // 10MB
+		MaxFileSize: 10 * 1024 * 1024,    // 10MB
 		Retention:   90 * 24 * time.Hour, // 90 days
 		Formats:     []string{"json"},
 		Levels:      []AuditLevel{AuditLevelInfo, AuditLevelWarning, AuditLevelError, AuditLevelCritical},

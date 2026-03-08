@@ -16,12 +16,12 @@ func TestE2ESimpleMCPTest(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping E2E test in short mode")
 	}
-	
+
 	testSuite := &E2ESimpleTestSuite{
 		t:           t,
 		projectRoot: "../..",
 	}
-	
+
 	testSuite.logStep("🚀 Starting Simple E2E MCP Test")
 	testSuite.setupEnvironment()
 	testSuite.testMCPServerInContainer()
@@ -53,25 +53,25 @@ func (suite *E2ESimpleTestSuite) logOutput(prefix, output string) {
 
 func (suite *E2ESimpleTestSuite) runCommand(command string, args ...string) (string, error) {
 	suite.logStep(fmt.Sprintf("🔧 Executing: %s %s", command, strings.Join(args, " ")))
-	
+
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
-	
+
 	cmd := exec.CommandContext(ctx, command, args...)
 	output, err := cmd.CombinedOutput()
-	
+
 	if err != nil {
 		suite.logOutput("ERROR", string(output))
 		return string(output), err
 	}
-	
+
 	suite.logOutput("OUTPUT", string(output))
 	return string(output), nil
 }
 
 func (suite *E2ESimpleTestSuite) setupEnvironment() {
 	suite.logStep("📋 Setting up test environment")
-	
+
 	// Build portunix binary
 	suite.binaryPath = filepath.Join(suite.projectRoot, "portunix")
 	if _, err := os.Stat(suite.binaryPath); os.IsNotExist(err) {
@@ -85,7 +85,7 @@ func (suite *E2ESimpleTestSuite) setupEnvironment() {
 	} else {
 		suite.logStep("✅ Using existing portunix binary")
 	}
-	
+
 	// Test basic portunix functionality
 	_, err := suite.runCommand(suite.binaryPath, "--version")
 	if err != nil {
@@ -96,7 +96,7 @@ func (suite *E2ESimpleTestSuite) setupEnvironment() {
 
 func (suite *E2ESimpleTestSuite) testMCPServerInContainer() {
 	suite.logStep("🐳 Testing MCP Server functionality using portunix container")
-	
+
 	// Create a test script that will run inside container
 	testScript := `#!/bin/bash
 echo "=== Testing MCP Server in Container ==="
@@ -129,61 +129,61 @@ echo "=== MCP Container Test Completed ==="
 	defer os.Remove(scriptPath)
 
 	suite.logStep("🚀 Running MCP test in container using portunix")
-	
+
 	// Use portunix container run-in-container to test MCP server
 	output, err := suite.runCommand(suite.binaryPath, "container", "run-in-container", "mcp-test")
-	
+
 	// The run-in-container command will create a container, install the environment, and provide SSH access
 	// We can then use exec to run our test script
-	
+
 	if err != nil {
 		suite.logStep("⚠️ Container creation had issues, attempting alternative approach")
 		suite.logOutput("CONTAINER OUTPUT", output)
 	}
-	
+
 	// Alternative test: Direct MCP server test on host
 	suite.logStep("🔄 Alternative: Testing MCP server directly on host")
-	
+
 	// Test MCP server initialization directly
 	suite.testDirectMCPServer()
-	
+
 	suite.logStep("✅ MCP functionality verified in container-ready environment")
 }
 
 func (suite *E2ESimpleTestSuite) testDirectMCPServer() {
 	suite.logStep("🎯 Direct MCP Server Test")
-	
+
 	// Test 1: Can we start MCP server?
 	suite.logStep("📡 Testing MCP server startup")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	
+
 	cmd := exec.CommandContext(ctx, suite.binaryPath, "mcp", "serve", "--mode", "stdio")
-	
+
 	// Send initialize message and try to get response
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
 		suite.t.Fatalf("Failed to get stdin: %v", err)
 	}
-	
+
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		suite.t.Fatalf("Failed to get stdout: %v", err)
 	}
-	
+
 	if err := cmd.Start(); err != nil {
 		suite.t.Fatalf("Failed to start MCP server: %v", err)
 	}
-	
+
 	// Send initialize
 	initMsg := `{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"e2e-test","version":"1.0"}}}` + "\n"
-	
+
 	go func() {
 		time.Sleep(1 * time.Second)
 		stdin.Write([]byte(initMsg))
 		stdin.Close()
 	}()
-	
+
 	// Try to read response
 	responseChan := make(chan string, 1)
 	go func() {
@@ -193,13 +193,13 @@ func (suite *E2ESimpleTestSuite) testDirectMCPServer() {
 			responseChan <- string(buffer[:n])
 		}
 	}()
-	
+
 	// Wait for response or timeout
 	select {
 	case response := <-responseChan:
 		suite.logStep("✅ MCP Server responded!")
 		suite.logOutput("MCP RESPONSE", response)
-		
+
 		// Check if it's valid JSON-RPC response
 		if strings.Contains(response, `"jsonrpc":"2.0"`) {
 			suite.logStep("🎉 SUCCESS: MCP Server is fully functional!")
@@ -210,16 +210,16 @@ func (suite *E2ESimpleTestSuite) testDirectMCPServer() {
 		} else {
 			suite.logStep("⚠️ MCP Server responded but format may be non-standard")
 		}
-		
+
 	case <-time.After(5 * time.Second):
 		suite.logStep("⏰ MCP Server test timeout (this might be expected)")
 		suite.logStep("✅ MCP Server can be started (even if communication timing varies)")
 	}
-	
+
 	// Clean up
 	cmd.Process.Kill()
 	cmd.Wait()
-	
+
 	// Final verification: Test MCP help
 	suite.logStep("📖 Verifying MCP command structure")
 	output, err := suite.runCommand(suite.binaryPath, "mcp", "--help")
@@ -233,6 +233,6 @@ func (suite *E2ESimpleTestSuite) testDirectMCPServer() {
 			suite.logStep("✅ MCP configure command available")
 		}
 	}
-	
+
 	suite.logStep("🏆 CONCLUSION: MCP Server is functional and ready for AI assistant integration")
 }

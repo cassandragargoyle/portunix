@@ -86,6 +86,9 @@ ptx-pft.exe
 /ptx-credential
 ptx-credential.exe
 
+/ptx-trace
+ptx-trace.exe
+
 # Documentation site generated files
 docs-site/public/
 docs-site/resources/
@@ -105,3 +108,5 @@ portunix-windows.zip
 .claude/settings.json
 tmpclaude-*-cwd
 
+# Translation files (temporary, generated on demand)
+.translated/

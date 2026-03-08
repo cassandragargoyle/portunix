@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package main
 
 import (
@@ -176,17 +180,17 @@ func (mcp *MCPTools) detectPackagesFromPrompt(prompt string) []PtxbookPackage {
 
 	// Package detection patterns
 	packagePatterns := map[string]PtxbookPackage{
-		"java":         {Name: "java", Variant: "17"},
-		"node":         {Name: "nodejs", Variant: "20"},
-		"python":       {Name: "python", Variant: "3.13"},
-		"docker":       {Name: "docker", Variant: "latest"},
-		"vscode":       {Name: "vscode", Variant: "stable"},
-		"go":           {Name: "go", Variant: "latest"},
-		"git":          {Name: "git", Variant: "latest"},
-		"ansible":      {Name: "ansible", Variant: "latest"},
-		"powershell":   {Name: "powershell", Variant: "latest"},
-		"chrome":       {Name: "chrome", Variant: "stable"},
-		"claude-code":  {Name: "claude-code", Variant: "latest"},
+		"java":        {Name: "java", Variant: "17"},
+		"node":        {Name: "nodejs", Variant: "20"},
+		"python":      {Name: "python", Variant: "3.13"},
+		"docker":      {Name: "docker", Variant: "latest"},
+		"vscode":      {Name: "vscode", Variant: "stable"},
+		"go":          {Name: "go", Variant: "latest"},
+		"git":         {Name: "git", Variant: "latest"},
+		"ansible":     {Name: "ansible", Variant: "latest"},
+		"powershell":  {Name: "powershell", Variant: "latest"},
+		"chrome":      {Name: "chrome", Variant: "stable"},
+		"claude-code": {Name: "claude-code", Variant: "latest"},
 	}
 
 	for keyword, pkg := range packagePatterns {
@@ -453,10 +457,10 @@ func (mcp *MCPTools) ListPlaybooks(directory string) (*MCPToolResult, error) {
 			ptxbook, parseErr := ParsePtxbookFile(path)
 			if parseErr == nil {
 				playbooks = append(playbooks, map[string]interface{}{
-					"path":        path,
-					"name":        ptxbook.Metadata.Name,
-					"description": ptxbook.Metadata.Description,
-					"has_ansible": ptxbook.Spec.Ansible != nil,
+					"path":         path,
+					"name":         ptxbook.Metadata.Name,
+					"description":  ptxbook.Metadata.Description,
+					"has_ansible":  ptxbook.Spec.Ansible != nil,
 					"has_rollback": ptxbook.Spec.Rollback != nil,
 					"package_count": func() int {
 						if ptxbook.Spec.Portunix != nil {

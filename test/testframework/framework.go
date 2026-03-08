@@ -11,17 +11,17 @@ import (
 
 // TestFramework provides verbose logging and standardized test execution
 type TestFramework struct {
-	verbose    bool
-	testName   string
-	startTime  time.Time
-	stepCount  int
+	verbose   bool
+	testName  string
+	startTime time.Time
+	stepCount int
 }
 
 // NewTestFramework creates a new test framework instance
 func NewTestFramework(testName string) *TestFramework {
 	// Use Go's built-in verbose detection
 	verbose := testing.Verbose()
-	
+
 	return &TestFramework{
 		verbose:   verbose,
 		testName:  testName,
@@ -34,7 +34,7 @@ func NewTestFramework(testName string) *TestFramework {
 func (tf *TestFramework) Start(t *testing.T, description string) {
 	tf.stepCount = 0
 	tf.startTime = time.Now()
-	
+
 	if tf.verbose {
 		fmt.Printf("\n%s\n", strings.Repeat("=", 80))
 		fmt.Printf("🚀 STARTING: %s\n", tf.testName)
@@ -42,14 +42,14 @@ func (tf *TestFramework) Start(t *testing.T, description string) {
 		fmt.Printf("Time: %s\n", tf.startTime.Format(time.RFC3339))
 		fmt.Printf("%s\n\n", strings.Repeat("=", 80))
 	}
-	
+
 	t.Logf("Starting %s: %s", tf.testName, description)
 }
 
 // Step logs a test step with optional verbose details
 func (tf *TestFramework) Step(t *testing.T, stepDescription string, details ...interface{}) {
 	tf.stepCount++
-	
+
 	if tf.verbose {
 		fmt.Printf("📋 STEP %d: %s\n", tf.stepCount, stepDescription)
 		if len(details) > 0 {
@@ -58,7 +58,7 @@ func (tf *TestFramework) Step(t *testing.T, stepDescription string, details ...i
 			}
 		}
 	}
-	
+
 	t.Logf("Step %d: %s", tf.stepCount, stepDescription)
 }
 
@@ -110,7 +110,7 @@ func (tf *TestFramework) Info(t *testing.T, message string, details ...interface
 // Command logs command execution
 func (tf *TestFramework) Command(t *testing.T, command string, args []string) {
 	fullCmd := fmt.Sprintf("%s %s", command, strings.Join(args, " "))
-	
+
 	if tf.verbose {
 		fmt.Printf("   🔧 Executing: %s\n", fullCmd)
 	}
@@ -122,11 +122,11 @@ func (tf *TestFramework) Output(t *testing.T, output string, maxLength int) {
 	if maxLength == 0 {
 		maxLength = 500
 	}
-	
+
 	if tf.verbose {
 		outputLen := len(output)
 		fmt.Printf("   📄 Output (%d chars):\n", outputLen)
-		
+
 		if outputLen > maxLength {
 			// Show first part and last part for better context
 			if maxLength > 100 {
@@ -157,7 +157,7 @@ func (tf *TestFramework) Output(t *testing.T, output string, maxLength int) {
 // Finish completes the test with summary
 func (tf *TestFramework) Finish(t *testing.T, success bool) {
 	duration := time.Since(tf.startTime)
-	
+
 	if tf.verbose {
 		fmt.Printf("\n%s\n", strings.Repeat("-", 80))
 		if success {
@@ -169,7 +169,7 @@ func (tf *TestFramework) Finish(t *testing.T, success bool) {
 		fmt.Printf("Steps: %d\n", tf.stepCount)
 		fmt.Printf("%s\n\n", strings.Repeat("-", 80))
 	}
-	
+
 	if success {
 		t.Logf("✅ %s completed successfully in %v (%d steps)", tf.testName, duration, tf.stepCount)
 	} else {
@@ -192,20 +192,20 @@ func (tf *TestFramework) Separator() {
 // VerifyBinary checks if Portunix binary exists and returns path or fails test
 func (tf *TestFramework) VerifyBinary(t *testing.T, relativePath string) (string, bool) {
 	tf.Step(t, "Verify Portunix binary exists")
-	
+
 	binaryPath, err := filepath.Abs(relativePath)
 	if err != nil {
 		tf.Error(t, "Failed to get binary path", err.Error())
 		return "", false
 	}
-	
+
 	tf.Info(t, "Binary path:", binaryPath)
-	
+
 	if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
 		tf.Error(t, "Portunix binary not found", binaryPath)
 		return "", false
 	}
-	
+
 	// Get file info for additional details
 	if fileInfo, err := os.Stat(binaryPath); err == nil {
 		tf.Success(t, "Portunix binary found")
@@ -214,7 +214,7 @@ func (tf *TestFramework) VerifyBinary(t *testing.T, relativePath string) (string
 	} else {
 		tf.Success(t, "Portunix binary found")
 	}
-	
+
 	return binaryPath, true
 }
 
@@ -222,23 +222,23 @@ func (tf *TestFramework) VerifyBinary(t *testing.T, relativePath string) (string
 func (tf *TestFramework) VerifyPortunixBinary(t *testing.T) (string, bool) {
 	// Try standard locations for Portunix binary
 	standardPaths := []string{
-		"../../portunix",  // Most common for integration tests
-		"./portunix",      // Current directory  
-		"../portunix",     // Parent directory
+		"../../portunix", // Most common for integration tests
+		"./portunix",     // Current directory
+		"../portunix",    // Parent directory
 	}
-	
+
 	tf.Step(t, "Verify Portunix binary exists")
-	
+
 	for _, relativePath := range standardPaths {
 		binaryPath, err := filepath.Abs(relativePath)
 		if err != nil {
 			continue
 		}
-		
+
 		if _, err := os.Stat(binaryPath); err == nil {
 			// Found the binary
 			tf.Info(t, "Binary path:", binaryPath)
-			
+
 			// Get file info for additional details
 			if fileInfo, err := os.Stat(binaryPath); err == nil {
 				tf.Success(t, "Portunix binary found")
@@ -247,16 +247,16 @@ func (tf *TestFramework) VerifyPortunixBinary(t *testing.T) (string, bool) {
 			} else {
 				tf.Success(t, "Portunix binary found")
 			}
-			
+
 			return binaryPath, true
 		}
 	}
-	
+
 	// Binary not found in any standard location
 	tf.Error(t, "Portunix binary not found in standard locations")
 	tf.Info(t, "Searched paths:", strings.Join(standardPaths, ", "))
 	tf.Info(t, "Make sure you have built the binary with: go build -o .")
-	
+
 	return "", false
 }
 

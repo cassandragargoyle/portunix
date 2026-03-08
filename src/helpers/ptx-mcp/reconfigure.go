@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package main
 
 import (
@@ -126,6 +130,7 @@ func reconfigureMCPIntegration(mode string, scope string, port int, permissions 
 	return nil
 }
 
+// init registers the reconfigure subcommand under mcpCmd and defines its CLI flags
 func init() {
 	mcpCmd.AddCommand(reconfigureCmd)
 

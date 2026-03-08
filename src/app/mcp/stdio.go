@@ -16,7 +16,7 @@ import (
 func RunStdioMode() {
 	// IMPORTANT: No output to stdout except JSON-RPC messages!
 	// All logs/info must go to stderr
-	
+
 	// Check if running in interactive terminal
 	if isInteractiveTerm() && !isMCPClient() {
 		// Show brief message to stderr for interactive users
@@ -232,7 +232,7 @@ func StartStdioWithConfig(config *ServerConfig) error {
 	}
 
 	server := NewServer(0, permissions, "")
-	
+
 	// Use buffered I/O for better performance
 	reader := bufio.NewReader(os.Stdin)
 	writer := bufio.NewWriter(os.Stdout)

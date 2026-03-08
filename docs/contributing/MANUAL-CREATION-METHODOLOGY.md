@@ -11,6 +11,7 @@ This document defines the standardized methodology for creating comprehensive do
 ## Documentation Philosophy
 
 ### Core Principles
+
 - **Consistency**: All documentation follows unified structure and style
 - **Accessibility**: Three different levels to serve different user needs
 - **Maintainability**: Single source with variant generation
@@ -18,13 +19,14 @@ This document defines the standardized methodology for creating comprehensive do
 - **Automation**: Automated validation and generation where possible
 
 ### Target Audiences
+
 1. **Basic Users**: New users, quick references, common tasks
 2. **Expert Users**: Advanced features, deep technical details, troubleshooting
 3. **AI Assistants**: Machine-readable format, structured data, integration context
 
 ## Directory Structure
 
-```
+```text
 docs/
 ├── manual/                           # Main manual directory
 │   ├── README.md                    # Manual index and navigation
@@ -66,6 +68,7 @@ docs/
 **Target**: New users, quick references, common tasks
 
 **Structure**:
+
 ```markdown
 # Command/Feature Name
 
@@ -90,6 +93,7 @@ docs/
 ```
 
 **Style Guidelines**:
+
 - Use simple, clear language
 - Avoid technical jargon
 - Include practical examples
@@ -101,6 +105,7 @@ docs/
 **Target**: Advanced users, system administrators, developers
 
 **Structure**:
+
 ```markdown
 # Command/Feature Name
 
@@ -136,6 +141,7 @@ docs/
 ```
 
 **Style Guidelines**:
+
 - Technical accuracy is paramount
 - Include implementation details
 - Provide troubleshooting guidance
@@ -147,6 +153,7 @@ docs/
 **Target**: AI assistants, automation tools, integration systems
 
 **Structure**:
+
 ```markdown
 # Command/Feature Name - AI Reference
 
@@ -164,21 +171,25 @@ docs/
 ```
 
 ## Context Integration
+
 - How this command fits in workflows
 - Prerequisites and dependencies
 - State management considerations
 
 ## Automation Patterns
+
 - Common automation scenarios
 - Scripting examples
 - Error handling patterns
 
 ## Integration Points
+
 - API endpoints
 - Configuration interfaces
 - Monitoring and logging
 
 ## Workflow Examples
+
 - Complete task workflows
 - Multi-step processes
 - Error recovery procedures
@@ -217,45 +228,54 @@ portunix [command] [subcommand] [flags]
 ```
 
 ## Description
+
 [Detailed description matching the audience level]
 
 ## Subcommands
+
 | Subcommand | Description | Example |
-|------------|-------------|---------|
+| ---------- | ----------- | ------- |
 | subcmd1    | Description | `portunix cmd subcmd1` |
 
 ## Flags
+
 | Flag | Type | Description | Default |
-|------|------|-------------|---------|
+| ---- | ---- | ----------- | ------- |
 | --flag | string | Description | value |
 
 ## Examples
 
 ### Basic Usage
+
 ```bash
 # Common use case
 portunix command example
 ```
 
 ### Advanced Usage (Expert/AI only)
+
 ```bash
 # Complex scenarios
 portunix command advanced --flag value
 ```
 
 ## Output Format
+
 [Describe command output, especially for AI documentation]
 
 ## Exit Codes
+
 - 0: Success
 - 1: General error
 - 2: Specific error type
 
 ## Related Commands
+
 - `portunix related-cmd` - Related functionality
 - `portunix other-cmd` - Alternative approach
 
 ## Notes
+
 [Version-specific notes, limitations, future changes]
 ```
 
@@ -382,6 +402,7 @@ portunix command advanced --flag value
 ```
 
 ### AI Documentation Generation
+
 ```bash
 # Generate AI-specific documentation from CLI help
 go run ./docs/tools/generate-ai-data.go
@@ -391,6 +412,7 @@ go run ./docs/tools/generate-ai-data.go --commands-only
 ```
 
 ### Help System Synchronization
+
 ```bash
 # Sync CLI help with documentation
 ./docs/tools/sync-help-docs.sh
@@ -402,18 +424,21 @@ go run ./docs/tools/generate-ai-data.go --commands-only
 ## Style Guide
 
 ### Writing Style
+
 - **Active Voice**: Use active voice where possible
 - **Present Tense**: Document current functionality
 - **Consistent Terminology**: Use established terms consistently
 - **Clear Headers**: Use descriptive section headers
 
 ### Code Examples
+
 - **Complete Examples**: Show complete, working commands
 - **Commented Code**: Explain complex examples with comments
 - **Realistic Data**: Use realistic examples, not foo/bar
 - **Error Handling**: Show error handling where appropriate
 
 ### Formatting Standards
+
 - **Headers**: Use appropriate heading levels (H1 for title, H2 for main sections)
 - **Lists**: Use bullet points for unordered lists, numbers for procedures
 - **Code Blocks**: Specify language for syntax highlighting
@@ -422,6 +447,7 @@ go run ./docs/tools/generate-ai-data.go --commands-only
 ## Integration with Development
 
 ### Development Workflow Integration
+
 1. **Feature Development**
    - Documentation requirements defined
    - Documentation created alongside code
@@ -438,6 +464,7 @@ go run ./docs/tools/generate-ai-data.go --commands-only
    - Link checking automated
 
 ### Release Process
+
 1. **Pre-Release**
    - Documentation review complete
    - All examples tested with new version
@@ -456,18 +483,21 @@ go run ./docs/tools/generate-ai-data.go --commands-only
 ## Metrics and Success Criteria
 
 ### Documentation Quality Metrics
+
 - **Coverage**: Percentage of features documented
 - **Accuracy**: Number of technical errors found
 - **Completeness**: Compliance with templates and standards
 - **Timeliness**: Documentation availability with feature release
 
 ### User Experience Metrics
+
 - **Discoverability**: How easily users find relevant documentation
 - **Effectiveness**: User success rate following documentation
 - **Satisfaction**: User feedback on documentation quality
 - **Adoption**: Usage of different documentation levels
 
 ### Automation Metrics
+
 - **Validation Pass Rate**: Percentage of automated validation passes
 - **Sync Accuracy**: CLI help and documentation consistency
 - **Build Integration**: Documentation build success rate
@@ -476,12 +506,14 @@ go run ./docs/tools/generate-ai-data.go --commands-only
 ## Future Enhancements
 
 ### Planned Improvements
+
 - **Interactive Documentation**: Embedded examples that can be executed
 - **Video Tutorials**: Complement written documentation with videos
 - **Multi-Language Support**: Documentation in multiple languages
 - **API Integration**: Direct integration with Portunix API for live examples
 
 ### Tool Development
+
 - **Documentation IDE**: Specialized editor for Portunix documentation
 - **Automated Generation**: More automated content generation from code
 - **Quality Analytics**: Advanced metrics and reporting tools

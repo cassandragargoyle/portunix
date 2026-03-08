@@ -19,7 +19,7 @@ import (
 
 // Backend implements the VirtualBox backend
 type Backend struct {
-	vmDir        string
+	vmDir          string
 	vboxManagePath string
 }
 
@@ -156,15 +156,15 @@ func (b *Backend) Create(config *types.VMConfig) error {
 
 	// Save VM configuration
 	vmConfig := &VBoxVMConfig{
-		Name:      config.Name,
-		DiskPath:  vdiPath,
-		RAM:       config.RAM,
-		CPUs:      config.CPUs,
-		OSType:    config.OSType,
-		ISO:       config.ISO,
-		Network:   config.Network,
-		Features:  config.Features,
-		Created:   time.Now(),
+		Name:     config.Name,
+		DiskPath: vdiPath,
+		RAM:      config.RAM,
+		CPUs:     config.CPUs,
+		OSType:   config.OSType,
+		ISO:      config.ISO,
+		Network:  config.Network,
+		Features: config.Features,
+		Created:  time.Now(),
 	}
 
 	configPath := filepath.Join(vmPath, "config.json")
@@ -613,8 +613,8 @@ func (b *Backend) parseVMInfo(output, vmName string) *types.VMInfo {
 			ostype = strings.Trim(ostype, "\"")
 			info.OSType = ostype
 		} else if (strings.Contains(line, "-0-0") || strings.Contains(line, "-1-0")) &&
-			   (strings.Contains(line, ".vdi") || strings.Contains(line, ".vmdk") || strings.Contains(line, ".vhd")) &&
-			   !strings.Contains(line, "ImageUUID") && !strings.Contains(line, "IsEjected") {
+			(strings.Contains(line, ".vdi") || strings.Contains(line, ".vmdk") || strings.Contains(line, ".vhd")) &&
+			!strings.Contains(line, "ImageUUID") && !strings.Contains(line, "IsEjected") {
 			// Extract disk path from any controller-0-0="path/to/disk.vdi"
 			if idx := strings.Index(line, "="); idx != -1 {
 				path := strings.Trim(line[idx+1:], "\"")
@@ -804,15 +804,15 @@ func (b *Backend) parseSnapshotSize(output string) int64 {
 
 // VBoxVMConfig represents VirtualBox VM configuration
 type VBoxVMConfig struct {
-	Name     string                 `json:"name"`
-	DiskPath string                 `json:"disk_path"`
-	RAM      string                 `json:"ram"`
-	CPUs     int                    `json:"cpus"`
-	OSType   string                 `json:"os_type"`
-	ISO      string                 `json:"iso,omitempty"`
-	Network  types.NetworkConfig     `json:"network"`
-	Features map[string]string      `json:"features,omitempty"`
-	Created  time.Time              `json:"created"`
+	Name     string              `json:"name"`
+	DiskPath string              `json:"disk_path"`
+	RAM      string              `json:"ram"`
+	CPUs     int                 `json:"cpus"`
+	OSType   string              `json:"os_type"`
+	ISO      string              `json:"iso,omitempty"`
+	Network  types.NetworkConfig `json:"network"`
+	Features map[string]string   `json:"features,omitempty"`
+	Created  time.Time           `json:"created"`
 }
 
 // detectVirtualBox performs comprehensive VirtualBox detection

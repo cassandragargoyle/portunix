@@ -40,12 +40,12 @@ exit 0`
 
 	// Test scenarios using mock binaries
 	testScenarios := []struct {
-		name        string
-		setupCmds   []string
-		expected    map[string]string
+		name      string
+		setupCmds []string
+		expected  map[string]string
 	}{
 		{
-			name: "No container runtime",
+			name:      "No container runtime",
 			setupCmds: []string{
 				// No mock binaries installed
 			},
@@ -259,10 +259,10 @@ func testHostSystemInfo(t *testing.T, tf *testframework.TestFramework, binaryPat
 func verifyOutput(output, key, value string) bool {
 	// Handle different formatting possibilities
 	patterns := []string{
-		fmt.Sprintf("%s %s", key, value),           // "Docker: installed"
-		fmt.Sprintf("%s%s", key, value),            // "Docker:installed"
-		fmt.Sprintf("%s       %s", key, value),     // "Docker:       installed" (aligned)
-		fmt.Sprintf("%s      %s", key, value),      // variations in spacing
+		fmt.Sprintf("%s %s", key, value),       // "Docker: installed"
+		fmt.Sprintf("%s%s", key, value),        // "Docker:installed"
+		fmt.Sprintf("%s       %s", key, value), // "Docker:       installed" (aligned)
+		fmt.Sprintf("%s      %s", key, value),  // variations in spacing
 		fmt.Sprintf("%s     %s", key, value),
 		fmt.Sprintf("%s    %s", key, value),
 		fmt.Sprintf("%s   %s", key, value),

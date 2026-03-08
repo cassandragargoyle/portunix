@@ -1,0 +1,51 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "vox-model-tts-english",
+    "displayName": "Vox TTS English Voice Model",
+    "description": "English text-to-speech voice model (en_US-lessac-medium) for Vox plugin",
+    "category": "plugins/models",
+    "homepage": "https://huggingface.co/rhasspy/piper-voices",
+    "license": "MIT",
+    "maintainer": "CassandraGargoyle"
+  },
+  "spec": {
+    "platforms": {
+      "linux": {
+        "type": "download",
+        "variants": {
+          "default": {
+            "version": "1.0.0",
+            "description": "English TTS voice en_US-lessac-medium (~60 MB)",
+            "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx",
+            "additionalFiles": [
+              {
+                "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json"
+              }
+            ],
+            "extractTo": "${HOME}/.portunix/models/vox/tts/en_US-lessac-medium"
+          }
+        }
+      },
+      "windows": {
+        "type": "download",
+        "variants": {
+          "default": {
+            "version": "1.0.0",
+            "description": "English TTS voice en_US-lessac-medium (~60 MB)",
+            "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx",
+            "additionalFiles": [
+              {
+                "url": "https://huggingface.co/rhasspy/piper-voices/resolve/main/en/en_US/lessac/medium/en_US-lessac-medium.onnx.json"
+              }
+            ],
+            "extractTo": "${LOCALAPPDATA}/portunix/models/vox/tts/en_US-lessac-medium"
+          }
+        }
+      }
+    },
+    "dependencies": ["vox-deps"],
+    "templates": ["download"]
+  }
+}

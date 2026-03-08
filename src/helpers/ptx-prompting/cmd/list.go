@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	listLang       string
-	listPath       string
-	listDetailed   bool
+	listLang        string
+	listPath        string
+	listDetailed    bool
 	listBuiltinOnly bool
 )
 
@@ -201,12 +201,12 @@ func findUserTemplates(basePath string) ([]TemplateEntry, error) {
 		templateInfo, err := builder.GetTemplateInfo(path)
 
 		template := TemplateEntry{
-			Name:         strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)),
-			Path:         path,
-			Language:     lang,
-			Format:       strings.TrimPrefix(ext, "."),
-			IsBuiltin:    false,
-			Size:         info.Size(),
+			Name:      strings.TrimSuffix(filepath.Base(path), filepath.Ext(path)),
+			Path:      path,
+			Language:  lang,
+			Format:    strings.TrimPrefix(ext, "."),
+			IsBuiltin: false,
+			Size:      info.Size(),
 		}
 
 		if err != nil {

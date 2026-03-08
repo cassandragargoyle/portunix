@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package registry
 
 import (
@@ -29,10 +33,10 @@ type PackageRegistry struct {
 
 // Package represents a package definition in the new format
 type Package struct {
-	APIVersion string       `json:"apiVersion"`
-	Kind       string       `json:"kind"`
-	Metadata   Metadata     `json:"metadata"`
-	Spec       PackageSpec  `json:"spec"`
+	APIVersion string      `json:"apiVersion"`
+	Kind       string      `json:"kind"`
+	Metadata   Metadata    `json:"metadata"`
+	Spec       PackageSpec `json:"spec"`
 }
 
 // Metadata contains package metadata
@@ -51,22 +55,22 @@ type Metadata struct {
 
 // PackageSpec contains the package specification
 type PackageSpec struct {
-	HasVariants  bool                      `json:"hasVariants"`
-	Platforms    map[string]PlatformSpec   `json:"platforms"`
-	Sources      map[string]SourceSpec     `json:"sources,omitempty"`
-	Verification *VerificationSpec         `json:"verification,omitempty"`
-	AIPrompts    *AIPrompts                `json:"aiPrompts,omitempty"`
-	Dependencies []string                  `json:"dependencies,omitempty"`
-	Templates    []string                  `json:"templates,omitempty"`
+	HasVariants  bool                    `json:"hasVariants"`
+	Platforms    map[string]PlatformSpec `json:"platforms"`
+	Sources      map[string]SourceSpec   `json:"sources,omitempty"`
+	Verification *VerificationSpec       `json:"verification,omitempty"`
+	AIPrompts    *AIPrompts              `json:"aiPrompts,omitempty"`
+	Dependencies []string                `json:"dependencies,omitempty"`
+	Templates    []string                `json:"templates,omitempty"`
 }
 
 // PlatformSpec represents platform-specific configuration
 type PlatformSpec struct {
-	Type         string                   `json:"type"`
-	Variants     map[string]VariantSpec   `json:"variants"`
-	InstallArgs  []string                 `json:"installArgs,omitempty"`
-	Environment  map[string]string        `json:"environment,omitempty"`
-	Verification *VerificationSpec        `json:"verification,omitempty"`
+	Type         string                 `json:"type"`
+	Variants     map[string]VariantSpec `json:"variants"`
+	InstallArgs  []string               `json:"installArgs,omitempty"`
+	Environment  map[string]string      `json:"environment,omitempty"`
+	Verification *VerificationSpec      `json:"verification,omitempty"`
 }
 
 // StringOrSlice is a type that can unmarshal either a string or []string from JSON
@@ -91,26 +95,57 @@ func (s *StringOrSlice) UnmarshalJSON(data []byte) error {
 
 // VariantSpec represents a specific variant of a package
 type VariantSpec struct {
-	Version       string                `json:"version"`
-	Description   string                `json:"description,omitempty"`
-	Type          string                `json:"type,omitempty"`
-	URL           string                `json:"url,omitempty"`
-	URLs          map[string]string     `json:"urls,omitempty"`
-	Packages      []string              `json:"packages,omitempty"`
-	Repository    string                `json:"repository,omitempty"`
-	KeyUrl        string                `json:"keyUrl,omitempty"`
-	InstallScript     StringOrSlice         `json:"installScript,omitempty"`
-	InstallScriptArgs string                `json:"installScriptArgs,omitempty"`
-	InstallPath       string                `json:"installPath,omitempty"`
-	ExtractTo     string                `json:"extractTo,omitempty"`
-	Extract       bool                  `json:"extract,omitempty"`
-	Binary        string                `json:"binary,omitempty"`
-	RequiresSudo  bool                  `json:"requiresSudo,omitempty"`
-	RequiresAdmin bool                  `json:"requiresAdmin,omitempty"`
-	PostInstall   []string              `json:"postInstall,omitempty"`
-	InstallArgs   []string              `json:"installArgs,omitempty"`
-	Distributions interface{}           `json:"distributions,omitempty"`
-	Checksum      map[string]string     `json:"checksum,omitempty"`
+	Version           string            `json:"version"`
+	Description       string            `json:"description,omitempty"`
+	Type              string            `json:"type,omitempty"`
+	URL               string            `json:"url,omitempty"`
+	URLs              map[string]string `json:"urls,omitempty"`
+	Packages          []string          `json:"packages,omitempty"`
+	Repository        string            `json:"repository,omitempty"`
+	KeyUrl            string            `json:"keyUrl,omitempty"`
+	InstallScript     StringOrSlice     `json:"installScript,omitempty"`
+	InstallScriptArgs string            `json:"installScriptArgs,omitempty"`
+	InstallPath       string            `json:"installPath,omitempty"`
+	ExtractTo         string            `json:"extractTo,omitempty"`
+	Extract           bool              `json:"extract,omitempty"`
+	Binary            string            `json:"binary,omitempty"`
+	RequiresSudo      bool              `json:"requiresSudo,omitempty"`
+	RequiresAdmin     bool              `json:"requiresAdmin,omitempty"`
+	PostInstall       []string          `json:"postInstall,omitempty"`
+	InstallArgs       []string          `json:"installArgs,omitempty"`
+	Distributions     interface{}       `json:"distributions,omitempty"`
+	Checksum          map[string]string `json:"checksum,omitempty"`
+	Container         *ContainerSpec    `json:"container,omitempty"`
+	AdditionalFiles   []AdditionalFile  `json:"additionalFiles,omitempty"`
+}
+
+// AdditionalFile represents an extra file to download alongside the main package
+type AdditionalFile struct {
+	URL      string `json:"url"`
+	Filename string `json:"filename,omitempty"`
+}
+
+// ContainerSpec represents container configuration for container-based installations
+type ContainerSpec struct {
+	Image       string            `json:"image"`
+	Tag         string            `json:"tag,omitempty"`
+	Command     []string          `json:"command,omitempty"`
+	Ports       []string          `json:"ports,omitempty"`
+	Volumes     []string          `json:"volumes,omitempty"`
+	Environment map[string]string `json:"environment,omitempty"`
+	Name        string            `json:"name,omitempty"`
+	HealthCheck *HealthCheckSpec  `json:"healthCheck,omitempty"`
+	Memory      string            `json:"memory,omitempty"`
+	Detach      bool              `json:"detach,omitempty"`
+}
+
+// HealthCheckSpec represents health check configuration for container services
+type HealthCheckSpec struct {
+	Endpoint string `json:"endpoint,omitempty"`
+	Command  string `json:"command,omitempty"`
+	Timeout  int    `json:"timeout,omitempty"`
+	Interval int    `json:"interval,omitempty"`
+	Retries  int    `json:"retries,omitempty"`
 }
 
 // SourceSpec represents source information for a package
@@ -139,9 +174,9 @@ type AIPrompts struct {
 
 // RegistryIndex represents the registry index
 type RegistryIndex struct {
-	APIVersion string           `json:"apiVersion"`
-	Kind       string           `json:"kind"`
-	Metadata   IndexMetadata    `json:"metadata"`
+	APIVersion string            `json:"apiVersion"`
+	Kind       string            `json:"kind"`
+	Metadata   IndexMetadata     `json:"metadata"`
 	Spec       RegistryIndexSpec `json:"spec"`
 }
 
@@ -427,7 +462,7 @@ func (r *PackageRegistry) validatePlatform(platformName string, platform *Platfo
 		return fmt.Errorf("type is required")
 	}
 
-	validTypes := []string{"msi", "exe", "zip", "tar.gz", "deb", "rpm", "apt", "dnf", "pacman", "snap", "repository", "powershell", "script", "winget", "chocolatey", "npm", "brew", "redirect", "builtin"}
+	validTypes := []string{"msi", "exe", "zip", "tar.gz", "deb", "rpm", "apt", "dnf", "pacman", "snap", "repository", "powershell", "script", "winget", "chocolatey", "npm", "brew", "redirect", "builtin", "container", "download"}
 	if !containsString(validTypes, platform.Type) {
 		return fmt.Errorf("unsupported type '%s', must be one of: %v", platform.Type, validTypes)
 	}
@@ -459,12 +494,12 @@ func (r *PackageRegistry) validateVariant(variantName string, variant *VariantSp
 
 	// Ensure at least one installation method is specified
 	hasInstallMethod := false
-	if variant.URL != "" || len(variant.URLs) > 0 || len(variant.Packages) > 0 || len(variant.InstallScript) > 0 {
+	if variant.URL != "" || len(variant.URLs) > 0 || len(variant.Packages) > 0 || len(variant.InstallScript) > 0 || variant.Container != nil || len(variant.AdditionalFiles) > 0 {
 		hasInstallMethod = true
 	}
 
 	if !hasInstallMethod {
-		return fmt.Errorf("variant must specify at least one installation method (url, urls, packages, or installScript)")
+		return fmt.Errorf("variant must specify at least one installation method (url, urls, packages, installScript, container, or additionalFiles)")
 	}
 
 	return nil

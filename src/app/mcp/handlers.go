@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"gopkg.in/yaml.v3"
-	
+
 	"portunix.ai/app/system"
 	"portunix.ai/app/version"
 )
@@ -510,6 +510,192 @@ func (s *Server) handleToolsList(params json.RawMessage) (interface{}, error) {
 				"required": []string{"host"},
 			},
 		},
+		// PTX-TRACE Tracing Tools (Issue #141)
+		{
+			"name":        "trace_start_session",
+			"description": "Start a new trace session for capturing operations during data processing, ETL pipelines, or software workflows",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"name": map[string]interface{}{
+						"type":        "string",
+						"description": "Session name (e.g., 'import-customers', 'etl-pipeline')",
+					},
+					"source": map[string]interface{}{
+						"type":        "string",
+						"description": "Source data identifier (file or URL)",
+					},
+					"tags": map[string]interface{}{
+						"type":        "string",
+						"description": "Comma-separated tags for categorization",
+					},
+					"pii_mask": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Enable PII masking for sensitive data",
+						"default":     false,
+					},
+					"sampling": map[string]interface{}{
+						"type":        "number",
+						"description": "Sampling rate (0.0-1.0, default 1.0)",
+						"default":     1.0,
+					},
+				},
+				"required": []string{"name"},
+			},
+		},
+		{
+			"name":        "trace_end_session",
+			"description": "End the active trace session",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"status": map[string]interface{}{
+						"type":        "string",
+						"description": "Session status: completed, failed, cancelled",
+						"default":     "completed",
+					},
+					"summary": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Show session summary after ending",
+						"default":     true,
+					},
+				},
+			},
+		},
+		{
+			"name":        "trace_list_sessions",
+			"description": "List all trace sessions with their status and statistics",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"limit": map[string]interface{}{
+						"type":        "integer",
+						"description": "Maximum number of sessions to return",
+						"default":     10,
+					},
+					"status": map[string]interface{}{
+						"type":        "string",
+						"description": "Filter by status: active, completed, failed",
+					},
+				},
+			},
+		},
+		{
+			"name":        "trace_view_events",
+			"description": "View trace events from a session with optional filtering",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"session_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Session ID (uses most recent if not specified)",
+					},
+					"operation": map[string]interface{}{
+						"type":        "string",
+						"description": "Filter by operation name",
+					},
+					"level": map[string]interface{}{
+						"type":        "string",
+						"description": "Filter by level: debug, info, warning, error",
+					},
+					"status": map[string]interface{}{
+						"type":        "string",
+						"description": "Filter by status: success, error",
+					},
+					"tag": map[string]interface{}{
+						"type":        "string",
+						"description": "Filter by tag",
+					},
+					"limit": map[string]interface{}{
+						"type":        "integer",
+						"description": "Maximum number of events to return",
+						"default":     50,
+					},
+				},
+			},
+		},
+		{
+			"name":        "trace_get_statistics",
+			"description": "Get detailed statistics for a trace session including operation counts, error rates, and timing",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"session_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Session ID (uses most recent if not specified)",
+					},
+				},
+			},
+		},
+		{
+			"name":        "trace_show_errors",
+			"description": "Show grouped errors with patterns and suggestions for a trace session",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"session_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Session ID (uses most recent if not specified)",
+					},
+					"limit": map[string]interface{}{
+						"type":        "integer",
+						"description": "Maximum number of error groups to show",
+						"default":     20,
+					},
+					"with_context": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Include sample events for each error",
+						"default":     true,
+					},
+				},
+			},
+		},
+		{
+			"name":        "trace_export_ai",
+			"description": "Export trace session in AI-friendly markdown format optimized for Claude/GPT analysis",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"session_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Session ID (uses most recent if not specified)",
+					},
+					"focus": map[string]interface{}{
+						"type":        "string",
+						"description": "Export focus: errors, slow, all",
+						"default":     "errors",
+					},
+					"include_samples": map[string]interface{}{
+						"type":        "boolean",
+						"description": "Include sample events in export",
+						"default":     true,
+					},
+				},
+			},
+		},
+		{
+			"name":        "trace_query",
+			"description": "Query trace events using SQL-like syntax",
+			"inputSchema": map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"query": map[string]interface{}{
+						"type":        "string",
+						"description": "Query string (e.g., \"operation = 'validate_email' AND level = 'error'\")",
+					},
+					"session_id": map[string]interface{}{
+						"type":        "string",
+						"description": "Session ID to query (optional, queries all if not specified)",
+					},
+					"limit": map[string]interface{}{
+						"type":        "integer",
+						"description": "Maximum number of results",
+						"default":     100,
+					},
+				},
+				"required": []string{"query"},
+			},
+		},
 	}
 
 	return map[string]interface{}{
@@ -602,6 +788,23 @@ func (s *Server) handleToolsCall(params json.RawMessage) (interface{}, error) {
 		result, err = s.handlePftConfigArea(request.Arguments)
 	case "pft_config_smtp":
 		result, err = s.handlePftConfigSmtp(request.Arguments)
+	// PTX-TRACE Tracing Tools (Issue #141)
+	case "trace_start_session":
+		result, err = s.handleTraceStartSession(request.Arguments)
+	case "trace_end_session":
+		result, err = s.handleTraceEndSession(request.Arguments)
+	case "trace_list_sessions":
+		result, err = s.handleTraceListSessions(request.Arguments)
+	case "trace_view_events":
+		result, err = s.handleTraceViewEvents(request.Arguments)
+	case "trace_get_statistics":
+		result, err = s.handleTraceGetStatistics(request.Arguments)
+	case "trace_show_errors":
+		result, err = s.handleTraceShowErrors(request.Arguments)
+	case "trace_export_ai":
+		result, err = s.handleTraceExportAI(request.Arguments)
+	case "trace_query":
+		result, err = s.handleTraceQuery(request.Arguments)
 	default:
 		err = fmt.Errorf("unknown tool: %s", request.Name)
 	}
@@ -4627,11 +4830,11 @@ func (s *Server) handleEcho(args map[string]interface{}) (interface{}, error) {
 	if !ok {
 		message = "hello" // default value
 	}
-	
+
 	return map[string]interface{}{
-		"echo": message,
+		"echo":      message,
 		"timestamp": time.Now().Format(time.RFC3339),
-		"status": "success",
+		"status":    "success",
 	}, nil
 }
 
@@ -4640,9 +4843,9 @@ func (s *Server) handleGetPluginDevelopmentGuide(args map[string]interface{}) (i
 	if !ok {
 		return nil, fmt.Errorf("language parameter is required")
 	}
-	
+
 	framework, _ := args["framework"].(string)
-	
+
 	// Read the appropriate language guide
 	var guidePath string
 	switch language {
@@ -4659,31 +4862,31 @@ func (s *Server) handleGetPluginDevelopmentGuide(args map[string]interface{}) (i
 	default:
 		return nil, fmt.Errorf("unsupported language: %s", language)
 	}
-	
+
 	// Check if file exists
 	if _, err := os.Stat(guidePath); os.IsNotExist(err) {
 		return map[string]interface{}{
-			"language": language,
-			"framework": framework,
-			"available": false,
-			"message": fmt.Sprintf("Development guide for %s is not yet available", language),
+			"language":    language,
+			"framework":   framework,
+			"available":   false,
+			"message":     fmt.Sprintf("Development guide for %s is not yet available", language),
 			"alternative": "Please refer to the general plugin development guide at docs/plugin-development/getting-started.md",
 		}, nil
 	}
-	
+
 	// Read the guide content
 	content, err := os.ReadFile(guidePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read development guide: %w", err)
 	}
-	
+
 	return map[string]interface{}{
-		"language": language,
-		"framework": framework,
-		"available": true,
+		"language":   language,
+		"framework":  framework,
+		"available":  true,
 		"guide_path": guidePath,
-		"content": string(content),
-		"format": "markdown",
+		"content":    string(content),
+		"format":     "markdown",
 	}, nil
 }
 
@@ -4692,32 +4895,32 @@ func (s *Server) handleGetPluginTemplate(args map[string]interface{}) (interface
 	if !ok {
 		return nil, fmt.Errorf("language parameter is required")
 	}
-	
+
 	pluginType, ok := args["plugin_type"].(string)
 	if !ok {
 		pluginType = "service"
 	}
-	
+
 	// Template directory path
 	templatePath := fmt.Sprintf("docs/plugin-development/languages/%s/template", language)
-	
+
 	// Check if template exists
 	if _, err := os.Stat(templatePath); os.IsNotExist(err) {
 		return map[string]interface{}{
-			"language": language,
+			"language":    language,
 			"plugin_type": pluginType,
-			"available": false,
-			"message": fmt.Sprintf("Template for %s is not yet available", language),
+			"available":   false,
+			"message":     fmt.Sprintf("Template for %s is not yet available", language),
 		}, nil
 	}
-	
+
 	// Read template files
 	templateFiles := make(map[string]string)
 	err := filepath.Walk(templatePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
-		
+
 		if !info.IsDir() {
 			relativePath, _ := filepath.Rel(templatePath, path)
 			content, readErr := os.ReadFile(path)
@@ -4728,17 +4931,17 @@ func (s *Server) handleGetPluginTemplate(args map[string]interface{}) (interface
 		}
 		return nil
 	})
-	
+
 	if err != nil {
 		return nil, fmt.Errorf("failed to read template files: %w", err)
 	}
-	
+
 	return map[string]interface{}{
-		"language": language,
-		"plugin_type": pluginType,
-		"available": true,
+		"language":      language,
+		"plugin_type":   pluginType,
+		"available":     true,
 		"template_path": templatePath,
-		"files": templateFiles,
+		"files":         templateFiles,
 	}, nil
 }
 
@@ -4747,9 +4950,9 @@ func (s *Server) handleGetPluginBuildInstructions(args map[string]interface{}) (
 	if !ok {
 		return nil, fmt.Errorf("language parameter is required")
 	}
-	
+
 	var instructions map[string]interface{}
-	
+
 	switch language {
 	case "go":
 		instructions = map[string]interface{}{
@@ -4898,7 +5101,7 @@ func (s *Server) handleGetPluginBuildInstructions(args map[string]interface{}) (
 	default:
 		return nil, fmt.Errorf("unsupported language: %s", language)
 	}
-	
+
 	return instructions, nil
 }
 
@@ -4907,16 +5110,16 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 	if !ok {
 		return nil, fmt.Errorf("plugin_path parameter is required")
 	}
-	
+
 	// Check if path exists
 	info, err := os.Stat(pluginPath)
 	if os.IsNotExist(err) {
 		return map[string]interface{}{
-			"valid": false,
+			"valid":  false,
 			"errors": []string{fmt.Sprintf("Path does not exist: %s", pluginPath)},
 		}, nil
 	}
-	
+
 	var manifestPath string
 	if info.IsDir() {
 		manifestPath = filepath.Join(pluginPath, "plugin.json")
@@ -4925,29 +5128,29 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 		pluginPath = filepath.Dir(pluginPath)
 	} else {
 		return map[string]interface{}{
-			"valid": false,
+			"valid":  false,
 			"errors": []string{"plugin_path must be a directory or .yaml/.yml file"},
 		}, nil
 	}
-	
+
 	validation := map[string]interface{}{
-		"valid": true,
-		"errors": []string{},
+		"valid":    true,
+		"errors":   []string{},
 		"warnings": []string{},
-		"checks": map[string]interface{}{},
+		"checks":   map[string]interface{}{},
 	}
-	
+
 	errors := []string{}
 	warnings := []string{}
 	checks := map[string]interface{}{}
-	
+
 	// Check plugin.json exists
 	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
 		errors = append(errors, "plugin.json not found")
 		checks["manifest"] = false
 	} else {
 		checks["manifest"] = true
-		
+
 		// Validate plugin.json content
 		content, err := os.ReadFile(manifestPath)
 		if err != nil {
@@ -4964,7 +5167,7 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 						errors = append(errors, fmt.Sprintf("Missing required field: %s", field))
 					}
 				}
-				
+
 				// Check plugin type
 				if pluginType, exists := manifest["type"]; exists {
 					if typeStr, ok := pluginType.(string); ok {
@@ -4981,22 +5184,22 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 						}
 					}
 				}
-				
+
 				checks["manifest_syntax"] = true
 				checks["required_fields"] = len(errors) == 0
 			}
 		}
 	}
-	
+
 	// Check for source files based on detected language
 	sourceChecks := map[string]bool{
-		"go": false,
-		"python": false,
-		"java": false,
+		"go":         false,
+		"python":     false,
+		"java":       false,
 		"javascript": false,
-		"rust": false,
+		"rust":       false,
 	}
-	
+
 	// Check for Go files
 	if goFiles, _ := filepath.Glob(filepath.Join(pluginPath, "*.go")); len(goFiles) > 0 {
 		sourceChecks["go"] = true
@@ -5005,7 +5208,7 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 	if _, err := os.Stat(mainGo); err == nil {
 		checks["go_main"] = true
 	}
-	
+
 	// Check for Python files
 	if pyFiles, _ := filepath.Glob(filepath.Join(pluginPath, "*.py")); len(pyFiles) > 0 {
 		sourceChecks["python"] = true
@@ -5019,7 +5222,7 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 			checks["python_main"] = true
 		}
 	}
-	
+
 	// Check for Java files
 	if javaFiles, _ := filepath.Glob(filepath.Join(pluginPath, "**", "*.java")); len(javaFiles) > 0 {
 		sourceChecks["java"] = true
@@ -5032,7 +5235,7 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 	if _, err := os.Stat(buildGradle); err == nil {
 		checks["java_gradle"] = true
 	}
-	
+
 	// Check for JavaScript files
 	if jsFiles, _ := filepath.Glob(filepath.Join(pluginPath, "*.js")); len(jsFiles) > 0 {
 		sourceChecks["javascript"] = true
@@ -5041,7 +5244,7 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 	if _, err := os.Stat(packageJson); err == nil {
 		checks["javascript_package"] = true
 	}
-	
+
 	// Check for Rust files
 	if rsFiles, _ := filepath.Glob(filepath.Join(pluginPath, "**", "*.rs")); len(rsFiles) > 0 {
 		sourceChecks["rust"] = true
@@ -5050,7 +5253,7 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 	if _, err := os.Stat(cargoToml); err == nil {
 		checks["rust_cargo"] = true
 	}
-	
+
 	// Determine primary language
 	detectedLanguages := []string{}
 	for lang, hasFiles := range sourceChecks {
@@ -5058,15 +5261,15 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 			detectedLanguages = append(detectedLanguages, lang)
 		}
 	}
-	
+
 	if len(detectedLanguages) == 0 {
 		warnings = append(warnings, "No source files detected")
 	} else if len(detectedLanguages) > 1 {
 		warnings = append(warnings, fmt.Sprintf("Multiple languages detected: %v", detectedLanguages))
 	}
-	
+
 	checks["detected_languages"] = detectedLanguages
-	
+
 	// Check for common directories
 	commonDirs := []string{"tests", "docs", "examples"}
 	for _, dir := range commonDirs {
@@ -5080,12 +5283,12 @@ func (s *Server) handleValidatePluginStructure(args map[string]interface{}) (int
 			}
 		}
 	}
-	
+
 	validation["errors"] = errors
 	validation["warnings"] = warnings
 	validation["checks"] = checks
 	validation["valid"] = len(errors) == 0
-	
+
 	return validation, nil
 }
 
@@ -5094,22 +5297,22 @@ func (s *Server) handleGetPluginExamples(args map[string]interface{}) (interface
 	if category == "" {
 		category = "all"
 	}
-	
+
 	language, _ := args["language"].(string)
-	
+
 	examples := map[string]interface{}{
 		"category": category,
 		"language": language,
 		"examples": []map[string]interface{}{},
 	}
-	
+
 	allExamples := []map[string]interface{}{
 		{
-			"title": "Basic Service Plugin",
+			"title":       "Basic Service Plugin",
 			"description": "Simple long-running service plugin that provides background functionality",
-			"category": "service",
-			"language": "go",
-			"file": "docs/plugin-development/languages/go/examples/basic-service.go",
+			"category":    "service",
+			"language":    "go",
+			"file":        "docs/plugin-development/languages/go/examples/basic-service.go",
 			"snippet": `package main
 
 import (
@@ -5135,11 +5338,11 @@ func (s *Service) Start() error {
 }`,
 		},
 		{
-			"title": "MCP Tool Implementation",
+			"title":       "MCP Tool Implementation",
 			"description": "Plugin that exposes tools to AI agents through MCP",
-			"category": "mcp-tools",
-			"language": "go",
-			"file": "docs/plugin-development/mcp-integration/examples/code-generator.go",
+			"category":    "mcp-tools",
+			"language":    "go",
+			"file":        "docs/plugin-development/mcp-integration/examples/code-generator.go",
 			"snippet": `func (h *PluginHandler) CallTool(ctx context.Context, req *pb.CallToolRequest) (*pb.CallToolResponse, error) {
     switch req.ToolName {
     case "generate_dockerfile":
@@ -5152,11 +5355,11 @@ func (s *Service) Start() error {
 }`,
 		},
 		{
-			"title": "Python Async Plugin",
+			"title":       "Python Async Plugin",
 			"description": "Python plugin using async/await for concurrent operations",
-			"category": "service",
-			"language": "python",
-			"file": "docs/plugin-development/languages/python/examples/async-service.py",
+			"category":    "service",
+			"language":    "python",
+			"file":        "docs/plugin-development/languages/python/examples/async-service.py",
 			"snippet": `async def process_files_concurrently(self, file_paths: List[str]) -> List[str]:
     semaphore = asyncio.Semaphore(5)  # Limit concurrency
     
@@ -5168,11 +5371,11 @@ func (s *Service) Start() error {
     return await asyncio.gather(*tasks)`,
 		},
 		{
-			"title": "Plugin Testing Suite",
+			"title":       "Plugin Testing Suite",
 			"description": "Comprehensive testing patterns for plugin development",
-			"category": "testing",
-			"language": "go",
-			"file": "docs/plugin-development/testing/examples/comprehensive-tests.go",
+			"category":    "testing",
+			"language":    "go",
+			"file":        "docs/plugin-development/testing/examples/comprehensive-tests.go",
 			"snippet": `func TestPluginIntegration(t *testing.T) {
     plugin := setupTestPlugin(t)
     defer plugin.Cleanup()
@@ -5195,11 +5398,11 @@ func (s *Service) Start() error {
 }`,
 		},
 		{
-			"title": "Secure Configuration",
+			"title":       "Secure Configuration",
 			"description": "Best practices for handling sensitive configuration data",
-			"category": "security",
-			"language": "go",
-			"file": "docs/plugin-development/security/examples/secure-config.go",
+			"category":    "security",
+			"language":    "go",
+			"file":        "docs/plugin-development/security/examples/secure-config.go",
 			"snippet": `type SecureConfig struct {
     APIKey     string ` + "`" + `yaml:"api_key" secret:"true"` + "`" + `
     Database   DatabaseConfig ` + "`" + `yaml:"database"` + "`" + `
@@ -5217,11 +5420,11 @@ func (c *SecureConfig) Validate() error {
 }`,
 		},
 		{
-			"title": "Docker Deployment",
+			"title":       "Docker Deployment",
 			"description": "Containerized plugin deployment with health checks",
-			"category": "deployment",
-			"language": "docker",
-			"file": "docs/plugin-development/deployment/examples/Dockerfile",
+			"category":    "deployment",
+			"language":    "docker",
+			"file":        "docs/plugin-development/deployment/examples/Dockerfile",
 			"snippet": `FROM golang:1.19-alpine AS builder
 WORKDIR /app
 COPY go.mod go.sum ./
@@ -5239,27 +5442,27 @@ HEALTHCHECK --interval=30s --timeout=10s \
 CMD ["./plugin"]`,
 		},
 	}
-	
+
 	filteredExamples := []map[string]interface{}{}
-	
+
 	for _, example := range allExamples {
 		includeExample := true
-		
+
 		// Filter by category
 		if category != "all" && category != example["category"].(string) {
 			includeExample = false
 		}
-		
+
 		// Filter by language
 		if language != "" && language != example["language"].(string) {
 			includeExample = false
 		}
-		
+
 		if includeExample {
 			filteredExamples = append(filteredExamples, example)
 		}
 	}
-	
+
 	examples["examples"] = filteredExamples
 	examples["total_count"] = len(filteredExamples)
 
@@ -5451,5 +5654,341 @@ func (s *Server) handlePftConfigSmtp(args map[string]interface{}) (interface{}, 
 		"status":  "success",
 		"message": "SMTP configuration updated",
 		"output":  output,
+	}, nil
+}
+
+// =============================================================================
+// PTX-TRACE Handlers (Issue #141)
+// =============================================================================
+
+// executePtxTrace executes a ptx-trace command and returns the output
+func (s *Server) executePtxTrace(args ...string) (string, error) {
+	// Get the directory containing the current executable (ptx-mcp helper)
+	execPath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("failed to get executable path: %w", err)
+	}
+	execDir := filepath.Dir(execPath)
+
+	// Find portunix binary in the same directory
+	binaryPath := filepath.Join(execDir, "portunix")
+	if runtime.GOOS == "windows" {
+		binaryPath += ".exe"
+	}
+
+	// Check if portunix exists
+	if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
+		return "", fmt.Errorf("portunix binary not found at %s", binaryPath)
+	}
+
+	// Build command with "trace" subcommand
+	cmdArgs := append([]string{"trace"}, args...)
+	cmd := exec.Command(binaryPath, cmdArgs...)
+
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return string(output), fmt.Errorf("ptx-trace command failed: %w\nOutput: %s", err, string(output))
+	}
+
+	return string(output), nil
+}
+
+// handleTraceStartSession starts a new tracing session
+func (s *Server) handleTraceStartSession(args map[string]interface{}) (interface{}, error) {
+	// Get name (required)
+	name, ok := args["name"].(string)
+	if !ok || name == "" {
+		return nil, fmt.Errorf("session name is required")
+	}
+
+	cmdArgs := []string{"start", name}
+
+	// Get source_type (optional)
+	if sourceType, ok := args["source_type"].(string); ok && sourceType != "" {
+		cmdArgs = append(cmdArgs, "--source-type", sourceType)
+	}
+
+	// Get source_files (optional)
+	if sourceFiles, ok := args["source_files"].([]interface{}); ok && len(sourceFiles) > 0 {
+		for _, f := range sourceFiles {
+			if file, ok := f.(string); ok {
+				cmdArgs = append(cmdArgs, "--source-file", file)
+			}
+		}
+	}
+
+	// Get dest_type (optional)
+	if destType, ok := args["dest_type"].(string); ok && destType != "" {
+		cmdArgs = append(cmdArgs, "--dest-type", destType)
+	}
+
+	// Get dest_url (optional)
+	if destURL, ok := args["dest_url"].(string); ok && destURL != "" {
+		cmdArgs = append(cmdArgs, "--dest-url", destURL)
+	}
+
+	// Get dest_table (optional)
+	if destTable, ok := args["dest_table"].(string); ok && destTable != "" {
+		cmdArgs = append(cmdArgs, "--dest-table", destTable)
+	}
+
+	// Get pii_masking (optional)
+	if piiMasking, ok := args["pii_masking"].(bool); ok && piiMasking {
+		cmdArgs = append(cmdArgs, "--pii-masking")
+	}
+
+	// Get sampling_rate (optional)
+	if samplingRate, ok := args["sampling_rate"].(float64); ok {
+		cmdArgs = append(cmdArgs, "--sampling-rate", fmt.Sprintf("%.2f", samplingRate))
+	}
+
+	// Get tags (optional)
+	if tags, ok := args["tags"].([]interface{}); ok && len(tags) > 0 {
+		for _, t := range tags {
+			if tag, ok := t.(string); ok {
+				cmdArgs = append(cmdArgs, "--tag", tag)
+			}
+		}
+	}
+
+	output, err := s.executePtxTrace(cmdArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"status":  "success",
+		"message": fmt.Sprintf("Tracing session '%s' started", name),
+		"output":  output,
+	}, nil
+}
+
+// handleTraceEndSession ends a tracing session
+func (s *Server) handleTraceEndSession(args map[string]interface{}) (interface{}, error) {
+	cmdArgs := []string{"end"}
+
+	// Get session_id (optional - uses active session if not provided)
+	if sessionID, ok := args["session_id"].(string); ok && sessionID != "" {
+		cmdArgs = append(cmdArgs, "--session", sessionID)
+	}
+
+	// Get status (optional)
+	if status, ok := args["status"].(string); ok && status != "" {
+		cmdArgs = append(cmdArgs, "--status", status)
+	}
+
+	output, err := s.executePtxTrace(cmdArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"status":  "success",
+		"message": "Tracing session ended",
+		"output":  output,
+	}, nil
+}
+
+// handleTraceListSessions lists all tracing sessions
+func (s *Server) handleTraceListSessions(args map[string]interface{}) (interface{}, error) {
+	cmdArgs := []string{"sessions"}
+
+	// Get status (optional)
+	if status, ok := args["status"].(string); ok && status != "" {
+		cmdArgs = append(cmdArgs, "--status", status)
+	}
+
+	// Get limit (optional)
+	if limit, ok := args["limit"].(float64); ok {
+		cmdArgs = append(cmdArgs, "--limit", fmt.Sprintf("%d", int(limit)))
+	}
+
+	// Get json output for better parsing
+	cmdArgs = append(cmdArgs, "--format", "json")
+
+	output, err := s.executePtxTrace(cmdArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"status":   "success",
+		"sessions": output,
+	}, nil
+}
+
+// handleTraceViewEvents views events from a session
+func (s *Server) handleTraceViewEvents(args map[string]interface{}) (interface{}, error) {
+	// Get session_id (optional - uses active/most recent if not provided)
+	sessionID, _ := args["session_id"].(string)
+
+	cmdArgs := []string{"view"}
+	if sessionID != "" {
+		cmdArgs = append(cmdArgs, sessionID)
+	}
+
+	// Get level (optional)
+	if level, ok := args["level"].(string); ok && level != "" {
+		cmdArgs = append(cmdArgs, "--level", level)
+	}
+
+	// Get operation (optional)
+	if operation, ok := args["operation"].(string); ok && operation != "" {
+		cmdArgs = append(cmdArgs, "--operation", operation)
+	}
+
+	// Get status (optional)
+	if status, ok := args["status"].(string); ok && status != "" {
+		cmdArgs = append(cmdArgs, "--status", status)
+	}
+
+	// Get tag (optional)
+	if tag, ok := args["tag"].(string); ok && tag != "" {
+		cmdArgs = append(cmdArgs, "--tag", tag)
+	}
+
+	// Get limit (optional)
+	if limit, ok := args["limit"].(float64); ok {
+		cmdArgs = append(cmdArgs, "--limit", fmt.Sprintf("%d", int(limit)))
+	}
+
+	// Get json output for better parsing
+	cmdArgs = append(cmdArgs, "--format", "json")
+
+	output, err := s.executePtxTrace(cmdArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"status": "success",
+		"events": output,
+	}, nil
+}
+
+// handleTraceGetStatistics gets statistics for a session
+func (s *Server) handleTraceGetStatistics(args map[string]interface{}) (interface{}, error) {
+	// Get session_id (optional - uses active/most recent if not provided)
+	sessionID, _ := args["session_id"].(string)
+
+	cmdArgs := []string{"stats"}
+	if sessionID != "" {
+		cmdArgs = append(cmdArgs, sessionID)
+	}
+	cmdArgs = append(cmdArgs, "--format", "json")
+
+	output, err := s.executePtxTrace(cmdArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"status":     "success",
+		"statistics": output,
+	}, nil
+}
+
+// handleTraceShowErrors shows errors from a session
+func (s *Server) handleTraceShowErrors(args map[string]interface{}) (interface{}, error) {
+	// Get session_id (optional - uses most recent if not provided)
+	sessionID, _ := args["session_id"].(string)
+
+	cmdArgs := []string{"errors"}
+	if sessionID != "" {
+		cmdArgs = append(cmdArgs, sessionID)
+	}
+
+	// Get limit (optional)
+	if limit, ok := args["limit"].(float64); ok {
+		cmdArgs = append(cmdArgs, "--limit", fmt.Sprintf("%d", int(limit)))
+	}
+
+	// Get with_context (optional)
+	if withContext, ok := args["with_context"].(bool); ok && withContext {
+		cmdArgs = append(cmdArgs, "--with-context")
+	}
+
+	// Get json output
+	cmdArgs = append(cmdArgs, "--format", "json")
+
+	output, err := s.executePtxTrace(cmdArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"status": "success",
+		"errors": output,
+	}, nil
+}
+
+// handleTraceExportAI exports session data in AI-friendly format
+func (s *Server) handleTraceExportAI(args map[string]interface{}) (interface{}, error) {
+	// Get session_id (optional - uses most recent if not provided)
+	sessionID, _ := args["session_id"].(string)
+
+	// Command: portunix trace export ai [session-id]
+	cmdArgs := []string{"export", "ai"}
+	if sessionID != "" {
+		cmdArgs = append(cmdArgs, sessionID)
+	}
+
+	// Get focus (optional: errors, slow, all)
+	if focus, ok := args["focus"].(string); ok && focus != "" {
+		cmdArgs = append(cmdArgs, "--focus", focus)
+	}
+
+	// Get include_samples (optional)
+	if includeSamples, ok := args["include_samples"].(bool); ok && includeSamples {
+		cmdArgs = append(cmdArgs, "--include-samples")
+	}
+
+	// Get max_tokens (optional)
+	if maxTokens, ok := args["max_tokens"].(float64); ok {
+		cmdArgs = append(cmdArgs, "--max-tokens", fmt.Sprintf("%d", int(maxTokens)))
+	}
+
+	output, err := s.executePtxTrace(cmdArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"status":    "success",
+		"ai_export": output,
+	}, nil
+}
+
+// handleTraceQuery executes a query on trace data
+func (s *Server) handleTraceQuery(args map[string]interface{}) (interface{}, error) {
+	// Get query (required)
+	query, ok := args["query"].(string)
+	if !ok || query == "" {
+		return nil, fmt.Errorf("query is required")
+	}
+
+	cmdArgs := []string{"query", query}
+
+	// Get session_id (optional - searches all sessions if not provided)
+	if sessionID, ok := args["session_id"].(string); ok && sessionID != "" {
+		cmdArgs = append(cmdArgs, "--session", sessionID)
+	}
+
+	// Get limit (optional)
+	if limit, ok := args["limit"].(float64); ok {
+		cmdArgs = append(cmdArgs, "--limit", fmt.Sprintf("%d", int(limit)))
+	}
+
+	// Get json output
+	cmdArgs = append(cmdArgs, "--format", "json")
+
+	output, err := s.executePtxTrace(cmdArgs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"status":  "success",
+		"results": output,
 	}, nil
 }

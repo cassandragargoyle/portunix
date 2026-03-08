@@ -28,7 +28,7 @@ func TestContainerGoIntegrationSuite(t *testing.T) {
 	if !isDockerAvailable() {
 		t.Skip("Docker not available - skipping integration tests")
 	}
-	
+
 	suite.Run(t, new(ContainerGoIntegrationTestSuite))
 }
 
@@ -125,7 +125,7 @@ func (suite *ContainerGoIntegrationTestSuite) TestDockerGoInstallationWorkflow()
 func (suite *ContainerGoIntegrationTestSuite) TestGoInstallationAlpine() {
 	// Test with Alpine Linux (apk package manager)
 	suite.testContainerName = fmt.Sprintf("portunix-go-alpine-test-%d", time.Now().Unix())
-	
+
 	// Compile Portunix binary
 	err := compilePortunixBinary()
 	suite.Require().NoError(err)
@@ -196,7 +196,7 @@ func cleanupContainer(containerName string) {
 // Test InstallSoftwareInContainer integration
 func (suite *ContainerGoIntegrationTestSuite) TestInstallSoftwareInContainer_Integration() {
 	suite.testContainerName = fmt.Sprintf("portunix-install-integration-test-%d", time.Now().Unix())
-	
+
 	// Compile Portunix binary
 	err := compilePortunixBinary()
 	suite.Require().NoError(err)

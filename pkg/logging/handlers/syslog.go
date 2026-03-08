@@ -1,3 +1,5 @@
+//go:build !windows
+
 package handlers
 
 import (
@@ -18,11 +20,11 @@ type SyslogHandler struct {
 
 // SyslogConfig holds configuration for syslog output
 type SyslogConfig struct {
-	Network  string            // Network type: "tcp", "udp", or "" for local
-	Address  string            // Address for remote syslog (host:port)
-	Priority syslog.Priority   // Syslog priority (facility + severity)
-	Tag      string            // Syslog tag (application name)
-	Facility syslog.Priority   // Syslog facility
+	Network  string          // Network type: "tcp", "udp", or "" for local
+	Address  string          // Address for remote syslog (host:port)
+	Priority syslog.Priority // Syslog priority (facility + severity)
+	Tag      string          // Syslog tag (application name)
+	Facility syslog.Priority // Syslog facility
 }
 
 // DefaultSyslogConfig returns default syslog configuration
@@ -101,6 +103,7 @@ func (h *SyslogHandler) parseLogEntry(entry string) (zerolog.Level, string) {
 
 	// Extract level
 	level := zerolog.InfoLevel
+	//nolint:gocritic // if-else chain is appropriate for strings.Contains pattern matching
 	if strings.Contains(entry, `"level":"trace"`) {
 		level = zerolog.TraceLevel
 	} else if strings.Contains(entry, `"level":"debug"`) {
