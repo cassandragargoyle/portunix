@@ -13,10 +13,10 @@ import (
 type EntryMeta struct {
 	Key       string    `json:"key"`
 	Category  Category  `json:"category"`
-	Source     string    `json:"source"`     // original URL or identifier
-	Filename  string    `json:"filename"`   // original filename
+	Source    string    `json:"source"`   // original URL or identifier
+	Filename  string    `json:"filename"` // original filename
 	Size      int64     `json:"size"`
-	Checksum  string    `json:"checksum"`   // SHA256 checksum
+	Checksum  string    `json:"checksum"` // SHA256 checksum
 	CreatedAt time.Time `json:"created_at"`
 	ExpiresAt time.Time `json:"expires_at"`
 }

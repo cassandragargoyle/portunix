@@ -196,5 +196,5 @@ func findUEFIFirmware() string {
 
 func joinArgs(args []string) string {
 	return fmt.Sprintf("%s", args[0]) + " \\\n  " +
-		fmt.Sprintf("%v", args[1:len(args)])[1:len(fmt.Sprintf("%v", args[1:len(args)]))-1]
+		fmt.Sprintf("%v", args[1:])[1:len(fmt.Sprintf("%v", args[1:]))-1]
 }
