@@ -18,7 +18,7 @@ if (Get-Command "portunix" -ErrorAction SilentlyContinue) {
 } elseif (Test-Path ".\portunix.exe") {
     $ptx = ".\portunix.exe"
 } else {
-    Write-Error "portunix binary not found in PATH or current directory. Install portunix first: https://github.com/cassandragargoyle/Portunix"
+    Write-Error "portunix binary not found in PATH or current directory. Install portunix first: https://github.com/cassandragargoyle/portunix"
     exit 1
 }
 

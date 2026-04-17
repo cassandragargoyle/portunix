@@ -22,7 +22,7 @@ ssh -T aur@aur.archlinux.org
 
 - Git tag must exist on GitHub
 - Release tarball must be downloadable
-- URL format: `https://github.com/cassandragargoyle/Portunix/archive/refs/tags/v1.7.5.tar.gz`
+- URL format: `https://github.com/cassandragargoyle/portunix/archive/refs/tags/v1.7.5.tar.gz`
 
 3. **Portunix Binary Built**
 
@@ -60,7 +60,7 @@ git push origin v1.7.5
 
 #### Option C: GitHub web interface
 
-1. Go to: <https://github.com/cassandragargoyle/Portunix/releases/new>
+1. Go to: <https://github.com/cassandragargoyle/portunix/releases/new>
 2. Create new tag: `v1.7.5`
 3. Add release title: "Release v1.7.5"
 4. Add release notes (or use dist/RELEASE_NOTES_v1.7.5.md)
@@ -204,7 +204,7 @@ git tag -a v1.7.5 -m "Release v1.7.5"
 git push origin v1.7.5
 
 # Verify tag exists
-curl -I -L https://github.com/cassandragargoyle/Portunix/archive/refs/tags/v1.7.5.tar.gz
+curl -I -L https://github.com/cassandragargoyle/portunix/archive/refs/tags/v1.7.5.tar.gz
 # Should return: HTTP/2 200
 ```
 
@@ -235,7 +235,7 @@ If it still fails:
 
 ```bash
 # Check if GitHub release exists
-curl -I -L https://github.com/cassandragargoyle/Portunix/archive/refs/tags/v1.7.5.tar.gz
+curl -I -L https://github.com/cassandragargoyle/portunix/archive/refs/tags/v1.7.5.tar.gz
 # Should return: HTTP/2 200
 
 # If tag doesn't exist, create it first (see above)

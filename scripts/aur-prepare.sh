@@ -129,7 +129,7 @@ success "Directory structure created"
 # Download source code from GitHub
 info "Downloading source code from GitHub..."
 VERSION_NUM="${VERSION#v}"
-GITHUB_URL="https://github.com/cassandragargoyle/Portunix/archive/refs/tags/${VERSION}.tar.gz"
+GITHUB_URL="https://github.com/cassandragargoyle/portunix/archive/refs/tags/${VERSION}.tar.gz"
 
 info "Checking if GitHub tag ${VERSION} exists..."
 # Check if tag exists on GitHub (follow redirects with -L)
@@ -153,7 +153,7 @@ if [ "$HTTP_STATUS" != "200" ]; then
     info "  # Then create GitHub release and upload dist/ files"
     echo ""
     info "Option 3: Create GitHub release (creates tag automatically)"
-    info "  1. Go to: https://github.com/cassandragargoyle/Portunix/releases/new"
+    info "  1. Go to: https://github.com/cassandragargoyle/portunix/releases/new"
     info "  2. Create new tag: ${VERSION}"
     info "  3. Add release notes"
     info "  4. Publish release"
@@ -220,13 +220,13 @@ pkgver=${VERSION_NUM}
 pkgrel=1
 pkgdesc='Portunix CLI – intelligent developer environment automation toolkit'
 arch=('x86_64')
-url='https://github.com/cassandragargoyle/Portunix'
+url='https://github.com/cassandragargoyle/portunix'
 license=('MIT')
 depends=()
 makedepends=('go' 'git')
 provides=('portunix')
 conflicts=('portunix-bin')
-source=(\"portunix-\${pkgver}.tar.gz::https://github.com/cassandragargoyle/Portunix/archive/refs/tags/v\${pkgver}.tar.gz\")
+source=(\"portunix-\${pkgver}.tar.gz::https://github.com/cassandragargoyle/portunix/archive/refs/tags/v\${pkgver}.tar.gz\")
 sha256sums=('SKIP')
 
 build() {
@@ -351,7 +351,7 @@ if [[ $TEST_BUILD_RESPONSE =~ ^[Yy]$ ]]; then
     else
         warning "Package build failed. Check the output above for errors."
         warning "Make sure GitHub tag v${VERSION_NUM} exists!"
-        info "Create release: https://github.com/cassandragargoyle/Portunix/releases/new"
+        info "Create release: https://github.com/cassandragargoyle/portunix/releases/new"
     fi
 fi
 

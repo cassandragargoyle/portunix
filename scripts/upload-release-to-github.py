@@ -278,7 +278,7 @@ def main() -> int:
     print_success(f"Release {version} uploaded to GitHub!")
     print()
     print_info("View release at:")
-    print(f"   https://github.com/cassandragargoyle/Portunix/releases/tag/{version}")
+    print(f"   https://github.com/cassandragargoyle/portunix/releases/tag/{version}")
 
     return 0
 

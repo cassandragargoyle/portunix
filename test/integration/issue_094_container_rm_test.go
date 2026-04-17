@@ -12,7 +12,7 @@ import (
 
 // TestIssue094_ContainerRmSubcommand tests container rm subcommand functionality
 // Issue: Container 'rm' Subcommand Not Recognized
-// https://github.com/cassandragargoyle/Portunix/issues/094
+// https://github.com/cassandragargoyle/portunix/issues/094
 func TestIssue094_ContainerRmSubcommand(t *testing.T) {
 	tf := testframework.NewTestFramework("Issue094_Container_RM_Subcommand")
 	tf.Start(t, "Test container rm subcommand implementation and recognition")

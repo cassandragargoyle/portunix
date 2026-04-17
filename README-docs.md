@@ -138,7 +138,7 @@ portunix install hugo --variant extended
 ### Git remote missing
 
 ```bash
-git remote add origin https://github.com/cassandragargoyle/Portunix.git
+git remote add origin https://github.com/cassandragargoyle/portunix.git
 ```
 
 ### Documentation not built
@@ -174,6 +174,6 @@ scripts\docs-serve.cmd
 ## 📡 GitHub Pages URL
 
 After successful publishing, the documentation is available at:
-**<https://cassandragargoyle.github.io/Portunix/>**
+**<https://cassandragargoyle.github.io/portunix/>**
 
 GitHub Pages may take 2–3 minutes to update.

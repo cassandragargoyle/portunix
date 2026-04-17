@@ -445,7 +445,7 @@ def init_hugo_site(version: str) -> bool:
     # Create Hugo configuration for Hugo Book
     if theme_installed:
         # Hugo Book configuration
-        hugo_config = f'''baseURL = 'https://cassandragargoyle.github.io/Portunix/'
+        hugo_config = f'''baseURL = 'https://cassandragargoyle.github.io/portunix/'
 languageCode = 'en-us'
 title = 'Portunix Documentation'
 theme = 'hugo-book'
@@ -458,7 +458,7 @@ theme = 'hugo-book'
 
   # (Optional) Set source repository location.
   # Used for 'Edit this page' links
-  BookRepo = 'https://github.com/cassandragargoyle/Portunix'
+  BookRepo = 'https://github.com/cassandragargoyle/portunix'
 
   # (Optional) Specify branch for repository above
   BookRepoBranch = 'main'
@@ -512,16 +512,16 @@ theme = 'hugo-book'
 # [[menu.before]]
 [[menu.after]]
   name = "GitHub"
-  url = "https://github.com/cassandragargoyle/Portunix"
+  url = "https://github.com/cassandragargoyle/portunix"
   weight = 10
 [[menu.after]]
   name = "Releases"
-  url = "https://github.com/cassandragargoyle/Portunix/releases"
+  url = "https://github.com/cassandragargoyle/portunix/releases"
   weight = 20
 '''
     else:
         # Fallback to custom theme configuration
-        hugo_config = f'''baseURL = 'https://cassandragargoyle.github.io/Portunix/'
+        hugo_config = f'''baseURL = 'https://cassandragargoyle.github.io/portunix/'
 languageCode = 'en-us'
 title = 'Portunix Documentation'
 theme = 'portunix-docs'
@@ -529,7 +529,7 @@ theme = 'portunix-docs'
 [params]
   description = 'Unified AI plugin and task platform for development environments'
   version = '{version}'
-  github_repo = 'https://github.com/cassandragargoyle/Portunix'
+  github_repo = 'https://github.com/cassandragargoyle/portunix'
 
 [menu]
   [[menu.main]]
@@ -546,7 +546,7 @@ theme = 'portunix-docs'
     weight = 3
   [[menu.main]]
     name = 'GitHub'
-    url = 'https://github.com/cassandragargoyle/Portunix'
+    url = 'https://github.com/cassandragargoyle/portunix'
     weight = 4
 '''
         # If Hugo Book failed, create basic theme
@@ -645,8 +645,8 @@ Comprehensive guides are being prepared and will be available in future releases
 
 For now, please refer to:
 - [Commands Documentation]({{< relref "/docs/commands" >}})
-- [GitHub Repository](https://github.com/cassandragargoyle/Portunix)
-- [GitHub Discussions](https://github.com/cassandragargoyle/Portunix/discussions)
+- [GitHub Repository](https://github.com/cassandragargoyle/portunix)
+- [GitHub Discussions](https://github.com/cassandragargoyle/portunix/discussions)
 '''
         else:
             # Custom theme format
@@ -666,8 +666,8 @@ Comprehensive guides are being prepared and will be available in future releases
 
 For now, please refer to:
 - [Commands Documentation](../commands/)
-- [GitHub Repository](https://github.com/cassandragargoyle/Portunix)
-- [GitHub Discussions](https://github.com/cassandragargoyle/Portunix/discussions)
+- [GitHub Repository](https://github.com/cassandragargoyle/portunix)
+- [GitHub Discussions](https://github.com/cassandragargoyle/portunix/discussions)
 '''
         guides_index.write_text(guides_index_content, encoding='utf-8')
 
@@ -691,7 +691,7 @@ Latest updates and version history.
 Release notes are automatically generated during the release process.
 
 For the latest releases, please visit:
-- [GitHub Releases](https://github.com/cassandragargoyle/Portunix/releases)
+- [GitHub Releases](https://github.com/cassandragargoyle/portunix/releases)
 '''
         else:
             # Custom theme format
@@ -710,7 +710,7 @@ Latest updates and version history.
 Release notes are automatically generated during the release process.
 
 For the latest releases, please visit:
-- [GitHub Releases](https://github.com/cassandragargoyle/Portunix/releases)
+- [GitHub Releases](https://github.com/cassandragargoyle/portunix/releases)
 '''
         releases_index.write_text(releases_index_content, encoding='utf-8')
 
@@ -741,7 +741,7 @@ Portunix is a unified AI plugin and task platform for development environments. 
 
 ```bash
 # Install Portunix
-curl -sf https://raw.githubusercontent.com/cassandragargoyle/Portunix/main/scripts/install.sh | bash
+curl -sf https://raw.githubusercontent.com/cassandragargoyle/portunix/main/scripts/install.sh | bash
 
 # Install development environment
 portunix install default
@@ -773,9 +773,9 @@ Latest updates and version history.
 
 ## Links
 
-- [GitHub Repository](https://github.com/cassandragargoyle/Portunix)
-- [Issues & Bug Reports](https://github.com/cassandragargoyle/Portunix/issues)
-- [Discussions](https://github.com/cassandragargoyle/Portunix/discussions)
+- [GitHub Repository](https://github.com/cassandragargoyle/portunix)
+- [Issues & Bug Reports](https://github.com/cassandragargoyle/portunix/issues)
+- [Discussions](https://github.com/cassandragargoyle/portunix/discussions)
 '''
         else:
             # Custom theme format
@@ -795,7 +795,7 @@ Portunix is a unified AI plugin and task platform for development environments. 
 
 ```bash
 # Install Portunix
-curl -sf https://raw.githubusercontent.com/cassandragargoyle/Portunix/main/scripts/install.sh | bash
+curl -sf https://raw.githubusercontent.com/cassandragargoyle/portunix/main/scripts/install.sh | bash
 
 # Install development environment
 portunix install default
@@ -827,9 +827,9 @@ Latest updates and version history.
 
 ## Links
 
-- [GitHub Repository](https://github.com/cassandragargoyle/Portunix)
-- [Issues & Bug Reports](https://github.com/cassandragargoyle/Portunix/issues)
-- [Discussions](https://github.com/cassandragargoyle/Portunix/discussions)
+- [GitHub Repository](https://github.com/cassandragargoyle/portunix)
+- [Issues & Bug Reports](https://github.com/cassandragargoyle/portunix/issues)
+- [Discussions](https://github.com/cassandragargoyle/portunix/discussions)
 '''
         main_index.write_text(main_index_content, encoding='utf-8')
 
@@ -1232,7 +1232,7 @@ Latest updates and version history.
 
 Released: {datetime.now().strftime("%Y-%m-%d")}
 
-For detailed release notes, please visit the [GitHub Releases](https://github.com/cassandragargoyle/Portunix/releases) page.
+For detailed release notes, please visit the [GitHub Releases](https://github.com/cassandragargoyle/portunix/releases) page.
 
 ## Previous Releases'''
     else:
@@ -1254,11 +1254,11 @@ Current version: **{version}**
 
 Released: {datetime.now().strftime("%Y-%m-%d")}
 
-For detailed release notes, please visit the [GitHub Releases](https://github.com/cassandragargoyle/Portunix/releases) page.
+For detailed release notes, please visit the [GitHub Releases](https://github.com/cassandragargoyle/portunix/releases) page.
 
 ## Previous Releases
 
-Visit our [GitHub Releases](https://github.com/cassandragargoyle/Portunix/releases) page for the complete release history.
+Visit our [GitHub Releases](https://github.com/cassandragargoyle/portunix/releases) page for the complete release history.
 '''
 
     release_file.write_text(content, encoding='utf-8')

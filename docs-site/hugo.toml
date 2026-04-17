@@ -1,4 +1,4 @@
-baseURL = 'https://cassandragargoyle.github.io/Portunix/'
+baseURL = 'https://cassandragargoyle.github.io/portunix/'
 languageCode = 'en-us'
 title = 'Portunix Documentation'
 theme = 'hugo-book'
@@ -11,7 +11,7 @@ theme = 'hugo-book'
 
   # (Optional) Set source repository location.
   # Used for 'Edit this page' links
-  BookRepo = 'https://github.com/cassandragargoyle/Portunix'
+  BookRepo = 'https://github.com/cassandragargoyle/portunix'
 
   # (Optional) Specify branch for repository above
   BookRepoBranch = 'main'
@@ -65,9 +65,9 @@ theme = 'hugo-book'
 # [[menu.before]]
 [[menu.after]]
   name = "GitHub"
-  url = "https://github.com/cassandragargoyle/Portunix"
+  url = "https://github.com/cassandragargoyle/portunix"
   weight = 10
 [[menu.after]]
   name = "Releases"
-  url = "https://github.com/cassandragargoyle/Portunix/releases"
+  url = "https://github.com/cassandragargoyle/portunix/releases"
   weight = 20

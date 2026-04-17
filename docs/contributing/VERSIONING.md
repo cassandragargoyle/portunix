@@ -58,7 +58,7 @@ git describe --tags github/main --abbrev=0
 # Example output: v1.9.2
 ```
 
-Or check [GitHub Releases](https://github.com/cassandragargoyle/Portunix/releases).
+Or check [GitHub Releases](https://github.com/cassandragargoyle/portunix/releases).
 
 ### 2. Start Development
 

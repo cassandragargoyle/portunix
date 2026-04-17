@@ -1,9 +1,9 @@
 # Portunix
 
 [![Go Version](https://img.shields.io/badge/Go-1.21%2B-blue.svg)](https://golang.org)
-[![Coverage](https://img.shields.io/badge/Coverage-0%25-red.svg)](https://codecov.io/gh/cassandragargoyle/Portunix)
-[![Build Status](https://github.com/cassandragargoyle/Portunix/workflows/Test%20Suite/badge.svg)](https://github.com/cassandragargoyle/Portunix/actions)
-[![Go Report Card](https://goreportcard.com/badge/github.com/cassandragargoyle/Portunix)](https://goreportcard.com/report/github.com/cassandragargoyle/Portunix)
+[![Coverage](https://img.shields.io/badge/Coverage-0%25-red.svg)](https://codecov.io/gh/cassandragargoyle/portunix)
+[![Build Status](https://github.com/cassandragargoyle/portunix/workflows/Test%20Suite/badge.svg)](https://github.com/cassandragargoyle/portunix/actions)
+[![Go Report Card](https://goreportcard.com/badge/github.com/cassandragargoyle/portunix)](https://goreportcard.com/report/github.com/cassandragargoyle/portunix)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 > 🌐 **Jazyk / Language**: **Čeština** | [English](README.md)
@@ -25,7 +25,7 @@
 
 ```bash
 # Linux (amd64)
-wget https://github.com/cassandragargoyle/Portunix/releases/latest/download/portunix_linux_amd64.tar.gz
+wget https://github.com/cassandragargoyle/portunix/releases/latest/download/portunix_linux_amd64.tar.gz
 tar -xzf portunix_linux_amd64.tar.gz
 sudo mv portunix /usr/local/bin/
 
@@ -36,7 +36,7 @@ portunix version
 ### Ze zdrojových kódů
 
 ```bash
-git clone https://github.com/cassandragargoyle/Portunix.git
+git clone https://github.com/cassandragargoyle/portunix.git
 cd Portunix
 make build
 ```
@@ -342,7 +342,7 @@ export PORTUNIX_CACHE_DIR=/custom/cache/path
 
 ```bash
 # Klonování a nastavení
-git clone https://github.com/cassandragargoyle/Portunix.git
+git clone https://github.com/cassandragargoyle/portunix.git
 cd Portunix
 make dev-setup
 
@@ -403,8 +403,8 @@ MIT License - podrobnosti viz soubor [LICENSE](LICENSE).
 
 ## Odkazy
 
-- **GitHub**: [cassandragargoyle/Portunix](https://github.com/cassandragargoyle/Portunix)
-- **Issues**: [GitHub Issues](https://github.com/cassandragargoyle/Portunix/issues)
+- **GitHub**: [cassandragargoyle/portunix](https://github.com/cassandragargoyle/portunix)
+- **Issues**: [GitHub Issues](https://github.com/cassandragargoyle/portunix/issues)
 - **Dokumentace**: [docs/](docs/)
 
 ---

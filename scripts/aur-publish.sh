@@ -261,7 +261,7 @@ if "$PORTUNIX" container exec "$CONTAINER_NAME" su - builder -c "cd /tmp/aur-che
     success "Checksums updated"
 else
     error "Failed to update checksums!"
-    info "Please check if GitHub release exists: https://github.com/cassandragargoyle/Portunix/releases/tag/${VERSION}"
+    info "Please check if GitHub release exists: https://github.com/cassandragargoyle/portunix/releases/tag/${VERSION}"
     exit 1
 fi
 

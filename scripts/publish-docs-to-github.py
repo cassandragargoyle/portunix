@@ -143,7 +143,7 @@ def check_repository():
         if returncode != 0:
             print_error("No GitHub remote found")
             print_info("Add GitHub remote with:")
-            print_info("  git remote add origin https://github.com/cassandragargoyle/Portunix.git")
+            print_info("  git remote add origin https://github.com/cassandragargoyle/portunix.git")
             return False
         else:
             remote_name = 'github'
@@ -242,7 +242,7 @@ def create_gh_pages_branch():
         # Add remote
         returncode, stdout, stderr = run_command([
             'git', 'remote', 'add', 'origin',
-            'https://github.com/cassandragargoyle/Portunix.git'
+            'https://github.com/cassandragargoyle/portunix.git'
         ], cwd=temp_dir)
 
     print_success("gh-pages branch ready")
@@ -365,7 +365,7 @@ def get_pages_url():
             owner, name = repo_info.split('/')
             pages_url = f"https://{owner.lower()}.github.io/{name}/"
         else:
-            pages_url = "https://cassandragargoyle.github.io/Portunix/"
+            pages_url = "https://cassandragargoyle.github.io/portunix/"
 
     return pages_url
 

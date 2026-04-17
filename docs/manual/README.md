@@ -111,7 +111,7 @@ See the [Manual Creation Methodology](../contributing/MANUAL-CREATION-METHODOLOG
 
 ## Feedback and Support
 
-- **Documentation Issues**: Report via [GitHub Issues](https://github.com/cassandragargoyle/Portunix/issues)
+- **Documentation Issues**: Report via [GitHub Issues](https://github.com/cassandragargoyle/portunix/issues)
 - **Feature Requests**: Use the [issue tracking system](../issues/README.md)
 - **Community Support**: Join the discussion in project channels
 

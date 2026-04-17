@@ -14,7 +14,7 @@ Portunix is a unified AI plugin and task platform for development environments. 
 
 ```bash
 # Install Portunix
-curl -sf https://raw.githubusercontent.com/cassandragargoyle/Portunix/main/scripts/install.sh | bash
+curl -sf https://raw.githubusercontent.com/cassandragargoyle/portunix/main/scripts/install.sh | bash
 
 # Install development environment
 portunix install default
@@ -46,6 +46,6 @@ Latest updates and version history.
 
 ## Links
 
-- [GitHub Repository](https://github.com/cassandragargoyle/Portunix)
-- [Issues & Bug Reports](https://github.com/cassandragargoyle/Portunix/issues)
-- [Discussions](https://github.com/cassandragargoyle/Portunix/discussions)
+- [GitHub Repository](https://github.com/cassandragargoyle/portunix)
+- [Issues & Bug Reports](https://github.com/cassandragargoyle/portunix/issues)
+- [Discussions](https://github.com/cassandragargoyle/portunix/discussions)

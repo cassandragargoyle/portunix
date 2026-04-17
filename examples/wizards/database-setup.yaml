@@ -139,4 +139,4 @@ wizard:
         • View status: portunix db status {{db_type}}
         
         📚 For more information, see the documentation at:
-        https://github.com/cassandragargoyle/Portunix/docs/database-management
+        https://github.com/cassandragargoyle/portunix/docs/database-management

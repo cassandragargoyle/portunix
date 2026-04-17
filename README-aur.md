@@ -61,7 +61,7 @@ Before publishing to AUR, create a GitHub release:
 gh release create v1.7.4 --title "Release v1.7.4" --notes "Release notes here"
 
 # Or manually at:
-# https://github.com/cassandragargoyle/Portunix/releases/new
+# https://github.com/cassandragargoyle/portunix/releases/new
 ```
 
 **Important**: AUR package downloads source from GitHub tag, so the release must exist!
@@ -109,7 +109,7 @@ makepkg --printsrcinfo > .SRCINFO
 
 # Option 2: Manual
 # Download source, calculate sha256, update PKGBUILD
-wget https://github.com/cassandragargoyle/Portunix/archive/refs/tags/v1.7.4.tar.gz
+wget https://github.com/cassandragargoyle/portunix/archive/refs/tags/v1.7.4.tar.gz
 sha256sum v1.7.4.tar.gz
 # Update sha256sums=('...') in PKGBUILD
 makepkg --printsrcinfo > .SRCINFO
@@ -251,7 +251,7 @@ The AUR package uses MIT license (same as Portunix).
 
 - **Maintainer**: CassandraGargoyle <info@cassandragargoyle.cz>
 - **AUR Package**: <https://aur.archlinux.org/packages/portunix>
-- **Upstream**: <https://github.com/cassandragargoyle/Portunix>
+- **Upstream**: <https://github.com/cassandragargoyle/portunix>
 
 ## Additional Resources
 

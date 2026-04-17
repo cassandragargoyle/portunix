@@ -21,7 +21,7 @@ elif [[ -f "./portunix" ]]; then
     PTX="./portunix"
 else
     echo "ERROR: portunix binary not found in PATH or current directory"
-    echo "Install portunix first: https://github.com/cassandragargoyle/Portunix"
+    echo "Install portunix first: https://github.com/cassandragargoyle/portunix"
     exit 1
 fi
 

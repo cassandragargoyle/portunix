@@ -563,7 +563,7 @@ Choose the appropriate package for your platform:
 ### Linux
 ```bash
 # AMD64
-wget https://github.com/cassandragargoyle/Portunix/releases/download/{version}/portunix_{version_num}_linux_amd64.tar.gz
+wget https://github.com/cassandragargoyle/portunix/releases/download/{version}/portunix_{version_num}_linux_amd64.tar.gz
 tar -xzf portunix_{version_num}_linux_amd64.tar.gz
 cd portunix_{version_num}_linux_amd64
 ./install.sh
@@ -572,7 +572,7 @@ cd portunix_{version_num}_linux_amd64
 ### Windows
 ```powershell
 # Download and extract
-# https://github.com/cassandragargoyle/Portunix/releases/download/{version}/portunix_{version_num}_windows_amd64.zip
+# https://github.com/cassandragargoyle/portunix/releases/download/{version}/portunix_{version_num}_windows_amd64.zip
 # Then run:
 .\\install.ps1
 ```
@@ -580,7 +580,7 @@ cd portunix_{version_num}_linux_amd64
 ### macOS
 ```bash
 # Intel Macs
-wget https://github.com/cassandragargoyle/Portunix/releases/download/{version}/portunix_{version_num}_darwin_amd64.tar.gz
+wget https://github.com/cassandragargoyle/portunix/releases/download/{version}/portunix_{version_num}_darwin_amd64.tar.gz
 tar -xzf portunix_{version_num}_darwin_amd64.tar.gz
 cd portunix_{version_num}_darwin_amd64
 ./install.sh
@@ -593,7 +593,7 @@ binaries from Windows), download the separate platforms bundle:
 
 ```bash
 # Download platforms bundle (contains all platform binaries)
-wget https://github.com/cassandragargoyle/Portunix/releases/download/{version}/portunix-platforms_{version_num}.tar.gz
+wget https://github.com/cassandragargoyle/portunix/releases/download/{version}/portunix-platforms_{version_num}.tar.gz
 
 # Extract to Portunix installation directory
 tar -xzf portunix-platforms_{version_num}.tar.gz -C /usr/local/portunix/
@@ -617,8 +617,8 @@ portunix mcp configure
 
 ## 🔗 Links
 
-- **Repository**: https://github.com/cassandragargoyle/Portunix
-- **Issues**: https://github.com/cassandragargoyle/Portunix/issues
+- **Repository**: https://github.com/cassandragargoyle/portunix
+- **Issues**: https://github.com/cassandragargoyle/portunix/issues
 - **Documentation**: Repository docs/ directory
 
 ## 🔐 Verification

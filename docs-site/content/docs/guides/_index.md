@@ -14,5 +14,5 @@ Comprehensive guides are being prepared and will be available in future releases
 
 For now, please refer to:
 - [Commands Documentation]({{< relref "/docs/commands" >}})
-- [GitHub Repository](https://github.com/cassandragargoyle/Portunix)
-- [GitHub Discussions](https://github.com/cassandragargoyle/Portunix/discussions)
+- [GitHub Repository](https://github.com/cassandragargoyle/portunix)
+- [GitHub Discussions](https://github.com/cassandragargoyle/portunix/discussions)

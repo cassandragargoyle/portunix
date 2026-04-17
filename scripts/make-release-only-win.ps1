@@ -1,5 +1,5 @@
 # Windows-only Release Builder for Portunix
-# https://github.com/cassandragargoyle/Portunix/releases/new
+# https://github.com/cassandragargoyle/portunix/releases/new
 $ErrorActionPreference = 'Stop'
 
 # parse command line arguments

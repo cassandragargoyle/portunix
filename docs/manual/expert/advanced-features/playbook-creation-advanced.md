@@ -367,7 +367,7 @@ jobs:
 
       - name: Setup Portunix
         run: |
-          curl -L https://github.com/cassandragargoyle/Portunix/releases/latest/download/portunix_linux_amd64.tar.gz | tar xz
+          curl -L https://github.com/cassandragargoyle/portunix/releases/latest/download/portunix_linux_amd64.tar.gz | tar xz
           sudo mv portunix /usr/local/bin/
 
       - name: Validate playbook
@@ -407,7 +407,7 @@ variables:
   PORTUNIX_VERSION: "v1.7.2"
 
 before_script:
-  - curl -L https://github.com/cassandragargoyle/Portunix/releases/download/${PORTUNIX_VERSION}/portunix_linux_amd64.tar.gz | tar xz
+  - curl -L https://github.com/cassandragargoyle/portunix/releases/download/${PORTUNIX_VERSION}/portunix_linux_amd64.tar.gz | tar xz
   - sudo mv portunix /usr/local/bin/
 
 validate-playbook:

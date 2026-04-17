@@ -59,7 +59,7 @@ Založeno na `portunix-cleanup-public.ps1`:
 
 ```text
 origin  -> tvůj-gitea-server (development)
-github  -> github.com/cassandragargoyle/Portunix (publikace)
+github  -> github.com/cassandragargoyle/portunix (publikace)
 ```
 
 ## 💡 Tips
@@ -74,7 +74,7 @@ github  -> github.com/cassandragargoyle/Portunix (publikace)
 ### GitHub remote neexistuje
 
 ```bash
-git remote add github https://github.com/cassandragargoyle/Portunix.git
+git remote add github https://github.com/cassandragargoyle/portunix.git
 ```
 
 ### Konflikt při push

@@ -9,10 +9,10 @@
 
 .QUICK START
     # Option 1: Direct execution (recommended)
-    irm https://github.com/cassandragargoyle/Portunix/releases/latest/download/quickstart-docusaurus.ps1 | iex
+    irm https://github.com/cassandragargoyle/portunix/releases/latest/download/quickstart-docusaurus.ps1 | iex
 
     # Option 2: Download and run
-    Invoke-WebRequest -Uri "https://github.com/cassandragargoyle/Portunix/releases/latest/download/quickstart-docusaurus.ps1" -OutFile "quickstart-docusaurus.ps1"
+    Invoke-WebRequest -Uri "https://github.com/cassandragargoyle/portunix/releases/latest/download/quickstart-docusaurus.ps1" -OutFile "quickstart-docusaurus.ps1"
     .\quickstart-docusaurus.ps1
 
     # Option 3: With parameters (non-interactive)
@@ -263,14 +263,14 @@ function Install-Portunix {
         # Get latest version from GitHub API
         Write-Status "INFO" "Checking latest Portunix version..."
         [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-        $apiUrl = "https://api.github.com/repos/cassandragargoyle/Portunix/releases/latest"
+        $apiUrl = "https://api.github.com/repos/cassandragargoyle/portunix/releases/latest"
         $release = Invoke-RestMethod -Uri $apiUrl -UseBasicParsing
         $version = $release.tag_name  # e.g., "v1.10.0"
         $versionNum = $version.TrimStart('v')  # e.g., "1.10.0"
 
         # Construct direct download URL
         $fileName = "portunix_${versionNum}_windows_${arch}.zip"
-        $releaseUrl = "https://github.com/cassandragargoyle/Portunix/releases/download/${version}/${fileName}"
+        $releaseUrl = "https://github.com/cassandragargoyle/portunix/releases/download/${version}/${fileName}"
         Write-Status "INFO" "Downloading: $fileName"
 
         # Create temp directory
@@ -635,7 +635,7 @@ function Start-QuickStart {
     Write-Host "      portunix playbook run $playbookFile --list-scripts" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  Documentation:" -ForegroundColor Yellow
-    Write-Host "    Portunix: https://github.com/cassandragargoyle/Portunix" -ForegroundColor Gray
+    Write-Host "    Portunix: https://github.com/cassandragargoyle/portunix" -ForegroundColor Gray
     Write-Host "    Docusaurus: https://docusaurus.io/docs" -ForegroundColor Gray
     Write-Host ""
 
@@ -669,7 +669,7 @@ try {
         $_.Exception.Message,
         "",
         "If this persists, please report at:",
-        "https://github.com/cassandragargoyle/Portunix/issues"
+        "https://github.com/cassandragargoyle/portunix/issues"
     )
     exit 1
 }

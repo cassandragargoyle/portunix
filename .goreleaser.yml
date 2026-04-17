@@ -387,7 +387,7 @@ release:
 
     ### Windows (one-liner)
     ```powershell
-    irm https://github.com/cassandragargoyle/Portunix/releases/latest/download/install.ps1 | iex
+    irm https://github.com/cassandragargoyle/portunix/releases/latest/download/install.ps1 | iex
     ```
 
     ### Windows (manual)
@@ -419,7 +419,7 @@ release:
     Get started quickly with pre-configured environments:
     ```powershell
     # Docusaurus documentation site (Windows)
-    irm https://github.com/cassandragargoyle/Portunix/releases/latest/download/quickstart-docusaurus.ps1 | iex
+    irm https://github.com/cassandragargoyle/portunix/releases/latest/download/quickstart-docusaurus.ps1 | iex
     ```
 
     ## Self-Update
