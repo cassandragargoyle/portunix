@@ -1,3 +1,8 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
+ 
 package podman
 
 import (
@@ -2267,6 +2272,7 @@ type ContainerRunOptions struct {
 	Ports       []string
 	Volumes     []string
 	Environment []string
+	Network     string
 }
 
 // RunContainer runs a generic Podman container with specified options
@@ -2286,6 +2292,9 @@ func RunContainer(image string, command []string, options ContainerRunOptions) e
 	}
 	if options.Name != "" {
 		args = append(args, "--name", options.Name)
+	}
+	if options.Network != "" {
+		args = append(args, "--network", options.Network)
 	}
 
 	// Add port mappings

@@ -4,7 +4,8 @@ Template-based prompt generation for AI assistants.
 
 ## Overview
 
-The `ptx-prompting` helper provides functionality for loading prompt templates, detecting placeholders, and generating customized prompts for AI assistants like Claude, ChatGPT, etc.
+The `ptx-prompting` helper provides functionality for loading prompt templates, detecting placeholders, and generating customized prompts
+for AI assistants like Claude, ChatGPT, etc.
 
 ## Features
 
@@ -45,9 +46,11 @@ ptx-prompting create review-template.md --interactive
 ## Commands
 
 ### build
+
 Build a prompt from a template file.
 
 **Flags:**
+
 - `--copy` - Copy generated prompt to clipboard
 - `--output`, `-o` - Write output to file
 - `--var` - Set template variable (--var key=value)
@@ -57,18 +60,22 @@ Build a prompt from a template file.
 - `--verbose`, `-v` - Show verbose output
 
 ### list
+
 List available prompt templates.
 
 **Flags:**
+
 - `--lang` - Filter templates by language (en, cs, etc.)
 - `--path` - Search templates in custom path
 - `--detailed`, `-d` - Show detailed information
 - `--builtin` - Show only built-in templates
 
 ### create
+
 Create a new prompt template file.
 
 **Flags:**
+
 - `--lang` - Template language (default: en)
 - `--description` - Template description
 - `--interactive`, `-i` - Interactive template creation
@@ -98,7 +105,7 @@ Requirements:
 
 ## Architecture
 
-```
+```text
 ptx-prompting/
 ├── main.go                 # Entry point with helper integration
 ├── cmd/                    # Cobra CLI commands
@@ -118,6 +125,7 @@ ptx-prompting/
 ## Integration
 
 The helper integrates with the main Portunix dispatcher system:
+
 - Binary name: `ptx-prompting`
 - Commands handled: `prompt`
 - Helper discovery: Automatic via `HelperDiscovery` system

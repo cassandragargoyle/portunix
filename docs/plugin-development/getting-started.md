@@ -16,9 +16,11 @@ Portunix provides a built-in command to scaffold new plugins:
 
 ```bash
 portunix plugin create my-first-plugin
+
 ```
 
 This command will:
+
 1. Prompt you to choose a programming language
 2. Create a directory structure with template files
 3. Generate necessary configuration files
@@ -38,7 +40,7 @@ Select your preferred programming language and follow the specific guide:
 
 Every Portunix plugin follows this basic structure:
 
-```
+```text
 my-plugin/
 ├── plugin.yaml              # Plugin metadata and configuration
 ├── src/                     # Source code (language-specific structure)
@@ -47,12 +49,15 @@ my-plugin/
 ├── docs/                    # Plugin documentation
 ├── examples/                # Usage examples
 └── scripts/                 # Build and deployment scripts
+
 ```
 
 ### Key Files
 
 #### plugin.yaml
+
 The plugin manifest file that defines:
+
 - Plugin metadata (name, version, description)
 - gRPC service configuration
 - Dependencies and requirements
@@ -60,7 +65,9 @@ The plugin manifest file that defines:
 - MCP tool definitions (if applicable)
 
 #### src/
+
 Contains your plugin's source code. The structure depends on your chosen language:
+
 - Go: `main.go`, package structure
 - Python: `main.py`, package structure, `requirements.txt`
 - Java: Maven/Gradle project structure
@@ -70,68 +77,82 @@ Contains your plugin's source code. The structure depends on your chosen languag
 ## Plugin Development Workflow
 
 1. **Create Plugin Scaffold**
-   ```bash
-   portunix plugin create my-plugin
-   cd my-plugin
-   ```
+
+```bash
+portunix plugin create my-plugin
+cd my-plugin
+```
 
 2. **Implement Plugin Logic**
-   - Define your plugin's functionality in the source files
-   - Follow language-specific best practices
-   - Implement required gRPC interfaces
+
+- Define your plugin's functionality in the source files
+- Follow language-specific best practices
+- Implement required gRPC interfaces
 
 3. **Configure Plugin Manifest**
-   - Update `plugin.yaml` with correct metadata
-   - Define required permissions
-   - Configure MCP tools (if exposing to AI agents)
+
+- Update `plugin.yaml` with correct metadata
+- Define required permissions
+- Configure MCP tools (if exposing to AI agents)
 
 4. **Test Plugin Locally**
-   ```bash
-   portunix plugin install .
-   portunix plugin enable my-plugin
-   portunix plugin start my-plugin
-   ```
+
+```bash
+portunix plugin install .
+portunix plugin enable my-plugin
+portunix plugin start my-plugin
+```
 
 5. **Validate Plugin**
-   ```bash
-   portunix plugin validate my-plugin
-   portunix plugin health my-plugin
-   ```
+
+```bash
+portunix plugin validate my-plugin
+portunix plugin health my-plugin
+```
 
 6. **Package for Distribution**
-   ```bash
-   portunix plugin package my-plugin
-   ```
+
+```bash
+portunix plugin package my-plugin
+```
 
 ## Plugin Types and Examples
 
 ### Service Plugin Example
+
 A background service that monitors system resources:
 
 ```yaml
 # plugin.yaml
+
 name: system-monitor
 type: service
 version: 1.0.0
 description: Monitors system resources and alerts on thresholds
+
 ```
 
 ### Tool Plugin Example
+
 A code generator tool:
 
 ```yaml
 # plugin.yaml
+
 name: code-generator
 type: tool
 version: 1.0.0
 description: Generates boilerplate code for common patterns
+
 ```
 
 ### MCP Plugin Example
+
 A plugin that exposes tools to AI agents:
 
 ```yaml
 # plugin.yaml
+
 name: ai-helper
 type: mcp
 version: 1.0.0
@@ -140,13 +161,16 @@ mcp:
   tools:
     - name: generate_dockerfile
       description: Generate optimized Dockerfile for any project
+
 ```
 
 ## Common Plugin Patterns
 
 ### Configuration Management
+
 ```yaml
 # plugin.yaml
+
 configuration:
   required:
     - api_key
@@ -154,22 +178,28 @@ configuration:
   optional:
     - timeout: 30
     - retry_count: 3
+
 ```
 
 ### Dependency Declaration
+
 ```yaml
 # plugin.yaml
+
 dependencies:
   system:
     - docker
     - git
   plugins:
     - database-connector: ">=1.2.0"
+
 ```
 
 ### Permission Requirements
+
 ```yaml
 # plugin.yaml
+
 permissions:
   filesystem:
     - read: ["/tmp", "/var/log"]
@@ -178,6 +208,7 @@ permissions:
     - outbound: ["api.example.com:443"]
   system:
     - execute: ["docker", "git"]
+
 ```
 
 ## Next Steps
@@ -191,16 +222,19 @@ permissions:
 ## Troubleshooting
 
 ### Plugin Won't Start
+
 - Check plugin logs: `portunix plugin logs my-plugin`
 - Validate configuration: `portunix plugin validate my-plugin`
 - Check dependencies: `portunix plugin info my-plugin`
 
 ### Permission Errors
+
 - Review required permissions in `plugin.yaml`
 - Check Portunix security settings
 - Verify user permissions on the host system
 
 ### gRPC Connection Issues
+
 - Ensure plugin implements required interfaces
 - Check port conflicts with other plugins
 - Verify network connectivity

@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """
 Deploy locally built Portunix binaries to system installation directory.
 Automatically detects existing installation path and copies all binaries.

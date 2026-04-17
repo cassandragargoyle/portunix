@@ -11,9 +11,11 @@ Helper binary for managing integration with external Product Feedback Tools (Fid
 
 ## Standards Compliance
 
-This tool aims to be compliant with **ISO 16355** (Quality Function Deployment - QFD). ISO 16355 provides a framework for translating customer requirements into product specifications through systematic collection and analysis of customer feedback.
+This tool aims to be compliant with **ISO 16355** (Quality Function Deployment - QFD). ISO 16355 provides a framework for translating customer
+requirements into product specifications through systematic collection and analysis of customer feedback.
 
 Key QFD concepts supported:
+
 - **Voice of Customer (VoC)** - collecting and organizing customer feedback
 - **Requirements management** - linking feedback to product documentation
 - **Prioritization** - status and priority tracking for feedback items
@@ -34,6 +36,7 @@ Key QFD concepts supported:
 ```
 
 This will:
+
 1. Create demo directory with 3 sample use cases
 2. Configure ptx-pft automatically
 3. Deploy feedback tool container
@@ -63,7 +66,7 @@ This will:
 ## Commands
 
 | Command | Description |
-|---------|-------------|
+| ------- | ----------- |
 | `pft example` | Full demo: configure + deploy + sample data |
 | `pft configure` | Interactive configuration wizard |
 | `pft configure --show` | Show current configuration |
@@ -89,7 +92,7 @@ Configuration is stored in `.pft-config.json`:
 
 ## Architecture
 
-```
+```text
 ptx-pft/
 ├── main.go       # CLI entry point (Cobra)
 ├── config.go     # Configuration management
@@ -113,11 +116,12 @@ type FeedbackProvider interface {
     Delete(id string) error
     Close() error
 }
-```
+
+```text
 ## Feedback tools comparation
 
 | Aspect | Fider | ClearFlask |
-|--------|-----------------|------------------|
+| ------ | ----- | ---------- |
 | Backend | Go (simple) | Java + Tomcat |
 | Database | PostgreSQL | MySQL + DynamoDB + Elasticsearch |
 | RAM | ~200MB | ~2GB+ |

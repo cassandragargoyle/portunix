@@ -16,9 +16,11 @@ Portunix provides extensive support for AI assistants through the Model Context 
 ## Supported AI Assistants
 
 ### Claude Code (Primary Support)
+
 Claude Code is Anthropic's official CLI tool with first-class Portunix integration.
 
 **Key Features:**
+
 - Full MCP protocol support
 - Plugin development assistance
 - Code generation and analysis
@@ -29,6 +31,7 @@ Claude Code is Anthropic's official CLI tool with first-class Portunix integrati
 **Development Guide:** [Plugin Development with Claude Code](claude-code/plugin-development.md)
 
 ### Future AI Assistants
+
 Portunix's MCP server is designed to work with any AI assistant that supports the Model Context Protocol:
 
 - **GitHub Copilot**: Planned integration
@@ -40,12 +43,14 @@ Portunix's MCP server is designed to work with any AI assistant that supports th
 Portunix exposes its functionality through a comprehensive MCP server that provides:
 
 ### Core System Tools
+
 - `get_system_info` - System information and capabilities
 - `list_packages` - Available packages for installation
 - `install_package` - Package installation management
 - `detect_project_type` - Project analysis and detection
 
 ### Plugin Development Tools
+
 - `get_plugin_development_guide` - Language-specific development guides
 - `get_plugin_template` - Production-ready plugin templates
 - `get_plugin_build_instructions` - Build and deployment instructions
@@ -53,6 +58,7 @@ Portunix exposes its functionality through a comprehensive MCP server that provi
 - `get_plugin_examples` - Code examples and best practices
 
 ### Virtual Machine Management
+
 - `vm_list` - List available virtual machines
 - `vm_create` - Create new VMs with various OS configurations
 - `vm_start` / `vm_stop` - VM lifecycle management
@@ -60,6 +66,7 @@ Portunix exposes its functionality through a comprehensive MCP server that provi
 - `vm_info` - Detailed VM information
 
 ### Edge Infrastructure
+
 - `create_edge_infrastructure` - VPS deployment with reverse proxy
 - `configure_domain_proxy` - Domain and SSL configuration
 - `setup_secure_tunnel` - VPN tunneling for secure connections
@@ -69,6 +76,7 @@ Portunix exposes its functionality through a comprehensive MCP server that provi
 ## Configuration
 
 ### MCP Server Configuration
+
 ```yaml
 # portunix-config.yaml
 mcp:
@@ -99,6 +107,7 @@ mcp:
 ### AI Assistant Configuration
 
 #### Claude Code
+
 ```bash
 # Configure Claude Code to use Portunix MCP server
 claude-code config set mcp.servers.portunix.url "http://localhost:8000"
@@ -111,9 +120,11 @@ claude-code mcp test portunix
 ## Usage Patterns
 
 ### 1. Development Environment Setup
+
 **Human:** "Set up a development environment for a Python web application"
 
 **AI Assistant Response:**
+
 1. Analyzes system requirements
 2. Installs Python, pip, and development tools
 3. Creates virtual environment
@@ -121,9 +132,11 @@ claude-code mcp test portunix
 5. Configures development tools (linting, testing)
 
 ### 2. Plugin Development Workflow
+
 **Human:** "Create a plugin that analyzes code quality"
 
 **AI Assistant Response:**
+
 1. Provides language selection (Go, Python, Java, etc.)
 2. Generates plugin template with appropriate structure
 3. Implements code analysis functionality
@@ -131,9 +144,11 @@ claude-code mcp test portunix
 5. Generates documentation and examples
 
 ### 3. Infrastructure Deployment
+
 **Human:** "Deploy my application to a VPS with SSL and monitoring"
 
 **AI Assistant Response:**
+
 1. Creates edge infrastructure configuration
 2. Sets up reverse proxy with SSL certificates
 3. Configures monitoring and health checks
@@ -141,9 +156,11 @@ claude-code mcp test portunix
 5. Deploys application with zero-downtime strategy
 
 ### 4. Debugging and Optimization
+
 **Human:** "My plugin is using too much memory, help me optimize it"
 
 **AI Assistant Response:**
+
 1. Analyzes plugin code and configuration
 2. Identifies memory-intensive operations
 3. Suggests optimization strategies
@@ -153,6 +170,7 @@ claude-code mcp test portunix
 ## Best Practices
 
 ### For AI Assistants
+
 1. **Context Awareness**: Always check system capabilities before making suggestions
 2. **Incremental Development**: Break complex tasks into manageable steps
 3. **Validation**: Validate configurations and code before execution
@@ -160,6 +178,7 @@ claude-code mcp test portunix
 5. **Testing**: Include comprehensive tests with all implementations
 
 ### For Developers
+
 1. **Clear Communication**: Provide specific, detailed requirements to AI assistants
 2. **Review Generated Code**: Always review and understand AI-generated code
 3. **Iterative Refinement**: Work with AI assistants iteratively to improve solutions
@@ -169,6 +188,7 @@ claude-code mcp test portunix
 ## Security Considerations
 
 ### MCP Server Security
+
 - **Authentication**: Enable API key authentication for production
 - **Rate Limiting**: Implement rate limiting to prevent abuse
 - **CORS Configuration**: Restrict origins to trusted domains only
@@ -176,6 +196,7 @@ claude-code mcp test portunix
 - **Sandboxing**: Plugin execution is sandboxed for security
 
 ### AI Assistant Security
+
 - **Credential Management**: Never expose sensitive credentials to AI assistants
 - **Code Review**: Review all AI-generated code before deployment
 - **Access Control**: Limit AI assistant permissions to necessary operations only
@@ -187,6 +208,7 @@ claude-code mcp test portunix
 ### Common Issues
 
 #### MCP Connection Problems
+
 ```bash
 # Check MCP server status
 portunix mcp status
@@ -199,6 +221,7 @@ portunix mcp logs
 ```
 
 #### Plugin Development Issues
+
 ```bash
 # Validate plugin structure
 portunix plugin validate /path/to/plugin
@@ -211,6 +234,7 @@ portunix plugin logs plugin-name
 ```
 
 #### Performance Issues
+
 ```bash
 # Check system resources
 portunix system info
@@ -232,26 +256,34 @@ portunix plugin profile plugin-name
 ## Advanced Topics
 
 ### Custom MCP Tools
+
 Learn how to extend Portunix with custom MCP tools:
+
 - [Creating Custom MCP Tools](../plugin-development/mcp-integration/custom-tools.md)
 - [MCP Tool Best Practices](../plugin-development/mcp-integration/best-practices.md)
 
 ### AI Assistant Development
+
 Guidelines for developing AI assistants that integrate with Portunix:
+
 - [MCP Protocol Implementation](../plugin-development/mcp-integration/protocol.md)
 - [Testing AI Assistant Integration](../plugin-development/testing/ai-integration.md)
 
 ### Performance Optimization
+
 Optimize AI assistant interactions for better performance:
+
 - [MCP Server Performance Tuning](performance-tuning.md)
 - [Caching Strategies](caching-strategies.md)
 
 ## Examples
 
 ### Complete Development Workflow
+
 See [Development Workflow Example](examples/complete-workflow.md) for a full example of using AI assistants to develop, test, and deploy a Portunix plugin.
 
 ### Advanced Use Cases
+
 - [Multi-language Plugin Development](examples/multi-language-plugin.md)
 - [CI/CD Integration with AI Assistance](examples/cicd-integration.md)
 - [Infrastructure as Code with AI](examples/infrastructure-as-code.md)
@@ -259,10 +291,12 @@ See [Development Workflow Example](examples/complete-workflow.md) for a full exa
 ## Contributing
 
 Help improve AI assistant integration:
+
 - [Contributing Guide](../contributing/README.md)
 - [AI Assistant Integration Roadmap](roadmap.md)
 - [Community Guidelines](../contributing/community-guidelines.md)
 
 ---
 
-The AI assistant integration capabilities of Portunix enable a new paradigm of AI-assisted development that enhances productivity while maintaining quality and security standards.
+The AI assistant integration capabilities of Portunix enable a new paradigm of AI-assisted development
+that enhances productivity while maintaining quality and security standards.

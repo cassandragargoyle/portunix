@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package models
 
 import (
@@ -28,7 +32,7 @@ type TraceEvent struct {
 	Error    *ErrorInfo             `json:"error,omitempty"`
 	Recovery *RecoveryInfo          `json:"recovery,omitempty"`
 
-	Performance *PerformanceInfo `json:"performance,omitempty"`
+	Performance *PerformanceInfo  `json:"performance,omitempty"`
 	Metadata    map[string]string `json:"metadata,omitempty"`
 }
 

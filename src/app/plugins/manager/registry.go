@@ -1,3 +1,10 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
+
+// Package manager handles plugin lifecycle and registry persistence
+// Manifest field mapping aligned with plugin-manifest.schema.json v1.0.0 (api/contract)
 package manager
 
 import (
@@ -35,9 +42,12 @@ type RegistryPlugin struct {
 	InstallPath         string                      `json:"install_path"`
 	BinaryName          string                      `json:"binary_name"`
 	Mode                string                      `json:"mode"`            // service or helper
-	Runtime             string                      `json:"runtime"`         // native, java, python
-	RuntimeVersion      string                      `json:"runtime_version"` // e.g., ">=21" for Java
-	JVMArgs             []string                    `json:"jvm_args"`        // JVM arguments for Java plugins
+	Runtime             string                      `json:"runtime"`                    // native, java, python
+	RuntimeVersion      string                      `json:"runtime_version"`            // e.g., ">=21" for Java
+	JVMArgs             []string                    `json:"jvm_args"`                   // JVM arguments for Java plugins
+	Wheel               string                      `json:"wheel,omitempty"`              // Python wheel filename
+	ExtraWheels         []string                    `json:"extra_wheels,omitempty"`       // Additional wheel files
+	PythonMinVersion    string                      `json:"python_min_version,omitempty"` // Minimum Python version
 	Port                int                         `json:"port"`
 	Status              plugins.PluginStatus        `json:"status"`
 	InstallTime         time.Time                   `json:"install_time"`
@@ -47,7 +57,10 @@ type RegistryPlugin struct {
 	Capabilities        plugins.PluginCapabilities  `json:"capabilities"`
 	RequiredPermissions plugins.PluginPermissions   `json:"required_permissions"`
 	AIIntegration       plugins.AIIntegrationConfig `json:"ai_integration"`
+	PortunixMinVersion  string                      `json:"portunix_min_version,omitempty"`
+	OptionalTools       []plugins.OptionalTool      `json:"optional_tools,omitempty"`
 	Enabled             bool                        `json:"enabled"`
+	Interfaces          []string                    `json:"interfaces,omitempty"` // e.g. ["cli", "grpc"]
 }
 
 // NewRegistry creates a new plugin registry
@@ -126,6 +139,9 @@ func (r *Registry) RegisterPlugin(manifest *plugins.PluginManifest, installPath 
 		Runtime:             manifest.Plugin.Runtime,
 		RuntimeVersion:      manifest.Plugin.RuntimeVersion,
 		JVMArgs:             manifest.Plugin.JVMArgs,
+		Wheel:               manifest.Plugin.Wheel,
+		ExtraWheels:         manifest.Plugin.ExtraWheels,
+		PythonMinVersion:    manifest.Plugin.PythonMinVersion,
 		Port:                manifest.Plugin.Port,
 		Status:              initialStatus,
 		InstallTime:         time.Now(),
@@ -134,11 +150,86 @@ func (r *Registry) RegisterPlugin(manifest *plugins.PluginManifest, installPath 
 		Commands:            commands,
 		RequiredPermissions: manifest.Permissions,
 		AIIntegration:       manifest.AIIntegration,
+		PortunixMinVersion:  manifest.Dependencies.PortunixMinVersion,
+		OptionalTools:       manifest.Dependencies.OptionalTools,
 		Enabled:             false,
+		Interfaces:          manifest.Plugin.Interfaces,
 	}
 
 	// Add to registry
 	r.data.Plugins[manifest.Name] = registryPlugin
+	r.data.LastUpdate = time.Now()
+
+	return r.save()
+}
+
+// ReregisterPlugin updates an existing plugin entry in the registry
+func (r *Registry) ReregisterPlugin(manifest *plugins.PluginManifest, installPath string) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	existing, exists := r.data.Plugins[manifest.Name]
+	if !exists {
+		return fmt.Errorf("plugin %s not found in registry", manifest.Name)
+	}
+
+	// Preserve enabled state and install time from previous registration
+	wasEnabled := existing.Enabled
+	installTime := existing.InstallTime
+
+	// Convert manifest commands
+	var commands []plugins.PluginCommand
+	for _, cmd := range manifest.Commands {
+		commands = append(commands, plugins.PluginCommand{
+			Name:        cmd.Name,
+			Description: cmd.Description,
+			Subcommands: cmd.Subcommands,
+			Parameters:  cmd.Parameters,
+			Examples:    cmd.Examples,
+		})
+	}
+
+	mode := manifest.Plugin.Mode
+	if mode == "" {
+		if manifest.Plugin.Type == "helper" || manifest.Plugin.Type == "executable" {
+			mode = "helper"
+		} else {
+			mode = "service"
+		}
+	}
+	initialStatus := plugins.PluginStatusStopped
+	if mode == "helper" {
+		initialStatus = plugins.PluginStatusReady
+	}
+
+	r.data.Plugins[manifest.Name] = &RegistryPlugin{
+		Name:                manifest.Name,
+		Version:             manifest.Version,
+		Description:         manifest.Description,
+		Author:              manifest.Author,
+		License:             manifest.License,
+		InstallPath:         installPath,
+		BinaryName:          manifest.Plugin.Binary,
+		Mode:                mode,
+		Runtime:             manifest.Plugin.Runtime,
+		RuntimeVersion:      manifest.Plugin.RuntimeVersion,
+		JVMArgs:             manifest.Plugin.JVMArgs,
+		Wheel:               manifest.Plugin.Wheel,
+		ExtraWheels:         manifest.Plugin.ExtraWheels,
+		PythonMinVersion:    manifest.Plugin.PythonMinVersion,
+		Port:                manifest.Plugin.Port,
+		Status:              initialStatus,
+		InstallTime:         installTime,
+		LastSeen:            time.Now(),
+		SupportedOS:         manifest.Dependencies.OSSupport,
+		Commands:            commands,
+		RequiredPermissions: manifest.Permissions,
+		AIIntegration:       manifest.AIIntegration,
+		PortunixMinVersion:  manifest.Dependencies.PortunixMinVersion,
+		OptionalTools:       manifest.Dependencies.OptionalTools,
+		Enabled:             wasEnabled,
+		Interfaces:          manifest.Plugin.Interfaces,
+	}
 	r.data.LastUpdate = time.Now()
 
 	return r.save()
@@ -227,6 +318,7 @@ func (r *Registry) GetPlugin(name string) (plugins.PluginInfo, error) {
 		Author:              registryPlugin.Author,
 		License:             registryPlugin.License,
 		Mode:                registryPlugin.Mode,
+		Interfaces:          registryPlugin.Interfaces,
 		SupportedOS:         registryPlugin.SupportedOS,
 		Commands:            registryPlugin.Commands,
 		Capabilities:        registryPlugin.Capabilities,
@@ -250,6 +342,7 @@ func (r *Registry) ListPlugins() ([]plugins.PluginInfo, error) {
 			Author:              registryPlugin.Author,
 			License:             registryPlugin.License,
 			Mode:                registryPlugin.Mode,
+			Interfaces:          registryPlugin.Interfaces,
 			SupportedOS:         registryPlugin.SupportedOS,
 			Commands:            registryPlugin.Commands,
 			Capabilities:        registryPlugin.Capabilities,
@@ -281,6 +374,8 @@ func (r *Registry) ListEnabledPlugins() ([]plugins.PluginInfo, error) {
 				Commands:            registryPlugin.Commands,
 				Capabilities:        registryPlugin.Capabilities,
 				RequiredPermissions: registryPlugin.RequiredPermissions,
+				Mode:                registryPlugin.Mode,
+				Interfaces:          registryPlugin.Interfaces,
 				Status:              registryPlugin.Status,
 				LastSeen:            registryPlugin.LastSeen,
 			}
@@ -447,4 +542,12 @@ func (r *Registry) GetPluginRegistryData(name string) (*RegistryPlugin, error) {
 	}
 
 	return plugin, nil
+}
+
+// BinaryPath returns the full path to the plugin binary
+func (rp *RegistryPlugin) BinaryPath() string {
+	if rp.Runtime == "python" && rp.Wheel != "" {
+		return filepath.Join(rp.InstallPath, ".venv", venvBinDir(), rp.BinaryName)
+	}
+	return filepath.Join(rp.InstallPath, rp.BinaryName)
 }

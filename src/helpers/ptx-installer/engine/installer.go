@@ -145,6 +145,13 @@ type InstallOptions struct {
 	InstallPath string // Target path for packages that require it (e.g., docusaurus)
 	DryRun      bool
 	Force       bool
+	// Database connection overrides for container-type installs that read
+	// PostgreSQL-style env keys (HOST, PORT, USER, PASSWORD). Empty values
+	// leave the variant's JSON defaults untouched.
+	DBHost     string
+	DBPort     string
+	DBUser     string
+	DBPassword string
 }
 
 // Installer handles package installation operations

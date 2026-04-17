@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package models
 
 import (
@@ -53,10 +57,10 @@ type SessionDestination struct {
 
 // SessionStats contains session statistics
 type SessionStats struct {
-	TotalEvents int64            `json:"total_events"`
-	ByStatus    map[string]int64 `json:"by_status"`
+	TotalEvents int64                      `json:"total_events"`
+	ByStatus    map[string]int64           `json:"by_status"`
 	ByOperation map[string]*OperationStats `json:"by_operation,omitempty"`
-	ByLevel     map[string]int64 `json:"by_level,omitempty"`
+	ByLevel     map[string]int64           `json:"by_level,omitempty"`
 }
 
 // OperationStats contains per-operation statistics

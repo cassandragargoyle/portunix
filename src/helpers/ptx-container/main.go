@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package main
 
 import (
@@ -41,6 +45,11 @@ with automatic runtime selection and enhanced features for development.
 	},
 }
 
+// handleCommand dispatches commands routed to this helper by the parent portunix
+// binary (see src/dispatcher/dispatcher.go): "container", "docker", and "podman".
+// It strips the global --debug flag (used to log the underlying podman/docker
+// argv) from args before routing. args arrive without the binary name prefix,
+// so args[0] is the top-level command and the rest are subcommand + flags.
 func handleCommand(args []string) {
 	// Handle dispatched commands: container, docker, podman
 	if len(args) == 0 {
@@ -79,13 +88,16 @@ func handleCommand(args []string) {
 			fmt.Println("  cp               Copy files/folders between container and host")
 			fmt.Println("  exec             Execute command in container (universal runtime)")
 			fmt.Println("  info             Show container runtime information and availability")
+			fmt.Println("  inspect          Show low-level container details (universal runtime)")
 			fmt.Println("  list             List containers from all available runtimes")
 			fmt.Println("  logs             Show container logs (universal runtime)")
+			fmt.Println("  network          Manage container networks (create/list/inspect/rm)")
 			fmt.Println("  rm               Remove container (universal runtime)")
 			fmt.Println("  run              Run new container (universal runtime)")
 			fmt.Println("  run-in-container Run installation in container (RECOMMENDED for testing)")
 			fmt.Println("  start            Start stopped container (universal runtime)")
 			fmt.Println("  stop             Stop container (universal runtime)")
+			fmt.Println("  volume           Manage container volumes (create/list/inspect/rm/prune)")
 			fmt.Println("\nFlags:")
 			fmt.Println("  -h, --help   help for", command)
 			fmt.Println("\nGlobal Flags:")
@@ -138,9 +150,15 @@ func handleContainerSubcommand(command string, subArgs []string) {
 		handleContainerCompose(cmdArgs)
 	case "compose-preflight":
 		handleComposePreflight(cmdArgs)
+	case "network":
+		handleContainerNetwork(cmdArgs)
+	case "volume":
+		handleContainerVolume(cmdArgs)
+	case "inspect":
+		handleContainerInspect(cmdArgs)
 	default:
 		fmt.Printf("Unknown %s subcommand: %s\n", command, subcommand)
-		fmt.Printf("Available subcommands: run, run-in-container, exec, list, stop, start, rm, logs, cp, info, check, compose, compose-preflight\n")
+		fmt.Printf("Available subcommands: run, run-in-container, exec, list, stop, start, rm, logs, cp, info, check, compose, compose-preflight, network, volume, inspect\n")
 	}
 }
 
@@ -251,6 +269,7 @@ func showRunHelp() {
 	fmt.Println("  -i, --interactive: Keep STDIN open")
 	fmt.Println("  -t, --tty: Allocate pseudo-TTY")
 	fmt.Println("  --name: Assign a name to the container")
+	fmt.Println("  --network: Connect container to a network")
 	fmt.Println("  -p, --port: Publish container ports to host")
 	fmt.Println("  -v, --volume: Bind mount volumes")
 	fmt.Println("  -e, --env: Set environment variables")
@@ -1272,6 +1291,9 @@ func runPodmanContainer(image string, command []string) {
 
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("❌ Podman run failed: %v\n", err)
+		// Surface the failure to the parent process (dispatcher / ptx-installer)
+		// — otherwise callers see a 0 exit and treat a failed run as a success.
+		os.Exit(1)
 	}
 }
 
@@ -1304,6 +1326,8 @@ func runDockerContainer(image string, command []string) {
 
 	if err := cmd.Run(); err != nil {
 		fmt.Printf("❌ Docker run failed: %v\n", err)
+		// See runPodmanContainer — surface failure so the parent sees non-zero exit.
+		os.Exit(1)
 	}
 }
 
@@ -1359,6 +1383,495 @@ func execDockerCommand(containerName string, command []string) error {
 	cmd.Stderr = os.Stderr
 
 	return cmd.Run()
+}
+
+// selectRuntime returns "podman" if installed, otherwise "docker".
+// Unlike isPodmanAvailable, this uses binary presence (LookPath) only — it
+// does not call `podman info`, which can hang on misconfigured hosts. These
+// passthrough subcommands (network, volume, inspect) do not need a daemon
+// pre-check: the runtime surfaces any operational errors natively.
+func selectRuntime() (string, error) {
+	if isPodmanInstalled() {
+		return "podman", nil
+	}
+	if isDockerInstalled() {
+		return "docker", nil
+	}
+	return "", fmt.Errorf("neither Podman nor Docker is available")
+}
+
+// runPassthrough runs a runtime command with inherited stdio and returns its exit code.
+// Used for subcommands that should surface the runtime's native output and exit status
+// verbatim (list, inspect, volume prune, etc.).
+func runPassthrough(runtime string, args ...string) int {
+	if debugMode {
+		fmt.Fprintf(os.Stderr, "🔍 DEBUG %s args: %v\n", runtime, args)
+	}
+	cmd := exec.Command(runtime, args...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Run(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return exitErr.ExitCode()
+		}
+		fmt.Fprintf(os.Stderr, "❌ %s execution failed: %v\n", runtime, err)
+		return 1
+	}
+	return 0
+}
+
+// handleContainerInspect implements `container inspect <name> [-f '<tmpl>']`.
+// Args are forwarded to the underlying runtime so flag compatibility is preserved.
+func handleContainerInspect(args []string) {
+	for _, arg := range args {
+		if arg == "--help" || arg == "-h" {
+			showInspectHelp()
+			return
+		}
+	}
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "❌ Error: container name required")
+		showInspectHelp()
+		os.Exit(1)
+	}
+	runtime, err := selectRuntime()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		os.Exit(1)
+	}
+	cmdArgs := append([]string{"inspect"}, args...)
+	os.Exit(runPassthrough(runtime, cmdArgs...))
+}
+
+// handleContainerNetwork dispatches `container network <create|list|inspect|rm>`.
+func handleContainerNetwork(args []string) {
+	if len(args) == 0 || args[0] == "--help" || args[0] == "-h" {
+		showNetworkHelp()
+		return
+	}
+	sub := args[0]
+	rest := args[1:]
+	switch sub {
+	case "create":
+		networkCreate(rest)
+	case "list", "ls":
+		networkList(rest)
+	case "inspect":
+		networkInspect(rest)
+	case "rm", "remove":
+		networkRm(rest)
+	case "--help", "-h":
+		showNetworkHelp()
+	default:
+		fmt.Fprintf(os.Stderr, "❌ Unknown network subcommand: %s\n", sub)
+		showNetworkHelp()
+		os.Exit(1)
+	}
+}
+
+// networkExists returns true if the named network is present on the runtime.
+func networkExists(runtime, name string) bool {
+	cmd := exec.Command(runtime, "network", "inspect", name)
+	return cmd.Run() == nil
+}
+
+// networkCreate creates a bridge network. Idempotent: returns success with an
+// informational message if the network already exists.
+func networkCreate(args []string) {
+	var name, driver, subnet, gateway string
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--driver":
+			if i+1 < len(args) {
+				driver = args[i+1]
+				i++
+			}
+		case "--subnet":
+			if i+1 < len(args) {
+				subnet = args[i+1]
+				i++
+			}
+		case "--gateway":
+			if i+1 < len(args) {
+				gateway = args[i+1]
+				i++
+			}
+		case "--help", "-h":
+			showNetworkHelp()
+			return
+		default:
+			if strings.HasPrefix(args[i], "-") {
+				fmt.Fprintf(os.Stderr, "❌ Unknown flag: %s\n", args[i])
+				os.Exit(1)
+			}
+			if name == "" {
+				name = args[i]
+			}
+		}
+	}
+	if name == "" {
+		fmt.Fprintln(os.Stderr, "❌ Error: network name required")
+		showNetworkHelp()
+		os.Exit(1)
+	}
+	runtime, err := selectRuntime()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		os.Exit(1)
+	}
+	if networkExists(runtime, name) {
+		fmt.Printf("ℹ️  Network '%s' already exists (no action taken)\n", name)
+		return
+	}
+	cmdArgs := []string{"network", "create"}
+	if driver != "" {
+		cmdArgs = append(cmdArgs, "--driver", driver)
+	}
+	if subnet != "" {
+		cmdArgs = append(cmdArgs, "--subnet", subnet)
+	}
+	if gateway != "" {
+		cmdArgs = append(cmdArgs, "--gateway", gateway)
+	}
+	cmdArgs = append(cmdArgs, name)
+	os.Exit(runPassthrough(runtime, cmdArgs...))
+}
+
+// networkList lists networks from the available runtime.
+func networkList(args []string) {
+	for _, a := range args {
+		if a == "--help" || a == "-h" {
+			showNetworkHelp()
+			return
+		}
+	}
+	runtime, err := selectRuntime()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		os.Exit(1)
+	}
+	cmdArgs := append([]string{"network", "ls"}, args...)
+	os.Exit(runPassthrough(runtime, cmdArgs...))
+}
+
+// networkInspect returns the runtime's inspect output, forwarding -f/--format.
+func networkInspect(args []string) {
+	for _, a := range args {
+		if a == "--help" || a == "-h" {
+			showNetworkHelp()
+			return
+		}
+	}
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "❌ Error: network name required")
+		os.Exit(1)
+	}
+	runtime, err := selectRuntime()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		os.Exit(1)
+	}
+	cmdArgs := append([]string{"network", "inspect"}, args...)
+	os.Exit(runPassthrough(runtime, cmdArgs...))
+}
+
+// networkRm removes one or more networks.
+// Rootless Podman can emit a harmless "permission denied" warning on network rm
+// even when the network is in fact removed; we post-verify with network inspect
+// and treat successful removal as success regardless of the warning.
+func networkRm(args []string) {
+	var names []string
+	for _, a := range args {
+		if a == "--help" || a == "-h" {
+			showNetworkHelp()
+			return
+		}
+		if strings.HasPrefix(a, "-") {
+			fmt.Fprintf(os.Stderr, "❌ Unknown flag: %s\n", a)
+			os.Exit(1)
+		}
+		names = append(names, a)
+	}
+	if len(names) == 0 {
+		fmt.Fprintln(os.Stderr, "❌ Error: at least one network name required")
+		os.Exit(1)
+	}
+	runtime, err := selectRuntime()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		os.Exit(1)
+	}
+	exitCode := 0
+	for _, name := range names {
+		existedBefore := networkExists(runtime, name)
+		cmdArgs := []string{"network", "rm", name}
+		if debugMode {
+			fmt.Fprintf(os.Stderr, "🔍 DEBUG %s args: %v\n", runtime, cmdArgs)
+		}
+		cmd := exec.Command(runtime, cmdArgs...)
+		output, runErr := cmd.CombinedOutput()
+		if runErr == nil {
+			fmt.Print(string(output))
+			continue
+		}
+		// Rootless Podman caveat: `network rm` can emit a harmless warning
+		// ("rootless netns: kill network process: permission denied") while
+		// actually removing the network. Only treat the error as success
+		// when the network existed before and is gone now.
+		if existedBefore && !networkExists(runtime, name) {
+			fmt.Fprintf(os.Stderr, "⚠️  %s", string(output))
+			continue
+		}
+		// Real failure: surface runtime output and exit code.
+		fmt.Fprint(os.Stderr, string(output))
+		if ee, ok := runErr.(*exec.ExitError); ok && ee.ExitCode() != 0 {
+			exitCode = ee.ExitCode()
+		} else {
+			exitCode = 1
+		}
+	}
+	if exitCode != 0 {
+		os.Exit(exitCode)
+	}
+}
+
+// handleContainerVolume dispatches `container volume <create|list|inspect|rm|prune>`.
+func handleContainerVolume(args []string) {
+	if len(args) == 0 || args[0] == "--help" || args[0] == "-h" {
+		showVolumeHelp()
+		return
+	}
+	sub := args[0]
+	rest := args[1:]
+	switch sub {
+	case "create":
+		volumeCreate(rest)
+	case "list", "ls":
+		volumeList(rest)
+	case "inspect":
+		volumeInspect(rest)
+	case "rm", "remove":
+		volumeRm(rest)
+	case "prune":
+		volumePrune(rest)
+	case "--help", "-h":
+		showVolumeHelp()
+	default:
+		fmt.Fprintf(os.Stderr, "❌ Unknown volume subcommand: %s\n", sub)
+		showVolumeHelp()
+		os.Exit(1)
+	}
+}
+
+// volumeExists returns true if the named volume is present on the runtime.
+func volumeExists(runtime, name string) bool {
+	cmd := exec.Command(runtime, "volume", "inspect", name)
+	return cmd.Run() == nil
+}
+
+// volumeCreate creates a named volume. Idempotent on pre-existing volumes.
+func volumeCreate(args []string) {
+	var name, driver string
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--driver":
+			if i+1 < len(args) {
+				driver = args[i+1]
+				i++
+			}
+		case "--help", "-h":
+			showVolumeHelp()
+			return
+		default:
+			if strings.HasPrefix(args[i], "-") {
+				fmt.Fprintf(os.Stderr, "❌ Unknown flag: %s\n", args[i])
+				os.Exit(1)
+			}
+			if name == "" {
+				name = args[i]
+			}
+		}
+	}
+	if name == "" {
+		fmt.Fprintln(os.Stderr, "❌ Error: volume name required")
+		showVolumeHelp()
+		os.Exit(1)
+	}
+	runtime, err := selectRuntime()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		os.Exit(1)
+	}
+	if volumeExists(runtime, name) {
+		fmt.Printf("ℹ️  Volume '%s' already exists (no action taken)\n", name)
+		return
+	}
+	cmdArgs := []string{"volume", "create"}
+	if driver != "" {
+		cmdArgs = append(cmdArgs, "--driver", driver)
+	}
+	cmdArgs = append(cmdArgs, name)
+	os.Exit(runPassthrough(runtime, cmdArgs...))
+}
+
+func volumeList(args []string) {
+	for _, a := range args {
+		if a == "--help" || a == "-h" {
+			showVolumeHelp()
+			return
+		}
+	}
+	runtime, err := selectRuntime()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		os.Exit(1)
+	}
+	cmdArgs := append([]string{"volume", "ls"}, args...)
+	os.Exit(runPassthrough(runtime, cmdArgs...))
+}
+
+func volumeInspect(args []string) {
+	for _, a := range args {
+		if a == "--help" || a == "-h" {
+			showVolumeHelp()
+			return
+		}
+	}
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "❌ Error: volume name required")
+		os.Exit(1)
+	}
+	runtime, err := selectRuntime()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		os.Exit(1)
+	}
+	cmdArgs := append([]string{"volume", "inspect"}, args...)
+	os.Exit(runPassthrough(runtime, cmdArgs...))
+}
+
+func volumeRm(args []string) {
+	var names []string
+	for _, a := range args {
+		if a == "--help" || a == "-h" {
+			showVolumeHelp()
+			return
+		}
+		if strings.HasPrefix(a, "-") {
+			fmt.Fprintf(os.Stderr, "❌ Unknown flag: %s\n", a)
+			os.Exit(1)
+		}
+		names = append(names, a)
+	}
+	if len(names) == 0 {
+		fmt.Fprintln(os.Stderr, "❌ Error: at least one volume name required")
+		os.Exit(1)
+	}
+	runtime, err := selectRuntime()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		os.Exit(1)
+	}
+	cmdArgs := append([]string{"volume", "rm"}, names...)
+	os.Exit(runPassthrough(runtime, cmdArgs...))
+}
+
+func volumePrune(args []string) {
+	force := false
+	for _, a := range args {
+		switch a {
+		case "--force", "-f":
+			force = true
+		case "--help", "-h":
+			showVolumeHelp()
+			return
+		default:
+			fmt.Fprintf(os.Stderr, "❌ Unknown flag: %s\n", a)
+			os.Exit(1)
+		}
+	}
+	runtime, err := selectRuntime()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		os.Exit(1)
+	}
+	cmdArgs := []string{"volume", "prune"}
+	if force {
+		cmdArgs = append(cmdArgs, "--force")
+	}
+	os.Exit(runPassthrough(runtime, cmdArgs...))
+}
+
+func showInspectHelp() {
+	fmt.Println("Usage: portunix container inspect [OPTIONS] <container-name> [<container-name>...]")
+	fmt.Println()
+	fmt.Println("🔎 INSPECT CONTAINER")
+	fmt.Println()
+	fmt.Println("Return low-level information on the given container(s) from the")
+	fmt.Println("automatically selected runtime (Podman first, Docker fallback).")
+	fmt.Println()
+	fmt.Println("Options:")
+	fmt.Println("  -f, --format <tmpl>   Go template for selective output (runtime semantics)")
+	fmt.Println("  -h, --help            Show this help message")
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  portunix container inspect my-container")
+	fmt.Println("  portunix container inspect my-container -f '{{.NetworkSettings.Networks}}'")
+	fmt.Println("  portunix container inspect my-container --format '{{.Config.Env}}'")
+}
+
+func showNetworkHelp() {
+	fmt.Println("Usage: portunix container network <subcommand> [options]")
+	fmt.Println()
+	fmt.Println("🌐 MANAGE CONTAINER NETWORKS")
+	fmt.Println()
+	fmt.Println("Universal network management that auto-selects Podman or Docker.")
+	fmt.Println()
+	fmt.Println("Subcommands:")
+	fmt.Println("  create <name> [--driver <drv>] [--subnet <CIDR>] [--gateway <IP>]")
+	fmt.Println("                  Create a network (idempotent — existing network is a no-op)")
+	fmt.Println("  list            List available networks")
+	fmt.Println("  inspect <name> [-f '<tmpl>']")
+	fmt.Println("                  Show low-level network information")
+	fmt.Println("  rm <name>...    Remove one or more networks")
+	fmt.Println()
+	fmt.Println("Options:")
+	fmt.Println("  -h, --help      Show this help message")
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  portunix container network create portunix-odoo-net")
+	fmt.Println("  portunix container network create my-net --driver bridge --subnet 10.88.0.0/16")
+	fmt.Println("  portunix container network list")
+	fmt.Println("  portunix container network inspect portunix-odoo-net -f '{{.Subnets}}'")
+	fmt.Println("  portunix container network rm portunix-odoo-net")
+}
+
+func showVolumeHelp() {
+	fmt.Println("Usage: portunix container volume <subcommand> [options]")
+	fmt.Println()
+	fmt.Println("📦 MANAGE CONTAINER VOLUMES")
+	fmt.Println()
+	fmt.Println("Universal volume management that auto-selects Podman or Docker.")
+	fmt.Println()
+	fmt.Println("Subcommands:")
+	fmt.Println("  create <name> [--driver <drv>]")
+	fmt.Println("                  Create a named volume (idempotent)")
+	fmt.Println("  list            List available volumes")
+	fmt.Println("  inspect <name> [-f '<tmpl>']")
+	fmt.Println("                  Show low-level volume information")
+	fmt.Println("  rm <name>...    Remove one or more volumes")
+	fmt.Println("  prune [--force] Remove all unused volumes")
+	fmt.Println()
+	fmt.Println("Options:")
+	fmt.Println("  -h, --help      Show this help message")
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  portunix container volume create odoo-data")
+	fmt.Println("  portunix container volume list")
+	fmt.Println("  portunix container volume inspect odoo-data")
+	fmt.Println("  portunix container volume rm odoo-data")
+	fmt.Println("  portunix container volume prune --force")
 }
 
 func init() {

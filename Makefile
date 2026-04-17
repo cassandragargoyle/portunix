@@ -1,7 +1,7 @@
 # Portunix Testing and Build Automation
 # Modern testing infrastructure with Go best practices
 
-.PHONY: help benchmark benchmark-docker build build-helpers build-main build-race build-release build-version ci-integration ci-setup ci-test clean clean-all deploy-local deps dev-setup dist docker-cleanup docker-test-env docs-serve fmt lint mocks security setup-test status test test-cli test-coverage test-coverage-ci test-docker test-docker-unit test-e2e test-fixtures test-integration test-performance test-release test-report test-unit undeploy-local vet watch-test
+.PHONY: help benchmark benchmark-docker build build-helpers build-main build-race build-release build-version ci-integration ci-setup ci-test clean clean-all deploy-local deps dev-setup dist docker-cleanup docker-test-env docs-serve fmt lint lint-md mocks security setup-test status test test-cli test-coverage test-coverage-ci test-docker test-docker-unit test-e2e test-fixtures test-integration test-performance test-release test-report test-unit undeploy-local vet watch-test
 
 # Detect OS and set executable extension and commands
 ifeq ($(OS),Windows_NT)
@@ -172,6 +172,10 @@ fmt: ## Format code
 lint: ## Run linters
 	@echo "Running linters..."
 	golangci-lint run ./...
+
+lint-md: ## Run Markdown linter
+	@echo "Running Markdown linter..."
+	markdownlint-cli2
 
 mocks: ## Generate mocks
 	@echo "Generating mocks..."

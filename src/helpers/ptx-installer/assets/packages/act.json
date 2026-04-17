@@ -23,15 +23,15 @@
               "x64": "https://github.com/nektos/act/releases/download/v0.2.68/act_Windows_x86_64.zip",
               "arm64": "https://github.com/nektos/act/releases/download/v0.2.68/act_Windows_arm64.zip"
             },
-            "extractTo": "C:/Program Files/act",
-            "postInstall": [
-              "setx PATH \"%PATH%;C:\\Program Files\\act\" /m"
-            ]
+            "extractTo": "C:/Program Files/act"
           }
         },
         "verification": {
           "command": "act --version",
           "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "C:/Program Files/act"
         }
       },
       "linux": {

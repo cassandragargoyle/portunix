@@ -1,12 +1,16 @@
 # Issue Development Methodology
 
 ## Overview
-This document defines the mandatory workflow for issue development in the Portunix project. This methodology ensures quality, traceability, and proper testing before code integration into the main branch.
+
+This document defines the mandatory workflow for issue development in the Portunix project.
+This methodology ensures quality, traceability, and proper testing before code integration
+into the main branch.
 
 ## Development Workflow
 
 ### Phase 1: Issue Creation & Planning
-**Role: Architect / Product Owner**
+
+#### Role: Architect / Product Owner
 
 1. **Issue Creation**
    - Create file `docs/issues/{number}-{name}.md`
@@ -22,7 +26,8 @@ This document defines the mandatory workflow for issue development in the Portun
    - Create feature branch naming convention: `feature/issue-{number}-{short-name}`
 
 ### Phase 2: Implementation
-**Role: Developer**
+
+#### Role: Developer
 
 1. **Branch Setup**
    - Create feature branch from main: `git checkout -b feature/issue-{number}-{short-name}`
@@ -47,13 +52,15 @@ This document defines the mandatory workflow for issue development in the Portun
    - Push feature branch to repository for tester access
 
 ### Phase 3: Testing & Validation
-**Role: Tester**
+
+#### Role: Tester
 
 1. **Test Environment Setup**
    - Checkout feature branch: `git checkout feature/issue-{number}-{short-name}`
    - Build and deploy in test environment
    - Prepare test data and scenarios
-   - **OS Validation**: Verify testing environment matches tester role (Linux tester → Linux tests, Windows tester → Windows tests)
+   - **OS Validation**: Verify testing environment matches tester role
+     (Linux tester -> Linux tests, Windows tester -> Windows tests)
    - For container/VM testing: Accept tests based on container/VM OS, not host OS
 
 2. **Testing Execution**
@@ -67,7 +74,8 @@ This document defines the mandatory workflow for issue development in the Portun
    - Document all test scenarios and results
    - Include screenshots/logs where applicable
    - Record any issues or recommendations
-   - **MANDATORY**: Document testing OS (host OS for local tests, container/VM OS for containerized tests)
+   - **MANDATORY**: Document testing OS
+     (host OS for local tests, container/VM OS for containerized tests)
 
 4. **Acceptance Decision**
    - **PASS**: Issue ready for merge - create approval document
@@ -75,7 +83,8 @@ This document defines the mandatory workflow for issue development in the Portun
    - **CONDITIONAL**: List required changes before approval
 
 ### Phase 4: Integration
-**Role: Developer (with Tester approval)**
+
+#### Role: Developer (with Tester approval)
 
 1. **Pre-Merge Validation**
    - Verify acceptance protocol exists and shows PASS status
@@ -85,7 +94,7 @@ This document defines the mandatory workflow for issue development in the Portun
 2. **Merge Process**
    - Create merge request/pull request with acceptance protocol reference
    - Merge feature branch to main: `git merge feature/issue-{number}-{short-name}`
-   - Update issue status to ✅ Implemented in `docs/issues/README.md`
+   - Update issue status to Implemented in `docs/issues/README.md`
    - Close GitHub issue with reference to acceptance protocol
 
 3. **Post-Merge Cleanup**
@@ -96,14 +105,16 @@ This document defines the mandatory workflow for issue development in the Portun
 ## Quality Gates
 
 ### Mandatory Requirements
-- ✅ Issue must have defined acceptance criteria
-- ✅ Code must pass all automated tests
-- ✅ Feature branch must build successfully
-- ✅ Tester must create acceptance protocol
-- ✅ Acceptance protocol must show PASS status
-- ✅ No merge to main without tester approval
+
+- Issue must have defined acceptance criteria
+- Code must pass all automated tests
+- Feature branch must build successfully
+- Tester must create acceptance protocol
+- Acceptance protocol must show PASS status
+- No merge to main without tester approval
 
 ### Acceptance Protocol Template
+
 ```markdown
 # Acceptance Protocol - Issue #{number}
 
@@ -125,7 +136,7 @@ This document defines the mandatory workflow for issue development in the Portun
 - [x] Acceptance criteria met
 - [ ] Edge cases handled
 
-### Regression Tests  
+### Regression Tests
 - [x] Existing functionality unaffected
 - [x] Cross-platform compatibility verified
 
@@ -141,9 +152,11 @@ This document defines the mandatory workflow for issue development in the Portun
 
 ### Container-Based Testing Policy
 
-**MANDATORY**: All software installation testing MUST be performed in isolated containers, never on the host development system.
+**MANDATORY**: All software installation testing MUST be performed in isolated containers,
+never on the host development system.
 
 #### Rationale
+
 - **Host Protection**: Prevents contamination of development environment with test software
 - **Isolation**: Each test runs in clean, reproducible environment
 - **Safety**: Eliminates risk of conflicts with existing host software
@@ -152,6 +165,7 @@ This document defines the mandatory workflow for issue development in the Portun
 #### Implementation Methods
 
 ##### Method 1: Portunix Docker Integration (Recommended)
+
 ```bash
 # Create clean Ubuntu container for testing
 portunix docker run ubuntu
@@ -162,6 +176,7 @@ portunix docker run ubuntu
 ```
 
 ##### Method 2: Portunix Podman Integration
+
 ```bash
 # Create clean container environment
 portunix podman run ubuntu
@@ -172,6 +187,7 @@ portunix podman run ubuntu
 ```
 
 ##### Method 3: Manual Container Setup
+
 ```bash
 # Only when Portunix container commands unavailable
 docker run -it --rm ubuntu:latest bash
@@ -204,13 +220,15 @@ docker run -it --rm ubuntu:latest bash
 
 #### Prohibited Practices
 
-**❌ NEVER DO:**
+**NEVER DO:**
+
 - Install software packages directly on development host for testing
 - Test package installation on primary development machine
 - Use `sudo` commands during testing on host system
 - Install dependencies manually on host to "help" testing
 
-**✅ ALWAYS DO:**
+**ALWAYS DO:**
+
 - Use containers for all software installation tests
 - Test in clean, isolated environments
 - Document container setup procedures
@@ -219,12 +237,14 @@ docker run -it --rm ubuntu:latest bash
 #### Container Test Environment Standards
 
 ##### Base Images
+
 - **Ubuntu**: `ubuntu:22.04` or `ubuntu:24.04` (primary testing)
 - **Debian**: `debian:bookworm` (compatibility testing)
 - **Fedora**: `fedora:latest` (RPM-based testing)
 - **Alpine**: `alpine:latest` (minimal environment testing)
 
 ##### Container Configuration
+
 ```bash
 # Standard container setup for testing
 docker run -it --rm \
@@ -242,6 +262,7 @@ apt update && apt install -y curl wget
 During **Phase 3: Testing & Validation**, testers MUST:
 
 1. **Document Container Environment**
+
    ```markdown
    ## Test Environment
    - Container: ubuntu:22.04
@@ -265,37 +286,42 @@ During **Phase 3: Testing & Validation**, testers MUST:
 #### Developer Guidelines for AI Assistants
 
 **For AI Development Assistants (Claude, etc.):**
+
 - Always suggest container-based testing for software installation
 - Never recommend installing test software on host system
 - Provide container setup commands in testing recommendations
 - Include dry-run testing before real installation attempts
 
 **Example Workflow:**
+
 ```bash
-# ✅ CORRECT: Container-based testing
+# CORRECT: Container-based testing
 portunix docker run ubuntu
 ./portunix install nodejs --dry-run    # Preview changes
 ./portunix install nodejs             # Test actual installation
 
-# ❌ INCORRECT: Host system testing  
+# INCORRECT: Host system testing
 ./portunix install nodejs             # Installs on development machine
 ```
 
 ## Process Enforcement
 
 ### Developer Responsibilities
+
 - Follow all development phases in order
 - Never bypass testing phase
 - Never merge without tester approval
 - Maintain feature branch until approval received
 
 ### Tester Responsibilities
+
 - Test within reasonable timeframe
 - Provide detailed acceptance protocol
 - Clearly communicate pass/fail status
 - Document all findings and recommendations
 
 ### Architect/Product Owner Responsibilities
+
 - Provide clear acceptance criteria
 - Review acceptance protocols when needed
 - Make final decisions on conditional approvals
@@ -303,11 +329,13 @@ portunix docker run ubuntu
 ## Exception Handling
 
 ### Critical Hotfixes
+
 - May bypass normal workflow with architect approval
 - Must be tested immediately after deployment
 - Retroactive acceptance protocol required within 24 hours
 
 ### Testing Delays
+
 - If tester unavailable, architect may designate alternate tester
 - Testing deadline: 48 hours for normal issues, 24 hours for high priority
 - Escalation to architect if testing timeline exceeded

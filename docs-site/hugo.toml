@@ -35,7 +35,7 @@ theme = 'hugo-book'
   BookLogo = ''
 
   # (Optional) Set description in header
-  description = 'Universal development environment management tool'
+  description = 'Unified AI plugin and task platform for development environments'
   version = 'v1.10.4'
 
   # (Optional) Enable comments template on pages

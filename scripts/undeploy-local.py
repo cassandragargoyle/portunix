@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """
 Remove Portunix binaries from system installation directory.
 Automatically detects existing installation path.

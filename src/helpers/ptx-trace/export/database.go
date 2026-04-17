@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package export
 
 import (
@@ -7,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	_ "github.com/lib/pq"           // PostgreSQL driver
 	_ "github.com/go-sql-driver/mysql" // MySQL driver
+	_ "github.com/lib/pq"              // PostgreSQL driver
 	"portunix.ai/portunix/src/helpers/ptx-trace/models"
 	"portunix.ai/portunix/src/helpers/ptx-trace/storage"
 )

@@ -4,7 +4,8 @@ This document explains Portunix versioning conventions for contributors.
 
 ## Overview
 
-Portunix uses **GitHub as the single source of truth** for stable versions. Contributors working on internal systems (personal repos, Gitea, GitLab, etc.) use development version suffixes to avoid conflicts.
+Portunix uses **GitHub as the single source of truth** for stable versions. Contributors working on internal systems (personal repos, Gitea, GitLab, etc.)
+use development version suffixes to avoid conflicts.
 
 ## Version Formats
 
@@ -202,4 +203,4 @@ v1.10.0+hotfix.1 → Released as v1.10.1
 
 ---
 
-*Last updated: 2026-01-23*
+Last updated: 2026-01-23

@@ -1,0 +1,321 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "odoo",
+    "displayName": "Odoo Community",
+    "description": "Open-source ERP / business application suite — three install modes: native APT, build from source, or container with bundled PostgreSQL",
+    "category": "application/erp",
+    "homepage": "https://www.odoo.com/",
+    "documentation": "https://www.odoo.com/documentation/19.0/",
+    "license": "LGPL-3.0",
+    "maintainer": "Odoo S.A."
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "19.0",
+            "description": "Native APT package from nightly.odoo.com — systemd service. Requires Ubuntu 24.04+ or Debian 13+ (older LTS lack python3-lxml-html-clean and other dependencies). Older systems: use container or source variant.",
+            "requiresSudo": true,
+            "installScript": [
+              "set -e; wget -qO- https://nightly.odoo.com/odoo.key | sudo gpg --dearmor -o /usr/share/keyrings/odoo-archive-keyring.gpg && echo 'deb [signed-by=/usr/share/keyrings/odoo-archive-keyring.gpg] https://nightly.odoo.com/19.0/nightly/deb/ ./' | sudo tee /etc/apt/sources.list.d/odoo.list >/dev/null && sudo apt-get update && sudo apt-get install -y odoo"
+            ],
+            "postInstall": [
+              "echo 'Odoo installed as systemd service — check: systemctl status odoo'",
+              "echo 'Config: /etc/odoo/odoo.conf — change admin_passwd before first use'",
+              "echo 'Default URL: http://localhost:8069'"
+            ]
+          },
+          "source": {
+            "version": "19.0",
+            "description": "Build from source via git + uv venv (Odoo 19.0 branch). Requires Python 3.12+ (uv will pick the system Python — Ubuntu 22.04's 3.10 cannot build pinned gevent; use Ubuntu 24.04+ or provision 3.12 via uv python install).",
+            "requiresSudo": true,
+            "installScript": [
+              "set -e; sudo apt-get update && sudo apt-get install -y git python3-dev python3-pip libxml2-dev libxslt1-dev libldap2-dev libpq-dev libsasl2-dev libjpeg-dev zlib1g-dev node-less npm wkhtmltopdf && git clone --depth 1 --branch 19.0 https://github.com/odoo/odoo.git /opt/odoo && cd /opt/odoo && uv venv && uv pip install -r requirements.txt"
+            ],
+            "postInstall": [
+              "echo 'Odoo source installed at /opt/odoo'",
+              "echo 'Run: cd /opt/odoo && uv run python3 odoo-bin --addons-path=addons -d <db-name>'",
+              "echo 'PostgreSQL must be running and accessible — see: portunix install postgresql'"
+            ]
+          },
+          "container": {
+            "type": "container",
+            "version": "19",
+            "description": "Official odoo:19 Docker image with bundled PostgreSQL 16 sidecar. --db-* flags apply to the Odoo primary only; the bundled sidecar's credentials stay odoo/odoo. For custom DB credentials use the container-external-db variant.",
+            "container": {
+              "image": "docker.io/library/odoo",
+              "tag": "19",
+              "name": "portunix-odoo",
+              "network": "portunix-odoo-net",
+              "ports": ["8069:8069", "8072:8072"],
+              "environment": {
+                "HOST": "portunix-odoo-db",
+                "USER": "odoo",
+                "PASSWORD": "odoo"
+              },
+              "volumes": ["odoo-web-data:/var/lib/odoo"],
+              "detach": true,
+              "sidecars": [
+                {
+                  "name": "portunix-odoo-db",
+                  "image": "docker.io/library/postgres",
+                  "tag": "16",
+                  "environment": {
+                    "POSTGRES_DB": "postgres",
+                    "POSTGRES_USER": "odoo",
+                    "POSTGRES_PASSWORD": "odoo"
+                  },
+                  "volumes": ["odoo-db-data:/var/lib/postgresql/data"]
+                }
+              ],
+              "healthCheck": {
+                "endpoint": "http://localhost:8069/web/health",
+                "timeout": 180,
+                "interval": 10,
+                "retries": 18
+              }
+            }
+          },
+          "container-external-db": {
+            "type": "container",
+            "version": "19",
+            "description": "Official odoo:19 Docker image with user-supplied PostgreSQL — no bundled sidecar; pass --db-host / --db-port / --db-user / --db-password flags to point at your DB",
+            "container": {
+              "image": "docker.io/library/odoo",
+              "tag": "19",
+              "name": "portunix-odoo",
+              "network": "portunix-odoo-net",
+              "ports": ["8069:8069", "8072:8072"],
+              "environment": {
+                "HOST": "portunix-odoo-db",
+                "USER": "odoo",
+                "PASSWORD": "odoo"
+              },
+              "volumes": ["odoo-web-data:/var/lib/odoo"],
+              "detach": true,
+              "healthCheck": {
+                "endpoint": "http://localhost:8069/web/health",
+                "timeout": 180,
+                "interval": 10,
+                "retries": 18
+              }
+            }
+          }
+        },
+        "verification": {
+          "command": "odoo --version",
+          "expectedExitCode": 0
+        }
+      },
+      "darwin": {
+        "type": "script",
+        "variants": {
+          "source": {
+            "version": "19.0",
+            "description": "Build from source via git + uv venv (Odoo 19.0 branch) — user installs system deps via brew. Requires Python 3.12+ (brew install python@3.12 if needed).",
+            "installScript": [
+              "set -e; git clone --depth 1 --branch 19.0 https://github.com/odoo/odoo.git $HOME/odoo && cd $HOME/odoo && uv venv && uv pip install -r requirements.txt"
+            ],
+            "postInstall": [
+              "echo 'Odoo source installed at $HOME/odoo'",
+              "echo 'Install system deps via: brew install postgresql node wkhtmltopdf libxml2 libxslt'",
+              "echo 'Run: cd $HOME/odoo && uv run python3 odoo-bin --addons-path=addons -d <db-name>'"
+            ]
+          },
+          "container": {
+            "type": "container",
+            "version": "19",
+            "description": "Official odoo:19 Docker image with bundled PostgreSQL 16 sidecar. --db-* flags apply to the Odoo primary only; the bundled sidecar's credentials stay odoo/odoo. For custom DB credentials use the container-external-db variant.",
+            "container": {
+              "image": "docker.io/library/odoo",
+              "tag": "19",
+              "name": "portunix-odoo",
+              "network": "portunix-odoo-net",
+              "ports": ["8069:8069", "8072:8072"],
+              "environment": {
+                "HOST": "portunix-odoo-db",
+                "USER": "odoo",
+                "PASSWORD": "odoo"
+              },
+              "volumes": ["odoo-web-data:/var/lib/odoo"],
+              "detach": true,
+              "sidecars": [
+                {
+                  "name": "portunix-odoo-db",
+                  "image": "docker.io/library/postgres",
+                  "tag": "16",
+                  "environment": {
+                    "POSTGRES_DB": "postgres",
+                    "POSTGRES_USER": "odoo",
+                    "POSTGRES_PASSWORD": "odoo"
+                  },
+                  "volumes": ["odoo-db-data:/var/lib/postgresql/data"]
+                }
+              ],
+              "healthCheck": {
+                "endpoint": "http://localhost:8069/web/health",
+                "timeout": 180,
+                "interval": 10,
+                "retries": 18
+              }
+            }
+          },
+          "container-external-db": {
+            "type": "container",
+            "version": "19",
+            "description": "Official odoo:19 Docker image with user-supplied PostgreSQL — no bundled sidecar; pass --db-host / --db-port / --db-user / --db-password flags to point at your DB",
+            "container": {
+              "image": "docker.io/library/odoo",
+              "tag": "19",
+              "name": "portunix-odoo",
+              "network": "portunix-odoo-net",
+              "ports": ["8069:8069", "8072:8072"],
+              "environment": {
+                "HOST": "portunix-odoo-db",
+                "USER": "odoo",
+                "PASSWORD": "odoo"
+              },
+              "volumes": ["odoo-web-data:/var/lib/odoo"],
+              "detach": true,
+              "healthCheck": {
+                "endpoint": "http://localhost:8069/web/health",
+                "timeout": 180,
+                "interval": 10,
+                "retries": 18
+              }
+            }
+          }
+        },
+        "verification": {
+          "command": "odoo --version",
+          "expectedExitCode": 0
+        }
+      },
+      "windows": {
+        "type": "script",
+        "variants": {
+          "source": {
+            "version": "19.0",
+            "description": "Build from source via git + uv venv (Odoo 19.0 branch) — development use only; production on Windows not recommended by Odoo. Requires Python 3.12+.",
+            "installScript": [
+              "git clone --depth 1 --branch 19.0 https://github.com/odoo/odoo.git %USERPROFILE%\\odoo && cd /d %USERPROFILE%\\odoo && uv venv && uv pip install -r requirements.txt"
+            ],
+            "postInstall": [
+              "Write-Host 'Odoo source installed at %USERPROFILE%\\odoo'",
+              "Write-Host 'PostgreSQL must be installed separately (portunix install postgresql)'",
+              "Write-Host 'Run: cd %USERPROFILE%\\odoo && uv run python odoo-bin --addons-path=addons -d <db-name>'"
+            ]
+          },
+          "container": {
+            "type": "container",
+            "version": "19",
+            "description": "Official odoo:19 Docker image with bundled PostgreSQL 16 sidecar (requires Docker Desktop). --db-* flags apply to the Odoo primary only; the bundled sidecar's credentials stay odoo/odoo. For custom DB credentials use the container-external-db variant.",
+            "container": {
+              "image": "docker.io/library/odoo",
+              "tag": "19",
+              "name": "portunix-odoo",
+              "network": "portunix-odoo-net",
+              "ports": ["8069:8069", "8072:8072"],
+              "environment": {
+                "HOST": "portunix-odoo-db",
+                "USER": "odoo",
+                "PASSWORD": "odoo"
+              },
+              "volumes": ["odoo-web-data:/var/lib/odoo"],
+              "detach": true,
+              "sidecars": [
+                {
+                  "name": "portunix-odoo-db",
+                  "image": "docker.io/library/postgres",
+                  "tag": "16",
+                  "environment": {
+                    "POSTGRES_DB": "postgres",
+                    "POSTGRES_USER": "odoo",
+                    "POSTGRES_PASSWORD": "odoo"
+                  },
+                  "volumes": ["odoo-db-data:/var/lib/postgresql/data"]
+                }
+              ],
+              "healthCheck": {
+                "endpoint": "http://localhost:8069/web/health",
+                "timeout": 180,
+                "interval": 10,
+                "retries": 18
+              }
+            }
+          },
+          "container-external-db": {
+            "type": "container",
+            "version": "19",
+            "description": "Official odoo:19 Docker image with user-supplied PostgreSQL — no bundled sidecar; pass --db-host / --db-port / --db-user / --db-password flags to point at your DB",
+            "container": {
+              "image": "docker.io/library/odoo",
+              "tag": "19",
+              "name": "portunix-odoo",
+              "network": "portunix-odoo-net",
+              "ports": ["8069:8069", "8072:8072"],
+              "environment": {
+                "HOST": "portunix-odoo-db",
+                "USER": "odoo",
+                "PASSWORD": "odoo"
+              },
+              "volumes": ["odoo-web-data:/var/lib/odoo"],
+              "detach": true,
+              "healthCheck": {
+                "endpoint": "http://localhost:8069/web/health",
+                "timeout": 180,
+                "interval": 10,
+                "retries": 18
+              }
+            }
+          }
+        },
+        "verification": {
+          "command": "odoo --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "apt": {
+        "type": "direct",
+        "url": "https://nightly.odoo.com/19.0/nightly/deb/",
+        "pattern": "odoo_{version}_all.deb"
+      },
+      "github": {
+        "type": "github",
+        "url": "https://github.com/odoo/odoo",
+        "apiEndpoint": "https://api.github.com/repos/odoo/odoo/branches/19.0",
+        "pattern": "branch 19.0"
+      },
+      "container": {
+        "type": "docker",
+        "url": "https://hub.docker.com/_/odoo",
+        "apiEndpoint": "https://hub.docker.com/v2/repositories/library/odoo/tags/",
+        "pattern": "odoo:{tag}"
+      }
+    },
+    "features": [
+      "Full Odoo Community ERP suite (CRM, accounting, inventory, HR, e-commerce, ...)",
+      "Three install variants: native APT package, build from source, container",
+      "Container variant bundles PostgreSQL 16 sidecar — zero external prerequisites",
+      "Shared container network 'portunix-odoo-net' for Odoo + PostgreSQL linking",
+      "Persistent data volumes (odoo-web-data, odoo-db-data)",
+      "Health check monitoring against /web/database/list",
+      "Port 8069 (HTTP), 8072 (longpolling/websocket)",
+      "Extensible: future OCA / Enterprise addon packages layer on top"
+    ],
+    "aiPrompts": {
+      "versionDiscovery": "Odoo has annual major releases with ~3 year support overlap. Current latest stable is 19 (April 2026). Check https://www.odoo.com/documentation/ for release cadence. APT repo at nightly.odoo.com/<major>.0/nightly/deb/, source at github.com/odoo/odoo (branch <major>.0), containers at docker.io/library/odoo:<major>.",
+      "urlResolution": "APT: https://nightly.odoo.com/19.0/nightly/deb/ (GPG key: https://nightly.odoo.com/odoo.key). Source: git clone https://github.com/odoo/odoo.git --branch 19.0. Container: docker.io/library/odoo:19.",
+      "updateGuidance": "Pick variant by use case — 'default' for production Linux servers (systemd-managed, requires Ubuntu 24.04+ / Debian 13+), 'source' for addon development against Odoo internals (requires Python 3.12+), 'container' for zero-config dev/staging/demos (bundles PostgreSQL 16 sidecar), 'container-external-db' when you already have PostgreSQL running elsewhere (pass --db-host / --db-port / --db-user / --db-password flags). The --db-* flags target the Odoo primary container only; with the bundled 'container' variant they cannot reconfigure the sidecar's POSTGRES_USER/POSTGRES_PASSWORD — use 'container-external-db' for custom credentials. PostgreSQL 13+ is MANDATORY for default/source variants (Odoo has no alternative RDBMS). SECURITY: change admin_passwd from default before first use; enable proxy_mode=True behind reverse proxy; set list_db=False in production. For Windows/macOS prefer a container variant — default (APT) is Linux-only and source on Windows is development-only per Odoo manifest."
+    },
+    "dependencies": [],
+    "templates": ["apt-package", "git-source", "container-service"]
+  }
+}

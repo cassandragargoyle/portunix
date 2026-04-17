@@ -325,8 +325,10 @@ func formatContainerRuntime(installed bool, daemonRunning bool, backend string) 
 		version = system.GetPodmanVersion()
 	}
 
-	status := version
-	if status == "" {
+	var status string
+	if version != "" {
+		status = "version " + version
+	} else {
 		status = "installed"
 	}
 

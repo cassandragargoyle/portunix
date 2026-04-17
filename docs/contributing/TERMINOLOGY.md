@@ -2,7 +2,8 @@
 
 ## Purpose
 
-This document defines common terminology, abbreviations, and technical terms used across all CassandraGargoyle projects. It serves as a reference to ensure consistent communication and understanding within the development team.
+This document defines common terminology, abbreviations, and technical terms used across all CassandraGargoyle projects.
+It serves as a reference to ensure consistent communication and understanding within the development team.
 
 ## General Abbreviations
 
@@ -212,7 +213,8 @@ This document defines common terminology, abbreviations, and technical terms use
 
 - **JWT** - JSON Web Token
 - **OAuth** - Open Authorization
-- **RBAC** - Role-Based Access Control: Security model that restricts system access based on user roles and permissions. In Portunix playbook system, controls who can execute, read, write, or delete playbooks in different environments (local, container, virt)
+- **RBAC** - Role-Based Access Control: Security model that restricts system access based on user roles and permissions.
+In Portunix playbook system, controls who can execute, read, write, or delete playbooks in different environments (local, container, virt)
 - **SAML** - Security Assertion Markup Language
 - **2FA/MFA** - Two-Factor/Multi-Factor Authentication
 - **PKI** - Public Key Infrastructure
@@ -301,7 +303,8 @@ This document defines common terminology, abbreviations, and technical terms use
 
 ---
 
-**Note**: This terminology document is a living document that should be updated as the project evolves and new terms are introduced. Team members are encouraged to suggest additions or clarifications.
+**Note**: This terminology document is a living document that should be updated as the project evolves and new terms are introduced.
+Team members are encouraged to suggest additions or clarifications.
 
 *Created: 2025-08-23*
 *Last updated: 2025-08-23*

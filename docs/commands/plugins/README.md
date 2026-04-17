@@ -5,9 +5,11 @@ Complete plugin ecosystem with gRPC-based architecture, lifecycle management, an
 ## Commands in this Category
 
 ### [`plugin`](plugin.md) - Plugin Lifecycle Management
+
 Comprehensive plugin system supporting creation, development, distribution, and runtime management.
 
 **Quick Examples:**
+
 ```bash
 portunix plugin list                      # List installed plugins
 portunix plugin install agile             # Install plugin from registry
@@ -16,6 +18,7 @@ portunix plugin health my-plugin          # Check plugin health
 ```
 
 **Key Features:**
+
 - Complete plugin lifecycle management (create, install, enable, start, stop, uninstall)
 - gRPC-based communication for high performance
 - Plugin templates for rapid development
@@ -24,6 +27,7 @@ portunix plugin health my-plugin          # Check plugin health
 - Plugin registry integration and distribution
 
 **Common Use Cases:**
+
 - Extending Portunix functionality
 - Custom workflow automation
 - Domain-specific tool integration
@@ -36,10 +40,10 @@ portunix plugin health my-plugin          # Check plugin health
 
 Portunix uses a modern gRPC architecture for plugin communication:
 
-```
+```text
 ┌─────────────────┐         gRPC          ┌─────────────────┐
-│   Portunix      │ ◄─────────────────► │   Plugin        │
-│   Core Engine   │   (High Performance) │   Process       │
+│   Portunix      │ ◄───────────────────► │   Plugin        │
+│   Core Engine   │   (High Performance)  │   Process       │
 └─────────────────┘                       └─────────────────┘
        │                                          │
        │                                          │
@@ -87,6 +91,7 @@ portunix plugin publish weather-tracker --registry official
 ### Official Plugins
 
 #### Agile Software Development Plugin
+
 ```bash
 # Install agile development tools
 portunix plugin install agile-software-development
@@ -98,6 +103,7 @@ portunix agile task add "Implement authentication"
 ```
 
 **Features:**
+
 - Kanban board management
 - User story tracking
 - Sprint planning tools
@@ -107,17 +113,20 @@ portunix agile task add "Implement authentication"
 ### Community Plugins
 
 #### Development Tools
+
 - **Code Quality Plugin** - Linting, formatting, security scanning
 - **Database Plugin** - Database management and migration tools
 - **Cloud Plugin** - AWS, Azure, GCP integration
 - **Monitoring Plugin** - Application and infrastructure monitoring
 
 #### Productivity Tools
+
 - **Notes Plugin** - Technical documentation and note-taking
 - **Time Tracking Plugin** - Development time tracking and reporting
 - **Screenshot Plugin** - Automated screenshot and documentation tools
 
 ### Enterprise Plugins
+
 - **Security Plugin** - Enterprise security scanning and compliance
 - **Audit Plugin** - Change tracking and compliance reporting
 - **Integration Plugin** - Enterprise system integration
@@ -333,6 +342,7 @@ portunix plugin run my-plugin --elevated
 ```
 
 Permission categories:
+
 - `filesystem:read/write` - File system access
 - `network:http/https` - Network access
 - `database:*` - Database connections
@@ -597,7 +607,8 @@ portunix plugin deps my-plugin --verify
 
 ## Best Practices
 
-### Plugin Development
+### Plugin Development Best Practices
+
 - Follow semantic versioning
 - Comprehensive error handling
 - Thorough testing and validation
@@ -605,12 +616,14 @@ portunix plugin deps my-plugin --verify
 - Performance optimization
 
 ### Plugin Management
+
 - Regular updates and security patches
 - Monitor plugin health and performance
 - Backup plugin configurations
 - Review plugin permissions regularly
 
 ### Team Collaboration
+
 - Use private registries for internal plugins
 - Establish plugin development standards
 - Code review processes
@@ -619,12 +632,14 @@ portunix plugin deps my-plugin --verify
 ## Future Roadmap
 
 ### Planned Features
+
 - **WebAssembly Support** - Run plugins in WASM for enhanced security
 - **Plugin Marketplace** - Enhanced discovery and rating system
 - **Visual Plugin Builder** - GUI-based plugin development
 - **Advanced Analytics** - ML-based plugin performance optimization
 
 ### Integration Improvements
+
 - **IDE Plugins** - VS Code, IntelliJ plugin development support
 - **Cloud Integration** - Serverless plugin execution
 - **API Gateway** - REST/GraphQL API exposure for plugins

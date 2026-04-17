@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package alerts
 
 import (
@@ -43,15 +47,15 @@ type RuleConfig struct {
 
 // Rule represents a parsed and validated rule
 type Rule struct {
-	Name       string
-	Condition  Condition
-	Window     time.Duration
-	Severity   Severity
-	Channels   []string
-	Cooldown   time.Duration
-	Message    string
-	LastFired  time.Time
-	FireCount  int
+	Name      string
+	Condition Condition
+	Window    time.Duration
+	Severity  Severity
+	Channels  []string
+	Cooldown  time.Duration
+	Message   string
+	LastFired time.Time
+	FireCount int
 }
 
 // Severity levels for alerts
@@ -79,7 +83,7 @@ const (
 // Condition represents a parsed condition
 type Condition struct {
 	Type      ConditionType
-	Operator  string  // >, <, >=, <=, ==, !=
+	Operator  string // >, <, >=, <=, ==, !=
 	Threshold float64
 	Field     string // for custom metrics
 }

@@ -5,11 +5,6 @@ run:
   timeout: 5m
   issues-exit-code: 1
   tests: true
-  skip-dirs:
-    - src/helpers
-    - test/integration
-    - test/e2e
-    - test/unit
 
 output:
   formats:
@@ -36,7 +31,6 @@ linters-settings:
   # Line length
   lll:
     line-length: 120
-
 
   # Formatting
   gofmt:
@@ -117,7 +111,7 @@ linters:
     - staticcheck     # Static analysis
     - typecheck       # Type checking
     - unused          # Unused code
-    
+
     # Additional linters
     - bodyclose       # HTTP response body close
     - copyloopvar     # Loop variable capture (replaces exportloopref)
@@ -133,7 +127,7 @@ linters:
     - unconvert       # Unnecessary conversions
     - unparam         # Unused parameters
     - whitespace      # Whitespace issues
-    
+
     # Test specific
     - testpackage     # Test package naming
 
@@ -155,9 +149,10 @@ linters:
     - lll           # Line length - too strict, interferes with readability
     - goconst       # Repeated strings - too many false positives
 
+issues:
   # Maximum issues count per one linter
   max-issues-per-linter: 50
-  
+
   # Maximum count of issues with the same text
   max-same-issues: 10
 
@@ -166,10 +161,10 @@ linters:
 
   # Fix found issues (if it's supported by the linter)
   fix: false
-  
+
   # Use uniq-by-line instead of deprecated run.uniq-by-line
   uniq-by-line: true
-  
+
   # Directories to exclude
   exclude-dirs:
     - vendor
@@ -178,7 +173,7 @@ linters:
     - test/fixtures
     - .portunix-github-sync
     - test/tmp
-    - src/helpers   # Helper binaries have relaxed lint requirements
+    - src/helpers       # Helper binaries have relaxed lint requirements
     - test/integration  # Integration tests have relaxed requirements
     - test/e2e          # E2E tests have relaxed requirements
     - test/unit         # Unit tests have relaxed requirements
@@ -193,19 +188,19 @@ linters:
     - text: "build system did not supply embed configuration"
       linters:
         - typecheck
-    
-    # Exclude invalid go:embed in CI environment  
+
+    # Exclude invalid go:embed in CI environment
     - text: "invalid go:embed:"
       linters:
         - typecheck
         - govet
-        
+
     # Allow embed usage in main.go
     - path: main\.go
       text: "build system did not supply embed configuration"
       linters:
         - typecheck
-    
+
     # Exclude some linters from running on tests files
     - path: _test\.go
       linters:
@@ -216,7 +211,7 @@ linters:
         - funlen
         - lll
         - goconst
-        
+
     # Exclude cognitive complexity from integration tests
     - path: test/integration/
       linters:
@@ -226,13 +221,13 @@ linters:
     - path: test/tmp/
       linters:
         - gofmt
-        
+
     # Exclude formatting issues in generated test plugins
     - path: test-plugin/
       linters:
         - gofmt
         - godot
-        
+
     # Exclude issues in generated/temporary test files
     - path: test-created-plugin-
       linters:
@@ -258,7 +253,7 @@ linters:
     - linters:
         - gosec
       text: "G204:"  # Allow subprocess with variables for Docker commands
-      
+
     # Exclude ineffassign for test files
     - path: _test\.go
       linters:
@@ -273,16 +268,18 @@ linters:
   exclude:
     # errcheck: Almost all programs ignore errors on these functions
     - Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*printf?|os\.(Un)?Setenv). is not checked
-    
+
     # revive: False positives
     - should have a package comment
     - comment on exported method
     - comment on exported function
     - comment on exported type
     - comment on exported const
-    
+
     # gosec: Allow certain security issues in development
     - G104  # Unhandled errors
+    - G301  # Directory permissions (0755 needed for shared dirs like logs, cache)
+    - G302  # File permissions (0644 needed for log files)
     - G304  # File path from variable (needed for file operations)
     - G306  # Poor file permissions (tests may need specific permissions)
 

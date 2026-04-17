@@ -1,6 +1,8 @@
 # Portunix Plugin Development Guide
 
-This comprehensive guide provides everything you need to create high-quality plugins for the Portunix ecosystem. Whether you're an AI agent helping a developer or a human developer working independently, this documentation will guide you through the entire plugin development lifecycle.
+This comprehensive guide provides everything you need to create high-quality plugins for the Portunix ecosystem. Whether you're an AI agent
+helping a developer or a human developer working independently, this documentation will guide you through the entire plugin development
+lifecycle.
 
 ## Quick Start
 
@@ -15,7 +17,8 @@ This comprehensive guide provides everything you need to create high-quality plu
 
 ## Plugin System Overview
 
-Portunix uses a gRPC-based plugin architecture that allows plugins to be written in any language that supports gRPC. Each plugin runs as a separate service and communicates with the core Portunix system through well-defined protocols.
+Portunix uses a gRPC-based plugin architecture that allows plugins to be written in any language that supports gRPC. Each plugin runs as a
+separate service and communicates with the core Portunix system through well-defined protocols.
 
 ### Key Features
 
@@ -28,20 +31,24 @@ Portunix uses a gRPC-based plugin architecture that allows plugins to be written
 ## Plugin Types
 
 ### Service Plugins
+
 Long-running services that provide continuous functionality (e.g., monitoring, background processing)
 
 ### Tool Plugins
+
 On-demand tools that perform specific tasks (e.g., code generators, deployment scripts)
 
 ### MCP Plugins
+
 Plugins that expose tools to AI agents through the Model Context Protocol
 
 ### Integration Plugins
+
 Plugins that integrate with external systems (e.g., cloud providers, databases, CI/CD systems)
 
 ## Documentation Structure
 
-```
+```text
 docs/plugin-development/
 ├── README.md                    # This overview document
 ├── getting-started.md          # Quick start guide for any language
@@ -64,6 +71,7 @@ docs/plugin-development/
     ├── local-development.md    # Local plugin development
     ├── packaging.md            # Plugin packaging
     └── distribution.md         # Plugin distribution
+
 ```
 
 ## AI Agent Integration

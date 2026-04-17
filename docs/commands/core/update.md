@@ -2,9 +2,11 @@
 
 ## Quick Start
 
-The `update` command keeps Portunix itself up-to-date by downloading and installing the latest version from GitHub releases.
+The `update` command keeps Portunix itself up-to-date by downloading
+and installing the latest version from GitHub releases.
 
 ### Simplest Usage
+
 ```bash
 portunix update
 ```
@@ -12,11 +14,13 @@ portunix update
 This checks for updates and installs the latest version if available.
 
 ### Basic Syntax
+
 ```bash
 portunix update [options]
 ```
 
 ### Common Operations
+
 - Check for updates without installing: `portunix update --check`
 - Force reinstall current version: `portunix update --force`
 - Update to specific version: `portunix update --version v1.5.14`
@@ -32,7 +36,8 @@ portunix update --check
 ```
 
 Output example:
-```
+
+```text
 Current version: v1.5.13
 Latest version: v1.5.14
 Update available: Yes
@@ -42,7 +47,8 @@ Download size: 15.2 MB
 
 ### Force Update
 
-Force reinstallation of the current version (useful for fixing corrupted installations):
+Force reinstallation of the current version (useful for fixing
+corrupted installations):
 
 ```bash
 portunix update --force
@@ -61,11 +67,13 @@ portunix update --force
 ### Rollback Mechanism
 
 If update fails, Portunix automatically:
+
 - Restores from backup
 - Verifies restored binary works
 - Reports rollback status
 
 Manual rollback:
+
 ```bash
 # List available backups
 portunix update --list-backups
@@ -80,7 +88,7 @@ portunix update --rollback v1.5.13
 
 The update system implements a secure, atomic update process:
 
-```
+```text
 ┌─────────────────┐
 │ GitHub Releases │
 └────────┬────────┘
@@ -171,12 +179,14 @@ Configure update behavior in `~/.portunix/config.json`:
 ### Automated Updates
 
 #### Cron Job (Linux/macOS)
+
 ```bash
 # Add to crontab
 0 3 * * * /usr/local/bin/portunix update --silent --auto-confirm
 ```
 
 #### Task Scheduler (Windows)
+
 ```powershell
 # Create scheduled task
 $action = New-ScheduledTaskAction -Execute "portunix.exe" -Argument "update --silent --auto-confirm"
@@ -194,6 +204,7 @@ The update process includes multiple verification steps:
    - Ensures file integrity
 
 2. **Signature Verification**
+
    ```bash
    # Enable GPG signature verification
    portunix update --verify-signature
@@ -307,6 +318,7 @@ portunix update --notify-webhook https://hooks.slack.com/xxx
 ### Common Issues and Solutions
 
 #### 1. Permission Denied
+
 ```bash
 # Linux/macOS
 sudo portunix update
@@ -317,6 +329,7 @@ portunix update --install-path ~/bin/portunix
 ```
 
 #### 2. Network Connection Failed
+
 ```bash
 # Check connectivity
 curl -I https://api.github.com
@@ -329,6 +342,7 @@ portunix update --mirror https://mirror.company.com
 ```
 
 #### 3. Checksum Mismatch
+
 ```bash
 # Re-download with cache clear
 portunix update --clear-cache
@@ -341,6 +355,7 @@ sha256sum portunix-linux-amd64.tar.gz
 ```
 
 #### 4. Update Loop
+
 ```bash
 # Clear update state
 rm ~/.portunix/update.state
@@ -410,18 +425,21 @@ portunix update --update-launch-agent
 ## Security Best Practices
 
 ### 1. Always Verify Signatures
+
 ```bash
 # Configure mandatory signature verification
 portunix config set update.requireSignature true
 ```
 
 ### 2. Use Secure Channels
+
 ```bash
 # Force HTTPS only
 portunix config set update.httpsOnly true
 ```
 
 ### 3. Audit Update History
+
 ```bash
 # View update log
 portunix update --show-history
@@ -431,6 +449,7 @@ portunix update --export-audit /path/to/audit.log
 ```
 
 ### 4. Restricted Update Window
+
 ```bash
 # Only allow updates during maintenance window
 portunix update --window "02:00-04:00"
@@ -439,6 +458,7 @@ portunix update --window "02:00-04:00"
 ## API Integration
 
 ### REST API
+
 ```bash
 # Trigger update via API
 curl -X POST http://localhost:8080/api/update \
@@ -447,6 +467,7 @@ curl -X POST http://localhost:8080/api/update \
 ```
 
 ### gRPC API
+
 ```go
 // Go client example
 client := portunix.NewClient()
@@ -458,6 +479,7 @@ result, err := client.Update(context.Background(), &UpdateRequest{
 ```
 
 ### Webhook Notifications
+
 ```json
 {
   "event": "update.completed",
@@ -474,12 +496,14 @@ result, err := client.Update(context.Background(), &UpdateRequest{
 ## Performance Optimization
 
 ### Download Optimization
+
 - **Parallel chunk download**: Splits file into chunks
 - **Resume support**: Continues interrupted downloads
 - **Compression**: Uses gzip compression
 - **CDN support**: Automatically selects fastest mirror
 
 ### Update Speed Metrics
+
 - Average download speed: 10-50 MB/s
 - Checksum verification: <1 second
 - Binary replacement: <100ms
@@ -488,6 +512,7 @@ result, err := client.Update(context.Background(), &UpdateRequest{
 ## Integration with CI/CD
 
 ### GitHub Actions
+
 ```yaml
 - name: Update Portunix
   run: |
@@ -498,6 +523,7 @@ result, err := client.Update(context.Background(), &UpdateRequest{
 ```
 
 ### Jenkins Pipeline
+
 ```groovy
 stage('Update Portunix') {
     steps {
@@ -507,6 +533,7 @@ stage('Update Portunix') {
 ```
 
 ### GitLab CI
+
 ```yaml
 update-portunix:
   script:
@@ -516,14 +543,14 @@ update-portunix:
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PORTUNIX_UPDATE_URL` | Custom update server | GitHub API |
-| `PORTUNIX_UPDATE_CHANNEL` | Update channel | stable |
-| `PORTUNIX_UPDATE_PROXY` | Proxy server | - |
-| `PORTUNIX_NO_UPDATE` | Disable updates | false |
-| `PORTUNIX_UPDATE_TIMEOUT` | Update timeout | 5m |
-| `PORTUNIX_BACKUP_DIR` | Backup directory | ~/.portunix/backups |
+| Variable                  | Description          | Default              |
+| ------------------------- | -------------------- | -------------------- |
+| `PORTUNIX_UPDATE_URL`     | Custom update server | GitHub API           |
+| `PORTUNIX_UPDATE_CHANNEL` | Update channel       | stable               |
+| `PORTUNIX_UPDATE_PROXY`   | Proxy server         | -                    |
+| `PORTUNIX_NO_UPDATE`      | Disable updates      | false                |
+| `PORTUNIX_UPDATE_TIMEOUT` | Update timeout       | 5m                   |
+| `PORTUNIX_BACKUP_DIR`     | Backup directory     | ~/.portunix/backups  |
 
 ## Related Commands
 
@@ -536,41 +563,41 @@ update-portunix:
 
 ### Complete Parameter List
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `--check` | boolean | `false` | Check for updates only |
-| `--force` | boolean | `false` | Force reinstall current version |
-| `--version` | string | `latest` | Specific version to install |
-| `--channel` | string | `stable` | Update channel |
-| `--dry-run` | boolean | `false` | Simulate update |
-| `--auto-confirm` | boolean | `false` | Skip confirmation prompts |
-| `--silent` | boolean | `false` | Silent mode |
-| `--rollback` | string | - | Rollback to specific version |
-| `--list-backups` | boolean | `false` | List available backups |
-| `--verify-signature` | boolean | `false` | Verify GPG signature |
-| `--skip-checksum` | boolean | `false` | Skip checksum verification |
-| `--timeout` | duration | `5m` | Update timeout |
-| `--retries` | int | `3` | Number of retries |
-| `--proxy` | string | - | Proxy server |
-| `--mirror` | string | - | Mirror URL |
-| `--differential` | boolean | `false` | Use differential updates |
-| `--output` | string | `text` | Output format (text/json/yaml) |
+| Parameter            | Type     | Default  | Description                     |
+| -------------------- | -------- | -------- | ------------------------------- |
+| `--check`            | boolean  | `false`  | Check for updates only          |
+| `--force`            | boolean  | `false`  | Force reinstall current version |
+| `--version`          | string   | `latest` | Specific version to install     |
+| `--channel`          | string   | `stable` | Update channel                  |
+| `--dry-run`          | boolean  | `false`  | Simulate update                 |
+| `--auto-confirm`     | boolean  | `false`  | Skip confirmation prompts       |
+| `--silent`           | boolean  | `false`  | Silent mode                     |
+| `--rollback`         | string   | -        | Rollback to specific version    |
+| `--list-backups`     | boolean  | `false`  | List available backups          |
+| `--verify-signature` | boolean  | `false`  | Verify GPG signature            |
+| `--skip-checksum`    | boolean  | `false`  | Skip checksum verification      |
+| `--timeout`          | duration | `5m`     | Update timeout                  |
+| `--retries`          | int      | `3`      | Number of retries               |
+| `--proxy`            | string   | -        | Proxy server                    |
+| `--mirror`           | string   | -        | Mirror URL                      |
+| `--differential`     | boolean  | `false`  | Use differential updates        |
+| `--output`           | string   | `text`   | Output format (text/json/yaml)  |
 
 ## Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Successful update or no update needed |
-| 1 | General error |
-| 2 | Network error |
-| 3 | Checksum verification failed |
-| 4 | Permission denied |
-| 5 | Rollback performed |
-| 6 | Update already in progress |
-| 7 | Incompatible version |
-| 8 | Signature verification failed |
-| 9 | Backup creation failed |
-| 10 | Self-test failed |
+| Code | Meaning                               |
+| ---- | ------------------------------------- |
+| 0    | Successful update or no update needed |
+| 1    | General error                         |
+| 2    | Network error                         |
+| 3    | Checksum verification failed          |
+| 4    | Permission denied                     |
+| 5    | Rollback performed                    |
+| 6    | Update already in progress            |
+| 7    | Incompatible version                  |
+| 8    | Signature verification failed         |
+| 9    | Backup creation failed                |
+| 10   | Self-test failed                      |
 
 ## Version History
 

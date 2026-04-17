@@ -41,6 +41,10 @@ This binary is typically invoked by the main portunix dispatcher and should not 
 	},
 }
 
+// handleCommand dispatches commands routed to this helper by the parent portunix
+// binary (see src/dispatcher/dispatcher.go): "install" and "package". args arrive
+// stripped of the binary name, so args[0] is the top-level command. Also handles
+// the --version / -v meta-flag used by the dispatcher for version discovery.
 func handleCommand(args []string) {
 	// Handle dispatched commands: install, package
 	if len(args) == 0 {
@@ -142,6 +146,26 @@ func handleInstall(args []string) {
 			i++ // Skip next argument as it's the path value
 		} else if arg == "--force" {
 			options.Force = true
+		} else if strings.HasPrefix(arg, "--db-host=") {
+			options.DBHost = strings.TrimPrefix(arg, "--db-host=")
+		} else if arg == "--db-host" && i+1 < len(args) {
+			options.DBHost = args[i+1]
+			i++
+		} else if strings.HasPrefix(arg, "--db-port=") {
+			options.DBPort = strings.TrimPrefix(arg, "--db-port=")
+		} else if arg == "--db-port" && i+1 < len(args) {
+			options.DBPort = args[i+1]
+			i++
+		} else if strings.HasPrefix(arg, "--db-user=") {
+			options.DBUser = strings.TrimPrefix(arg, "--db-user=")
+		} else if arg == "--db-user" && i+1 < len(args) {
+			options.DBUser = args[i+1]
+			i++
+		} else if strings.HasPrefix(arg, "--db-password=") {
+			options.DBPassword = strings.TrimPrefix(arg, "--db-password=")
+		} else if arg == "--db-password" && i+1 < len(args) {
+			options.DBPassword = args[i+1]
+			i++
 		}
 	}
 
@@ -518,12 +542,17 @@ func showInstallHelp() {
 	fmt.Println("  --path=<path>        Target installation path (for project generators like docusaurus)")
 	fmt.Println("  --dry-run            Preview installation without executing")
 	fmt.Println("  --force              Force reinstallation even if already installed")
+	fmt.Println("  --db-host=<host>     Override container DB HOST env (container variants that read it)")
+	fmt.Println("  --db-port=<port>     Override container DB PORT env")
+	fmt.Println("  --db-user=<user>     Override container DB USER env")
+	fmt.Println("  --db-password=<pwd>  Override container DB PASSWORD env")
 	fmt.Println("  -h, --help           Show this help message")
 	fmt.Println("\nExamples:")
 	fmt.Println("  portunix install python")
 	fmt.Println("  portunix install java --variant=21")
 	fmt.Println("  portunix install docusaurus --path ./my-docs")
 	fmt.Println("  portunix install nodejs --dry-run")
+	fmt.Println("  portunix install odoo --variant=container-external-db --db-host=my-pg")
 	fmt.Println("\nUse 'portunix package list' to see available packages")
 	fmt.Println("Use 'portunix package info <package>' for detailed package information")
 }

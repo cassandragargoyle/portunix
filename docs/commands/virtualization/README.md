@@ -1,13 +1,17 @@
 # Virtualization Commands
 
-Cross-platform virtual machine management supporting multiple backends including QEMU/KVM, VirtualBox, VMware, and Hyper-V.
+Cross-platform virtual machine management supporting multiple backends
+including QEMU/KVM, VirtualBox, VMware, and Hyper-V.
 
 ## Commands in this Category
 
 ### [`virt`](virt.md) - Virtual Machine Management
-Universal VM management with multi-backend support, automated provisioning, and cloud integration.
+
+Universal VM management with multi-backend support, automated provisioning,
+and cloud integration.
 
 **Quick Examples:**
+
 ```bash
 portunix virt create myvm --iso ubuntu.iso    # Create VM from ISO
 portunix virt start myvm                      # Start virtual machine
@@ -16,6 +20,7 @@ portunix virt snapshot create myvm            # Create VM snapshot
 ```
 
 **Key Features:**
+
 - Multi-backend support (QEMU/KVM, VirtualBox, VMware, Hyper-V)
 - Automated provisioning with cloud-init and Ansible
 - VM templates for rapid deployment
@@ -24,6 +29,7 @@ portunix virt snapshot create myvm            # Create VM snapshot
 - Cross-platform compatibility
 
 **Common Use Cases:**
+
 - Development environment isolation
 - Cross-platform testing and validation
 - Legacy application support
@@ -33,9 +39,11 @@ portunix virt snapshot create myvm            # Create VM snapshot
 ---
 
 ### `sandbox` - Windows Sandbox Integration *(Coming Soon)*
+
 Windows Sandbox integration for lightweight, disposable Windows environments.
 
 **Planned Features:**
+
 - Quick Windows environment creation
 - Application testing in isolation
 - Malware analysis sandbox
@@ -43,13 +51,15 @@ Windows Sandbox integration for lightweight, disposable Windows environments.
 
 ## Category Overview
 
-The **Virtualization** category provides comprehensive virtual machine management that abstracts the complexity of different virtualization platforms while maintaining their unique capabilities.
+The **Virtualization** category provides comprehensive virtual machine management
+that abstracts the complexity of different virtualization platforms while
+maintaining their unique capabilities.
 
 ### Multi-Backend Architecture
 
 Portunix automatically detects and utilizes available virtualization backends:
 
-```
+```text
 ┌─────────────────┐
 │   Portunix VM   │
 │    Management   │
@@ -70,6 +80,7 @@ Linux     Cross     Commercial Windows  Providers
 ### Backend-Specific Features
 
 #### QEMU/KVM (Linux)
+
 ```bash
 # High-performance virtualization on Linux
 portunix virt create linux-vm \
@@ -80,6 +91,7 @@ portunix virt create linux-vm \
 ```
 
 #### VirtualBox (Cross-platform)
+
 ```bash
 # Cross-platform virtualization
 portunix virt create cross-vm \
@@ -90,6 +102,7 @@ portunix virt create cross-vm \
 ```
 
 #### VMware (Commercial)
+
 ```bash
 # Enterprise virtualization
 portunix virt create enterprise-vm \
@@ -100,6 +113,7 @@ portunix virt create enterprise-vm \
 ```
 
 #### Hyper-V (Windows)
+
 ```bash
 # Windows native virtualization
 portunix virt create windows-vm \
@@ -112,6 +126,7 @@ portunix virt create windows-vm \
 ## VM Lifecycle Management
 
 ### Complete VM Lifecycle
+
 ```bash
 # 1. Create VM from template or ISO
 portunix virt create development-vm \
@@ -142,6 +157,7 @@ portunix virt archive development-vm --keep-snapshots
 ```
 
 ### Template System
+
 ```bash
 # Create reusable templates
 portunix virt template create ubuntu-dev \
@@ -161,6 +177,7 @@ portunix virt template import ubuntu-dev-template.yaml
 ## Integration with Portunix Ecosystem
 
 ### With Core Commands
+
 ```bash
 # Install Portunix in VM during creation
 portunix virt create vm-with-portunix \
@@ -172,6 +189,7 @@ portunix virt ssh my-vm "portunix install nodejs python"
 ```
 
 ### With Container Integration
+
 ```bash
 # VM with container support
 portunix virt create container-host \
@@ -184,6 +202,7 @@ portunix virt ssh container-host "portunix docker run nginx"
 ```
 
 ### With Plugin System
+
 ```bash
 # VM with plugin ecosystem
 portunix virt provision plugin-vm \
@@ -191,10 +210,12 @@ portunix virt provision plugin-vm \
   --enable-plugins
 
 # Install plugins in VM
-portunix virt exec plugin-vm "portunix plugin install agile-software-development"
+portunix virt exec plugin-vm \
+  "portunix plugin install agile-software-development"
 ```
 
 ### With MCP Integration
+
 ```bash
 # MCP-enabled VM for AI development
 portunix virt create ai-dev-vm \
@@ -209,6 +230,7 @@ portunix mcp connect vm://ai-dev-vm:3000
 ## Advanced Virtualization Workflows
 
 ### Development Environment Provisioning
+
 ```yaml
 # cloud-config.yaml for automated setup
 #cloud-config
@@ -240,6 +262,7 @@ portunix virt create dev-vm \
 ```
 
 ### Cross-Platform Testing
+
 ```bash
 # Create test matrix
 for os in ubuntu-22.04 debian-12 centos-8 windows-server-2022; do
@@ -257,6 +280,7 @@ done
 ```
 
 ### CI/CD Integration
+
 ```bash
 # Ephemeral test environments
 portunix virt create ci-test-$(date +%s) \
@@ -276,6 +300,7 @@ portunix virt exec ci-test-* "
 ## Performance and Resource Management
 
 ### Resource Optimization
+
 ```bash
 # Optimize VM performance
 portunix virt tune my-vm \
@@ -290,6 +315,7 @@ portunix virt metrics my-vm --export prometheus
 ```
 
 ### High Availability Setup
+
 ```bash
 # Create clustered VMs
 portunix virt cluster create ha-cluster \
@@ -302,6 +328,7 @@ portunix virt migrate my-vm --to node2 --live --verify
 ```
 
 ### Backup and Disaster Recovery
+
 ```bash
 # Automated backup strategy
 portunix virt backup-schedule my-vm \
@@ -320,6 +347,7 @@ portunix virt restore \
 ## Security and Isolation
 
 ### Security Features
+
 ```bash
 # Secure VM configuration
 portunix virt create secure-vm \
@@ -337,6 +365,7 @@ portunix virt security-scan my-vm \
 ```
 
 ### Network Isolation
+
 ```bash
 # Create isolated network
 portunix virt network create isolated-lab \
@@ -354,6 +383,7 @@ portunix virt network create dmz \
 ## Cloud Integration
 
 ### Hybrid Cloud Workflows
+
 ```bash
 # Import cloud images
 portunix virt cloud import \
@@ -369,6 +399,7 @@ portunix virt cloud export my-vm \
 ```
 
 ### Multi-Cloud Development
+
 ```bash
 # Test across cloud providers
 portunix virt create aws-test --cloud-image aws-ubuntu
@@ -384,6 +415,7 @@ done
 ## Platform-Specific Features
 
 ### Linux (QEMU/KVM)
+
 ```bash
 # Advanced Linux virtualization
 portunix virt create linux-vm \
@@ -396,6 +428,7 @@ portunix virt create linux-vm \
 ```
 
 ### Windows (Hyper-V)
+
 ```bash
 # Windows-specific features
 portunix virt create windows-vm \
@@ -408,6 +441,7 @@ portunix virt create windows-vm \
 ```
 
 ### macOS (Limited Support)
+
 ```bash
 # macOS virtualization (where legally permitted)
 portunix virt create macos-vm \
@@ -421,6 +455,7 @@ portunix virt create macos-vm \
 ## Troubleshooting and Diagnostics
 
 ### Common Issues
+
 ```bash
 # VM won't start
 portunix virt diagnose my-vm --startup-issues
@@ -436,6 +471,7 @@ portunix virt storage diagnose my-vm --corruption-check
 ```
 
 ### Debug Mode
+
 ```bash
 # Verbose VM operations
 portunix virt create debug-vm --debug --trace
@@ -450,18 +486,21 @@ portunix virt console my-vm --serial --capture-output
 ## Best Practices
 
 ### VM Management
+
 - Use templates for consistent environments
 - Regular snapshots before major changes
 - Monitor resource usage and optimize
 - Implement proper backup strategies
 
 ### Security
+
 - Enable encryption for sensitive VMs
 - Use network isolation for testing
 - Regular security scanning and updates
 - Implement proper access controls
 
 ### Performance
+
 - Allocate appropriate resources
 - Use backend-specific optimizations
 - Monitor and tune performance regularly
@@ -470,12 +509,14 @@ portunix virt console my-vm --serial --capture-output
 ## Future Roadmap
 
 ### Planned Features
+
 - **Enhanced Container Integration** - Seamless VM-container workflows
 - **Advanced Networking** - SDN and service mesh support
 - **GPU Virtualization** - Enhanced GPU passthrough and sharing
 - **Edge Computing** - Lightweight edge VM deployment
 
 ### Integration Improvements
+
 - **Kubernetes in VMs** - Native K8s cluster deployment
 - **Multi-Cloud Orchestration** - Unified cloud VM management
 - **Advanced Automation** - Infrastructure as Code integration
@@ -490,4 +531,5 @@ portunix virt console my-vm --serial --capture-output
 
 ---
 
-*Virtualization commands provide complete isolation and cross-platform compatibility for complex development and testing scenarios.*
+*Virtualization commands provide complete isolation and cross-platform
+compatibility for complex development and testing scenarios.*

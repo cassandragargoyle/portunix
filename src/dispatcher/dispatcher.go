@@ -134,6 +134,13 @@ func (d *Dispatcher) registerHelpers() {
 		Binary:   "ptx-trace",
 		Required: false,
 	}
+
+	// Issue #068: PTX-Virt Helper for virtualization management
+	d.helpers["ptx-virt"] = &HelperConfig{
+		Commands: []string{"virt"},
+		Binary:   "ptx-virt",
+		Required: false,
+	}
 }
 
 // ShouldDispatch checks if a command should be dispatched to a helper binary

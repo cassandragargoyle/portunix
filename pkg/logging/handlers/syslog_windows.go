@@ -13,27 +13,27 @@ import (
 type SyslogPriority int
 
 const (
-	LOG_INFO    SyslogPriority = 6
-	LOG_USER    SyslogPriority = 8
-	LOG_KERN    SyslogPriority = 0
-	LOG_MAIL    SyslogPriority = 16
-	LOG_DAEMON  SyslogPriority = 24
-	LOG_AUTH    SyslogPriority = 32
-	LOG_SYSLOG  SyslogPriority = 40
-	LOG_LPR     SyslogPriority = 48
-	LOG_NEWS    SyslogPriority = 56
-	LOG_UUCP    SyslogPriority = 64
-	LOG_CRON    SyslogPriority = 72
+	LOG_INFO     SyslogPriority = 6
+	LOG_USER     SyslogPriority = 8
+	LOG_KERN     SyslogPriority = 0
+	LOG_MAIL     SyslogPriority = 16
+	LOG_DAEMON   SyslogPriority = 24
+	LOG_AUTH     SyslogPriority = 32
+	LOG_SYSLOG   SyslogPriority = 40
+	LOG_LPR      SyslogPriority = 48
+	LOG_NEWS     SyslogPriority = 56
+	LOG_UUCP     SyslogPriority = 64
+	LOG_CRON     SyslogPriority = 72
 	LOG_AUTHPRIV SyslogPriority = 80
-	LOG_FTP     SyslogPriority = 88
-	LOG_LOCAL0  SyslogPriority = 128
-	LOG_LOCAL1  SyslogPriority = 136
-	LOG_LOCAL2  SyslogPriority = 144
-	LOG_LOCAL3  SyslogPriority = 152
-	LOG_LOCAL4  SyslogPriority = 160
-	LOG_LOCAL5  SyslogPriority = 168
-	LOG_LOCAL6  SyslogPriority = 176
-	LOG_LOCAL7  SyslogPriority = 184
+	LOG_FTP      SyslogPriority = 88
+	LOG_LOCAL0   SyslogPriority = 128
+	LOG_LOCAL1   SyslogPriority = 136
+	LOG_LOCAL2   SyslogPriority = 144
+	LOG_LOCAL3   SyslogPriority = 152
+	LOG_LOCAL4   SyslogPriority = 160
+	LOG_LOCAL5   SyslogPriority = 168
+	LOG_LOCAL6   SyslogPriority = 176
+	LOG_LOCAL7   SyslogPriority = 184
 )
 
 // SyslogHandler handles syslog output (stub for Windows)

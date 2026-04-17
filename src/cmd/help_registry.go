@@ -240,6 +240,27 @@ var CommandRegistry = []CommandInfo{
 		Category:    "utility",
 	},
 	{
+		Name:        "cache",
+		Brief:       "Manage download and metadata cache",
+		Description: "Manage Portunix cache for downloaded packages, HTTP responses, build artifacts, and metadata. Provides cache inspection, cleanup, and purge capabilities.",
+		Category:    "utility",
+		SubCommands: []CommandInfo{
+			{Name: "info", Brief: "Show cache statistics and location"},
+			{Name: "list", Brief: "List cached items by category"},
+			{Name: "clean", Brief: "Remove expired and invalid entries"},
+			{Name: "purge", Brief: "Clear all cache contents"},
+			{Name: "remove", Brief: "Remove entries matching a pattern"},
+		},
+		Examples: []string{
+			"portunix cache info",
+			"portunix cache list",
+			"portunix cache list downloads",
+			"portunix cache clean",
+			"portunix cache purge",
+			"portunix cache remove nodejs",
+		},
+	},
+	{
 		Name:        "config",
 		Brief:       "Manage configuration",
 		Description: "View and modify Portunix configuration settings including default behaviors, paths, and preferences.",

@@ -32,6 +32,13 @@ This binary is typically invoked by the main portunix dispatcher and should not 
 	},
 }
 
+// handleCommand dispatches commands routed to this helper by the parent
+// portunix binary (see src/dispatcher/dispatcher.go). The primary dispatched
+// command is "playbook"; additional top-level commands ("mcp", "enterprise",
+// "secrets", "audit", "rbac", "cicd", "security", "compliance") support the
+// Ansible helper's extended subcommand surface when invoked directly. Also
+// handles the --version meta-flag used by the dispatcher. args arrive without
+// the binary name prefix.
 func handleCommand(args []string) {
 	// Handle version command first
 	if len(args) > 0 && args[0] == "--version" {

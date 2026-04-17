@@ -1,6 +1,7 @@
 # Go Plugin Development Guide
 
-Go is the native language for Portunix plugins, offering the best performance and seamless integration with the core system. This guide will help you create robust, efficient plugins using Go.
+Go is the native language for Portunix plugins, offering the best performance and seamless integration with the core system. This guide will
+help you create robust, efficient plugins using Go.
 
 ## Prerequisites
 
@@ -15,11 +16,12 @@ Create a new Go plugin using the Portunix CLI:
 ```bash
 portunix plugin create my-go-plugin --language=go
 cd my-go-plugin
+
 ```
 
 This creates a complete Go project structure:
 
-```
+```text
 my-go-plugin/
 ├── plugin.yaml              # Plugin manifest
 ├── go.mod                   # Go module definition
@@ -33,11 +35,13 @@ my-go-plugin/
 ├── scripts/                # Build and deployment scripts
 ├── tests/                  # Test files
 └── README.md               # Plugin documentation
+
 ```
 
 ## Plugin Structure
 
 ### Main Entry Point (main.go)
+
 ```go
 package main
 
@@ -106,9 +110,11 @@ func main() {
         log.Fatalf("Failed to serve: %v", err)
     }
 }
+
 ```
 
 ### Configuration Package (internal/config/config.go)
+
 ```go
 package config
 
@@ -176,9 +182,11 @@ func (c *Config) Validate() error {
     }
     return nil
 }
+
 ```
 
 ### gRPC Handlers (internal/handlers/plugin.go)
+
 ```go
 package handlers
 
@@ -242,9 +250,11 @@ func (h *PluginHandler) Shutdown(ctx context.Context, req *pb.ShutdownRequest) (
         Status: pb.ShutdownResponse_SUCCESS,
     }, nil
 }
+
 ```
 
 ### Business Logic (internal/services/plugin.go)
+
 ```go
 package services
 
@@ -305,39 +315,47 @@ func (s *PluginService) Cleanup() {
     log.Println("Performing cleanup operations...")
     // Implement cleanup logic
 }
+
 ```
 
 ## Building and Testing
 
 ### Build Script (scripts/build.sh)
+
 ```bash
 #!/bin/bash
 
 set -e
 
 # Build plugin binary
+
 echo "Building plugin..."
 go build -o bin/plugin main.go
 
 # Generate protocol buffers (if needed)
+
 if [ -d "proto" ]; then
     echo "Generating protocol buffers..."
     protoc --go_out=. --go-grpc_out=. proto/*.proto
 fi
 
 # Run tests
+
 echo "Running tests..."
 go test ./...
 
 # Create plugin package
+
 echo "Creating plugin package..."
 mkdir -p dist
 tar -czf dist/plugin.tar.gz bin/ plugin.yaml
 
 echo "Build completed successfully!"
+
 ```
 
 ### Test Example (tests/plugin_test.go)
+
 ```go
 package tests
 
@@ -384,50 +402,67 @@ func TestHealthCheck(t *testing.T) {
         t.Errorf("Expected SERVING status, got %v", resp.Status)
     }
 }
+
 ```
 
 ## Development Workflow
 
 ### 1. Development Setup
+
 ```bash
 # Install dependencies
+
 go mod download
 
 # Generate protocol buffers
+
 make proto
 
 # Run in development mode
+
 go run main.go -config=config.dev.yaml
+
 ```
 
 ### 2. Testing
+
 ```bash
 # Run unit tests
+
 go test ./...
 
 # Run integration tests
+
 go test -tags=integration ./tests/integration/
 
 # Test with Portunix
+
 portunix plugin install .
 portunix plugin test my-go-plugin
+
 ```
 
 ### 3. Building
+
 ```bash
 # Build binary
+
 make build
 
 # Build for multiple platforms
+
 make build-all
 
 # Create distribution package
+
 make package
+
 ```
 
 ## Advanced Features
 
 ### MCP Integration
+
 For plugins that expose tools to AI agents:
 
 ```go
@@ -487,9 +522,11 @@ func (h *PluginHandler) handleProcessFile(ctx context.Context, args string) (*pb
         Status: pb.CallToolResponse_SUCCESS,
     }, nil
 }
+
 ```
 
 ### Configuration Validation
+
 ```go
 func (c *Config) Validate() error {
     if c.Plugin.Name == "" {
@@ -512,9 +549,11 @@ func (c *Config) Validate() error {
     
     return nil
 }
+
 ```
 
 ### Logging and Metrics
+
 ```go
 import (
     "github.com/sirupsen/logrus"
@@ -568,11 +607,13 @@ func (h *PluginHandler) Execute(ctx context.Context, req *pb.ExecuteRequest) (*p
         Status: pb.ExecuteResponse_SUCCESS,
     }, nil
 }
+
 ```
 
 ## Best Practices
 
 ### Error Handling
+
 ```go
 import (
     "errors"
@@ -594,9 +635,11 @@ func (s *PluginService) ProcessData(data []byte) error {
     
     return nil
 }
+
 ```
 
 ### Resource Management
+
 ```go
 type PluginService struct {
     config   *config.Config
@@ -630,9 +673,11 @@ func (s *PluginService) Stop() error {
     
     return nil
 }
+
 ```
 
 ### Testing Patterns
+
 ```go
 func TestPluginServiceWithMocks(t *testing.T) {
     // Create mock dependencies
@@ -657,11 +702,13 @@ func TestPluginServiceWithMocks(t *testing.T) {
     // Verify mock calls
     mockDB.AssertExpectations(t)
 }
+
 ```
 
 ## Deployment
 
 ### Dockerfile
+
 ```dockerfile
 FROM golang:1.19-alpine AS builder
 
@@ -682,9 +729,11 @@ COPY --from=builder /app/plugin.yaml .
 EXPOSE 50051 50052 8080
 
 CMD ["./plugin"]
+
 ```
 
 ### Plugin Manifest
+
 ```yaml
 name: my-go-plugin
 version: 1.0.0
@@ -725,6 +774,7 @@ configuration:
       type: integer
       default: 30
       description: Request timeout in seconds
+
 ```
 
 ## Troubleshooting

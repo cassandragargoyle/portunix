@@ -6,7 +6,9 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/cassandragargoyle/Portunix)](https://goreportcard.com/report/github.com/cassandragargoyle/Portunix)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-**Universal development environment management tool** with intelligent OS detection, Docker container support, and automated software installation.
+> 🌐 **Language / Jazyk**: **English** | [Čeština](README.cs.md)
+
+**Unified AI plugin and task platform for development environments** — with intelligent OS detection, Docker container support, and automated software installation.
 
 > Simplify your development workflow across Windows, Linux, and macOS with a single, powerful CLI tool.
 
@@ -407,4 +409,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-**Universal development environment management made simple.**
+**Unified AI plugin and task platform — orchestrate, automate, extend.**

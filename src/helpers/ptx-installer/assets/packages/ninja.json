@@ -22,10 +22,7 @@
             "urls": {
               "x64": "https://github.com/ninja-build/ninja/releases/download/v1.12.1/ninja-win.zip"
             },
-            "extractTo": "C:/Program Files/ninja",
-            "postInstall": [
-              "setx PATH \"%PATH%;C:\\Program Files\\ninja\" /m"
-            ]
+            "extractTo": "C:/Program Files/ninja"
           },
           "chocolatey": {
             "type": "chocolatey",
@@ -36,6 +33,9 @@
         "verification": {
           "command": "ninja --version",
           "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "C:/Program Files/ninja"
         }
       },
       "linux": {

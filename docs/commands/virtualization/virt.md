@@ -2,9 +2,11 @@
 
 ## Quick Start
 
-The `virt` command provides universal virtualization management supporting multiple backends including QEMU/KVM, VirtualBox, VMware, and Hyper-V for cross-platform virtual machine operations.
+The `virt` command provides universal virtualization management supporting multiple backends including QEMU/KVM, VirtualBox, VMware, and Hyper-V
+for cross-platform virtual machine operations.
 
 ### Simplest Usage
+
 ```bash
 # Create a new VM
 portunix virt create myvm --iso ubuntu.iso
@@ -17,11 +19,13 @@ portunix virt ssh myvm
 ```
 
 ### Basic Syntax
+
 ```bash
 portunix virt [subcommand] [vm-name] [options]
 ```
 
 ### Common Subcommands
+
 - `create` - Create new virtual machine
 - `start` - Start virtual machine
 - `stop` - Stop virtual machine
@@ -169,6 +173,7 @@ portunix virt console myvm --serial
 Portunix supports multiple virtualization backends:
 
 #### QEMU/KVM (Linux)
+
 ```bash
 # Create KVM-accelerated VM
 portunix virt create myvm --backend qemu --accel kvm --iso linux.iso
@@ -185,6 +190,7 @@ portunix virt create myvm \
 ```
 
 #### VirtualBox (Cross-platform)
+
 ```bash
 # Create VirtualBox VM
 portunix virt create myvm --backend virtualbox --iso windows.iso
@@ -197,6 +203,7 @@ portunix virt create myvm \
 ```
 
 #### VMware (Commercial)
+
 ```bash
 # Create VMware VM
 portunix virt create myvm --backend vmware --iso vmware-tools.iso
@@ -209,6 +216,7 @@ portunix virt create myvm \
 ```
 
 #### Hyper-V (Windows)
+
 ```bash
 # Create Hyper-V VM
 portunix virt create myvm --backend hyperv --iso server.iso
@@ -243,6 +251,7 @@ portunix virt template export ubuntu-dev > template.json
 ```
 
 Template definition example:
+
 ```json
 {
   "name": "ubuntu-dev",
@@ -324,6 +333,7 @@ portunix virt provision myvm \
 ```
 
 Cloud-init example (`provision.yaml`):
+
 ```yaml
 #cloud-config
 users:
@@ -648,7 +658,7 @@ vm, err := client.Virt.Create(context.Background(), &VirtCreateRequest{
 ## Environment Variables
 
 | Variable | Description | Default |
-|----------|-------------|---------|
+| -------- | ----------- | ------- |
 | `PORTUNIX_VIRT_BACKEND` | Default virtualization backend | auto |
 | `PORTUNIX_VIRT_STORAGE` | Default storage location | ~/.portunix/vms |
 | `PORTUNIX_VIRT_TIMEOUT` | VM operation timeout | 300s |
@@ -667,7 +677,7 @@ vm, err := client.Virt.Create(context.Background(), &VirtCreateRequest{
 ### Complete Parameter List
 
 | Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
+| --------- | ---- | ------- | ----------- |
 | `--backend` | string | `auto` | Virtualization backend |
 | `--iso` | string | - | ISO image file |
 | `--image` | string | - | Disk image file |
@@ -686,7 +696,7 @@ vm, err := client.Virt.Create(context.Background(), &VirtCreateRequest{
 ## Exit Codes
 
 | Code | Meaning |
-|------|---------|
+| ---- | ------- |
 | 0 | Success |
 | 1 | General error |
 | 2 | VM not found |

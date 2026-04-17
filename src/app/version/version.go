@@ -1,7 +1,7 @@
 package version
 
 // Version will be set from main.go
-var ProductVersion = "v1.5.14"
+var ProductVersion = "v2.0.0"
 
 const (
 	ProductName = "Portunix"

@@ -1,4 +1,8 @@
-package sdk
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
+ package sdk
 
 import (
 	"sync"
@@ -109,9 +113,9 @@ func NewSession(name string, opts ...SessionOption) (*Session, error) {
 		session:         session,
 		storage:         store,
 		traceID:         models.GenerateTraceID(),
-		masker:          pii.NewMasker(false), // Disabled by default
+		masker:          pii.NewMasker(false),     // Disabled by default
 		sampler:         sampling.NewSampler(nil), // Default config
-		maxRecentEvents: 100, // Keep last 100 events for alert evaluation
+		maxRecentEvents: 100,                      // Keep last 100 events for alert evaluation
 		recentEvents:    make([]*models.TraceEvent, 0, 100),
 		firedAlerts:     make([]*alerts.Alert, 0),
 	}

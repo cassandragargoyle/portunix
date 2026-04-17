@@ -1,6 +1,7 @@
 # 🔧🚀 Portunix Features Overview
 
-This document provides an overview of features available in the Portunix core and standard plugins. It serves as a reference for both the core project (`portunix`) and plugins project (`portunix-plugins`).
+This document provides an overview of features available in the Portunix core and standard plugins. It serves as a reference for both
+the core project (`portunix`) and plugins project (`portunix-plugins`).
 
 ## Core Features (portunix)
 

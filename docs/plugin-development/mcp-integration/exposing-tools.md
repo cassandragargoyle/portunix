@@ -1,6 +1,7 @@
 # Exposing MCP Tools from Plugins
 
-The Model Context Protocol (MCP) allows plugins to expose their functionality to AI agents like Claude Code. This guide shows how to implement MCP tools in your plugins to enable AI-assisted development workflows.
+The Model Context Protocol (MCP) allows plugins to expose their functionality to AI agents like Claude Code. This guide shows how to
+implement MCP tools in your plugins to enable AI-assisted development workflows.
 
 ## Overview
 
@@ -42,6 +43,7 @@ First, define your tools using JSON Schema to describe parameters and their type
     "required": ["language", "specification"]
   }
 }
+
 ```
 
 ### 2. Implement ListTools RPC
@@ -82,10 +84,12 @@ func (h *PluginHandler) ListTools(ctx context.Context, req *pb.ListToolsRequest)
     
     return &pb.ListToolsResponse{Tools: tools}, nil
 }
+
 ```
 
 ```python
 # Python implementation
+
 def ListTools(self, request, context):
     """List available MCP tools."""
     tools = [
@@ -118,6 +122,7 @@ def ListTools(self, request, context):
     ]
     
     return plugin_pb2.ListToolsResponse(tools=tools)
+
 ```
 
 ### 3. Implement CallTool RPC
@@ -165,10 +170,12 @@ func (h *PluginHandler) handleGenerateCode(ctx context.Context, args string) (*p
         Status: pb.CallToolResponse_SUCCESS,
     }, nil
 }
+
 ```
 
 ```python
 # Python implementation
+
 def CallTool(self, request, context):
     """Call an MCP tool."""
     try:
@@ -208,6 +215,7 @@ def _handle_generate_code(self, arguments: str) -> plugin_pb2.CallToolResponse:
         result=code,
         status=plugin_pb2.CallToolResponse.SUCCESS
     )
+
 ```
 
 ## Advanced MCP Patterns
@@ -234,6 +242,7 @@ Create tools that can be chained together for complex workflows:
     "required": ["project_path"]
   }
 }
+
 ```
 
 ### 2. File Operation Tools
@@ -261,6 +270,7 @@ Tools for reading, writing, and manipulating files:
     "required": ["file_path"]
   }
 }
+
 ```
 
 ### 3. Interactive Tools
@@ -281,6 +291,7 @@ Tools that can prompt for additional information:
     "required": ["code", "refactor_type"]
   }
 }
+
 ```
 
 ## Tool Design Best Practices
@@ -319,6 +330,7 @@ Tools that can prompt for additional information:
     "required": ["query", "database_type"]
   }
 }
+
 ```
 
 ### 3. Robust Error Handling
@@ -376,6 +388,7 @@ func (h *PluginHandler) handleOptimizeQuery(ctx context.Context, args string) (*
         Status: pb.CallToolResponse_SUCCESS,
     }, nil
 }
+
 ```
 
 ### 4. Structured Return Values
@@ -430,6 +443,7 @@ func (s *Service) OptimizeQuery(ctx context.Context, query, dbType, target strin
     
     return string(resultJSON), nil
 }
+
 ```
 
 ## Testing MCP Tools
@@ -489,6 +503,7 @@ func TestMCPToolExecution(t *testing.T) {
         })
     }
 }
+
 ```
 
 ### Integration Testing with Claude Code
@@ -525,6 +540,7 @@ async def test_mcp_integration():
 
 if __name__ == "__main__":
     asyncio.run(test_mcp_integration())
+
 ```
 
 ## Plugin Manifest Configuration
@@ -565,11 +581,13 @@ mcp:
       priority: high
       auto_discover: true
       suggestions_enabled: true
+
 ```
 
 ## Real-World Examples
 
 ### 1. Docker Tool
+
 ```json
 {
   "name": "generate_dockerfile",
@@ -586,9 +604,11 @@ mcp:
     "required": ["project_path"]
   }
 }
+
 ```
 
 ### 2. Database Migration Tool
+
 ```json
 {
   "name": "generate_migration",
@@ -605,9 +625,11 @@ mcp:
     "required": ["old_schema", "new_schema", "database_type"]
   }
 }
+
 ```
 
 ### 3. API Documentation Tool
+
 ```json
 {
   "name": "generate_api_docs",
@@ -624,6 +646,7 @@ mcp:
     "required": ["source_path"]
   }
 }
+
 ```
 
 ## Monitoring and Analytics
@@ -654,6 +677,7 @@ func (h *PluginHandler) CallTool(ctx context.Context, req *pb.CallToolRequest) (
     
     return response, err
 }
+
 ```
 
 ## Next Steps

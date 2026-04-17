@@ -5,6 +5,7 @@
 The `plugin` command manages the complete lifecycle of Portunix plugins, from creation and installation to execution and monitoring.
 
 ### Simplest Usage
+
 ```bash
 # List all plugins
 portunix plugin list
@@ -18,11 +19,13 @@ portunix plugin start my-plugin
 ```
 
 ### Basic Syntax
+
 ```bash
 portunix plugin [subcommand] [plugin-name] [options]
 ```
 
 ### Available Subcommands
+
 - `list` - Show installed plugins
 - `install` - Install a plugin
 - `uninstall` - Remove a plugin
@@ -78,7 +81,8 @@ portunix plugin create weather-tracker \
 ```
 
 This creates:
-```
+
+```text
 weather-tracker/
 ├── plugin.json          # Plugin manifest
 ├── proto/
@@ -142,7 +146,8 @@ portunix plugin health --all
 ```
 
 Output example:
-```
+
+```text
 Plugin: my-plugin
 Status: Healthy
 Uptime: 2h 15m
@@ -159,7 +164,7 @@ Response Time: 15ms avg
 
 Portunix uses a gRPC-based plugin architecture:
 
-```
+```text
 ┌──────────────┐         gRPC          ┌─────────────┐
 │   Portunix   │ ◄──────────────────► │   Plugin    │
 │     Core     │                       │   Process   │
@@ -371,6 +376,7 @@ portunix plugin run my-plugin --elevated
 ```
 
 Permission categories:
+
 - `filesystem:read` - Read files
 - `filesystem:write` - Write files
 - `network:http` - HTTP requests
@@ -500,6 +506,7 @@ portunix plugin release my-plugin --version 1.0.0 --notes "Initial release"
 ### Common Issues and Solutions
 
 #### 1. Plugin Won't Start
+
 ```bash
 # Check plugin status
 portunix plugin status my-plugin
@@ -515,6 +522,7 @@ portunix plugin reinstall my-plugin
 ```
 
 #### 2. Permission Denied
+
 ```bash
 # Check current permissions
 portunix plugin permissions my-plugin
@@ -524,6 +532,7 @@ portunix plugin run my-plugin --permissions filesystem:read,network:https
 ```
 
 #### 3. Plugin Crashes
+
 ```bash
 # Get crash report
 portunix plugin crashlog my-plugin
@@ -536,6 +545,7 @@ portunix plugin config my-plugin set recovery.enabled true
 ```
 
 #### 4. Version Conflicts
+
 ```bash
 # Check compatibility
 portunix plugin compat my-plugin
@@ -695,9 +705,9 @@ ws.on('message', (data) => {
 ## Environment Variables
 
 | Variable | Description | Default |
-|----------|-------------|---------|
+| -------- | ----------- | ------- |
 | `PORTUNIX_PLUGIN_DIR` | Plugin installation directory | ~/.portunix/plugins |
-| `PORTUNIX_PLUGIN_REGISTRY` | Plugin registry URL | https://registry.portunix.ai |
+| `PORTUNIX_PLUGIN_REGISTRY` | Plugin registry URL | <https://registry.portunix.ai> |
 | `PORTUNIX_PLUGIN_TIMEOUT` | Plugin operation timeout | 30s |
 | `PORTUNIX_PLUGIN_DEBUG` | Enable debug mode | false |
 | `PORTUNIX_PLUGIN_SANDBOX` | Enable sandboxing | true |
@@ -714,7 +724,7 @@ ws.on('message', (data) => {
 ### Complete Parameter List
 
 | Subcommand | Parameters | Description |
-|------------|------------|-------------|
+| ---------- | ---------- | ----------- |
 | `list` | `--all`, `--enabled`, `--disabled` | List plugins |
 | `install` | `--version`, `--force`, `--dev` | Install plugin |
 | `uninstall` | `--keep-data`, `--force` | Remove plugin |
@@ -730,7 +740,7 @@ ws.on('message', (data) => {
 ## Exit Codes
 
 | Code | Meaning |
-|------|---------|
+| ---- | ------- |
 | 0 | Success |
 | 1 | General error |
 | 2 | Plugin not found |

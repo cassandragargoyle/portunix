@@ -2,7 +2,8 @@
 
 ## Purpose
 
-This document defines the Go coding standards for CassandraGargoyle projects, based on established patterns from the Portunix project and Go community best practices.
+This document defines the Go coding standards for CassandraGargoyle projects, based on established patterns from the Portunix
+project and Go community best practices.
 
 ## General Principles
 
@@ -564,7 +565,8 @@ When updating existing code to follow these guidelines:
 
 ---
 
-**Note**: These guidelines are based on the established patterns in the Portunix project and Go community standards. They should be adapted as the team's practices evolve.
+**Note**: These guidelines are based on the established patterns in the Portunix project and Go community standards.
+They should be adapted as the team's practices evolve.
 
 *Created: 2025-08-23*
 *Last updated: 2025-08-23*

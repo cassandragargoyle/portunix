@@ -1,11 +1,14 @@
 # PTX-Prompting Interactive Mode
 
 ## Overview
-PTX-Prompting helper supports an intelligent interactive mode that makes it easy to fill in template placeholders without having to remember all parameter names or provide them via command line.
+
+PTX-Prompting helper supports an intelligent interactive mode that makes it easy to fill in template placeholders without having to remember
+all parameter names or provide them via command line.
 
 ## Features
 
 ### 1. Automatic Interactive Mode Activation
+
 When you run the `build` command without providing values for required placeholders, the tool automatically switches to interactive mode:
 
 ```bash
@@ -16,6 +19,7 @@ ptx-prompting build template.md
 ```
 
 ### 2. Partial Value Support
+
 You can provide some values via command line and be prompted only for missing ones:
 
 ```bash
@@ -26,6 +30,7 @@ ptx-prompting build template.md --var file_path=main.go --var programming_langua
 ```
 
 ### 3. Explicit Interactive Mode
+
 Force interactive mode even when values could be optional:
 
 ```bash
@@ -35,6 +40,7 @@ ptx-prompting build template.md -i
 ```
 
 ### 4. Smart Defaults
+
 The interactive mode provides intelligent defaults for common placeholders:
 
 - `target_language`: Defaults to "English"
@@ -45,6 +51,7 @@ The interactive mode provides intelligent defaults for common placeholders:
 When a default is available, you can press Enter to accept it.
 
 ### 5. Contextual Help
+
 Each placeholder shows helpful descriptions based on its name:
 
 - Placeholders ending with `_file`: "Path to a file"
@@ -53,7 +60,9 @@ Each placeholder shows helpful descriptions based on its name:
 - Common placeholders have specific help text (e.g., `source_file`, `context_description`)
 
 ### 6. Friendly Display Names
+
 Placeholder names are automatically converted to readable format:
+
 - `source_file` → "Source File"
 - `programming_language` → "Programming Language"
 - `focus_area_1` → "Focus Area 1"
@@ -152,12 +161,15 @@ For best interactive experience, follow these naming patterns:
 ## Troubleshooting
 
 ### Issue: Not entering interactive mode automatically
+
 **Solution**: Check if you have `--allow-incomplete` flag set, which disables auto-interactive mode
 
 ### Issue: Want to skip interactive mode
+
 **Solution**: Use `--allow-incomplete` flag or provide all values via `--var` flags
 
 ### Issue: Need to provide many values repeatedly
+
 **Solution**: Consider creating a defaults file or using command history with `--var` flags
 
 ## Integration with Portunix

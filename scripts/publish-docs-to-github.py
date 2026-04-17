@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """
 Publish Documentation to GitHub Pages
 Deploys generated static documentation site to GitHub Pages using gh CLI

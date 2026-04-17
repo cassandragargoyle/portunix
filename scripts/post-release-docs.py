@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """
 Post-Release Documentation Generation Script
 Generates static documentation site from Portunix commands and deploys to GitHub Pages
@@ -478,7 +482,7 @@ theme = 'hugo-book'
   BookLogo = ''
 
   # (Optional) Set description in header
-  description = 'Universal development environment management tool'
+  description = 'Unified AI plugin and task platform for development environments'
   version = '{version}'
 
   # (Optional) Enable comments template on pages
@@ -523,7 +527,7 @@ title = 'Portunix Documentation'
 theme = 'portunix-docs'
 
 [params]
-  description = 'Universal development environment management tool'
+  description = 'Unified AI plugin and task platform for development environments'
   version = '{version}'
   github_repo = 'https://github.com/cassandragargoyle/Portunix'
 
@@ -729,9 +733,9 @@ weight: 1
 
 # Portunix Documentation
 
-**Universal development environment management tool**
+**Unified AI plugin and task platform for development environments**
 
-Portunix is a cross-platform CLI tool that simplifies the installation and management of development tools, packages, and environments.
+Portunix is a unified AI plugin and task platform for development environments. It simplifies the installation and management of development tools, packages, and environments across Windows, Linux, and macOS.
 
 ## Quick Start
 
@@ -783,9 +787,9 @@ draft: false
 
 # Portunix Documentation
 
-**Universal development environment management tool**
+**Unified AI plugin and task platform for development environments**
 
-Portunix is a cross-platform CLI tool that simplifies the installation and management of development tools, packages, and environments.
+Portunix is a unified AI plugin and task platform for development environments. It simplifies the installation and management of development tools, packages, and environments across Windows, Linux, and macOS.
 
 ## Quick Start
 
@@ -840,9 +844,9 @@ type: docs
 
 # Portunix Documentation
 
-**Universal development environment management tool**
+**Unified AI plugin and task platform for development environments**
 
-Portunix is a cross-platform CLI tool that simplifies the installation and management of development tools, packages, and environments.
+Portunix is a unified AI plugin and task platform for development environments. It simplifies the installation and management of development tools, packages, and environments across Windows, Linux, and macOS.
 
 [→ Go to Documentation](/Portunix/docs/)
 '''

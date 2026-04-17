@@ -1,17 +1,16 @@
 @echo off
-REM Setup Python Virtual Environment for Portunix
+REM Setup Python Virtual Environment for Portunix (uv-based)
 REM Usage: scripts\setup-venv.cmd [--with-tests]
 REM
-REM Creates a virtual environment in .venv\ directory
+REM Provisions .\.venv\ via `uv sync` (or `uv sync --group test` with
+REM --with-tests). See ADR-039 for the rationale behind adopting uv.
 
 setlocal EnableDelayedExpansion
 
 set "SCRIPT_DIR=%~dp0"
 set "PROJECT_ROOT=%SCRIPT_DIR%.."
-set "VENV_DIR=%PROJECT_ROOT%\.venv"
 set "INSTALL_TESTS=0"
 
-REM Parse arguments
 :parse_args
 if "%~1"=="" goto :main
 if /i "%~1"=="--with-tests" set "INSTALL_TESTS=1"
@@ -24,8 +23,14 @@ goto :parse_args
 echo Usage: %~nx0 [options]
 echo.
 echo Options:
-echo   --with-tests    Also install test dependencies
+echo   --with-tests    Also install test dependencies (pytest, ...)
 echo   --help, -h      Show this help message
+echo.
+echo This script uses uv ^(https://docs.astral.sh/uv/^) to provision the
+echo Python environment. If uv is not installed, run one of:
+echo.
+echo   portunix install uv
+echo   powershell -c "irm https://astral.sh/uv/install.ps1 ^| iex"
 exit /b 0
 
 :main
@@ -36,118 +41,60 @@ echo.
 
 cd /d "%PROJECT_ROOT%"
 
-REM Detect Python
-call :detect_python
+call :check_uv
 if errorlevel 1 exit /b 1
 
-REM Create venv
-call :create_venv
+call :uv_sync
 if errorlevel 1 exit /b 1
 
-REM Install dependencies
-call :install_deps
-
-REM Show instructions
 call :show_instructions
-
 exit /b 0
 
-:detect_python
-echo [==] Detecting Python...
-
-REM Try py launcher first
-py -3 --version >nul 2>&1
+:check_uv
+echo [==] Detecting uv...
+uv --version >nul 2>&1
 if %errorlevel%==0 (
-    for /f "tokens=*" %%i in ('py -3 --version 2^>^&1') do set "PY_VERSION=%%i"
-    echo [OK] Found Python via py launcher: !PY_VERSION!
-    set "PYTHON_CMD=py -3"
+    for /f "tokens=*" %%i in ('uv --version 2^>^&1') do set "UV_VERSION=%%i"
+    echo [OK] Found uv: !UV_VERSION!
     exit /b 0
 )
-
-REM Try python command
-python --version >nul 2>&1
-if %errorlevel%==0 (
-    for /f "tokens=*" %%i in ('python --version 2^>^&1') do set "PY_VERSION=%%i"
-    echo !PY_VERSION! | findstr /C:"Python 3" >nul
-    if !errorlevel!==0 (
-        echo [OK] Found Python: !PY_VERSION!
-        set "PYTHON_CMD=python"
-        exit /b 0
-    )
-)
-
-echo [X] Python 3 is not installed
-echo Install Python 3.8+ from https://python.org or use: portunix install python
+echo [X] uv is not installed or not on PATH
+echo.
+echo Install uv via one of:
+echo   portunix install uv
+echo   powershell -c "irm https://astral.sh/uv/install.ps1 ^| iex"
+echo.
+echo See https://docs.astral.sh/uv/ for details.
 exit /b 1
 
-:create_venv
-echo [==] Creating virtual environment in %VENV_DIR%...
-
-if exist "%VENV_DIR%" (
-    echo [!] Virtual environment already exists
-    set /p "RECREATE=Do you want to recreate it? [y/N] "
-    if /i "!RECREATE!"=="y" (
-        rmdir /s /q "%VENV_DIR%"
-    ) else (
-        echo [==] Using existing virtual environment
-        exit /b 0
-    )
+:uv_sync
+if "%INSTALL_TESTS%"=="1" (
+    echo [==] Provisioning .venv\ with test dependencies ^(uv sync --group test^)...
+    uv sync --group test
+) else (
+    echo [==] Provisioning .venv\ ^(uv sync^)...
+    uv sync
 )
-
-%PYTHON_CMD% -m venv "%VENV_DIR%"
 if errorlevel 1 (
-    echo [X] Failed to create virtual environment
+    echo [X] uv sync failed
     exit /b 1
 )
-echo [OK] Virtual environment created
-exit /b 0
-
-:install_deps
-echo [==] Installing dependencies...
-
-set "VENV_PYTHON=%VENV_DIR%\Scripts\python.exe"
-
-REM Upgrade pip
-"%VENV_PYTHON%" -m pip install --upgrade pip >nul 2>&1
-echo [OK] pip upgraded
-
-REM Install main requirements if exists
-if exist "%PROJECT_ROOT%\requirements.txt" (
-    REM Check if file has actual dependencies
-    findstr /v /r "^#" "%PROJECT_ROOT%\requirements.txt" | findstr /r "." >nul 2>&1
-    if !errorlevel!==0 (
-        "%VENV_PYTHON%" -m pip install -r "%PROJECT_ROOT%\requirements.txt"
-        echo [OK] Main dependencies installed
-    ) else (
-        echo [OK] No main dependencies to install
-    )
-)
-
-REM Install test requirements if requested
-if "%INSTALL_TESTS%"=="1" (
-    if exist "%PROJECT_ROOT%\test\requirements-test.txt" (
-        "%VENV_PYTHON%" -m pip install -r "%PROJECT_ROOT%\test\requirements-test.txt"
-        echo [OK] Test dependencies installed
-    )
-)
-
+echo [OK] Environment ready
 exit /b 0
 
 :show_instructions
 echo.
 echo [==] Setup complete!
 echo.
-echo To activate the virtual environment:
+echo Run commands without activation:
+echo   uv run pytest test/
+echo   uv run scripts\file-server.py --help
+echo.
+echo Or activate the virtual environment:
 echo.
 echo   CMD:           .venv\Scripts\activate.bat
 echo   PowerShell:    .venv\Scripts\Activate.ps1
 echo   Git Bash:      source .venv/Scripts/activate
-echo.
-echo Or use the helper scripts:
-echo.
-echo   CMD:           scripts\activate-venv.cmd
-echo   PowerShell:    .\scripts\activate-venv.ps1
-echo   Bash:          source scripts/activate-venv.sh
 echo.
 echo To deactivate: deactivate
 echo.

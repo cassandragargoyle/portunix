@@ -318,6 +318,8 @@ archives:
         dst: install.sh
       - src: scripts/install.ps1
         dst: install.ps1
+      - src: scripts/install.bat
+        dst: install.bat
       - LICENSE*
       - README.md
       # Optionally add e.g. shell completion:
@@ -340,12 +342,14 @@ release:
     - glob: ./dist/*
     - glob: ./release-assets/quickstart/*.ps1
     - glob: ./release-assets/quickstart/*.sh
+    - glob: ./scripts/install.ps1
+    - glob: ./scripts/install.bat
   
   # Release notes
   header: |
     ## Portunix {{.Version}}
 
-    Universal development environment management tool with Git-like dispatcher architecture.
+    Unified AI plugin and task platform for development environments, with Git-like dispatcher architecture.
 
     **This release includes:**
     - Main portunix binary (dispatcher)
@@ -381,13 +385,18 @@ release:
     ./install.sh --silent --add-to-path
     ```
 
-    ### Windows
+    ### Windows (one-liner)
+    ```powershell
+    irm https://github.com/cassandragargoyle/Portunix/releases/latest/download/install.ps1 | iex
+    ```
+
+    ### Windows (manual)
     ```powershell
     # Download and extract
     Expand-Archive portunix_{{.Version}}_windows_amd64.zip
     cd portunix_{{.Version}}_windows_amd64
 
-    # Interactive installation
+    # Double-click install.bat or run:
     .\install.ps1
 
     # Or silent installation

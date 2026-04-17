@@ -7,7 +7,7 @@ import (
 )
 
 // Version is set at build time using ldflags
-var Version = "v1.5.14"
+var Version = "v1.10.8"
 
 // ReleaseInfo contains information about a GitHub release
 type ReleaseInfo struct {

@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """
 Make Release Script for Portunix
 Part of ADR-035: Separate Platforms Distribution Strategy
@@ -521,7 +525,7 @@ def create_release_notes(version: str) -> None:
 
     release_notes = f"""# Portunix {version}
 
-Universal development environment management tool.
+Unified AI plugin and task platform for development environments.
 
 ## 🎉 What's New
 

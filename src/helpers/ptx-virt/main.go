@@ -1,7 +1,12 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package main
 
 import (
 	_ "embed"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -35,6 +40,91 @@ Supported virtualization backends:
 	},
 }
 
+func showHelpAI() {
+	type CommandInfo struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+	type AIHelp struct {
+		Tool        string        `json:"tool"`
+		Version     string        `json:"version"`
+		Description string        `json:"description"`
+		Commands    []CommandInfo `json:"commands"`
+	}
+	help := AIHelp{
+		Tool:        "ptx-virt",
+		Version:     version,
+		Description: "Unified virtualization management (VirtualBox, QEMU/KVM, VMware, Hyper-V)",
+		Commands: []CommandInfo{
+			{Name: "virt check", Description: "Check virtualization support and available backends"},
+			{Name: "virt list", Description: "List all virtual machines"},
+			{Name: "virt create", Description: "Create a new virtual machine"},
+			{Name: "virt start", Description: "Start a virtual machine"},
+			{Name: "virt stop", Description: "Stop a virtual machine"},
+			{Name: "virt restart", Description: "Restart a virtual machine"},
+			{Name: "virt delete", Description: "Delete a virtual machine"},
+			{Name: "virt info", Description: "Show detailed VM information"},
+			{Name: "virt status", Description: "Show VM status"},
+			{Name: "virt ssh", Description: "SSH into a virtual machine"},
+			{Name: "virt snapshot", Description: "Manage VM snapshots"},
+			{Name: "virt install-qemu", Description: "Install QEMU/KVM"},
+		},
+	}
+	data, _ := json.MarshalIndent(help, "", "  ")
+	fmt.Println(string(data))
+}
+
+func showHelpExpert() {
+	fmt.Printf("PTX-VIRT v%s - Virtualization Management\n", version)
+	fmt.Println("═══════════════════════════════════════════════════════════")
+	fmt.Println()
+	fmt.Println("DESCRIPTION:")
+	fmt.Println("  Unified interface for managing virtual machines across multiple")
+	fmt.Println("  hypervisors: VirtualBox, QEMU/KVM, VMware, and Hyper-V.")
+	fmt.Println("  Automatic backend detection with priority: VirtualBox > QEMU/KVM > VMware > Hyper-V.")
+	fmt.Println()
+	fmt.Println("COMMANDS:")
+	fmt.Println("  virt check               Check virtualization support and backends")
+	fmt.Println("  virt list                List all virtual machines")
+	fmt.Println("  virt create <name>       Create a new virtual machine")
+	fmt.Println("    --os <type>              OS type (linux, windows)")
+	fmt.Println("    --memory <MB>            Memory allocation")
+	fmt.Println("    --disk <GB>              Disk size")
+	fmt.Println("    --iso <path>             Installation ISO")
+	fmt.Println("  virt start <name>        Start a virtual machine")
+	fmt.Println("  virt stop <name>         Stop a virtual machine")
+	fmt.Println("  virt restart <name>      Restart a virtual machine")
+	fmt.Println("  virt delete <name>       Delete a virtual machine")
+	fmt.Println("  virt info <name>         Show detailed VM information")
+	fmt.Println("  virt status <name>       Show VM status")
+	fmt.Println("  virt ssh <name>          SSH into a virtual machine")
+	fmt.Println("  virt snapshot <name>     Manage VM snapshots")
+	fmt.Println("    create <snap-name>       Create snapshot")
+	fmt.Println("    list                     List snapshots")
+	fmt.Println("    restore <snap-name>      Restore snapshot")
+	fmt.Println("    delete <snap-name>       Delete snapshot")
+	fmt.Println("  virt install-qemu        Install QEMU/KVM")
+	fmt.Println()
+	fmt.Println("SUPPORTED BACKENDS:")
+	fmt.Println("  VirtualBox     Cross-platform (Windows, Linux, macOS)")
+	fmt.Println("  QEMU/KVM       Linux only (best performance)")
+	fmt.Println("  VMware         Cross-platform (Workstation/Fusion)")
+	fmt.Println("  Hyper-V        Windows only")
+	fmt.Println()
+	fmt.Println("EXAMPLES:")
+	fmt.Println("  portunix virt check")
+	fmt.Println("  portunix virt list")
+	fmt.Println("  portunix virt create dev-vm --os linux --memory 4096 --disk 40")
+	fmt.Println("  portunix virt start dev-vm")
+	fmt.Println("  portunix virt ssh dev-vm")
+	fmt.Println("  portunix virt snapshot dev-vm create before-upgrade")
+}
+
+// handleCommand dispatches the "virt" command routed to this helper by the
+// parent portunix binary (see src/dispatcher/dispatcher.go), plus the meta-flags
+// --version, --description, --list-commands, --help-ai, and --help-expert used
+// by the dispatcher for discovery and documentation generation. args arrive
+// without the binary name prefix.
 func handleCommand(args []string) {
 	// Handle dispatched commands: virt
 	if len(args) == 0 {
@@ -59,6 +149,10 @@ func handleCommand(args []string) {
 		fmt.Println("Portunix Virtualization Management Helper")
 	case "--list-commands":
 		fmt.Println("virt")
+	case "--help-ai":
+		showHelpAI()
+	case "--help-expert":
+		showHelpExpert()
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		fmt.Println("Supported commands: virt")
@@ -412,6 +506,18 @@ func showVirtualBoxHelp() {
 }
 
 func main() {
+	// Handle --help-ai and --help-expert before cobra processing
+	for _, arg := range os.Args[1:] {
+		switch arg {
+		case "--help-ai":
+			showHelpAI()
+			return
+		case "--help-expert":
+			showHelpExpert()
+			return
+		}
+	}
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

@@ -1,0 +1,72 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "uv",
+    "displayName": "uv",
+    "description": "An extremely fast Python package and project manager, written in Rust",
+    "category": "development/tools",
+    "homepage": "https://docs.astral.sh/uv/",
+    "documentation": "https://docs.astral.sh/uv/",
+    "license": "MIT OR Apache-2.0",
+    "maintainer": "Astral"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "script",
+        "variants": {
+          "latest": {
+            "version": "latest",
+            "installScript": "powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\"",
+            "postInstall": [
+              "uv --version"
+            ]
+          }
+        },
+        "verification": {
+          "command": "uv --version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "script",
+        "variants": {
+          "latest": {
+            "version": "latest",
+            "packages": ["curl"],
+            "installScript": "curl -LsSf https://astral.sh/uv/install.sh | sh",
+            "postInstall": [
+              "uv --version"
+            ]
+          }
+        },
+        "verification": {
+          "command": "uv --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "github": {
+        "type": "github",
+        "url": "https://github.com/astral-sh/uv",
+        "apiEndpoint": "https://api.github.com/repos/astral-sh/uv/releases/latest",
+        "pattern": "uv-{os}-{arch}"
+      },
+      "official": {
+        "type": "direct",
+        "url": "https://docs.astral.sh/uv/",
+        "apiEndpoint": "https://astral.sh/uv/install.sh"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check GitHub API at https://api.github.com/repos/astral-sh/uv/releases/latest for the latest uv release. The official installer always fetches the latest version.",
+      "urlResolution": "Linux/macOS install script: https://astral.sh/uv/install.sh. Windows install script: https://astral.sh/uv/install.ps1. Binary releases on GitHub as uv-{target-triple}.tar.gz.",
+      "updateGuidance": "uv is a single static binary with no runtime dependencies. Re-running the official installer upgrades in place. See ADR-039 for Portunix's adoption rationale."
+    },
+    "dependencies": [],
+    "templates": ["powershell-script", "bash-script"]
+  }
+}

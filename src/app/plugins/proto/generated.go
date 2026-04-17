@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 // Package proto contains generated protobuf definitions for plugin communication
 // This is a placeholder until we can generate actual protobuf files
 package proto

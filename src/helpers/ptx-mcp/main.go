@@ -5,6 +5,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -108,7 +109,72 @@ func init() {
 	rootCmd.SetVersionTemplate("portunix mcp version {{.Version}}\n")
 }
 
+func showHelpAI() {
+	type CommandInfo struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+	type AIHelp struct {
+		Tool        string        `json:"tool"`
+		Version     string        `json:"version"`
+		Description string        `json:"description"`
+		Commands    []CommandInfo `json:"commands"`
+	}
+	help := AIHelp{
+		Tool:        "ptx-mcp",
+		Version:     version,
+		Description: "Model Context Protocol server for AI assistant integration",
+		Commands: []CommandInfo{
+			{Name: "mcp serve", Description: "Start MCP server for AI assistant integration"},
+		},
+	}
+	data, _ := json.MarshalIndent(help, "", "  ")
+	fmt.Println(string(data))
+}
+
+func showHelpExpert() {
+	fmt.Printf("PTX-MCP v%s - Model Context Protocol Server\n", version)
+	fmt.Println("═══════════════════════════════════════════════════════════")
+	fmt.Println()
+	fmt.Println("DESCRIPTION:")
+	fmt.Println("  MCP (Model Context Protocol) server enabling AI assistants like")
+	fmt.Println("  Claude Code to interact with Portunix functionality.")
+	fmt.Println()
+	fmt.Println("COMMANDS:")
+	fmt.Println("  mcp serve                Start MCP server")
+	fmt.Println()
+	fmt.Println("SERVE FLAGS:")
+	fmt.Println("  -m, --mode <mode>        Communication mode: stdio, tcp, unix (default: stdio)")
+	fmt.Println("  -p, --port <port>        Port for TCP mode (default: 3001)")
+	fmt.Println("  -s, --socket <path>      Socket path for Unix mode (default: /tmp/portunix.sock)")
+	fmt.Println("  -r, --permissions <level> Permission level: limited, standard, full (default: limited)")
+	fmt.Println("  -c, --config <path>      Path to configuration file")
+	fmt.Println()
+	fmt.Println("COMMUNICATION MODES:")
+	fmt.Println("  stdio    Standard input/output for direct AI integration (default)")
+	fmt.Println("  tcp      TCP socket server for network-based connections")
+	fmt.Println("  unix     Unix domain socket for local IPC")
+	fmt.Println()
+	fmt.Println("EXAMPLES:")
+	fmt.Println("  portunix mcp serve                           Start in stdio mode")
+	fmt.Println("  portunix mcp serve --mode tcp --port 3001    TCP mode on port 3001")
+	fmt.Println("  portunix mcp serve --mode unix               Unix socket mode")
+	fmt.Println("  portunix mcp serve --permissions full        Full permissions")
+}
+
 func main() {
+	// Handle --help-ai and --help-expert before cobra processing
+	for _, arg := range os.Args[1:] {
+		switch arg {
+		case "--help-ai":
+			showHelpAI()
+			return
+		case "--help-expert":
+			showHelpExpert()
+			return
+		}
+	}
+
 	// Handle dispatched commands - when called via dispatcher, args[0] is "mcp"
 	if len(os.Args) > 1 && os.Args[0] != "mcp" {
 		// Called directly as ptx-mcp, shift args to include mcp

@@ -2096,6 +2096,7 @@ type ContainerRunOptions struct {
 	Ports       []string
 	Volumes     []string
 	Environment []string
+	Network     string
 }
 
 // RunContainer runs a generic Docker container with specified options
@@ -2115,6 +2116,9 @@ func RunContainer(image string, command []string, options ContainerRunOptions) e
 	}
 	if options.Name != "" {
 		args = append(args, "--name", options.Name)
+	}
+	if options.Network != "" {
+		args = append(args, "--network", options.Network)
 	}
 
 	// Add port mappings

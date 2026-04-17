@@ -113,7 +113,7 @@ git push -u origin hotfix/security-vulnerability
 
 ### Good Examples
 
-```
+```text
 ✅ feature/github-integration
 ✅ feature/user-authentication  
 ✅ feature/package-manager-detection
@@ -131,7 +131,7 @@ git push -u origin hotfix/security-vulnerability
 
 ### Bad Examples
 
-```
+```text
 ❌ feature/NewFeature              # Use lowercase
 ❌ fix_bug                         # Use hyphens, not underscores
 ❌ Feature/GitHub Integration       # No spaces, use lowercase
@@ -146,7 +146,7 @@ git push -u origin hotfix/security-vulnerability
 
 ### Format
 
-```
+```text
 <type>: <description>
 
 [optional body]
@@ -283,7 +283,7 @@ git push origin v1.2.1
 
 Use the same format as commit messages:
 
-```
+```text
 feat: Add user authentication system
 fix: Resolve Docker installation issue
 docs: Update API documentation
@@ -558,7 +558,8 @@ When viewing commit statistics (e.g., `git show --stat`, `git diff --stat`), the
               56 lines added    3786 lines deleted
 ```
 
-**Common misunderstanding**: The numbers after "insertions" and "deletions" refer to **lines of code**, not files. The file count is shown separately at the beginning.
+**Common misunderstanding**: The numbers after "insertions" and "deletions" refer to **lines of code**, not files.
+The file count is shown separately at the beginning.
 
 ### Reading Diff Stats
 
@@ -620,7 +621,8 @@ git push --force-with-lease origin branch-name
 
 ---
 
-**Note**: These guidelines should be consistently applied across all CassandraGargoyle projects. Team members should review and follow these practices to maintain clean and manageable Git history.
+**Note**: These guidelines should be consistently applied across all CassandraGargoyle projects. Team members should review and follow
+these practices to maintain clean and manageable Git history.
 
 *Created: 2025-08-23*
 *Last updated: 2026-01-03*

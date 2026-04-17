@@ -12,9 +12,9 @@ func TestValidatePlatform_DownloadType(t *testing.T) {
 	r := &PackageRegistry{}
 
 	tests := []struct {
-		name        string
+		name         string
 		platformType string
-		wantErr     bool
+		wantErr      bool
 	}{
 		{"download type is valid", "download", false},
 		{"apt type is valid", "apt", false},

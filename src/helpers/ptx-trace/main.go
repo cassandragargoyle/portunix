@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package main
 
 import (
@@ -1761,7 +1765,123 @@ func init() {
 	rootCmd.SetVersionTemplate("portunix trace version {{.Version}}\n")
 }
 
+func showHelpAI() {
+	type CommandInfo struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+		Category    string `json:"category"`
+	}
+	type AIHelp struct {
+		Tool        string        `json:"tool"`
+		Version     string        `json:"version"`
+		Description string        `json:"description"`
+		Commands    []CommandInfo `json:"commands"`
+	}
+	help := AIHelp{
+		Tool:        "ptx-trace",
+		Version:     version,
+		Description: "Universal tracing system for software development workflows",
+		Commands: []CommandInfo{
+			{Name: "trace start", Description: "Start a new trace session", Category: "session"},
+			{Name: "trace end", Description: "End active trace session", Category: "session"},
+			{Name: "trace sessions", Description: "List trace sessions", Category: "session"},
+			{Name: "trace event", Description: "Record a trace event", Category: "recording"},
+			{Name: "trace view", Description: "View session details and events", Category: "analysis"},
+			{Name: "trace stats", Description: "Show session statistics", Category: "analysis"},
+			{Name: "trace query", Description: "Query events with filters", Category: "analysis"},
+			{Name: "trace errors", Description: "Show error events", Category: "analysis"},
+			{Name: "trace index", Description: "Manage search index", Category: "index"},
+			{Name: "trace index rebuild", Description: "Rebuild search index", Category: "index"},
+			{Name: "trace serve", Description: "Start trace web UI server", Category: "server"},
+			{Name: "trace export ai", Description: "Export optimized for AI/LLM analysis", Category: "export"},
+			{Name: "trace export file", Description: "Export to file (JSON, CSV)", Category: "export"},
+			{Name: "trace export db", Description: "Export to database", Category: "export"},
+			{Name: "trace export fulltext", Description: "Export to fulltext search index", Category: "export"},
+			{Name: "trace alerts rules", Description: "Manage alert rules", Category: "alerts"},
+			{Name: "trace alerts history", Description: "View alert history", Category: "alerts"},
+			{Name: "trace alerts stats", Description: "Alert statistics", Category: "alerts"},
+			{Name: "trace alerts test", Description: "Test alert rules", Category: "alerts"},
+			{Name: "trace alerts clear", Description: "Clear alert history", Category: "alerts"},
+		},
+	}
+	data, _ := json.MarshalIndent(help, "", "  ")
+	fmt.Println(string(data))
+}
+
+func showHelpExpert() {
+	fmt.Printf("PTX-TRACE v%s - Universal Tracing System\n", version)
+	fmt.Println("═══════════════════════════════════════════════════════════")
+	fmt.Println()
+	fmt.Println("DESCRIPTION:")
+	fmt.Println("  Universal tracing system for software development. Captures, stores,")
+	fmt.Println("  and visualizes operations during ETL/ELT pipelines, API calls, build")
+	fmt.Println("  processes, and any workflows requiring debugging and analysis.")
+	fmt.Println()
+	fmt.Println("SESSION MANAGEMENT:")
+	fmt.Println("  trace start <name>       Start new trace session")
+	fmt.Println("    -s, --source <src>       Source data (file or URL)")
+	fmt.Println("    -d, --destination <dst>  Destination (connection string)")
+	fmt.Println("    -t, --tag <tag>          Add tag (repeatable)")
+	fmt.Println("    --sampling <rate>        Sampling rate 0.0-1.0 (default: 1.0)")
+	fmt.Println("    --pii-mask               Enable PII masking")
+	fmt.Println("    --alerts                 Enable real-time alerting")
+	fmt.Println("  trace end                End active session")
+	fmt.Println("    --status <status>        completed, failed, cancelled")
+	fmt.Println("    --summary                Show session summary")
+	fmt.Println("  trace sessions           List sessions")
+	fmt.Println()
+	fmt.Println("EVENT RECORDING:")
+	fmt.Println("  trace event <type> <message>   Record an event")
+	fmt.Println("    Types: transform, validate, error, warning, info, skip, enrich")
+	fmt.Println()
+	fmt.Println("ANALYSIS:")
+	fmt.Println("  trace view [session-id]   View session details and events")
+	fmt.Println("  trace stats [session-id]  Show statistics")
+	fmt.Println("  trace query <pattern>     Query events with filters")
+	fmt.Println("  trace errors [session-id] Show error events")
+	fmt.Println()
+	fmt.Println("EXPORT:")
+	fmt.Println("  trace export ai           Export optimized for AI/LLM analysis")
+	fmt.Println("  trace export file         Export to JSON/CSV file")
+	fmt.Println("  trace export db           Export to database")
+	fmt.Println("  trace export fulltext     Export to fulltext search index")
+	fmt.Println()
+	fmt.Println("INDEX & SERVER:")
+	fmt.Println("  trace index rebuild       Rebuild search index")
+	fmt.Println("  trace serve               Start trace web UI server")
+	fmt.Println("    --port <port>             Server port (default: 8080)")
+	fmt.Println()
+	fmt.Println("ALERTS:")
+	fmt.Println("  trace alerts rules        Manage alert rules")
+	fmt.Println("  trace alerts history      View alert history")
+	fmt.Println("  trace alerts stats        Alert statistics")
+	fmt.Println("  trace alerts test         Test alert rules")
+	fmt.Println("  trace alerts clear        Clear alert history")
+	fmt.Println()
+	fmt.Println("STORAGE:")
+	fmt.Println("  ~/.portunix/traces/")
+	fmt.Println()
+	fmt.Println("EXAMPLES:")
+	fmt.Println("  portunix trace start \"import-customers\" --source data.csv --tag production")
+	fmt.Println("  portunix trace event transform \"Mapped field: email -> contact_email\"")
+	fmt.Println("  portunix trace end --summary")
+	fmt.Println("  portunix trace export ai --last 5")
+	fmt.Println("  portunix trace query \"error\" --since 24h")
+}
+
 func main() {
+	// Handle --help-ai and --help-expert before cobra processing
+	for _, arg := range os.Args[1:] {
+		switch arg {
+		case "--help-ai":
+			showHelpAI()
+			return
+		case "--help-expert":
+			showHelpExpert()
+			return
+		}
+	}
+
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)

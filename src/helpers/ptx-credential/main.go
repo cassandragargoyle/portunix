@@ -1,3 +1,8 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
+ 
 package main
 
 import (
@@ -623,7 +628,98 @@ func init() {
 	rootCmd.AddCommand(m365Cmd)
 }
 
+func showHelpAI() {
+	type CommandInfo struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+	type AIHelp struct {
+		Tool        string        `json:"tool"`
+		Version     string        `json:"version"`
+		Description string        `json:"description"`
+		Commands    []CommandInfo `json:"commands"`
+	}
+	help := AIHelp{
+		Tool:        "ptx-credential",
+		Version:     version,
+		Description: "Secure credential storage and retrieval with AES-256-GCM encryption",
+		Commands: []CommandInfo{
+			{Name: "set", Description: "Store a credential securely"},
+			{Name: "get", Description: "Retrieve a stored credential"},
+			{Name: "delete", Description: "Delete a stored credential"},
+			{Name: "list", Description: "List all stored credentials"},
+			{Name: "info", Description: "Show credential store information"},
+			{Name: "store create", Description: "Create a new credential store"},
+			{Name: "store list", Description: "List all credential stores"},
+			{Name: "store delete", Description: "Delete a credential store"},
+			{Name: "m365 get", Description: "Get M365-compatible token"},
+			{Name: "m365 set", Description: "Set M365-compatible token"},
+			{Name: "m365 delete", Description: "Delete M365-compatible token"},
+		},
+	}
+	data, _ := json.MarshalIndent(help, "", "  ")
+	fmt.Println(string(data))
+}
+
+func showHelpExpert() {
+	fmt.Printf("PTX-CREDENTIAL v%s - Secure Credential Management\n", version)
+	fmt.Println("═══════════════════════════════════════════════════════════")
+	fmt.Println()
+	fmt.Println("DESCRIPTION:")
+	fmt.Println("  Securely store and retrieve credentials (API keys, passwords, tokens)")
+	fmt.Println("  with AES-256-GCM encryption and PBKDF2-HMAC-SHA256 key derivation.")
+	fmt.Println("  Machine-bound encryption by default, optional password protection.")
+	fmt.Println()
+	fmt.Println("COMMANDS:")
+	fmt.Println("  set <name> <value>       Store a credential")
+	fmt.Println("    --label <text>           Human-readable label")
+	fmt.Println("  get <name>               Retrieve a stored credential")
+	fmt.Println("  delete <name>            Delete a stored credential")
+	fmt.Println("  list                     List all stored credentials")
+	fmt.Println("  info                     Show credential store information")
+	fmt.Println()
+	fmt.Println("  store create <name>      Create a new credential store")
+	fmt.Println("  store list               List all credential stores")
+	fmt.Println("  store delete <name>      Delete a credential store")
+	fmt.Println()
+	fmt.Println("  m365 get <name>          Get M365-compatible token")
+	fmt.Println("  m365 set <name> <value>  Set M365-compatible token")
+	fmt.Println("  m365 delete <name>       Delete M365-compatible token")
+	fmt.Println()
+	fmt.Println("GLOBAL FLAGS:")
+	fmt.Println("  --store <name>           Credential store name (default: \"default\")")
+	fmt.Println("  --password               Use password-protected store")
+	fmt.Println("  --quiet                  Suppress non-essential output")
+	fmt.Println("  --json                   Output in JSON format")
+	fmt.Println()
+	fmt.Println("ENVIRONMENT VARIABLES:")
+	fmt.Println("  PORTUNIX_CREDENTIAL_PASSWORD   Password for encrypted store")
+	fmt.Println("  PORTUNIX_CREDENTIAL_STORE      Default store name")
+	fmt.Println()
+	fmt.Println("STORAGE:")
+	fmt.Println("  ~/.portunix/credentials/")
+	fmt.Println()
+	fmt.Println("EXAMPLES:")
+	fmt.Println("  portunix credential set github-token \"ghp_xxxxxxxxxxxx\"")
+	fmt.Println("  portunix credential get github-token")
+	fmt.Println("  portunix credential set api-key \"secret\" --label \"Prod API\" --password")
+	fmt.Println("  portunix credential list --json")
+	fmt.Println("  portunix credential store create secure --password")
+}
+
 func main() {
+	// Handle --help-ai and --help-expert before cobra processing
+	for _, arg := range os.Args[1:] {
+		switch arg {
+		case "--help-ai":
+			showHelpAI()
+			return
+		case "--help-expert":
+			showHelpExpert()
+			return
+		}
+	}
+
 	// Handle dispatcher pattern: when called as "portunix credential ...",
 	// the dispatcher passes "credential" as the first argument which we need to skip
 	if len(os.Args) > 1 && os.Args[1] == "credential" {

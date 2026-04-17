@@ -128,25 +128,21 @@ func GetDockerVersion() string {
 			return ""
 		}
 
-		// Parse from "Docker version 24.0.7, build afdd53b"
-		output := strings.TrimSpace(out2.String())
-		parts := strings.Fields(output)
-		if len(parts) >= 3 && strings.HasPrefix(parts[2], "v") {
-			return strings.TrimSuffix(parts[2], ",")
-		}
-		for i, part := range parts {
-			if i > 0 && (strings.Contains(part, ".") || strings.HasPrefix(part, "v")) {
-				return strings.TrimSuffix(strings.TrimPrefix(part, "v"), ",")
-			}
-		}
-		return ""
+		return parseDockerVersionOutput(out2.String())
 	}
 
-	version := strings.TrimSpace(out.String())
-	if !strings.HasPrefix(version, "v") {
-		version = "v" + version
+	return strings.TrimSpace(out.String())
+}
+
+// parseDockerVersionOutput extracts version number from "docker --version" output
+// e.g. "Docker version 27.5.1, build 9f9e405" -> "27.5.1"
+func parseDockerVersionOutput(output string) string {
+	output = strings.TrimSpace(output)
+	re := regexp.MustCompile(`\d+\.\d+\.\d+`)
+	if match := re.FindString(output); match != "" {
+		return match
 	}
-	return version
+	return ""
 }
 
 // GetPodmanVersion returns the version of Podman if available
@@ -172,20 +168,12 @@ func GetPodmanVersion() string {
 		output := strings.TrimSpace(out2.String())
 		parts := strings.Fields(output)
 		if len(parts) >= 3 {
-			version := parts[2]
-			if !strings.HasPrefix(version, "v") {
-				version = "v" + version
-			}
-			return version
+			return parts[2]
 		}
 		return ""
 	}
 
-	version := strings.TrimSpace(out.String())
-	if !strings.HasPrefix(version, "v") {
-		version = "v" + version
-	}
-	return version
+	return strings.TrimSpace(out.String())
 }
 
 // IsDockerDaemonRunning checks if Docker daemon is running

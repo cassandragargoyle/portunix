@@ -27,7 +27,8 @@ This directory contains guidelines and documentation for contributing to the Cas
 
 ## Team Initials Assignment and Collision Resolution
 
-Team members are assigned unique initials for identification purposes. When multiple members have the same initials (e.g., John Smith = JS), collision resolution is applied by adding additional characters from the surname (e.g., John Smith = JSm if JS is already taken).
+Team members are assigned unique initials for identification purposes. When multiple members have the same initials (e.g., John Smith = JS), collision
+resolution is applied by adding additional characters from the surname (e.g., John Smith = JSm if JS is already taken).
 
 ## Available Guidelines
 

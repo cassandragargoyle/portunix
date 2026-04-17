@@ -2,7 +2,8 @@
 
 ## Overview
 
-**ISO 16355** is an international standard that defines Quality Function Deployment (QFD) - a systematic method for translating customer requirements into appropriate technical requirements throughout product development.
+**ISO 16355** is an international standard that defines Quality Function Deployment (QFD) - a systematic method for translating customer requirements
+into appropriate technical requirements throughout product development.
 
 QFD originated in Japan in the late 1960s and has become a fundamental tool for product planning and quality management worldwide.
 
@@ -69,7 +70,8 @@ The primary tool of QFD is a matrix called "House of Quality":
 3. **Process Planning** - Part characteristics → Process parameters
 4. **Production Planning** - Process parameters → Production requirements
 
-> **Note**: Traditional QFD (Akao, 1960s) focused primarily on customer needs. ISO 16355 extends the input to include both Voice of Customer (VoC) and Voice of Stakeholder (VoS) - regulatory, business, technical, and partner requirements.
+> **Note**: Traditional QFD (Akao, 1960s) focused primarily on customer needs. ISO 16355 extends the input to include both Voice of Customer (VoC)
+and Voice of Stakeholder (VoS) - regulatory, business, technical, and partner requirements.
 
 ## Application in Software Development
 

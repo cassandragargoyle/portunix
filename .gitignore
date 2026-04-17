@@ -20,6 +20,7 @@ portunix.backup
 
 # Test results directory
 test/results/
+test/logs/
 
 # Python virtual environment
 .venv/

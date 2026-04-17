@@ -22,10 +22,7 @@
             "urls": {
               "x64": "https://github.com/llvm/llvm-project/releases/download/llvmorg-21.0.0/LLVM-21.0.0-win64.exe"
             },
-            "installArgs": ["/S"],
-            "postInstall": [
-              "setx PATH \"%PATH%;C:\\Program Files\\LLVM\\bin\" /m"
-            ]
+            "installArgs": ["/S"]
           },
           "chocolatey": {
             "type": "chocolatey",

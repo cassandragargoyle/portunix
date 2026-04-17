@@ -1,0 +1,68 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "tesseract",
+    "displayName": "Tesseract OCR",
+    "description": "Open source OCR engine with support for 100+ languages",
+    "category": "tools/ocr",
+    "homepage": "https://github.com/tesseract-ocr/tesseract",
+    "documentation": "https://tesseract-ocr.github.io/tessdoc/",
+    "license": "Apache-2.0",
+    "maintainer": "Tesseract OCR Project"
+  },
+  "spec": {
+    "hasVariants": false,
+    "platforms": {
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "apt": {
+            "version": "latest",
+            "packages": [
+              "tesseract-ocr",
+              "tesseract-ocr-eng",
+              "tesseract-ocr-ces"
+            ]
+          },
+          "dnf": {
+            "version": "latest",
+            "packages": [
+              "tesseract",
+              "tesseract-langpack-eng",
+              "tesseract-langpack-ces"
+            ]
+          }
+        },
+        "verification": {
+          "command": "tesseract --version",
+          "expectedExitCode": 0
+        }
+      },
+      "windows": {
+        "type": "chocolatey",
+        "variants": {
+          "chocolatey": {
+            "version": "latest",
+            "packages": ["tesseract"]
+          },
+          "scoop": {
+            "version": "latest",
+            "packages": ["tesseract"]
+          }
+        },
+        "verification": {
+          "command": "tesseract --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check https://github.com/tesseract-ocr/tesseract/releases for latest version",
+      "urlResolution": "Install via package managers",
+      "updateGuidance": "Tesseract 5.x is the current major version with LSTM-based recognition"
+    },
+    "dependencies": [],
+    "templates": ["apt-package"]
+  }
+}
