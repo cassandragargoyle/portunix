@@ -25,12 +25,14 @@
     }
   }
 }
+
 ```
 
 ### File Format Specification
 
 ```yaml
 # .ptxbook file format
+
 name: "string"                    # Required: Descriptive playbook name
 description: "string"             # Required: What this playbook does
 version: "string"                 # Required: Semantic version (e.g., "1.0")
@@ -56,11 +58,13 @@ tasks:                           # Required: Ansible task array
   - name: "string"               # Required: Task description
     module_name:                 # Required: Ansible module
       parameter: "value"
+
 ```
 
 ## Command Interface
 
 ### Validation Commands
+
 ```json
 {
   "validation": {
@@ -77,9 +81,11 @@ tasks:                           # Required: Ansible task array
     }
   }
 }
+
 ```
 
 ### Execution Commands
+
 ```json
 {
   "execution": {
@@ -98,34 +104,42 @@ tasks:                           # Required: Ansible task array
     }
   }
 }
+
 ```
 
 ## Ansible Module Reference
 
 ### Package Management
+
 ```yaml
 # System packages
+
 - name: "Install package"
   package:
     name: "package_name"
     state: "present|absent|latest"
 
 # Python packages
+
 - name: "Install Python package"
   pip:
     name: ["package1", "package2"]
     state: "present|absent|latest"
 
 # Node.js packages
+
 - name: "Install npm package"
   npm:
     name: "package_name"
     global: true|false
+
 ```
 
 ### File Operations
+
 ```yaml
 # Create directories
+
 - name: "Create directory"
   file:
     path: "/path/to/directory"
@@ -135,6 +149,7 @@ tasks:                           # Required: Ansible task array
     group: "groupname"
 
 # Copy files
+
 - name: "Copy file"
   copy:
     src: "source_file"
@@ -143,16 +158,20 @@ tasks:                           # Required: Ansible task array
     backup: true|false
 
 # Template processing
+
 - name: "Process template"
   template:
     src: "template.j2"
     dest: "/output/path"
     variables: "{{ variables }}"
+
 ```
 
 ### Service Management
+
 ```yaml
 # Systemd services
+
 - name: "Manage service"
   systemd:
     name: "service_name"
@@ -161,16 +180,20 @@ tasks:                           # Required: Ansible task array
     daemon_reload: true|false
 
 # Generic service module
+
 - name: "Manage service"
   service:
     name: "service_name"
     state: "started|stopped|restarted"
     enabled: true|false
+
 ```
 
 ### Command Execution
+
 ```yaml
 # Execute commands
+
 - name: "Run command"
   command: "command_to_run"
   args:
@@ -179,15 +202,18 @@ tasks:                           # Required: Ansible task array
     removes: "/file/that/indicates/need/to/run"
 
 # Execute shell commands
+
 - name: "Run shell command"
   shell: "complex | shell | command"
   args:
     executable: "/bin/bash"
+
 ```
 
 ## Variable System
 
 ### Variable Definition
+
 ```yaml
 variables:
   # String variables
@@ -210,9 +236,11 @@ variables:
     host: "localhost"
     port: 5432
     name: "app_db"
+
 ```
 
 ### Variable Usage Patterns
+
 ```yaml
 tasks:
   # Simple substitution
@@ -232,11 +260,13 @@ tasks:
     package:
       name: "{{ item }}"
     loop: "{{ packages }}"
+
 ```
 
 ## Environment Management
 
 ### Environment-Specific Configuration
+
 ```json
 {
   "environments": {
@@ -269,17 +299,21 @@ tasks:
     }
   }
 }
+
 ```
 
 ### Environment Override Patterns
+
 ```yaml
 # Base configuration
+
 variables:
   debug_mode: false
   log_level: "info"
   cache_ttl: 3600
 
 # Environment-specific overrides
+
 environments:
   development:
     debug_mode: true
@@ -290,18 +324,22 @@ environments:
     log_level: "error"
     cache_ttl: 7200
     performance_monitoring: true
+
 ```
 
 ## Error Handling Patterns
 
 ### Task-Level Error Handling
+
 ```yaml
 # Ignore errors and continue
+
 - name: "Optional task"
   command: "might_fail_command"
   ignore_errors: true
 
 # Register result for conditional logic
+
 - name: "Test connectivity"
   uri:
     url: "http://example.com/health"
@@ -314,16 +352,20 @@ environments:
   when: health_check.failed
 
 # Conditional execution
+
 - name: "Install if not present"
   package:
     name: "nginx"
     state: "present"
   when: ansible_facts['packages']['nginx'] is not defined
+
 ```
 
 ### Validation Patterns
+
 ```yaml
 # Prerequisite checking
+
 - name: "Verify system requirements"
   assert:
     that:
@@ -332,6 +374,7 @@ environments:
     fail_msg: "System does not meet minimum requirements"
 
 # File existence validation
+
 - name: "Check configuration file exists"
   stat:
     path: "/etc/app/config.yml"
@@ -342,11 +385,13 @@ environments:
     content: "default_config_content"
     dest: "/etc/app/config.yml"
   when: not config_file.stat.exists
+
 ```
 
 ## Common Automation Patterns
 
 ### Development Environment Setup
+
 ```json
 {
   "pattern": "dev_environment_setup",
@@ -359,9 +404,11 @@ environments:
   ],
   "typical_modules": ["package", "file", "template", "service", "command"]
 }
+
 ```
 
 ### Application Deployment
+
 ```json
 {
   "pattern": "application_deployment",
@@ -376,9 +423,11 @@ environments:
   ],
   "rollback_strategy": "restore_backup_on_validation_failure"
 }
+
 ```
 
 ### Configuration Management
+
 ```json
 {
   "pattern": "configuration_management",
@@ -392,11 +441,13 @@ environments:
   ],
   "safety_measures": "dry_run_validation,backup_restoration,service_health_checks"
 }
+
 ```
 
 ## Integration Guidelines
 
 ### AI Assistant Workflow
+
 ```json
 {
   "playbook_creation_workflow": {
@@ -422,11 +473,14 @@ environments:
     }
   }
 }
+
 ```
 
 ### Template Generation
+
 ```yaml
 # Basic template structure
+
 name: "{{ playbook_name }}"
 description: "{{ playbook_description }}"
 version: "1.0"
@@ -443,9 +497,11 @@ variables:
 tasks:
   # Tasks generated from requirements
   {{ generated_tasks }}
+
 ```
 
 ### Validation Integration
+
 ```json
 {
   "validation_workflow": {
@@ -456,11 +512,13 @@ tasks:
     "security_validation": "sensitive_data_exposure_check"
   }
 }
+
 ```
 
 ## Best Practices for Automation
 
 ### Playbook Generation Guidelines
+
 1. **Always start with requirements analysis**
 2. **Use standard module patterns from reference**
 3. **Include appropriate error handling for each task**
@@ -469,6 +527,7 @@ tasks:
 6. **Include rollback procedures for destructive operations**
 
 ### Variable Management
+
 ```json
 {
   "variable_best_practices": {
@@ -479,9 +538,11 @@ tasks:
     "validation": "use_assert_module_for_critical_variables"
   }
 }
+
 ```
 
 ### Task Organization
+
 ```json
 {
   "task_organization": {
@@ -492,11 +553,13 @@ tasks:
     "documentation": "add_meaningful_descriptions_for_complex_tasks"
   }
 }
+
 ```
 
 ## Output Formats
 
 ### JSON Schema for Generated Playbooks
+
 ```json
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -540,9 +603,11 @@ tasks:
     }
   }
 }
+
 ```
 
 ### Execution Response Format
+
 ```json
 {
   "execution_response": {
@@ -562,11 +627,13 @@ tasks:
     }
   }
 }
+
 ```
 
 ## Common Use Cases
 
 ### Web Application Deployment
+
 ```yaml
 name: "Web Application Deployment"
 description: "Deploy web application with database and reverse proxy"
@@ -611,9 +678,11 @@ tasks:
       state: "started"
       enabled: true
     loop: ["postgresql", "nginx", "{{ app_name }}"]
+
 ```
 
-### Development Environment Setup
+### Development Environment Setup Example
+
 ```yaml
 name: "Development Environment Setup"
 description: "Complete development environment with tools and configurations"
@@ -651,29 +720,36 @@ tasks:
     loop: ["ms-python.python", "ms-vscode.vscode-typescript-next"]
     become_user: "{{ developer_user }}"
     ignore_errors: true
+
 ```
 
 ## Security Considerations
 
 ### Sensitive Data Handling
+
 ```yaml
 # Use Ansible Vault for sensitive variables
+
 variables:
   database_password: "{{ vault_database_password }}"
   api_key: "{{ vault_api_key }}"
 
 # Avoid logging sensitive data
+
 - name: "Configure database connection"
   template:
     src: "database.conf.j2"
     dest: "/etc/app/database.conf"
     mode: "0600"
   no_log: true
+
 ```
 
 ### Access Control
+
 ```yaml
 # Principle of least privilege
+
 - name: "Create service user"
   user:
     name: "appuser"
@@ -683,12 +759,14 @@ variables:
     create_home: false
 
 # Secure file permissions
+
 - name: "Set secure permissions"
   file:
     path: "/etc/app/secrets"
     mode: "0600"
     owner: "appuser"
     group: "appuser"
+
 ```
 
 ---

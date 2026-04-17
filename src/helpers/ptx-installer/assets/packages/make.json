@@ -1,0 +1,88 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "make",
+    "displayName": "GNU Make",
+    "description": "GNU Make - build automation tool that controls generation of executables and other files",
+    "category": "development/build-tools",
+    "homepage": "https://www.gnu.org/software/make/",
+    "documentation": "https://www.gnu.org/software/make/manual/",
+    "license": "GPL-3.0-or-later",
+    "maintainer": "GNU Project"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "zip",
+        "variants": {
+          "latest": {
+            "version": "4.4.1",
+            "urls": {
+              "x64": "https://sourceforge.net/projects/ezwinports/files/make-4.4.1-without-guile-w32-bin.zip/download"
+            },
+            "extractTo": "C:/Program Files/make"
+          },
+          "chocolatey": {
+            "type": "chocolatey",
+            "version": "latest",
+            "packages": ["make"]
+          }
+        },
+        "verification": {
+          "command": "make --version",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "C:/Program Files/make/bin"
+        }
+      },
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "apt": {
+            "type": "apt",
+            "version": "latest",
+            "packages": ["make"],
+            "requiresSudo": true
+          },
+          "dnf": {
+            "type": "dnf",
+            "version": "latest",
+            "packages": ["make"],
+            "requiresSudo": true
+          },
+          "pacman": {
+            "type": "pacman",
+            "version": "latest",
+            "packages": ["make"]
+          },
+          "apk": {
+            "type": "apk",
+            "version": "latest",
+            "packages": ["make"]
+          }
+        },
+        "verification": {
+          "command": "make --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "ezwinports": {
+        "type": "sourceforge",
+        "url": "https://sourceforge.net/projects/ezwinports/files/",
+        "pattern": "make-{version}-without-guile-w32-bin.zip"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check ezwinports SourceForge page at https://sourceforge.net/projects/ezwinports/files/ for latest make release builds. Look for make-X.Y.Z-without-guile-w32-bin.zip pattern.",
+      "urlResolution": "Windows: make-{version}-without-guile-w32-bin.zip from ezwinports. Linux: use native package managers (apt, dnf, pacman, apk).",
+      "updateGuidance": "Monitor GNU Make releases at https://ftp.gnu.org/gnu/make/ and ezwinports for corresponding Windows builds. Major versions change rarely."
+    },
+    "dependencies": [],
+    "templates": ["zip-archive"]
+  }
+}

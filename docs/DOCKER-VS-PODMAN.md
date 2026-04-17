@@ -2,11 +2,13 @@
 
 ## Overview
 
-Portunix supports both Docker and Podman as container runtimes. This document explains the differences, how compose tools work with each, and how Portunix abstracts these differences.
+Portunix supports both Docker and Podman as container runtimes. This document explains the differences, how compose tools work with each, and how
+Portunix abstracts these differences.
 
 ## What is a Container?
 
-**Container** is a lightweight, isolated environment for running applications. Unlike virtual machines, containers share the host operating system's kernel, making them faster to start and more resource-efficient.
+**Container** is a lightweight, isolated environment for running applications. Unlike virtual machines, containers share the host
+operating system's kernel, making them faster to start and more resource-efficient.
 
 ```text
 ┌─────────────────────────────────────────────────────┐
@@ -32,7 +34,8 @@ Portunix supports both Docker and Podman as container runtimes. This document ex
 
 ## What is Compose?
 
-**Compose** is a tool for defining and running **multi-container applications**. Instead of starting each container manually with long command lines, you define your entire application stack in a single YAML file.
+**Compose** is a tool for defining and running **multi-container applications**. Instead of starting each container manually with long command
+lines, you define your entire application stack in a single YAML file.
 
 ### Why Compose Exists
 

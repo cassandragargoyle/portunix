@@ -1,12 +1,14 @@
 # Portunix Plugin Architecture
 
-This document provides a comprehensive overview of the Portunix plugin system architecture, designed for both human developers and AI agents who need to understand how plugins integrate with the core system.
+This document provides a comprehensive overview of the Portunix plugin system architecture,
+designed for both human developers and AI agents who need to understand how plugins integrate
+with the core system.
 
 ## High-Level Architecture
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Portunix Core                           │
+│                        Portunix Core                            │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐  │
 │  │   Plugin        │  │      MCP        │  │     CLI         │  │
@@ -32,12 +34,15 @@ This document provides a comprehensive overview of the Portunix plugin system ar
 │ gRPC    │              │    gRPC     │              │  gRPC   │
 │ Server  │              │   Server    │              │ Server  │
 └─────────┘              └─────────────┘              └─────────┘
+
 ```
 
 ## Core Components
 
 ### Plugin Manager
+
 The Plugin Manager is responsible for:
+
 - **Lifecycle Management**: Starting, stopping, enabling, disabling plugins
 - **Discovery**: Finding and registering plugins
 - **Health Monitoring**: Checking plugin status and performance
@@ -45,6 +50,7 @@ The Plugin Manager is responsible for:
 - **Security Enforcement**: Applying permission policies
 
 #### Key Interfaces
+
 ```go
 type PluginManager interface {
     Install(pluginPath string) error
@@ -55,24 +61,31 @@ type PluginManager interface {
     Health(pluginName string) (*HealthStatus, error)
     List() ([]*PluginInfo, error)
 }
+
 ```
 
 ### gRPC Gateway
+
 The gRPC Gateway handles communication between the core system and plugins:
+
 - **Protocol Translation**: Converts internal calls to gRPC
 - **Load Balancing**: Distributes requests across plugin instances
 - **Circuit Breaking**: Prevents cascading failures
 - **Metrics Collection**: Tracks performance and usage
 
 ### Configuration Manager
+
 Manages plugin configuration and settings:
+
 - **Schema Validation**: Ensures configuration correctness
 - **Environment Variable Injection**: Provides runtime configuration
 - **Secret Management**: Securely handles sensitive data
 - **Dynamic Reconfiguration**: Updates configuration without restart
 
 ### Security Manager
+
 Enforces security policies for plugins:
+
 - **Permission System**: Controls what plugins can access
 - **Sandboxing**: Isolates plugin execution
 - **Authentication**: Verifies plugin identity
@@ -81,45 +94,54 @@ Enforces security policies for plugins:
 ## Plugin Types
 
 ### Service Plugins
+
 Long-running background services that provide continuous functionality.
 
 **Characteristics:**
+
 - Run continuously once started
 - Maintain persistent state
 - Handle multiple concurrent requests
 - Provide health check endpoints
 
 **Example Use Cases:**
+
 - System monitoring
 - Background data processing
 - File watchers
 - Network services
 
 ### Tool Plugins
+
 On-demand utilities that perform specific tasks and exit.
 
 **Characteristics:**
+
 - Short-lived execution
 - Stateless (or minimal state)
 - Single-purpose functionality
 - Fast startup time
 
 **Example Use Cases:**
+
 - Code generators
 - File converters
 - Deployment scripts
 - Data validators
 
 ### MCP Plugins
+
 Plugins that expose functionality to AI agents through the Model Context Protocol.
 
 **Characteristics:**
+
 - Implement MCP tool interfaces
 - Provide structured schemas
 - AI-friendly descriptions
 - Error handling for agent consumption
 
 **Example Use Cases:**
+
 - Code analysis tools
 - Project scaffolding
 - Documentation generators
@@ -127,9 +149,9 @@ Plugins that expose functionality to AI agents through the Model Context Protoco
 
 ## Plugin Lifecycle
 
-```
+```text
 ┌─────────────┐    ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
-│  CREATED    │───▶│  INSTALLED  │───▶│   ENABLED   │───▶│   STARTED   │
+│  CREATED    │──▶│  INSTALLED  │──▶│   ENABLED   │──▶│   STARTED   │
 └─────────────┘    └─────────────┘    └─────────────┘    └─────────────┘
                             │                   │                   │
                             │                   │                   ▼
@@ -146,6 +168,7 @@ Plugins that expose functionality to AI agents through the Model Context Protoco
                      ┌─────────────┐    ┌─────────────┐    ┌─────────────┐
                      │ UNINSTALLED │    │ UNINSTALLED │    │ UNINSTALLED │
                      └─────────────┘    └─────────────┘    └─────────────┘
+
 ```
 
 ### State Transitions
@@ -173,6 +196,7 @@ Plugins that expose functionality to AI agents through the Model Context Protoco
 ## Communication Protocols
 
 ### gRPC Service Definition
+
 All plugins must implement the base plugin service:
 
 ```protobuf
@@ -197,9 +221,11 @@ message PluginInfo {
     string description = 3;
     repeated string capabilities = 4;
 }
+
 ```
 
 ### MCP Integration
+
 Plugins that expose MCP tools implement additional interfaces:
 
 ```protobuf
@@ -208,13 +234,16 @@ service MCPService {
     rpc CallTool(CallToolRequest) returns (CallToolResponse);
     rpc GetToolSchema(GetToolSchemaRequest) returns (GetToolSchemaResponse);
 }
+
 ```
 
 ## Configuration System
 
 ### Plugin Manifest (plugin.yaml)
+
 ```yaml
 # Basic metadata
+
 name: my-plugin
 version: 1.0.0
 description: Example plugin for Portunix
@@ -222,12 +251,14 @@ author: Developer Name
 license: MIT
 
 # Plugin type and capabilities
+
 type: service  # service, tool, mcp
 capabilities:
   - system-monitoring
   - file-processing
 
 # Runtime configuration
+
 runtime:
   language: go
   main: ./main
@@ -235,6 +266,7 @@ runtime:
   health_check_port: 50052
 
 # Dependencies
+
 dependencies:
   system:
     - docker: ">=20.0.0"
@@ -243,6 +275,7 @@ dependencies:
     - database-connector: ">=1.2.0"
 
 # Permissions
+
 permissions:
   filesystem:
     read: ["/tmp", "/var/log"]
@@ -253,6 +286,7 @@ permissions:
     execute: ["docker", "git"]
 
 # Configuration schema
+
 configuration:
   required:
     api_key:
@@ -269,6 +303,7 @@ configuration:
       description: Request timeout in seconds
 
 # MCP tools (for MCP plugins)
+
 mcp:
   tools:
     - name: process_file
@@ -280,11 +315,13 @@ mcp:
         options:
           type: object
           description: Processing options
+
 ```
 
 ## Security Model
 
 ### Permission System
+
 Plugins operate under a strict permission model:
 
 1. **Filesystem Permissions**
@@ -303,7 +340,9 @@ Plugins operate under a strict permission model:
    - Limited process management
 
 ### Sandboxing
+
 Plugins run in isolated environments:
+
 - Separate process space
 - Limited resource allocation (CPU, memory)
 - Network isolation
@@ -312,9 +351,10 @@ Plugins run in isolated environments:
 ## Plugin Registry
 
 ### Local Registry
+
 Each Portunix installation maintains a local plugin registry:
 
-```
+```text
 ~/.portunix/plugins/
 ├── registry.json           # Plugin metadata database
 ├── installed/              # Installed plugin binaries
@@ -323,10 +363,13 @@ Each Portunix installation maintains a local plugin registry:
 ├── enabled/                # Symlinks to enabled plugins
 ├── configs/                # Plugin configurations
 └── logs/                   # Plugin logs
+
 ```
 
 ### Remote Registry
+
 Future support for remote plugin registries:
+
 - Plugin discovery and installation
 - Version management
 - Security verification
@@ -335,20 +378,26 @@ Future support for remote plugin registries:
 ## Error Handling and Monitoring
 
 ### Health Checks
+
 All plugins must implement health check endpoints:
+
 - **Liveness**: Plugin process is running
 - **Readiness**: Plugin is ready to handle requests
 - **Startup**: Plugin has completed initialization
 
 ### Logging
+
 Structured logging with standard levels:
+
 - **ERROR**: Critical errors requiring attention
 - **WARN**: Warnings that don't affect functionality
 - **INFO**: General operational messages
 - **DEBUG**: Detailed debugging information
 
 ### Metrics
+
 Plugins can expose metrics for monitoring:
+
 - Request counts and latencies
 - Resource usage (CPU, memory)
 - Custom business metrics
@@ -357,6 +406,7 @@ Plugins can expose metrics for monitoring:
 ## Development Guidelines
 
 ### Best Practices
+
 1. **Stateless Design**: Prefer stateless plugins when possible
 2. **Graceful Shutdown**: Handle shutdown signals properly
 3. **Resource Management**: Clean up resources on exit
@@ -364,6 +414,7 @@ Plugins can expose metrics for monitoring:
 5. **Configuration Validation**: Validate configuration at startup
 
 ### Anti-Patterns
+
 1. **Direct Core Access**: Don't access core system internals
 2. **Shared State**: Avoid shared mutable state between plugins
 3. **Blocking Operations**: Don't block on long-running operations
@@ -373,13 +424,18 @@ Plugins can expose metrics for monitoring:
 ## Integration Points
 
 ### CLI Integration
+
 Plugins can extend the Portunix CLI:
+
 ```bash
 portunix my-plugin command --arg value
+
 ```
 
-### MCP Integration
+### MCP Tool Integration
+
 Expose tools to AI agents:
+
 ```json
 {
   "name": "generate_dockerfile",
@@ -392,22 +448,28 @@ Expose tools to AI agents:
     }
   }
 }
+
 ```
 
 ### API Integration
+
 Plugins can expose REST APIs through the core system:
+
 ```yaml
 # plugin.yaml
+
 api:
   endpoints:
     - path: /api/v1/process
       method: POST
       handler: processData
+
 ```
 
 ## Future Enhancements
 
 ### Planned Features
+
 1. **Plugin Marketplace**: Central repository for plugin discovery
 2. **Hot Reloading**: Update plugins without restart
 3. **Plugin Composition**: Combine multiple plugins into workflows
@@ -415,6 +477,7 @@ api:
 5. **WebAssembly Support**: Run plugins in WASM runtime
 
 ### Extension Points
+
 1. **Custom Protocols**: Support for non-gRPC protocols
 2. **Event System**: Plugin-to-plugin communication
 3. **Workflow Engine**: Orchestrate plugin interactions
@@ -422,4 +485,6 @@ api:
 
 ---
 
-This architecture provides a flexible, secure, and scalable foundation for building Portunix plugins while maintaining clear separation of concerns and enabling rich integration with both human developers and AI agents.
+This architecture provides a flexible, secure, and scalable foundation for building
+Portunix plugins while maintaining clear separation of concerns and enabling rich
+integration with both human developers and AI agents.

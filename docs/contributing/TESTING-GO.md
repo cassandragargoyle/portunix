@@ -1,19 +1,24 @@
 # Go Testing Guidelines
 
-> **IMPORTANT**: This document is distributed from BOOTSTRAP-SCRIPTS and MUST NOT be modified in individual projects as it will be automatically overwritten during updates. Each project should have a project-specific testing document (e.g., `TESTING-GO-PROJECT.md`) for project-specific differences or additions.
+> **IMPORTANT**: This document is distributed from BOOTSTRAP-SCRIPTS and MUST NOT be modified in individual projects as it will be automatically
+> overwritten during updates. Each project should have a project-specific testing document (e.g., `TESTING-GO-PROJECT.md`)
+> for project-specific differences or additions.
 
 ## Purpose
+
 This document defines the testing strategy, structure, and best practices for Go projects in the CassandraGargoyle ecosystem.
 
 ## Testing Philosophy
 
 ### Testing Pyramid
+
 1. **Unit Tests** (70%) - Fast, isolated tests for individual functions/methods (Go)
 2. **Integration Tests** (20%) - Test component interactions (Python for complex scenarios)
 3. **End-to-End Tests** (10%) - Full system workflow tests (Python)
 4. **Smoke Tests** - Quick verification of basic functionality (Bash)
 
 ### Key Principles
+
 - Write tests first (TDD approach when possible)
 - Tests should be fast, reliable, and independent
 - Each test should test one specific behavior
@@ -28,7 +33,8 @@ This document defines the testing strategy, structure, and best practices for Go
 ## Project Structure
 
 ### Directory Layout
-```
+
+```text
 project/
 ├── cmd/                    # Application entry points
 ├── pkg/                    # Public packages
@@ -64,6 +70,7 @@ project/
 ## Test Naming Conventions
 
 ### Test Files
+
 - **Go unit tests**: `*_test.go` (in same package directory)
 - **Go benchmark tests**: `*_benchmark_test.go`
 - **Python integration tests**: `test_*.py` (in test/integration/)
@@ -71,11 +78,13 @@ project/
 - **Bash smoke tests**: `test_*.sh` (in test/smoke/)
 
 ### Test Functions
+
 Use descriptive names that explain what is being tested.
 
 *Code examples will be added after initial test implementation is completed.*
 
 ### Test Structure Pattern
+
 Use **Arrange, Act, Assert** pattern.
 
 *Code examples will be added after initial test implementation is completed.*
@@ -83,9 +92,11 @@ Use **Arrange, Act, Assert** pattern.
 ## Unit Testing
 
 ### Simple Function Tests
+
 Use basic `testing` package for straightforward unit tests.
 
 ### Test Suite Pattern  
+
 For complex integration tests or when you need setup/teardown, use testify/suite:
 
 ```go
@@ -124,6 +135,7 @@ func TestMyTestSuite(t *testing.T) {
 ## Integration Testing
 
 ### Simple Table-Driven Approach
+
 For straightforward integration tests, use basic Go testing patterns:
 
 ```go
@@ -153,6 +165,7 @@ func TestIssue012_PowerShellInstallation_AllDistros(t *testing.T) {
 ```
 
 ### Test Suite Approach for Complex Integration Tests
+
 When you need shared setup/teardown, database connections, or complex resource management:
 
 ```go
@@ -207,12 +220,14 @@ func TestPowerShellIntegrationSuite(t *testing.T) {
 ### When to Use Each Approach
 
 **Simple Table-Driven Tests:**
+
 - Independent test cases
 - No complex setup/teardown needed
 - Fast, lightweight tests
 - Parallel execution is straightforward
 
 **Test Suite Pattern:**
+
 - Shared expensive resources (DB connections, containers)
 - Complex setup/teardown logic
 - Need for test fixtures across multiple tests
@@ -221,12 +236,14 @@ func TestPowerShellIntegrationSuite(t *testing.T) {
 ### Container-Based Testing
 
 **Container Engine Preference:**
+
 - **Always use Podman** for container-based testing
 - Podman provides better security with rootless operation
 - Native systemd integration and daemonless architecture
 - Compatible with existing Docker-based test infrastructure
 
 **Container Test Setup:**
+
 ```go
 // Use podman commands instead of docker
 func setupTestContainer(t *testing.T, image string) string {
@@ -247,6 +264,7 @@ func cleanupTestContainer(t *testing.T, containerID string) {
 ## Python Integration & E2E Testing
 
 ### Setup Python Test Environment
+
 ```bash
 # Install Python test dependencies
 pip install -r requirements-test.txt
@@ -257,6 +275,7 @@ pytest test/e2e/ -v
 ```
 
 ### Python Test Structure
+
 ```python
 # test/integration/test_powershell_installation.py
 import pytest
@@ -331,6 +350,7 @@ class TestPowerShellInstallation:
 ```
 
 ### Python Test Configuration
+
 ```ini
 # pytest.ini
 [tool:pytest]
@@ -359,6 +379,7 @@ pexpect>=4.8.0       # Interactive command testing
 ## Bash Smoke Testing
 
 ### Smoke Test Structure
+
 ```bash
 #!/bin/bash
 # test/smoke/test_basic_functionality.sh
@@ -483,6 +504,7 @@ check_dependencies() {
 ## Test Execution Strategy
 
 ### Multi-Language Test Runner
+
 ```bash
 #!/bin/bash
 # test/scripts/test.sh - Main test runner
@@ -530,6 +552,7 @@ echo -e "${GREEN}All tests completed successfully!${NC}"
 ```
 
 ### Language-Specific Test Commands
+
 ```bash
 # Run only Go unit tests
 ./test/scripts/test-unit.sh
@@ -550,12 +573,14 @@ python3 -m pytest test/integration/ -n auto  # Requires pytest-xdist
 ## Best Practices by Language
 
 ### Go Testing
+
 - Keep unit tests in same package directory
 - Use table-driven tests for multiple scenarios
 - Mock external dependencies with interfaces
 - Focus on business logic and algorithms
 
-### Python Testing  
+### Python Testing
+
 - Use pytest fixtures for resource management
 - Parameterize tests for multiple test cases
 - Use subprocess for CLI testing
@@ -563,6 +588,7 @@ python3 -m pytest test/integration/ -n auto  # Requires pytest-xdist
 - Use pytest-mock for mocking system calls
 
 ### Bash Testing
+
 - Keep tests simple and focused
 - Use functions for reusable test logic
 - Provide clear error messages
@@ -588,11 +614,13 @@ python3 -m pytest test/integration/ -n auto  # Requires pytest-xdist
 ## Coverage Requirements
 
 ### Coverage Targets
+
 - **Minimum coverage**: 80% for unit tests
 - **Integration coverage**: 60% for integration tests
 - **Critical packages**: 90% coverage required
 
 ### Generating Coverage Reports
+
 ```bash
 # Generate coverage profile
 go test -coverprofile=coverage.out ./...
@@ -610,6 +638,7 @@ go tool cover -func=coverage.out | grep total | grep -E \"[0-9]+\\.[0-9]+%\" | s
 ## Build Tags and Test Categories
 
 ### Using Build Tags
+
 ```go
 // Unit tests (default)
 //go:build !integration
@@ -622,6 +651,7 @@ go tool cover -func=coverage.out | grep total | grep -E \"[0-9]+\\.[0-9]+%\" | s
 ```
 
 ### Running Different Test Categories
+
 ```bash
 # Unit tests only (default)
 go test ./...
@@ -640,11 +670,13 @@ go test -short ./...
 ```
 
 ### Integration Tests
+
 **IMPORTANT: ALWAYS use the launcher scripts in `test/scripts/`, never direct pytest commands!**
 
 The launcher scripts ensure proper environment setup, Python virtual environment activation, dependency management, and container environment configuration.
 
-#### Linux (Bash):
+#### Linux (Bash)
+
 ```bash
 # General pattern for issue-specific tests
 ./test/scripts/issue-{number}-test-runner.sh [OPTIONS]
@@ -653,7 +685,8 @@ The launcher scripts ensure proper environment setup, Python virtual environment
 ./test/scripts/run-integration-tests.sh [OPTIONS]
 ```
 
-#### Windows (PowerShell):
+#### Windows (PowerShell)
+
 ```powershell
 # PowerShell wrapper for integration tests
 .\test\scripts\run-integration-tests.ps1 [OPTIONS]
@@ -668,6 +701,7 @@ The launcher scripts ensure proper environment setup, Python virtual environment
 ## CI/CD Integration
 
 ### GitHub Actions Example
+
 ```yaml
 name: Test Suite
 
@@ -709,6 +743,7 @@ jobs:
 ## Testing Scripts
 
 ### Main Test Script
+
 ```bash
 #!/bin/bash
 # scripts/test.sh
@@ -751,6 +786,7 @@ echo -e \"${GREEN}All tests passed!${NC}\"
 ```
 
 ### Coverage Script
+
 ```bash
 #!/bin/bash
 # scripts/coverage.sh
@@ -781,6 +817,7 @@ echo \"Coverage report generated: coverage.html\"
 ## Test Configuration
 
 ### go.mod for Testing
+
 ```go
 // go.mod
 module project.com
@@ -804,6 +841,7 @@ require (
 ```
 
 ### Makefile Integration
+
 ```makefile
 .PHONY: test test-unit test-integration test-coverage clean
 
@@ -838,24 +876,28 @@ test-deps:
 ## Best Practices Summary
 
 ### Test Organization
+
 1. Use centralized `test/` directory for shared test infrastructure
 2. Use descriptive test names with clear scenarios
 3. Follow AAA pattern (Arrange, Act, Assert)
 4. Use table-driven tests for multiple scenarios
 
 ### Test Quality
+
 1. Tests should be fast, reliable, and independent
 2. Mock external dependencies
 3. Use temporary files/directories for file operations
 4. Clean up resources with `t.Cleanup()`
 
 ### Coverage and Quality
+
 1. Aim for 80%+ code coverage
 2. Focus on testing critical paths and error conditions
 3. Use integration tests for complex workflows
 4. Benchmark performance-critical code
 
 ### Maintenance
+
 1. Run tests in CI/CD pipeline
 2. Update tests when code changes
 3. Remove obsolete tests
@@ -865,12 +907,15 @@ test-deps:
 
 ### Issue 12: PowerShell Installation in Linux Containers via SSH
 
-**Scenario**: Test PowerShell installation across all supported Linux distributions. Portunix creates or connects to virtual machines, copies itself into the VM environment via SSH, and then executes installations within the isolated virtual environment. The created environments can be registered for Claude Code usage during development.
+**Scenario**: Test PowerShell installation across all supported Linux distributions. Portunix creates or connects to virtual machines, copies itself
+into the VM environment via SSH, and then executes installations within the isolated virtual environment. The created environments
+can be registered for Claude Code usage during development.
 
 **Test Type**: Integration Test (involves multiple components: containers, SSH, package installation)
 
 **Test Structure**:
-```
+
+```text
 test/
 ├── integration/
 │   └── issue012_powershell_ssh_test.go
@@ -932,6 +977,7 @@ func TestIssue012_PowerShellInstallation_AllDistros(t *testing.T) {
 ### Test Execution
 
 **Running the test**:
+
 ```bash
 # Run specific test
 ./test/scripts/test-integration.sh -run TestIssue012
@@ -944,6 +990,7 @@ go test -parallel 5 ./test/integration -run TestIssue012
 ```
 
 **Expected Results**:
+
 - All 8 Linux distributions should successfully install PowerShell
 - PowerShell version verification should pass on all distros
 - Test should complete within reasonable time (5-10 minutes per distro)
@@ -951,7 +998,8 @@ go test -parallel 5 ./test/integration -run TestIssue012
 
 ---
 
-**Note**: These guidelines should be adapted based on specific project requirements and complexity. Regular review ensures tests remain effective and maintainable.
+**Note**: These guidelines should be adapted based on specific project requirements and complexity.
+Regular review ensures tests remain effective and maintainable.
 
 *Created: 2025-08-23*
 *Last updated: 2025-08-23*

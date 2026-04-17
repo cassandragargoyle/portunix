@@ -43,20 +43,23 @@ go test ./test/integration/your_test.go -v -timeout 10m
 ### Constructor
 
 #### `NewTestFramework(testName string) *TestFramework`
+
 Creates a new test framework instance. Automatically detects verbose mode via `testing.Verbose()`.
 
 ### Lifecycle Methods
 
 #### `Start(t *testing.T, description string)`
+
 Begins a test with header output in verbose mode.
 
 #### `Finish(t *testing.T, success bool)`
+
 Completes the test with summary (duration, step count, pass/fail status).
 
 ### Logging Methods
 
 | Method | Emoji | Description |
-|--------|-------|-------------|
+| ------ | ----- | ----------- |
 | `Step(t, description, details...)` | 📋 | Numbered test step |
 | `Success(t, message, details...)` | ✅ | Success message |
 | `Error(t, message, details...)` | ❌ | Error (calls `t.Errorf`) |
@@ -66,28 +69,35 @@ Completes the test with summary (duration, step count, pass/fail status).
 ### Command Execution
 
 #### `Command(t *testing.T, command string, args []string)`
+
 Logs command execution with 🔧 emoji.
 
 #### `Output(t *testing.T, output string, maxLength int)`
+
 Logs command output with truncation for long outputs.
 
 ### Utility Methods
 
 #### `Separator()`
+
 Prints visual separator line in verbose mode.
 
 #### `IsVerbose() bool`
+
 Returns whether verbose mode is enabled.
 
 ### Binary Verification
 
 #### `VerifyBinary(t *testing.T, relativePath string) (string, bool)`
+
 Verifies binary exists at specified path.
 
 #### `VerifyPortunixBinary(t *testing.T) (string, bool)`
+
 Searches for Portunix binary in standard locations (`../../portunix`, `./portunix`, `../portunix`).
 
 #### `MustVerifyPortunixBinary(t *testing.T) string`
+
 Same as `VerifyPortunixBinary` but calls `t.FailNow()` if not found.
 
 ## Example: Complete Test
@@ -143,13 +153,15 @@ func TestMCPServe(t *testing.T) {
 ## Output Examples
 
 ### Standard Mode
-```
+
+```text
 === RUN   TestMCPServe
 --- PASS: TestMCPServe (0.15s)
 ```
 
 ### Verbose Mode (`-v`)
-```
+
+```text
 ================================================================================
 🚀 STARTING: MCP_Serve
 Description: Test MCP serve command

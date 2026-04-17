@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package unit
 
 import (
@@ -11,8 +15,7 @@ import (
 func TestGetSelectedRuntime_DefaultToPodman(t *testing.T) {
 	// Use temporary directory for config
 	tmpDir := t.TempDir()
-	os.Setenv("HOME", tmpDir)
-	defer os.Unsetenv("HOME")
+	t.Setenv("HOME", tmpDir)
 
 	// Change to temp directory to avoid loading existing config
 	originalDir, _ := os.Getwd()

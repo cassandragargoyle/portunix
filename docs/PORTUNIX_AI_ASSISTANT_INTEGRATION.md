@@ -1,10 +1,13 @@
 # Portunix AI Assistant Integration Guide
 
-This document provides comprehensive information about Portunix capabilities for AI assistants working in other projects that need to understand what Portunix can do and how to integrate with it.
+This document provides comprehensive information about Portunix capabilities for AI assistants working in other projects
+that need to understand what Portunix can do and how to integrate with it.
 
 ## What is Portunix?
 
-Portunix is a universal development environment management tool that provides cross-platform software installation, containerization, virtualization, and development workflow automation. It's designed to simplify complex development environment setup and management across Windows, Linux, and macOS.
+Portunix is a unified AI plugin and task platform for development environments. It provides cross-platform software installation,
+containerization, virtualization, and AI-assisted workflow automation through a language-independent plugin architecture
+(Go, Java, Python) across Windows, Linux, and macOS.
 
 ## Core Capabilities Overview
 
@@ -372,4 +375,5 @@ portunix docker run-in-container default --port 3000:3000 --port 8080:8080
 
 ---
 
-**Note for AI Assistants**: Portunix is designed to be AI-friendly with clear, consistent commands and comprehensive help text. When in doubt, suggest using `portunix [command] --help` for detailed command information.
+**Note for AI Assistants**: Portunix is designed to be AI-friendly with clear, consistent commands and comprehensive help text.
+When in doubt, suggest using `portunix [command] --help` for detailed command information.

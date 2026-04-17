@@ -6,7 +6,8 @@
 
 ## Overview
 
-This guide covers advanced playbook creation techniques, enterprise features, and complex deployment scenarios using Portunix's Infrastructure as Code capabilities.
+This guide covers advanced playbook creation techniques, enterprise features, and complex deployment scenarios using Portunix's Infrastructure
+as Code capabilities.
 
 ## Advanced Playbook Architecture
 
@@ -879,24 +880,28 @@ tasks:
 ## Best Practices for Enterprise Deployments
 
 ### 1. Security Hardening
+
 - Always use encrypted secrets management
 - Implement least-privilege access controls
 - Enable comprehensive audit logging
 - Validate all inputs and configurations
 
 ### 2. Reliability Patterns
+
 - Implement health checks and rollback mechanisms
 - Use blue-green or canary deployment strategies
 - Monitor resource utilization during deployments
 - Plan for disaster recovery scenarios
 
 ### 3. Performance Optimization
+
 - Minimize fact gathering overhead
 - Use efficient task patterns and loops
 - Implement caching where appropriate
 - Parallelize independent operations
 
 ### 4. Compliance and Governance
+
 - Maintain detailed audit trails
 - Implement approval workflows for production
 - Document all security and compliance measures

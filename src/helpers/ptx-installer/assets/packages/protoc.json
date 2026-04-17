@@ -23,15 +23,15 @@
               "x64": "https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protoc-25.1-win64.zip",
               "x86": "https://github.com/protocolbuffers/protobuf/releases/download/v25.1/protoc-25.1-win32.zip"
             },
-            "extractTo": "C:/Program Files/protoc",
-            "postInstall": [
-              "setx PATH \"%PATH%;C:\\Program Files\\protoc\\bin\" /m"
-            ]
+            "extractTo": "C:/Program Files/protoc"
           }
         },
         "verification": {
           "command": "protoc --version",
           "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "C:/Program Files/protoc/bin"
         }
       },
       "linux": {

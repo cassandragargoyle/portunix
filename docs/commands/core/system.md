@@ -5,6 +5,7 @@
 The `system` command provides comprehensive information about your system environment, hardware, software, and Portunix configuration.
 
 ### Simplest Usage
+
 ```bash
 portunix system info
 ```
@@ -12,11 +13,13 @@ portunix system info
 This displays a complete system overview including OS, hardware, and installed software.
 
 ### Basic Syntax
+
 ```bash
 portunix system [subcommand] [options]
 ```
 
 ### Common Subcommands
+
 - `info` - Complete system information
 - `os` - Operating system details
 - `hardware` - Hardware specifications
@@ -35,7 +38,8 @@ portunix system info
 ```
 
 Example output:
-```
+
+```text
 System Information
 ==================
 Operating System:
@@ -78,6 +82,7 @@ portunix system os --field distribution
 ```
 
 Output includes:
+
 - Distribution name and version
 - Kernel version
 - System architecture
@@ -285,7 +290,8 @@ portunix system container-info
 ```
 
 Output:
-```
+
+```text
 Container Detection:
   Running in Container: Yes
   Container Type: Docker
@@ -307,7 +313,8 @@ portunix system virt-info
 ```
 
 Output:
-```
+
+```text
 Virtualization Detection:
   Virtualized: Yes
   Hypervisor: VMware
@@ -500,6 +507,7 @@ fi
 ### Common Issues
 
 #### 1. Permission Denied
+
 ```bash
 # Some information requires elevated privileges
 sudo portunix system hardware --detailed
@@ -509,6 +517,7 @@ portunix system info --no-privileged
 ```
 
 #### 2. Slow Information Gathering
+
 ```bash
 # Skip slow checks
 portunix system info --fast
@@ -521,6 +530,7 @@ portunix system info --parallel
 ```
 
 #### 3. Missing Information
+
 ```bash
 # Install required tools
 portunix system deps --install
@@ -609,7 +619,7 @@ ws.on('message', (data) => {
 ## Environment Variables
 
 | Variable | Description | Default |
-|----------|-------------|---------|
+| -------- | ----------- | ------- |
 | `PORTUNIX_SYSTEM_CACHE` | Cache duration | 5m |
 | `PORTUNIX_SYSTEM_TIMEOUT` | Command timeout | 30s |
 | `PORTUNIX_SYSTEM_PARALLEL` | Parallel execution | true |
@@ -675,7 +685,7 @@ portunix system macos extensions
 ### Complete Parameter List
 
 | Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
+| --------- | ---- | ------- | ----------- |
 | `--output` | string | `text` | Output format (text/json/yaml/csv/markdown) |
 | `--filter` | string | - | Filter output sections |
 | `--exclude` | string | - | Exclude sections |
@@ -694,7 +704,7 @@ portunix system macos extensions
 ## Exit Codes
 
 | Code | Meaning |
-|------|---------|
+| ---- | ------- |
 | 0 | Success |
 | 1 | General error |
 | 2 | Permission denied |

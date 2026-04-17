@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package alerts
 
 import (
@@ -378,12 +382,12 @@ func (h *AlertHistory) save() error {
 
 // Stats returns alert statistics
 type AlertStats struct {
-	Total         int            `json:"total"`
-	BySeverity    map[string]int `json:"by_severity"`
-	ByRule        map[string]int `json:"by_rule"`
-	LastAlert     *time.Time     `json:"last_alert,omitempty"`
-	AlertsToday   int            `json:"alerts_today"`
-	AlertsThisWeek int           `json:"alerts_this_week"`
+	Total          int            `json:"total"`
+	BySeverity     map[string]int `json:"by_severity"`
+	ByRule         map[string]int `json:"by_rule"`
+	LastAlert      *time.Time     `json:"last_alert,omitempty"`
+	AlertsToday    int            `json:"alerts_today"`
+	AlertsThisWeek int            `json:"alerts_this_week"`
 }
 
 // GetStats returns alert statistics

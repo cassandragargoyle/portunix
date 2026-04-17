@@ -137,6 +137,16 @@ type ContainerSpec struct {
 	HealthCheck *HealthCheckSpec  `json:"healthCheck,omitempty"`
 	Memory      string            `json:"memory,omitempty"`
 	Detach      bool              `json:"detach,omitempty"`
+	// Network is the shared container network name. When set, the installer
+	// creates it (if missing) and attaches the primary and all sidecars.
+	Network string `json:"network,omitempty"`
+	// Sidecars are dependency containers launched before the primary and on
+	// the same Network. Each sidecar is a full ContainerSpec (but its own
+	// nested Sidecars field is ignored — only one level of bundling).
+	Sidecars []ContainerSpec `json:"sidecars,omitempty"`
+	// DependsOn lists sidecar names that must be healthy before the primary
+	// starts. When empty, all sidecars are awaited in declaration order.
+	DependsOn []string `json:"dependsOn,omitempty"`
 }
 
 // HealthCheckSpec represents health check configuration for container services

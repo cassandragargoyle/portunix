@@ -7,6 +7,7 @@ Portunix includes two scripts for managing documentation:
 **Purpose**: Generate static documentation from Portunix commands using Hugo
 
 **Usage**:
+
 ```bash
 # Generate documentation
 python3 scripts/post-release-docs.py v1.5.0
@@ -19,6 +20,7 @@ python3 scripts/post-release-docs.py --build-only
 ```
 
 **What it does**:
+
 - ✅ Checks dependencies (Hugo, Portunix binary)
 - ✅ Installs Hugo automatically via Portunix if missing
 - ✅ Creates the Hugo site structure
@@ -36,6 +38,7 @@ python3 scripts/post-release-docs.py --build-only
 **Purpose**: Publish documentation to GitHub Pages
 
 **Usage**:
+
 ```bash
 # Publish documentation
 python3 scripts/publish-docs-to-github.py v1.5.0
@@ -51,6 +54,7 @@ python3 scripts/publish-docs-to-github.py v1.5.0 --skip-checks
 ```
 
 **What it does**:
+
 - ✅ Checks GitHub CLI (installs automatically via Portunix)
 - ✅ Verifies authentication with `gh auth status`
 - ✅ Checks the git repository and GitHub remote
@@ -61,6 +65,7 @@ python3 scripts/publish-docs-to-github.py v1.5.0 --skip-checks
 - ✅ Shows the final documentation URL
 
 **Requirements**:
+
 - `post-release-docs.py` must be run (needs `docs-site/public/`)
 - GitHub CLI authentication: `gh auth login`
 - Git repository with a GitHub remote
@@ -90,7 +95,7 @@ Both scripts automatically install their dependencies via Portunix:
 - **Hugo**: `portunix install hugo`
 - **GitHub CLI**: `portunix install github-cli`
 
-### First run:
+### First run
 
 1. **Build Portunix**: `go build -o .`
 2. **Authenticate GitHub**: `gh auth login`
@@ -100,7 +105,7 @@ Both scripts automatically install their dependencies via Portunix:
 
 ## 📂 File structure
 
-```
+```text
 docs-site/                 # Hugo site
 ├── content/               # Markdown content
 │   ├── commands/          # Generated command docs
@@ -118,22 +123,26 @@ docs-site/                 # Hugo site
 ## 🔧 Troubleshooting
 
 ### GitHub CLI not authenticated
+
 ```bash
 gh auth login
 # Choose: Login with a web browser
 ```
 
 ### Hugo installation failed
+
 ```bash
 portunix install hugo --variant extended
 ```
 
 ### Git remote missing
+
 ```bash
 git remote add origin https://github.com/cassandragargoyle/Portunix.git
 ```
 
 ### Documentation not built
+
 ```bash
 python3 scripts/post-release-docs.py v1.5.0
 ```
@@ -156,6 +165,7 @@ scripts\docs-serve.cmd
 ```
 
 **Parameters:**
+
 - No parameters: Hugo server at `http://localhost:1313` (hot reload)
 - `--static` / `-Static`: Python HTTP server at `http://localhost:8080` (serves `public/` only)
 
@@ -164,6 +174,6 @@ scripts\docs-serve.cmd
 ## 📡 GitHub Pages URL
 
 After successful publishing, the documentation is available at:
-**https://cassandragargoyle.github.io/Portunix/**
+**<https://cassandragargoyle.github.io/Portunix/>**
 
 GitHub Pages may take 2–3 minutes to update.

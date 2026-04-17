@@ -1,9 +1,15 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
+ 
 package plugins
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"portunix.ai/app/version"
@@ -70,6 +76,31 @@ func ValidateManifest(manifest *PluginManifest) error {
 	}
 	if manifest.Plugin.Runtime != "native" && manifest.Plugin.Runtime != "java" && manifest.Plugin.Runtime != "python" {
 		return fmt.Errorf("unsupported runtime: %s (supported: native, java, python)", manifest.Plugin.Runtime)
+	}
+
+	// Validate Python wheel plugin configuration
+	if manifest.Plugin.Wheel != "" {
+		if manifest.Plugin.Runtime != "python" {
+			return fmt.Errorf("wheel field requires runtime: python")
+		}
+		if !strings.HasSuffix(manifest.Plugin.Wheel, ".whl") {
+			return fmt.Errorf("wheel file must have .whl extension: %s", manifest.Plugin.Wheel)
+		}
+	}
+
+	// Validate extra_wheels requires wheel field
+	if len(manifest.Plugin.ExtraWheels) > 0 && manifest.Plugin.Wheel == "" {
+		return fmt.Errorf("extra_wheels requires wheel field to be set")
+	}
+
+	if manifest.Plugin.PythonMinVersion != "" {
+		if manifest.Plugin.Runtime != "python" {
+			return fmt.Errorf("python_min_version can only be used with runtime: python")
+		}
+		// Bridge to runtime_version for prerequisite checking
+		if manifest.Plugin.RuntimeVersion == "" {
+			manifest.Plugin.RuntimeVersion = ">=" + manifest.Plugin.PythonMinVersion
+		}
 	}
 
 	// Validate port range (only required for gRPC service plugins)

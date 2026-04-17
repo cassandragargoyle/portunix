@@ -136,6 +136,11 @@ func (b *Backend) Start(vmName string) error {
 
 // Stop stops a VM
 func (b *Backend) Stop(vmName string, force bool) error {
+	// Check if VM exists
+	if _, err := b.loadVMConfig(vmName); err != nil {
+		return fmt.Errorf("VM not found: %s", vmName)
+	}
+
 	pid, err := b.getVMPID(vmName)
 	if err != nil {
 		return err
@@ -257,6 +262,11 @@ func (b *Backend) GetInfo(vmName string) (*types.VMInfo, error) {
 
 // GetState gets VM state
 func (b *Backend) GetState(vmName string) types.VMState {
+	// Check if VM exists by looking for its config
+	if _, err := b.loadVMConfig(vmName); err != nil {
+		return types.VMStateNotFound
+	}
+
 	if b.isVMRunning(vmName) {
 		return types.VMStateRunning
 	}
@@ -265,9 +275,18 @@ func (b *Backend) GetState(vmName string) types.VMState {
 
 // GetIP gets VM IP address
 func (b *Backend) GetIP(vmName string) (string, error) {
-	// Try to get IP from DHCP leases or ARP table
-	// This is a simplified implementation
-	return "127.0.0.1", nil // TODO: Implement proper IP detection
+	// Check if VM exists
+	if _, err := b.loadVMConfig(vmName); err != nil {
+		return "", fmt.Errorf("VM not found: %s", vmName)
+	}
+
+	// Check if VM is running
+	if !b.isVMRunning(vmName) {
+		return "", fmt.Errorf("VM %s is not running", vmName)
+	}
+
+	// TODO: Implement proper IP detection from DHCP leases or ARP table
+	return "127.0.0.1", nil
 }
 
 // IsSSHReady checks if SSH is ready

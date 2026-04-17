@@ -5,9 +5,11 @@ AI assistant integration and external system connectivity through the Model Cont
 ## Commands in this Category
 
 ### [`mcp`](mcp.md) - Model Context Protocol Server
+
 MCP server for seamless integration with AI assistants like Claude, providing structured tool access and real-time communication.
 
 **Quick Examples:**
+
 ```bash
 portunix mcp configure                    # Setup MCP server
 portunix mcp serve                        # Start MCP server
@@ -16,6 +18,7 @@ portunix mcp tools list                   # Show available MCP tools
 ```
 
 **Key Features:**
+
 - Claude and other AI assistant integration
 - Structured tool exposure to AI systems
 - Real-time bidirectional communication
@@ -24,6 +27,7 @@ portunix mcp tools list                   # Show available MCP tools
 - Performance monitoring and analytics
 
 **Common Use Cases:**
+
 - AI-assisted development workflows
 - Automated task execution via AI
 - Natural language system administration
@@ -33,9 +37,11 @@ portunix mcp tools list                   # Show available MCP tools
 ---
 
 ### `api` - REST API Server *(Coming Soon)*
+
 RESTful API server for external system integration and programmatic access to Portunix functionality.
 
 **Planned Features:**
+
 - Full REST API for all Portunix commands
 - WebSocket support for real-time events
 - Authentication and authorization
@@ -48,8 +54,8 @@ RESTful API server for external system integration and programmatic access to Po
 
 The MCP server enables sophisticated AI assistant integration:
 
-```
-┌─────────────────┐    JSON-RPC/MCP    ┌─────────────────┐
+```text
+┌─────────────────┐    JSON-RPC/MCP     ┌─────────────────┐
 │   AI Assistant  │ ◄─────────────────► │  Portunix MCP   │
 │    (Claude)     │     Protocol        │     Server      │
 └─────────────────┘                     └─────────────────┘
@@ -68,29 +74,34 @@ The MCP server enables sophisticated AI assistant integration:
 The MCP server exposes these tools to AI assistants:
 
 #### Core System Tools
+
 - `install_package` - Install software packages
 - `system_info` - Get comprehensive system information
 - `update_portunix` - Update Portunix to latest version
 - `check_requirements` - Verify system requirements
 
 #### Container Management Tools
+
 - `create_container` - Create and configure containers
 - `manage_containers` - Start, stop, and manage containers
 - `container_ssh` - Access containers via SSH
 - `container_logs` - Retrieve container logs
 
 #### Virtualization Tools
+
 - `create_vm` - Create virtual machines
 - `manage_vms` - VM lifecycle management
 - `vm_snapshots` - Snapshot creation and management
 - `vm_provisioning` - Automated VM setup
 
 #### Plugin Management Tools
+
 - `plugin_lifecycle` - Install, enable, and manage plugins
 - `plugin_development` - Create and develop plugins
 - `plugin_health` - Monitor plugin status
 
 #### File System Tools
+
 - `file_operations` - Read, write, and manage files
 - `directory_operations` - Directory management
 - `search_files` - File content and name searching
@@ -99,7 +110,7 @@ The MCP server exposes these tools to AI assistants:
 
 ### Development Environment Setup
 
-```
+```text
 User: "Set up a full-stack development environment with Node.js, Python,
        PostgreSQL, and Redis in a container"
 
@@ -114,7 +125,7 @@ Result: Complete development environment ready in minutes
 
 ### Automated Troubleshooting
 
-```
+```text
 User: "My container won't start and I'm getting network errors"
 
 AI Assistant via MCP:
@@ -128,7 +139,7 @@ Result: Automated diagnosis and fix suggestions
 
 ### Cross-Platform Testing
 
-```
+```text
 User: "Test my application across different operating systems"
 
 AI Assistant via MCP:
@@ -595,18 +606,21 @@ portunix mcp optimize --auto-tune
 ## Best Practices
 
 ### Security
+
 - Always enable authentication for production
 - Use least-privilege principle for tool access
 - Regular security audits and updates
 - Monitor and log all MCP interactions
 
 ### Performance
+
 - Implement appropriate caching strategies
 - Monitor resource usage and scale accordingly
 - Optimize tool execution times
 - Use async operations where possible
 
 ### Development
+
 - Thorough testing of custom tools
 - Clear documentation and examples
 - Error handling and graceful degradation
@@ -615,12 +629,14 @@ portunix mcp optimize --auto-tune
 ## Future Roadmap
 
 ### Planned Features
+
 - **Multi-Protocol Support** - GraphQL, WebSocket, gRPC integrations
 - **Advanced AI Features** - Context awareness, learning capabilities
 - **Workflow Engine** - Visual workflow builder and automation
 - **Marketplace Integration** - Third-party tool marketplace
 
 ### Integration Improvements
+
 - **IDE Plugins** - IntelliJ, Eclipse, Vim integration
 - **Mobile Apps** - Mobile AI assistant integration
 - **Voice Interfaces** - Voice command processing

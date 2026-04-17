@@ -11,6 +11,7 @@ portunix mcp configure
 ```
 
 This command automatically:
+
 1. Detects Claude Code installation
 2. Finds Portunix executable path
 3. Registers Portunix as MCP server
@@ -63,7 +64,7 @@ claude mcp remove portunix
 ## Available Commands
 
 | Command | Description |
-|---------|-------------|
+| ------- | ----------- |
 | `mcp serve` | Start MCP server (stdio mode by default) |
 | `mcp configure` | Auto-configure with Claude Code |
 | `mcp status` | Check MCP integration status |

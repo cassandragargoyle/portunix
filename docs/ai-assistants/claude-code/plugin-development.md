@@ -38,6 +38,7 @@ Use Claude Code to create a new plugin:
 **Human:** "Create a new Go plugin for code analysis that can detect code smells and suggest improvements"
 
 **Claude Code Response:**
+
 ```bash
 # Claude Code will execute these commands
 portunix plugin create code-analyzer --language=go
@@ -47,6 +48,7 @@ cd code-analyzer
 ```
 
 Claude Code will:
+
 1. Create the plugin directory structure
 2. Generate plugin.yaml with appropriate configuration
 3. Implement basic gRPC handlers
@@ -142,6 +144,7 @@ func (h *PluginHandler) handleComplexityAnalysis(ctx context.Context, args strin
 **Claude Code will:**
 
 1. **Write Tests First**
+
    ```go
    func TestSecurityVulnerabilityScanner(t *testing.T) {
        tests := []struct {
@@ -219,6 +222,7 @@ func (h *PluginHandler) handleComplexityAnalysis(ctx context.Context, args strin
    - Optimize data structures
 
 3. **Implement Optimizations**
+
    ```go
    // Before: Loading entire file into memory
    func (s *Service) AnalyzeFile(filePath string) (*AnalysisResult, error) {
@@ -259,7 +263,8 @@ func (h *PluginHandler) handleComplexityAnalysis(ctx context.Context, args strin
    ```
 
 4. **Add Performance Tests**
-   ```go
+
+```go
    func BenchmarkAnalyzeLargeFile(b *testing.B) {
        // Create large test file
        tempFile := createLargeTestFile(b, 10*1024*1024) // 10MB
@@ -277,7 +282,7 @@ func (h *PluginHandler) handleComplexityAnalysis(ctx context.Context, args strin
            }
        }
    }
-   ```
+```
 
 ## Advanced AI-Assisted Patterns
 
@@ -286,12 +291,14 @@ func (h *PluginHandler) handleComplexityAnalysis(ctx context.Context, args strin
 **Human:** "Generate a plugin that integrates with popular CI/CD systems"
 
 Claude Code will analyze:
+
 - Existing plugin patterns in the codebase
 - CI/CD system APIs (GitHub Actions, GitLab CI, Jenkins)
 - Authentication and configuration patterns
 - Error handling conventions
 
 Then generate:
+
 - Plugin structure following established patterns
 - CI/CD system integrations
 - Configuration management
@@ -305,6 +312,7 @@ Then generate:
 Claude Code will:
 
 1. **Design Tool Schemas**
+
    ```json
    {
      "tools": [
@@ -536,6 +544,7 @@ Claude Code will:
    - Suggest potential fixes
 
 2. **Add Debugging Code**
+
    ```go
    func (s *Service) ProcessJSON(data []byte) (*Result, error) {
        // Add memory monitoring
@@ -565,6 +574,7 @@ Claude Code will:
    ```
 
 3. **Create Reproduction Tests**
+
    ```go
    func TestLargeJSONProcessing(t *testing.T) {
        service := NewService()
@@ -585,6 +595,7 @@ Claude Code will:
 Claude Code will:
 
 1. **Add Profiling Code**
+
    ```go
    import _ "net/http/pprof"
    
@@ -601,6 +612,7 @@ Claude Code will:
    ```
 
 2. **Generate Profiling Scripts**
+
    ```bash
    #!/bin/bash
    # profile.sh
@@ -697,6 +709,7 @@ jobs:
 Claude Code will also:
 
 1. **Generate Plugin Registry Entry**
+
    ```json
    {
      "name": "code-analyzer",
@@ -726,6 +739,7 @@ Claude Code will also:
    ```
 
 2. **Create Installation Scripts**
+
    ```bash
    #!/bin/bash
    # install.sh
@@ -763,6 +777,7 @@ Claude Code will also:
 **Good:** "Add a tool that validates Kubernetes YAML files, checks for security issues, and suggests resource optimizations"
 
 **Better:** "Add an MCP tool called 'validate_k8s_yaml' that:
+
 - Takes a YAML file path as input
 - Validates Kubernetes API schema compliance
 - Checks for security issues (privileged containers, missing security contexts)
@@ -798,6 +813,7 @@ Request documentation updates with every change:
 **Human:** "Add integration with GitHub API to analyze repository metrics"
 
 Claude Code will:
+
 1. Add GitHub API client with proper authentication
 2. Implement rate limiting and error handling
 3. Create MCP tools for repository analysis
@@ -810,6 +826,7 @@ Claude Code will:
 **Human:** "The file processing is too slow. Optimize it for better performance"
 
 Claude Code will:
+
 1. Profile current implementation
 2. Identify bottlenecks
 3. Implement optimizations (concurrency, caching, streaming)
@@ -822,6 +839,7 @@ Claude Code will:
 **Human:** "Add security scanning capabilities to detect common vulnerabilities"
 
 Claude Code will:
+
 1. Research common vulnerability patterns
 2. Implement detection algorithms
 3. Add security rule configuration
@@ -881,4 +899,5 @@ func (s *Service) collectMetrics() {
 }
 ```
 
-This comprehensive guide demonstrates how Claude Code can accelerate every aspect of plugin development while maintaining high quality standards and best practices.
+This comprehensive guide demonstrates how Claude Code can accelerate every aspect of plugin development
+while maintaining high quality standards and best practices.

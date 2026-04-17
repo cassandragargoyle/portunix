@@ -32,6 +32,11 @@ Supported features:
 	},
 }
 
+// handleCommand dispatches the "aiops" command (AI Operations, including GPU
+// management) routed to this helper by the parent portunix binary (see
+// src/dispatcher/dispatcher.go), plus the discovery meta-flags --version,
+// --description, and --list-commands. args arrive without the binary name
+// prefix.
 func handleCommand(args []string) {
 	if len(args) == 0 {
 		fmt.Println("No command specified")

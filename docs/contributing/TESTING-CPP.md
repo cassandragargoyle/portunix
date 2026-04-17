@@ -1066,6 +1066,7 @@ jobs:
 ## Testing Scripts
 
 ### Main Test Script
+
 ```bash
 #!/bin/bash
 # scripts/test.sh
@@ -1131,7 +1132,8 @@ echo -e \"${GREEN}All tests passed!${NC}\"
 
 ---
 
-**Note**: These guidelines should be adapted based on specific project requirements and C++ standard used. Regular review ensures tests remain effective and maintainable.
+**Note**: These guidelines should be adapted based on specific project requirements and C++ standard used. Regular review ensures tests
+remain effective and maintainable.
 
 *Created: 2025-08-23*
 *Last updated: 2025-08-23*

@@ -272,44 +272,24 @@ install_go_dependencies() {
     log_success "Go dependencies setup completed"
 }
 
-# Install Python dependencies
+# Install Python dependencies via uv (per ADR-039)
 install_python_dependencies() {
     if [[ "$SKIP_PYTHON_DEPS" == "true" ]]; then
         log_info "Skipping Python dependencies (--skip-python)"
         return 0
     fi
-    
-    log_info "Installing Python dependencies..."
-    
-    # Check if requirements file exists (from main test suite)
-    local requirements_file="$SCRIPT_DIR/requirements-test.txt"
-    
-    if [[ -f "$requirements_file" ]]; then
-        log_info "Installing from $requirements_file"
-        if command_exists pip3; then
-            pip3 install --user -r "$requirements_file"
-        else
-            python3 -m pip install --user -r "$requirements_file"
-        fi
-    else
-        log_info "Installing basic Python test dependencies"
-        local python_deps=(
-            "pytest>=7.0.0"
-            "pytest-html>=3.1.0"
-            "pytest-xdist>=3.0.0"
-        )
-        
-        for dep in "${python_deps[@]}"; do
-            if command_exists pip3; then
-                pip3 install --user "$dep"
-            else
-                python3 -m pip install --user "$dep"
-            fi
-            log_success "Installed $dep"
-        done
+
+    log_info "Installing Python dependencies via uv..."
+
+    if ! command_exists uv; then
+        log_error "uv is not installed"
+        log_info "Install with: portunix install uv"
+        log_info "Or: curl -LsSf https://astral.sh/uv/install.sh | sh"
+        return 1
     fi
-    
-    log_success "Python dependencies installed"
+
+    (cd "$PORTUNIX_ROOT" && uv sync --group test)
+    log_success "Python dependencies synced (.venv/ ready)"
 }
 
 # Build Portunix binary

@@ -250,15 +250,15 @@ The AUR package uses MIT license (same as Portunix).
 ## Maintainer
 
 - **Maintainer**: CassandraGargoyle <info@cassandragargoyle.cz>
-- **AUR Package**: https://aur.archlinux.org/packages/portunix
-- **Upstream**: https://github.com/cassandragargoyle/Portunix
+- **AUR Package**: <https://aur.archlinux.org/packages/portunix>
+- **Upstream**: <https://github.com/cassandragargoyle/Portunix>
 
 ## Additional Resources
 
-- [AUR Submission Guidelines](https://wiki.archlinux.org/title/AUR_submission_guidelines)
-- [PKGBUILD Documentation](https://wiki.archlinux.org/title/PKGBUILD)
-- [makepkg Manual](https://man.archlinux.org/man/makepkg.8)
-- [AUR Account Registration](https://aur.archlinux.org/register/)
+- [AUR Submission Guidelines](<https://wiki.archlinux.org/title/AUR_submission_guidelines>)
+- [PKGBUILD Documentation](<https://wiki.archlinux.org/title/PKGBUILD>)
+- [makepkg Manual](<https://man.archlinux.org/man/makepkg.8>)
+- [AUR Account Registration](<https://aur.archlinux.org/register/>)
 
 ## Quick Reference
 

@@ -90,6 +90,7 @@ public abstract class AbstractPackageManager { }
 ### Methods
 
 Use camelCase with verbs describing actions:
+
 ```java
 // Good method names
 public void installPackage(String packageName) { }
@@ -257,6 +258,7 @@ public enum ProcessingMode
 ### Class Structure
 
 Organize class members in this order:
+
 1. Static constants
 2. Static variables
 3. Instance variables
@@ -364,6 +366,7 @@ public Configuration loadConfiguration(String configPath) throws ConfigurationEx
 ### Custom Exceptions
 
 Create domain-specific exception classes:
+
 ```java
 public class ConfigurationException extends Exception
 {
@@ -443,6 +446,7 @@ public class MyService
 Use Javadoc for all public APIs.
 
 > **TODO: PENDING VALIDATION** - The following Javadoc formatting styles need to be validated by authority:
+>
 > - `<p>` tag on separate line
 > - `<li>` tags without indentation inside `<ul>`
 
@@ -592,6 +596,7 @@ public void processConfiguration(String configPath)
 ### Lambda Expressions
 
 Use lambdas for functional interfaces:
+
 ```java
 // Event handling
 button.addActionListener(event -> handleInstallation());
@@ -864,7 +869,8 @@ Essential plugins for code quality:
 
 ---
 
-**Note**: These guidelines should be adapted based on specific project requirements and team preferences. Regular review and updates ensure alignment with evolving best practices.
+**Note**: These guidelines should be adapted based on specific project requirements and team preferences.
+Regular review and updates ensure alignment with evolving best practices.
 
 *Created: 2025-08-23*
 *Last updated: 2026-01-20*

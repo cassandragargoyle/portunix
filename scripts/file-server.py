@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """
 Portunix Local File Server
 Serves Portunix binary and installation scripts for VMs and containers

@@ -5,12 +5,14 @@ Machine-readable documentation designed for AI assistants, automation tools, and
 ## Machine-Readable References
 
 ### Command Reference
+
 - [command-reference.json](command-reference.json) - Complete machine-readable command database
 - [api-schema.json](api-schema.json) - API schemas and data structures
 - [workflow-patterns.md](workflow-patterns.md) - Common automation patterns
 - [error-codes.json](context-data/error-codes.json) - Comprehensive error code reference
 
 ### Context Data
+
 - [Feature Matrix](context-data/feature-matrix.json) - Platform and version capabilities
 - [Integration Points](context-data/integration-points.json) - External system interfaces
 - [Configuration Schema](context-data/config-schema.json) - Complete configuration reference
@@ -19,12 +21,14 @@ Machine-readable documentation designed for AI assistants, automation tools, and
 ## Workflow Patterns
 
 ### Common Automation Scenarios
+
 1. **Environment Setup**: Automated development environment provisioning
 2. **Deployment Workflows**: Infrastructure as Code deployment patterns
 3. **Container Management**: Automated container lifecycle management
 4. **CI/CD Integration**: Continuous integration and deployment workflows
 
 ### Error Handling Patterns
+
 - Retry mechanisms for transient failures
 - Graceful degradation strategies
 - Recovery procedures for common failure modes
@@ -33,12 +37,14 @@ Machine-readable documentation designed for AI assistants, automation tools, and
 ## Integration Guidance
 
 ### AI Assistant Integration
+
 - **Claude Code**: Native integration with Anthropic's Claude Code
 - **MCP Protocol**: Model Context Protocol server implementation
 - **Automated Workflows**: AI-driven task automation patterns
 - **Context Management**: Maintaining conversation context across operations
 
 ### Automation Tools
+
 - **Script Generation**: Automated script and configuration generation
 - **Task Orchestration**: Multi-step workflow automation
 - **Resource Management**: Automated resource provisioning and cleanup
@@ -47,6 +53,7 @@ Machine-readable documentation designed for AI assistants, automation tools, and
 ## API Reference
 
 ### Command Execution
+
 ```json
 {
   "command_structure": {
@@ -62,9 +69,11 @@ Machine-readable documentation designed for AI assistants, automation tools, and
     "working_directory": "string"
   }
 }
+
 ```
 
 ### Response Formats
+
 ```json
 {
   "success_response": {
@@ -80,11 +89,13 @@ Machine-readable documentation designed for AI assistants, automation tools, and
     "suggestions": "array"
   }
 }
+
 ```
 
 ## Automation Examples
 
 ### Infrastructure Deployment
+
 ```json
 {
   "workflow": "infrastructure_deployment",
@@ -103,9 +114,11 @@ Machine-readable documentation designed for AI assistants, automation tools, and
     "deployment_failure": "rollback to previous state"
   }
 }
+
 ```
 
 ### Container Development Environment
+
 ```json
 {
   "workflow": "container_dev_setup",
@@ -126,6 +139,7 @@ Machine-readable documentation designed for AI assistants, automation tools, and
     }
   ]
 }
+
 ```
 
 ---

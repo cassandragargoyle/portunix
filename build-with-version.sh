@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Build script with version embedding and portunix.rc update for all binaries
-VERSION=${1:-v1.10.7}
+VERSION=${1:-v1.10.8}
 
 # Remove 'v' prefix if present for version numbers
 VERSION_NUM=${VERSION#v}

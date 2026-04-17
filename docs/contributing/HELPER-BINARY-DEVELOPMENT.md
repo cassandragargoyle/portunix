@@ -2,7 +2,8 @@
 
 ## Overview
 
-Starting with Portunix v1.6.0, the project uses a Git-like dispatcher architecture where functionality is split between the main binary (`portunix`) and helper binaries (`ptx-*`). This guide explains how to develop, build, and integrate helper binaries.
+Starting with Portunix v1.6.0, the project uses a Git-like dispatcher architecture where functionality is split between the main binary (`portunix`)
+and helper binaries (`ptx-*`). This guide explains how to develop, build, and integrate helper binaries.
 
 ## Architecture
 
@@ -547,7 +548,7 @@ export PORTUNIX_DEBUG=1
 
 When a helper binary needs to expose functionality to AI assistants (Claude Code, etc.), you can add MCP tools to the existing `ptx-mcp` helper.
 
-### Overview
+### MCP Tools Overview
 
 MCP (Model Context Protocol) tools are defined in `src/app/mcp/handlers.go`. The `ptx-mcp` helper binary uses this package to serve tools via JSON-RPC.
 
@@ -658,7 +659,8 @@ func (s *Server) handleMyToolAction(args map[string]interface{}) (interface{}, e
 
 ### Important Notes
 
-1. **Binary Path Resolution**: The MCP server runs as `ptx-mcp`, so `os.Executable()` returns the helper path, not `portunix`. Use `filepath.Dir()` to find the directory and locate `portunix` there.
+1. **Binary Path Resolution**: The MCP server runs as `ptx-mcp`, so `os.Executable()` returns the helper
+   path, not `portunix`. Use `filepath.Dir()` to find the directory and locate `portunix` there.
 
 2. **JSON Output**: Request `--format json` from CLI commands for structured data that AI can parse.
 
@@ -703,7 +705,8 @@ echo '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"mytool_act
 
 See Issue #141 for a complete example of MCP integration:
 
-- **8 tools added**: `trace_start_session`, `trace_end_session`, `trace_list_sessions`, `trace_view_events`, `trace_get_statistics`, `trace_show_errors`, `trace_export_ai`, `trace_query`
+- **8 tools added**: `trace_start_session`, `trace_end_session`, `trace_list_sessions`, `trace_view_events`, `trace_get_statistics`,
+`trace_show_errors`, `trace_export_ai`, `trace_query`
 - **Handler pattern**: `executePtxTrace()` calls `portunix trace` commands
 - **JSON output**: All tools request `--format json` for structured responses
 
@@ -728,4 +731,4 @@ For questions about helper binary development:
 
 ---
 
-*This guide is part of Issue #051: Git-like Dispatcher with Python Distribution Architecture*
+This guide is part of Issue #051: Git-like Dispatcher with Python Distribution Architecture.

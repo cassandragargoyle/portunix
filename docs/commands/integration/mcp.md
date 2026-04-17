@@ -5,6 +5,7 @@
 The `mcp` command manages the Model Context Protocol (MCP) server, enabling seamless integration between Portunix and AI assistants like Claude.
 
 ### Simplest Usage
+
 ```bash
 # Configure MCP server
 portunix mcp configure
@@ -17,11 +18,13 @@ portunix mcp status
 ```
 
 ### Basic Syntax
+
 ```bash
 portunix mcp [subcommand] [options]
 ```
 
 ### Common Subcommands
+
 - `configure` - Set up MCP server configuration
 - `serve` - Start the MCP server
 - `status` - Check server status
@@ -53,7 +56,8 @@ portunix mcp config show
 ```
 
 Configuration prompts:
-```
+
+```text
 MCP Server Configuration
 ========================
 Server Name: Portunix Development Server
@@ -108,7 +112,8 @@ portunix mcp reload
 ```
 
 Status output example:
-```
+
+```text
 MCP Server Status
 =================
 Status: Running
@@ -144,6 +149,7 @@ portunix mcp tools docs install_package
 ```
 
 Available MCP tools:
+
 - `install_package` - Install software packages
 - `system_info` - Get system information
 - `run_command` - Execute shell commands
@@ -157,11 +163,11 @@ Available MCP tools:
 
 The MCP server implements the Model Context Protocol specification:
 
-```
+```text
 ┌─────────────────┐    MCP Protocol    ┌─────────────────┐
-│   AI Assistant  │ ◄─────────────────► │  Portunix MCP   │
+│   AI Assistant  │ ◄────────────────► │  Portunix MCP   │
 │    (Claude)     │     (JSON-RPC)     │     Server      │
-└─────────────────┘                     └─────────────────┘
+└─────────────────┘                    └─────────────────┘
                                                 │
                                                 │
                                                 ▼
@@ -193,6 +199,7 @@ portunix mcp config reset
 ```
 
 Configuration file structure (`mcp-config.json`):
+
 ```json
 {
   "server": {
@@ -320,6 +327,7 @@ portunix mcp client test claude
 ```
 
 Claude Desktop configuration example:
+
 ```json
 {
   "mcpServers": {
@@ -491,6 +499,7 @@ services:
 ### Common Issues
 
 #### 1. Server Won't Start
+
 ```bash
 # Check port availability
 portunix mcp port-check 3000
@@ -506,6 +515,7 @@ portunix mcp config reset
 ```
 
 #### 2. Connection Issues
+
 ```bash
 # Test server connectivity
 portunix mcp ping
@@ -518,6 +528,7 @@ portunix mcp client verify claude
 ```
 
 #### 3. Tool Execution Failures
+
 ```bash
 # Test specific tool
 portunix mcp tool test install_package
@@ -530,6 +541,7 @@ portunix mcp tool debug install_package --trace
 ```
 
 #### 4. Performance Issues
+
 ```bash
 # Analyze server performance
 portunix mcp analyze --performance
@@ -671,7 +683,7 @@ MCP uses JSON-RPC 2.0 for communication:
 ## Environment Variables
 
 | Variable | Description | Default |
-|----------|-------------|---------|
+| -------- | ----------- | ------- |
 | `PORTUNIX_MCP_PORT` | MCP server port | 3000 |
 | `PORTUNIX_MCP_HOST` | MCP server host | localhost |
 | `PORTUNIX_MCP_LOG_LEVEL` | Logging level | info |
@@ -690,7 +702,7 @@ MCP uses JSON-RPC 2.0 for communication:
 ### Complete Parameter List
 
 | Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
+| --------- | ---- | ------- | ----------- |
 | `--port` | int | `3000` | Server port |
 | `--host` | string | `localhost` | Server host |
 | `--config` | string | - | Configuration file |
@@ -708,7 +720,7 @@ MCP uses JSON-RPC 2.0 for communication:
 ## Exit Codes
 
 | Code | Meaning |
-|------|---------|
+| ---- | ------- |
 | 0 | Success |
 | 1 | General error |
 | 2 | Configuration error |

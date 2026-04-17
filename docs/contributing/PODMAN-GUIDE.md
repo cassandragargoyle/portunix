@@ -2,11 +2,13 @@
 
 ## Purpose
 
-This document provides comprehensive guidance for using Podman as a container engine in CassandraGargoyle projects. Podman is a daemonless, rootless container engine that provides Docker-compatible commands while offering enhanced security features.
+This document provides comprehensive guidance for using Podman as a container engine in CassandraGargoyle projects. Podman is a daemonless, rootless
+container engine that provides Docker-compatible commands while offering enhanced security features.
 
 ## What is Podman?
 
-**Podman** (Pod Manager) is an open-source container management tool that allows you to manage OCI containers and pods. Unlike Docker, Podman doesn't require a daemon and can run containers as a non-root user, providing better security isolation.
+**Podman** (Pod Manager) is an open-source container management tool that allows you to manage OCI containers and pods. Unlike Docker, Podman
+doesn't requirea daemon and canrun containers as a non-root user, providing better security isolation.
 
 ### Key Features
 

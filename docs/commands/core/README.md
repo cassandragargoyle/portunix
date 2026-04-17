@@ -5,16 +5,20 @@ Essential commands for package management, system operations, and Portunix maint
 ## Commands in this Category
 
 ### [`install`](install.md) - Package Installation System
-Universal cross-platform package installation with dependency resolution and multiple package manager support.
 
-**Quick Examples:**
+Universal cross-platform package installation with dependency resolution
+and multiple package manager support.
+
+Quick Examples:
+
 ```bash
 portunix install nodejs                    # Install Node.js
 portunix install python --variant full     # Full Python environment
 portunix install default                   # Default development profile
 ```
 
-**Key Features:**
+Key Features:
+
 - Cross-platform package management (Windows, Linux, macOS)
 - Automatic dependency resolution
 - Installation profiles (default, minimal, full, empty)
@@ -22,7 +26,8 @@ portunix install default                   # Default development profile
 - Checksum verification and security
 - Offline installation support
 
-**Common Use Cases:**
+Common Use Cases:
+
 - Development environment setup
 - CI/CD pipeline software installation
 - Quick prototype environment creation
@@ -31,16 +36,19 @@ portunix install default                   # Default development profile
 ---
 
 ### [`update`](update.md) - Portunix Self-Update
+
 Secure automatic update system with verification and rollback capabilities.
 
-**Quick Examples:**
+Quick Examples:
+
 ```bash
 portunix update                    # Check and install updates
 portunix update --check           # Check for updates only
 portunix update --force           # Force reinstall current version
 ```
 
-**Key Features:**
+Key Features:
+
 - SHA256 checksum verification
 - Automatic rollback on failure
 - Update channels (stable, beta, nightly)
@@ -48,7 +56,8 @@ portunix update --force           # Force reinstall current version
 - GPG signature verification
 - Update history and audit trail
 
-**Common Use Cases:**
+Common Use Cases:
+
 - Keeping Portunix up-to-date
 - Testing beta features
 - Automated CI/CD updates
@@ -57,16 +66,19 @@ portunix update --force           # Force reinstall current version
 ---
 
 ### [`system`](system.md) - System Information & Diagnostics
+
 Comprehensive system information gathering, monitoring, and compatibility checking.
 
-**Quick Examples:**
+Quick Examples:
+
 ```bash
 portunix system info              # Complete system overview
 portunix system hardware          # Hardware specifications
 portunix system requirements nodejs # Check package requirements
 ```
 
-**Key Features:**
+Key Features:
+
 - Hardware and software inventory
 - Real-time performance monitoring
 - Compatibility checking for packages
@@ -74,7 +86,8 @@ portunix system requirements nodejs # Check package requirements
 - Multiple output formats (JSON, YAML, CSV, Markdown)
 - Container and virtualization detection
 
-**Common Use Cases:**
+Common Use Cases:
+
 - System diagnostics and troubleshooting
 - Environment preparation verification
 - Performance monitoring and analysis
@@ -82,19 +95,24 @@ portunix system requirements nodejs # Check package requirements
 
 ## Category Overview
 
-The **Core** category contains the fundamental commands that every Portunix user will interact with regularly. These commands form the foundation of the Portunix ecosystem and are essential for:
+The Core category contains the fundamental commands that every Portunix user
+will interact with regularly. These commands form the foundation of the
+Portunix ecosystem and are essential for:
 
 ### Daily Operations
+
 - Installing and managing software packages
 - Keeping Portunix updated with latest features
 - Gathering system information for troubleshooting
 
 ### Development Workflows
+
 - Setting up development environments quickly
 - Ensuring compatibility across different systems
 - Automating software installation in pipelines
 
 ### System Administration
+
 - Monitoring system health and performance
 - Validating system requirements
 - Managing software dependencies
@@ -103,28 +121,32 @@ The **Core** category contains the fundamental commands that every Portunix user
 
 Core commands integrate seamlessly with other Portunix categories:
 
-### With Containers
+### Integration with Containers
+
 ```bash
 # Install software in containers
 portunix docker run ubuntu
 portunix docker exec my-container portunix install nodejs
 ```
 
-### With Plugins
+### Integration with Plugins
+
 ```bash
 # Install prerequisites for plugins
 portunix install nodejs  # Required for many plugins
 portunix plugin install agile-software-development
 ```
 
-### With Virtualization
+### Integration with Virtualization
+
 ```bash
 # Setup VM with software
 portunix virt create dev-vm --iso ubuntu.iso
 portunix virt ssh dev-vm "portunix install default"
 ```
 
-### With MCP Integration
+### Integration with MCP
+
 ```bash
 # Install MCP tools
 portunix install claude-code
@@ -134,6 +156,7 @@ portunix mcp configure
 ## Quick Start Workflows
 
 ### New Developer Setup
+
 ```bash
 # 1. Get system information
 portunix system info
@@ -149,6 +172,7 @@ portunix update
 ```
 
 ### CI/CD Integration
+
 ```bash
 # 1. Check system compatibility
 portunix system requirements --profile full
@@ -164,6 +188,7 @@ portunix update --check && portunix update --auto-confirm
 ```
 
 ### Cross-Platform Development
+
 ```bash
 # 1. Check platform-specific features
 portunix system capabilities
@@ -180,19 +205,22 @@ portunix system profile import dev-profile.json
 
 ## Best Practices
 
-### Package Installation
+### Package Installation Best Practices
+
 - Use `--dry-run` to preview installations
 - Always verify with `portunix system requirements` first
 - Use installation profiles for consistent environments
 - Keep backups with rollback points
 
-### Update Management
+### Update Management Best Practices
+
 - Enable automatic update checking
 - Test updates in development environments first
 - Use specific channels (stable/beta) based on needs
 - Monitor update logs for issues
 
-### System Monitoring
+### System Monitoring Best Practices
+
 - Regular system information gathering
 - Set up monitoring for critical systems
 - Use JSON output for automated processing
@@ -200,14 +228,15 @@ portunix system profile import dev-profile.json
 
 ## Related Categories
 
-- **[Plugins](../plugins/)** - Extend core functionality
-- **[Containers](../containers/)** - Containerized environments
-- **[Integration](../integration/)** - AI and external system integration
-- **[Utilities](../utilities/)** - Supporting tools and enhancements
+- [Plugins](../plugins/) - Extend core functionality
+- [Containers](../containers/) - Containerized environments
+- [Integration](../integration/) - AI and external system integration
+- [Utilities](../utilities/) - Supporting tools and enhancements
 
 ## Support and Troubleshooting
 
 For issues with core commands:
+
 1. Check `portunix system info` for environment details
 2. Use `--debug` flag for detailed output
 3. Consult troubleshooting sections in individual command docs
@@ -215,4 +244,5 @@ For issues with core commands:
 
 ---
 
-*Core commands form the foundation of the Portunix ecosystem - master these first for the best experience.*
+*Core commands form the foundation of the Portunix ecosystem -
+master these first for the best experience.*

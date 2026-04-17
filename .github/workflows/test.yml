@@ -1,3 +1,8 @@
+# Policy (ADR-039, issue #171): Any Python job added here MUST use
+# `astral-sh/setup-uv@v3` + `uv sync --group test` / `uv run …` — never
+# `pip install` or `python -m venv`. No Python job exists today; this comment
+# applies to future additions.
+
 name: Test Suite
 
 on:

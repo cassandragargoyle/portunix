@@ -1,6 +1,7 @@
 # Python Plugin Development Guide
 
-Python offers rapid development and access to a rich ecosystem of libraries for Portunix plugins. This guide will help you create powerful, feature-rich plugins using Python.
+Python offers rapid development and access to a rich ecosystem of libraries for Portunix plugins. This guide will help you create powerful,
+feature-rich plugins using Python.
 
 ## Prerequisites
 
@@ -16,11 +17,12 @@ Create a new Python plugin using the Portunix CLI:
 ```bash
 portunix plugin create my-python-plugin --language=python
 cd my-python-plugin
+
 ```
 
 This creates a complete Python project structure:
 
-```
+```text
 my-python-plugin/
 ├── plugin.yaml              # Plugin manifest
 ├── requirements.txt         # Python dependencies
@@ -35,11 +37,13 @@ my-python-plugin/
 ├── tests/                  # Test files
 ├── scripts/                # Build and deployment scripts
 └── README.md               # Plugin documentation
+
 ```
 
 ## Plugin Structure
 
 ### Main Entry Point (src/main.py)
+
 ```python
 #!/usr/bin/env python3
 
@@ -131,9 +135,11 @@ class HealthServicer(health_pb2_grpc.HealthServicer):
 
 if __name__ == '__main__':
     asyncio.run(main())
+
 ```
 
 ### Configuration Module (src/config/config.py)
+
 ```python
 import yaml
 from dataclasses import dataclass
@@ -188,9 +194,11 @@ class Config:
             raise ValueError("Plugin version is required")
         if self.timeout <= 0:
             raise ValueError("Timeout must be positive")
+
 ```
 
 ### gRPC Handler (src/handlers/plugin_handler.py)
+
 ```python
 import json
 import logging
@@ -374,9 +382,11 @@ class PluginHandler(plugin_pb2_grpc.PluginServiceServicer):
     def cleanup(self):
         """Perform cleanup operations."""
         self.service.cleanup()
+
 ```
 
 ### Business Logic (src/services/plugin_service.py)
+
 ```python
 import logging
 import statistics
@@ -481,11 +491,13 @@ class PluginService:
         # - Cancel background tasks
         # - Release resources
         self.logger.info("Cleanup completed")
+
 ```
 
 ## Development Setup
 
 ### Requirements (requirements.txt)
+
 ```txt
 grpcio>=1.58.0
 grpcio-tools>=1.58.0
@@ -498,9 +510,11 @@ pytest-grpc>=0.8.0
 black>=23.7.0
 flake8>=6.0.0
 mypy>=1.5.0
+
 ```
 
 ### Development Setup Script (scripts/setup.sh)
+
 ```bash
 #!/bin/bash
 
@@ -509,16 +523,20 @@ set -e
 echo "Setting up Python plugin development environment..."
 
 # Create virtual environment
+
 python3 -m venv venv
 source venv/bin/activate
 
 # Upgrade pip
+
 pip install --upgrade pip
 
 # Install dependencies
+
 pip install -r requirements.txt
 
 # Generate protocol buffers
+
 echo "Generating protocol buffers..."
 python -m grpc_tools.protoc \
     --proto_path=proto \
@@ -527,12 +545,15 @@ python -m grpc_tools.protoc \
     proto/*.proto
 
 # Fix imports in generated files
+
 find src -name "*_pb2_grpc.py" -exec sed -i 's/import.*_pb2/from . import &/' {} \;
 
 echo "Setup completed! Activate the virtual environment with: source venv/bin/activate"
+
 ```
 
 ### Build Script (scripts/build.sh)
+
 ```bash
 #!/bin/bash
 
@@ -541,9 +562,11 @@ set -e
 echo "Building Python plugin..."
 
 # Activate virtual environment
+
 source venv/bin/activate
 
 # Generate protocol buffers
+
 python -m grpc_tools.protoc \
     --proto_path=proto \
     --python_out=src \
@@ -551,28 +574,34 @@ python -m grpc_tools.protoc \
     proto/*.proto
 
 # Fix imports
+
 find src -name "*_pb2_grpc.py" -exec sed -i 's/import.*_pb2/from . import &/' {} \;
 
 # Run tests
+
 echo "Running tests..."
 python -m pytest tests/ -v
 
 # Check code quality
+
 echo "Checking code quality..."
 black --check src/
 flake8 src/
 mypy src/
 
 # Create distribution
+
 echo "Creating distribution..."
 python setup.py sdist bdist_wheel
 
 echo "Build completed successfully!"
+
 ```
 
 ## Testing
 
 ### Test Example (tests/test_plugin.py)
+
 ```python
 import pytest
 import asyncio
@@ -702,11 +731,13 @@ class TestAsyncOperations:
         for i, response in enumerate(responses):
             assert response.status == plugin_pb2.ExecuteResponse.SUCCESS
             assert f"User{i}" in response.result
+
 ```
 
 ## Advanced Features
 
 ### Async Operations
+
 ```python
 import asyncio
 import aiohttp
@@ -757,9 +788,11 @@ class AsyncPluginService(PluginService):
             if not line:
                 break
             yield line
+
 ```
 
 ### Data Processing with Pandas
+
 ```python
 import pandas as pd
 import numpy as np
@@ -800,9 +833,11 @@ class DataAnalysisService:
             result["correlations"] = df[numeric_cols].corr().to_dict()
         
         return result
+
 ```
 
 ### Machine Learning Integration
+
 ```python
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import KMeans
@@ -847,31 +882,37 @@ class MLService:
         """Load trained model from disk."""
         file_path = f"models/{model_name}.joblib"
         return joblib.load(file_path)
+
 ```
 
 ## Deployment
 
 ### Dockerfile
+
 ```dockerfile
 FROM python:3.11-slim
 
 WORKDIR /app
 
 # Install system dependencies
+
 RUN apt-get update && apt-get install -y \
     protobuf-compiler \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy source code
+
 COPY src/ src/
 COPY proto/ proto/
 COPY plugin.yaml .
 
 # Generate protocol buffers
+
 RUN python -m grpc_tools.protoc \
     --proto_path=proto \
     --python_out=src \
@@ -879,16 +920,20 @@ RUN python -m grpc_tools.protoc \
     proto/*.proto
 
 # Fix imports in generated files
+
 RUN find src -name "*_pb2_grpc.py" -exec sed -i 's/import.*_pb2/from . import &/' {} \;
 
 # Create non-root user
+
 RUN useradd -m -u 1000 plugin
 USER plugin
 
 # Expose ports
+
 EXPOSE 50051 50052 8080
 
 # Health check
+
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python -c "import grpc; from grpc_health.v1 import health_pb2_grpc, health_pb2; \
                    channel = grpc.insecure_channel('localhost:50052'); \
@@ -897,10 +942,13 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
                    exit(0 if response.status == 1 else 1)"
 
 # Start plugin
+
 CMD ["python", "src/main.py"]
+
 ```
 
 ### Docker Compose for Development
+
 ```yaml
 version: '3.8'
 
@@ -936,11 +984,13 @@ services:
 networks:
   plugin-network:
     driver: bridge
+
 ```
 
 ## Best Practices
 
 ### Error Handling
+
 ```python
 import functools
 import logging
@@ -972,9 +1022,11 @@ def handle_grpc_errors(func: Callable) -> Callable:
             raise
     
     return wrapper
+
 ```
 
 ### Configuration Validation
+
 ```python
 from pydantic import BaseModel, validator
 from typing import Optional, List
@@ -1011,9 +1063,11 @@ class DatabaseConfig(BaseModel):
         if v <= 0:
             raise ValueError('Pool size must be positive')
         return v
+
 ```
 
 ### Logging and Monitoring
+
 ```python
 import logging
 import time
@@ -1021,6 +1075,7 @@ from prometheus_client import Counter, Histogram, start_http_server
 
 
 # Metrics
+
 REQUEST_COUNT = Counter('plugin_requests_total', 'Total requests', ['method', 'status'])
 REQUEST_DURATION = Histogram('plugin_request_duration_seconds', 'Request duration', ['method'])
 
@@ -1059,6 +1114,7 @@ def log_and_monitor(method_name: str):
         
         return wrapper
     return decorator
+
 ```
 
 ## Next Steps

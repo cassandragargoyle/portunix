@@ -1,17 +1,20 @@
 # C++ Code Style Guidelines
 
 ## Purpose
+
 This document defines the C++ coding standards for CassandraGargoyle projects, based on modern C++ best practices and industry standards.
 
 ## General Principles
 
 ### 1. Modern C++ Standards
+
 - Use C++17 or later features when available
 - Prefer standard library over custom implementations
 - Follow RAII (Resource Acquisition Is Initialization) principle
 - Embrace value semantics and move semantics
 
 ### 2. Code Quality
+
 - Write self-documenting code
 - Use const-correctness throughout
 - Prefer stack allocation over heap allocation
@@ -20,11 +23,12 @@ This document defines the C++ coding standards for CassandraGargoyle projects, b
 ## File Organization
 
 ### File Naming
+
 - Header files: `.hpp` extension (preferred) or `.h`
 - Implementation files: `.cpp` extension
 - Use snake_case for file names
 
-```
+```text
 ✅ package_installer.hpp
 ✅ config_manager.cpp
 ✅ system_detector.hpp
@@ -33,7 +37,8 @@ This document defines the C++ coding standards for CassandraGargoyle projects, b
 ```
 
 ### Directory Structure
-```
+
+```text
 project/
 ├── include/
 │   └── cassandragargoyle/
@@ -62,6 +67,7 @@ project/
 ```
 
 ### Header File Structure
+
 ```cpp
 // package_installer.hpp
 #pragma once
@@ -93,7 +99,9 @@ private:
 ## Naming Conventions
 
 ### Namespaces
+
 Use lowercase with underscores, follow logical hierarchy:
+
 ```cpp
 namespace cassandragargoyle::project::install {
     // implementation
@@ -105,7 +113,9 @@ namespace cassandragargoyle::project::config::detail {
 ```
 
 ### Classes and Types
+
 Use PascalCase for types:
+
 ```cpp
 class PackageInstaller;
 class ConfigurationManager;
@@ -115,7 +125,9 @@ using PackageList = std::vector<std::string>;
 ```
 
 ### Functions and Variables
+
 Use snake_case for functions and variables:
+
 ```cpp
 class PackageInstaller {
 public:
@@ -130,6 +142,7 @@ private:
 ```
 
 ### Constants and Enumerations
+
 - Constants: Use UPPER_CASE with underscores
 - Enum values: Use PascalCase
 
@@ -148,7 +161,9 @@ enum class PackageStatus {
 ```
 
 ### Member Variables
+
 Use trailing underscore for private member variables:
+
 ```cpp
 class ConfigurationManager {
 private:
@@ -162,12 +177,15 @@ private:
 ## Code Formatting
 
 ### Indentation and Spacing
+
 - Use 4 spaces for indentation (no tabs)
 - Maximum line length: 100 characters
 - Use blank lines to separate logical sections
 
 ### Braces and Line Breaks
+
 Use Allman style (braces on new line):
+
 ```cpp
 class PackageInstaller
 {
@@ -194,7 +212,9 @@ private:
 ```
 
 ### Pointer and Reference Declarations
+
 Attach * and & to the type:
+
 ```cpp
 // Preferred
 std::string* config_ptr;
@@ -209,7 +229,9 @@ const Configuration &config_ref;
 ## Header Files and Includes
 
 ### Include Guards
+
 Use `#pragma once` instead of traditional include guards:
+
 ```cpp
 #pragma once
 
@@ -218,7 +240,9 @@ Use `#pragma once` instead of traditional include guards:
 ```
 
 ### Include Order
+
 Organize includes in the following order with blank lines between groups:
+
 1. Corresponding header (for .cpp files)
 2. C standard library
 3. C++ standard library  
@@ -245,7 +269,9 @@ Organize includes in the following order with blank lines between groups:
 ```
 
 ### Forward Declarations
+
 Use forward declarations in headers to reduce dependencies:
+
 ```cpp
 // In header file
 namespace cassandragargoyle::project::config {
@@ -265,7 +291,9 @@ private:
 ## Modern C++ Features
 
 ### Smart Pointers
+
 Always prefer smart pointers over raw pointers:
+
 ```cpp
 class PackageInstaller
 {
@@ -291,7 +319,9 @@ private:
 ```
 
 ### Move Semantics
+
 Implement move operations for performance:
+
 ```cpp
 class PackageInstaller
 {
@@ -330,7 +360,9 @@ private:
 ```
 
 ### Range-Based For Loops
+
 Use range-based loops when appropriate:
+
 ```cpp
 void install_packages(const std::vector<std::string>& packages)
 {
@@ -351,7 +383,9 @@ void print_package_info(const std::map<std::string, PackageInfo>& packages)
 ```
 
 ### Auto Keyword
+
 Use auto judiciously for type deduction:
+
 ```cpp
 // Good uses of auto
 auto config = load_configuration(\"config.xml\");
@@ -364,7 +398,9 @@ int retry_count = 3;  // Simple type, be explicit
 ```
 
 ### Lambda Expressions
+
 Use lambdas for local functions and callbacks:
+
 ```cpp
 void install_packages_async(const std::vector<std::string>& packages)
 {
@@ -386,7 +422,9 @@ void install_packages_async(const std::vector<std::string>& packages)
 ## Error Handling
 
 ### Exception Safety
+
 Write exception-safe code using RAII:
+
 ```cpp
 class ConfigurationManager
 {
@@ -412,7 +450,9 @@ private:
 ```
 
 ### Custom Exceptions
+
 Create domain-specific exception classes:
+
 ```cpp
 namespace cassandragargoyle::project::install {
 
@@ -445,7 +485,9 @@ private:
 ## Class Design
 
 ### Interface Design
+
 Use pure virtual interfaces for contracts:
+
 ```cpp
 namespace cassandragargoyle::project::install {
 
@@ -473,7 +515,9 @@ public:
 ```
 
 ### PIMPL Idiom
+
 Use PIMPL for stable ABI and fast compilation:
+
 ```cpp
 // In header file
 class PackageInstaller
@@ -537,7 +581,9 @@ void PackageInstaller::install_package(const std::string& package_name)
 ## Memory Management
 
 ### RAII Pattern
+
 Always use RAII for resource management:
+
 ```cpp
 class FileHandler
 {
@@ -573,7 +619,9 @@ private:
 ```
 
 ### Container Usage
+
 Choose appropriate containers for your use case:
+
 ```cpp
 class PackageRegistry
 {
@@ -598,7 +646,9 @@ private:
 ## Concurrency
 
 ### Thread Safety
+
 Use appropriate synchronization primitives:
+
 ```cpp
 class ThreadSafePackageInstaller
 {
@@ -624,7 +674,9 @@ private:
 ```
 
 ### Async Programming
+
 Use std::future and std::async for asynchronous operations:
+
 ```cpp
 class AsyncPackageInstaller
 {
@@ -662,7 +714,9 @@ private:
 ## Documentation
 
 ### Class Documentation
+
 Document classes and their purpose:
+
 ```cpp
 /**
  * @brief Manages cross-platform package installation.
@@ -707,7 +761,9 @@ public:
 ## Testing
 
 ### Unit Test Structure
+
 Use a modern testing framework like Catch2:
+
 ```cpp
 #include <catch2/catch_test_macros.hpp>
 #include \"cassandragargoyle/project/install/package_installer.hpp\"
@@ -739,7 +795,9 @@ TEST_CASE(\"PackageInstaller basic functionality\", \"[package_installer]\")
 ## Build Configuration
 
 ### CMake Configuration
+
 Use modern CMake practices:
+
 ```cmake
 cmake_minimum_required(VERSION 3.20)
 
@@ -807,14 +865,18 @@ endif()
 ## Code Quality Tools
 
 ### Static Analysis
+
 Use tools for code quality checking:
+
 - **clang-tidy**: Static analysis and code linting
 - **cppcheck**: Static analysis for bugs
 - **AddressSanitizer**: Runtime memory error detection
 - **Valgrind**: Memory debugging and profiling
 
 ### Formatting
+
 Use consistent code formatting:
+
 ```bash
 # .clang-format
 BasedOnStyle: Allman
@@ -827,7 +889,9 @@ ReferenceAlignment: Left
 ## Security Best Practices
 
 ### Input Validation
+
 ```cpp
+
 void install_package(const std::string& package_name)
 {
     // Validate input
@@ -854,6 +918,7 @@ void install_package(const std::string& package_name)
 ```
 
 ### Safe String Operations
+
 ```cpp
 #include <string_view>
 
@@ -868,7 +933,8 @@ bool validate_package_name(std::string_view package_name)
 
 ---
 
-**Note**: These guidelines should be adapted based on specific project requirements and evolve with C++ standards. Regular code reviews ensure adherence to these practices.
+**Note**: These guidelines should be adapted based on specific project requirements and evolve with C++ standards.
+Regular code reviews ensure adherence to these practices.
 
 *Created: 2025-08-23*
 *Last updated: 2025-08-23*

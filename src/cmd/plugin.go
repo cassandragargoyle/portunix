@@ -77,12 +77,16 @@ The plugin directory must contain:
 - Plugin binary
 - Any additional plugin files
 
+Use --force to reinstall an existing plugin (preserves enabled state).
+
 Example:
-  portunix plugin install ./agile-plugin/`,
+  portunix plugin install ./agile-plugin/
+  portunix plugin install --force ./agile-plugin/`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		pluginPath := args[0]
-		return installPlugin(pluginPath)
+		force, _ := cmd.Flags().GetBool("force")
+		return installPlugin(pluginPath, force)
 	},
 }
 
@@ -274,6 +278,35 @@ Examples:
 	},
 }
 
+// Plugin check command
+var pluginCheckCmd = &cobra.Command{
+	Use:   "check [plugin-name]",
+	Short: "Check plugin prerequisites",
+	Long: `Check if prerequisites are satisfied for a specific plugin or all installed plugins.
+
+Validates runtime availability, runtime version, Portunix version compatibility,
+OS support, and optional tool availability.
+
+Examples:
+  portunix plugin check text-extractor        # Check single plugin
+  portunix plugin check --all                 # Check all installed plugins
+  portunix plugin check --all --json          # JSON output for programmatic use`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		checkAll, _ := cmd.Flags().GetBool("all")
+		jsonOutput, _ := cmd.Flags().GetBool("json")
+
+		if checkAll {
+			return checkAllPluginPrerequisites(jsonOutput)
+		}
+
+		if len(args) < 1 {
+			return fmt.Errorf("plugin name required. Use --all to check all plugins")
+		}
+
+		return checkPluginPrerequisites(args[0], jsonOutput)
+	},
+}
+
 func init() {
 	rootCmd.AddCommand(pluginCmd)
 
@@ -292,10 +325,18 @@ func init() {
 	pluginCmd.AddCommand(pluginCreateCmd)
 	pluginCmd.AddCommand(pluginValidateCmd)
 	pluginCmd.AddCommand(pluginRunCmd)
+	pluginCmd.AddCommand(pluginCheckCmd)
+
+	// Flags for check command
+	pluginCheckCmd.Flags().Bool("all", false, "Check prerequisites for all installed plugins")
+	pluginCheckCmd.Flags().Bool("json", false, "Output results in JSON format")
 
 	// Flags for list command
 	pluginListCmd.Flags().BoolP("all", "a", false, "Show all plugins (including disabled)")
 	pluginListCmd.Flags().StringP("output", "o", "table", "Output format: table, json, yaml")
+
+	// Flags for install command
+	pluginInstallCmd.Flags().BoolP("force", "f", false, "Force reinstall if plugin already exists")
 
 	// Flags for uninstall command
 	pluginUninstallCmd.Flags().BoolP("force", "f", false, "Force uninstall without confirmation")
@@ -363,7 +404,7 @@ func listPlugins(showAll bool, outputFormat string) error {
 }
 
 // installPlugin installs a plugin
-func installPlugin(pluginPath string) error {
+func installPlugin(pluginPath string, force bool) error {
 	manifestPath := filepath.Join(pluginPath, "plugin.json")
 
 	// Check if manifest exists
@@ -371,13 +412,20 @@ func installPlugin(pluginPath string) error {
 		return fmt.Errorf("plugin.json not found in %s", pluginPath)
 	}
 
-	fmt.Printf("Installing plugin from %s...\n", pluginPath)
-
-	if err := pluginManager.InstallPlugin(manifestPath); err != nil {
-		return fmt.Errorf("failed to install plugin: %w", err)
+	if force {
+		fmt.Printf("Force installing plugin from %s...\n", pluginPath)
+		if err := pluginManager.ForceInstallPlugin(manifestPath); err != nil {
+			return fmt.Errorf("failed to install plugin: %w", err)
+		}
+		fmt.Println("✅ Plugin reinstalled successfully!")
+	} else {
+		fmt.Printf("Installing plugin from %s...\n", pluginPath)
+		if err := pluginManager.InstallPlugin(manifestPath); err != nil {
+			return fmt.Errorf("failed to install plugin: %w", err)
+		}
+		fmt.Println("✅ Plugin installed successfully!")
 	}
 
-	fmt.Println("✅ Plugin installed successfully!")
 	return nil
 }
 
@@ -467,6 +515,9 @@ func showPluginInfo(pluginName string) error {
 	fmt.Printf("License:     %s\n", pluginInfo.License)
 	fmt.Printf("Status:      %s\n", pluginInfo.Status.String())
 	fmt.Printf("Last Seen:   %s\n", pluginInfo.LastSeen.Format(time.RFC3339))
+	if len(pluginInfo.Interfaces) > 0 {
+		fmt.Printf("Interfaces:  %s\n", strings.Join(pluginInfo.Interfaces, ", "))
+	}
 
 	fmt.Printf("\nSupported OS: %s\n", strings.Join(pluginInfo.SupportedOS, ", "))
 
@@ -508,7 +559,12 @@ func checkPluginHealth(pluginName string) error {
 	}
 	fmt.Printf("Status:     %s\n", status)
 	fmt.Printf("Message:    %s\n", health.Message)
-	fmt.Printf("Uptime:     %d seconds\n", health.UptimeSeconds)
+
+	// Only show uptime for service plugins (helper plugins don't have uptime)
+	if health.Status != "ready" {
+		fmt.Printf("Uptime:     %d seconds\n", health.UptimeSeconds)
+	}
+
 	fmt.Printf("Last Check: %s\n", health.LastCheckTime.Format(time.RFC3339))
 
 	if len(health.Metrics) > 0 {
@@ -516,6 +572,72 @@ func checkPluginHealth(pluginName string) error {
 		for key, value := range health.Metrics {
 			fmt.Printf("  %s: %s\n", key, value)
 		}
+	}
+
+	return nil
+}
+
+// checkPluginPrerequisites checks prerequisites for a single plugin
+func checkPluginPrerequisites(pluginName string, jsonOutput bool) error {
+	result, err := pluginManager.CheckPluginPrerequisites(pluginName)
+	if err != nil {
+		return fmt.Errorf("failed to check prerequisites: %w", err)
+	}
+
+	if jsonOutput {
+		output, err := result.FormatJSON()
+		if err != nil {
+			return fmt.Errorf("failed to format JSON: %w", err)
+		}
+		fmt.Println(output)
+	} else {
+		fmt.Print(result.FormatHuman())
+	}
+
+	// Exit code based on result
+	if result.HasErrors() {
+		os.Exit(1)
+	} else if result.HasWarnings() {
+		os.Exit(2)
+	}
+
+	return nil
+}
+
+// checkAllPluginPrerequisites checks prerequisites for all installed plugins
+func checkAllPluginPrerequisites(jsonOutput bool) error {
+	summary, err := pluginManager.CheckAllPrerequisites()
+	if err != nil {
+		return fmt.Errorf("failed to check prerequisites: %w", err)
+	}
+
+	if len(summary.Results) == 0 {
+		fmt.Println("No plugins installed.")
+		return nil
+	}
+
+	if jsonOutput {
+		return outputJSON(summary)
+	}
+
+	for i, result := range summary.Results {
+		if i > 0 {
+			fmt.Println()
+		}
+		fmt.Print(result.FormatHuman())
+	}
+
+	fmt.Printf("\nSummary: %d plugins checked, %d issues found, %d warnings\n",
+		summary.Summary.Total,
+		summary.Summary.Error,
+		summary.Summary.Warning,
+	)
+
+	// Exit code based on summary
+	if summary.Summary.Error > 0 {
+		os.Exit(1)
+	} else if summary.Summary.Warning > 0 {
+		os.Exit(2)
 	}
 
 	return nil
@@ -795,8 +917,8 @@ func outputYAML(data interface{}) error {
 // Helper functions for output formatting
 func outputPluginTable(pluginList []plugins.PluginInfo, showAll bool) error {
 	// Implementation for table output
-	fmt.Printf("%-20s %-10s %-15s %-30s\n", "NAME", "VERSION", "STATUS", "DESCRIPTION")
-	fmt.Printf("%-20s %-10s %-15s %-30s\n", "----", "-------", "------", "-----------")
+	fmt.Printf("%-20s %-10s %-12s %-15s %-30s\n", "NAME", "VERSION", "INTERFACE", "STATUS", "DESCRIPTION")
+	fmt.Printf("%-20s %-10s %-12s %-15s %-30s\n", "----", "-------", "---------", "------", "-----------")
 
 	for _, plugin := range pluginList {
 		status := plugin.Status.String()
@@ -809,9 +931,19 @@ func outputPluginTable(pluginList []plugins.PluginInfo, showAll bool) error {
 				status = "ready"
 			}
 		}
-		fmt.Printf("%-20s %-10s %-15s %-30s\n",
+		iface := strings.Join(plugin.Interfaces, ",")
+		if iface == "" {
+			// Derive from mode for backward compatibility
+			if plugin.Mode == "helper" {
+				iface = "cli"
+			} else {
+				iface = "grpc"
+			}
+		}
+		fmt.Printf("%-20s %-10s %-12s %-15s %-30s\n",
 			plugin.Name,
 			plugin.Version,
+			iface,
 			status,
 			truncateString(plugin.Description, 30))
 	}

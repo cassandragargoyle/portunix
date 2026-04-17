@@ -2,7 +2,8 @@
 
 ## Overview
 
-This module provides cross-platform clipboard operations for Portunix and its helpers. It combines multiple clipboard access methods to ensure maximum compatibility across different operating systems and desktop environments.
+This module provides cross-platform clipboard operations for Portunix and its helpers. It combines multiple clipboard access methods to ensure maximum
+compatibility across different operating systems and desktop environments.
 
 ## Features
 
@@ -46,22 +47,26 @@ fmt.Printf("Platform: %s, Methods: %v\n", info.Platform, info.Methods)
 ## Platform Support
 
 ### Windows
+
 - ✅ **Full support** via standard Windows clipboard API
 - Uses `github.com/atotto/clipboard` library
 - No additional dependencies required
 
 ### macOS
+
 - ✅ **Full support** via NSPasteboard
 - Uses `github.com/atotto/clipboard` library
 - No additional dependencies required
 
 ### Linux
+
 - ✅ **Multi-method support**:
   - **Standard**: xclip/xsel utilities (via `github.com/atotto/clipboard`)
   - **D-Bus fallback**: KDE Klipper integration
   - **Future**: Wayland wl-clipboard support (planned)
 
 #### Linux Dependencies
+
 - **Option 1**: Install `xclip` or `xsel` packages
 - **Option 2**: Use KDE desktop environment with Klipper
 - **Automatic fallback**: D-Bus when standard methods fail
@@ -69,16 +74,19 @@ fmt.Printf("Platform: %s, Methods: %v\n", info.Platform, info.Methods)
 ## Architecture
 
 ### ClipboardManager
+
 Main interface providing clipboard operations with automatic method selection.
 
 ### Detection Logic
+
 1. Test standard clipboard support (`github.com/atotto/clipboard`)
 2. On Linux: Test D-Bus clipboard support (KDE Klipper)
 3. Enable clipboard if any method is available
 4. Use best available method for each operation
 
 ### Fallback Chain (Linux)
-```
+
+```text
 Standard Clipboard (xclip/xsel)
          ↓ (if fails)
 D-Bus KDE Klipper
@@ -112,6 +120,7 @@ info := cm.GetSystemInfo()
 ## Integration Examples
 
 ### PTX-Prompting Helper
+
 ```go
 // In cmd/build.go
 clipboardMgr := shared.NewClipboardManager()
@@ -124,6 +133,7 @@ if !noCopy {
 ```
 
 ### Future Helpers
+
 ```go
 // Any Portunix helper can use shared clipboard
 import "portunix.ai/portunix/src/shared"
@@ -140,6 +150,7 @@ func saveToClipboard(content string) error {
 **Review schedule**: Quarterly
 
 ### Monitoring Checklist
+
 - [ ] Check for updates to `github.com/atotto/clipboard`
 - [ ] Evaluate new Go clipboard libraries
 - [ ] Test compatibility with new Linux distributions
@@ -147,17 +158,20 @@ func saveToClipboard(content string) error {
 - [ ] Review D-Bus clipboard specifications
 
 ### Alternative Libraries to Consider
+
 - `github.com/zyedidia/clipboard` - Better Linux support but requires packages
 - `github.com/d2r2/go-clipboard` - More platform-specific options
 - Direct system API integration (Windows user32.dll, macOS NSPasteboard)
 
 ### Platform Improvements Needed
+
 - **Wayland**: Add `wl-clipboard` support
 - **GNOME**: Add GNOME clipboard D-Bus integration
 - **Android**: Termux clipboard support (future mobile support)
 - **Web**: WASM clipboard API integration (future web support)
 
 ### Known Issues
+
 1. **Linux Wayland**: Limited testing, compositor-dependent
 2. **Rich content**: Only text clipboard supported (no images/files)
 3. **Clipboard history**: No integration with system clipboard managers
@@ -166,11 +180,13 @@ func saveToClipboard(content string) error {
 ## Testing
 
 Run the included test:
+
 ```bash
 go run test_shared_clipboard.go
 ```
 
 Expected output shows:
+
 - Platform detection
 - Available methods
 - Capability information
@@ -179,6 +195,7 @@ Expected output shows:
 ## Migration Guide
 
 ### From Helper-Specific Clipboard
+
 ```go
 // Old (helper-specific)
 import "portunix.ai/portunix/src/helpers/ptx-prompting/internal/clipboard"
@@ -190,6 +207,7 @@ clipboardMgr := shared.NewClipboardManager()
 ```
 
 ### API Compatibility
+
 The shared module maintains the same API as the original helper clipboard modules for easy migration.
 
 ## Security Considerations

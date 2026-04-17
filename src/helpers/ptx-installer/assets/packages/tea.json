@@ -23,15 +23,15 @@
               "x64": "https://gitea.com/gitea/tea/releases/download/v0.11.1/tea-0.11.1-windows-amd64.exe"
             },
             "binary": "tea.exe",
-            "installPath": "C:/Program Files/tea",
-            "postInstall": [
-              "setx PATH \"%PATH%;C:\\Program Files\\tea\" /m"
-            ]
+            "installPath": "C:/Program Files/tea"
           }
         },
         "verification": {
           "command": "tea --version",
           "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "C:/Program Files/tea"
         }
       },
       "linux": {

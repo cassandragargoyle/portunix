@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package pii
 
 import (
@@ -13,9 +17,9 @@ type Masker struct {
 
 // Pattern defines a PII pattern to mask
 type Pattern struct {
-	Name        string
-	Regex       *regexp.Regexp
-	Mask        string
+	Name         string
+	Regex        *regexp.Regexp
+	Mask         string
 	PreserveLast int // Preserve last N characters
 }
 

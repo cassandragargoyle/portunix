@@ -533,6 +533,7 @@ Supported flags:
   -i, --interactive: Keep STDIN open
   -t, --tty: Allocate pseudo-TTY
   --name: Assign a name to the container
+  --network: Connect container to a network
   -p, --port: Publish container ports to host
   -v, --volume: Bind mount volumes
   -e, --env: Set environment variables
@@ -549,6 +550,7 @@ Use -- to separate flags from command arguments when needed.`,
 		ports, _ := cmd.Flags().GetStringSlice("port")
 		volumes, _ := cmd.Flags().GetStringSlice("volume")
 		envVars, _ := cmd.Flags().GetStringSlice("env")
+		network, _ := cmd.Flags().GetString("network")
 
 		image := args[0]
 		command := args[1:]
@@ -571,6 +573,7 @@ Use -- to separate flags from command arguments when needed.`,
 				Ports:       ports,
 				Volumes:     volumes,
 				Environment: envVars,
+				Network:     network,
 			})
 		case "podman":
 			err = podman.RunContainer(image, command, podman.ContainerRunOptions{
@@ -581,6 +584,7 @@ Use -- to separate flags from command arguments when needed.`,
 				Ports:       ports,
 				Volumes:     volumes,
 				Environment: envVars,
+				Network:     network,
 			})
 		default:
 			fmt.Printf("❌ Error: Unsupported runtime: %s\n", runtime)
@@ -861,6 +865,7 @@ func init() {
 	containerRunCmd.Flags().StringSliceP("port", "p", []string{}, "Publish container ports to host")
 	containerRunCmd.Flags().StringSliceP("volume", "v", []string{}, "Bind mount volumes")
 	containerRunCmd.Flags().StringSliceP("env", "e", []string{}, "Set environment variables")
+	containerRunCmd.Flags().String("network", "", "Connect container to a network")
 
 	// Add interactive flag to exec command
 	containerExecCmd.Flags().BoolP("interactive", "i", false, "Keep STDIN open and allocate pseudo-TTY")

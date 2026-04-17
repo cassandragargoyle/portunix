@@ -4,7 +4,7 @@ Multi-language testing framework for Portunix following the CassandraGargoyle te
 
 ## Directory Structure
 
-```
+```text
 test/
 ├── integration/           # Python integration tests
 ├── e2e/                  # Python end-to-end tests
@@ -18,43 +18,46 @@ test/
 
 ### Python Integration Tests (Issue #012)
 
+Python tooling is managed with [uv](https://docs.astral.sh/uv/) — see
+[ADR-039](../docs/adr/039-uv-python-tooling-adoption.md).
+
 ```bash
-# Install Python dependencies
-pip install -r requirements-test.txt
+# Provision test environment (run once)
+./scripts/setup-venv.sh --with-tests
 
 # Run quick test (Ubuntu 22.04 only)
-python test/scripts/test-integration.py --quick
+uv run test/scripts/test-integration.py --quick
 
 # Run full test suite (all 6 distributions)
-python test/scripts/test-integration.py --full-suite
+uv run test/scripts/test-integration.py --full-suite
 
 # Run specific distribution
-python test/scripts/test-integration.py --distribution ubuntu-22
+uv run test/scripts/test-integration.py --distribution ubuntu-22
 
 # Run with parallel execution
-python test/scripts/test-integration.py --full-suite --parallel
+uv run test/scripts/test-integration.py --full-suite --parallel
 
 # List available distributions
-python test/scripts/test-integration.py --list-distributions
+uv run test/scripts/test-integration.py --list-distributions
 
 # Clean up test containers
-python test/scripts/test-integration.py --cleanup
+uv run test/scripts/test-integration.py --cleanup
 ```
 
 ### Direct pytest Usage
 
 ```bash
 # Run all integration tests
-pytest test/integration/ -v
+uv run pytest test/integration/ -v
 
 # Run quick tests only
-pytest test/integration/ -m quick -v
+uv run pytest test/integration/ -m quick -v
 
 # Run tests in parallel
-pytest test/integration/ -n auto
+uv run pytest test/integration/ -n auto
 
 # Generate HTML report
-pytest test/integration/ --html=report.html --self-contained-html
+uv run pytest test/integration/ --html=report.html --self-contained-html
 ```
 
 ### Available Test Markers
@@ -96,20 +99,26 @@ pytest test/integration/ --html=report.html --self-contained-html
 
 ## Prerequisites
 
-- Python 3.7+
+- Python 3.11+ (managed by uv via `.python-version`)
+- [uv](https://docs.astral.sh/uv/) on `PATH`
 - Podman (rootless mode recommended)
 - Built portunix binary
-- Python test dependencies: `pip install -r requirements-test.txt`
+- Test dependencies: `./scripts/setup-venv.sh --with-tests`
 
 ## Configuration
 
 ### pytest.ini
+
 Controls pytest behavior, markers, and test discovery.
 
-### requirements-test.txt
-Python dependencies for testing framework.
+### pyproject.toml / uv.lock
+
+Python dependencies (including the `test` dependency group) are declared in
+`pyproject.toml` at the repo root and pinned in `uv.lock`. See
+[ADR-039](../docs/adr/039-uv-python-tooling-adoption.md).
 
 ### conftest.py
+
 Shared fixtures and pytest configuration.
 
 ## Integration with CI/CD
@@ -118,11 +127,14 @@ The test suite is designed to work in CI/CD environments:
 
 ```yaml
 # Example GitHub Actions usage
+- name: Set up uv
+  uses: astral-sh/setup-uv@v3
+
 - name: Install Python dependencies
-  run: pip install -r requirements-test.txt
+  run: uv sync --group test
 
 - name: Run integration tests
-  run: python test/scripts/test-integration.py --full-suite --parallel
+  run: uv run test/scripts/test-integration.py --full-suite --parallel
 
 - name: Upload test report
   uses: actions/upload-artifact@v3
@@ -134,11 +146,13 @@ The test suite is designed to work in CI/CD environments:
 ## Methodology
 
 This follows the CassandraGargoyle testing pyramid:
+
 - **Go**: Unit tests (70%)
-- **Python**: Integration/E2E tests (30%) 
+- **Python**: Integration/E2E tests (30%)
 - **Bash**: Smoke tests (quick verification)
 
 Each language is chosen for its strengths:
+
 - **Python**: Better for complex scenarios, container management, SSH
 - **Go**: Fast unit tests, internal package testing
 - **Bash**: Simple CLI verification and smoke tests

@@ -1,16 +1,19 @@
 # Java Testing Guidelines
 
 ## Purpose
+
 This document defines the testing strategy, structure, and best practices for Java projects in the CassandraGargoyle ecosystem.
 
 ## Testing Philosophy
 
 ### Testing Pyramid
+
 1. **Unit Tests** (70%) - Fast, isolated tests for individual classes/methods
 2. **Integration Tests** (20%) - Test component interactions and external systems
 3. **End-to-End Tests** (10%) - Full application workflow tests
 
 ### Key Principles
+
 - Follow Test-Driven Development (TDD) when possible
 - Tests should be fast, reliable, and independent
 - Each test should verify one specific behavior
@@ -21,7 +24,8 @@ This document defines the testing strategy, structure, and best practices for Ja
 ## Project Structure
 
 ### Maven Project Layout
-```
+
+```text
 project/
 ├── src/
 │   ├── main/
@@ -62,6 +66,7 @@ project/
 ## Test Dependencies
 
 ### Maven Dependencies
+
 ```xml
 <dependencies>
     <!-- Main application dependencies -->
@@ -119,12 +124,15 @@ project/
 ## Test Naming Conventions
 
 ### Test Classes
+
 - Unit tests: `ClassNameTest.java`
 - Integration tests: `ClassNameIntegrationTest.java`
 - End-to-end tests: `ClassNameE2ETest.java`
 
 ### Test Methods
+
 Use descriptive names following the pattern: `should_ExpectedBehavior_When_StateUnderTest`
+
 ```java
 public class PackageInstallerTest {
     
@@ -143,7 +151,9 @@ public class PackageInstallerTest {
 ```
 
 ### Test Structure Pattern
+
 Use **Given/When/Then** or **Arrange/Act/Assert** pattern:
+
 ```java
 @Test
 void shouldInstallPackageSuccessfully_WhenValidPackageNameProvided() {
@@ -165,6 +175,7 @@ void shouldInstallPackageSuccessfully_WhenValidPackageNameProvided() {
 ## Unit Testing
 
 ### Basic Unit Test Example
+
 ```java
 package com.cassandragargoyle.project.service;
 
@@ -223,7 +234,9 @@ class PackageInstallerTest {
 ```
 
 ### Parameterized Tests
+
 Use JUnit 5 parameterized tests for multiple scenarios:
+
 ```java
 @ParameterizedTest
 @ValueSource(strings = {\"\", \"   \", \"package;rm -rf /\", \"very-long-package-name-that-exceeds-limit\"})
@@ -288,6 +301,7 @@ static class PackageTestData {
 ```
 
 ### Testing Exceptions
+
 ```java
 @Test
 void shouldThrowConfigurationException_WhenConfigFileNotFound() {
@@ -321,6 +335,7 @@ void shouldHandleInterruptedException_WhenInstallationIsInterrupted() {
 ## Integration Testing
 
 ### Integration Test Structure
+
 ```java
 package com.cassandragargoyle.project.service;
 
@@ -372,6 +387,7 @@ class PackageInstallerIntegrationTest {
 ```
 
 ### TestContainers Integration
+
 ```java
 @Testcontainers
 class DockerBasedIntegrationTest {
@@ -406,6 +422,7 @@ class DockerBasedIntegrationTest {
 ## Mocking with Mockito
 
 ### Basic Mocking
+
 ```java
 @ExtendWith(MockitoExtension.class)
 class ServiceTest {
@@ -434,6 +451,7 @@ class ServiceTest {
 ```
 
 ### Advanced Mocking Patterns
+
 ```java
 @Test
 void shouldRetryOnFailure_AndEventuallySucceed() {
@@ -471,6 +489,7 @@ void shouldCaptureArgumentsPassedToMock() {
 ## Test Fixtures and Data
 
 ### Using Test Resources
+
 ```java
 class ConfigurationLoaderTest {
     
@@ -504,6 +523,7 @@ class ConfigurationLoaderTest {
 ```
 
 ### Temporary Files and Directories
+
 ```java
 class FileProcessorTest {
     
@@ -527,6 +547,7 @@ class FileProcessorTest {
 ## Asynchronous Testing
 
 ### Testing CompletableFuture
+
 ```java
 @Test
 void shouldHandleAsynchronousInstallation() throws Exception {
@@ -558,6 +579,7 @@ void shouldTimeoutAsynchronousOperation() {
 ```
 
 ### Testing with Awaitility
+
 ```java
 @Test
 void shouldEventuallyCompleteInstallation() {
@@ -584,6 +606,7 @@ void shouldEventuallyCompleteInstallation() {
 ## Performance Testing
 
 ### Simple Performance Tests
+
 ```java
 @Test
 @Timeout(value = 5, unit = TimeUnit.SECONDS)
@@ -612,6 +635,7 @@ void shouldConsistentlyInstallPackage() {
 ```
 
 ### JMH Benchmarking
+
 ```java
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
@@ -637,6 +661,7 @@ public class PackageInstallerBenchmark {
 ## Test Categories and Profiles
 
 ### Maven Profiles for Test Categories
+
 ```xml
 <profiles>
     <profile>
@@ -680,6 +705,7 @@ public class PackageInstallerBenchmark {
 ```
 
 ### Running Different Test Categories
+
 ```bash
 # Unit tests only (default)
 mvn test
@@ -700,6 +726,7 @@ mvn test -Dtest=PackageInstallerTest#shouldInstallPackageSuccessfully_WhenValidP
 ## Coverage and Quality
 
 ### JaCoCo Coverage Configuration
+
 ```xml
 <plugin>
     <groupId>org.jacoco</groupId>
@@ -743,6 +770,7 @@ mvn test -Dtest=PackageInstallerTest#shouldInstallPackageSuccessfully_WhenValidP
 ```
 
 ### Coverage Requirements
+
 - **Minimum coverage**: 80% line coverage
 - **Critical classes**: 90% coverage required
 - **Integration tests**: 60% additional coverage
@@ -750,6 +778,7 @@ mvn test -Dtest=PackageInstallerTest#shouldInstallPackageSuccessfully_WhenValidP
 ## CI/CD Integration
 
 ### GitHub Actions Example
+
 ```yaml
 name: Java Test Suite
 
@@ -796,6 +825,7 @@ jobs:
 ## Testing Scripts
 
 ### Main Test Script
+
 ```bash
 #!/bin/bash
 # scripts/test.sh
@@ -829,6 +859,7 @@ echo -e \"${GREEN}All tests passed!${NC}\"
 ```
 
 ### Coverage Script
+
 ```bash
 #!/bin/bash
 # scripts/coverage.sh
@@ -857,24 +888,28 @@ fi
 ## Best Practices Summary
 
 ### Test Organization
+
 1. Follow Maven standard directory structure
 2. Use descriptive test method names
 3. Group related tests in nested classes
 4. Separate unit, integration, and E2E tests
 
 ### Test Quality
+
 1. Each test should verify one specific behavior
 2. Use meaningful assertions with custom messages
 3. Mock external dependencies properly
 4. Clean up resources in `@AfterEach` methods
 
 ### Performance and Reliability
+
 1. Keep unit tests fast (< 100ms each)
 2. Make tests deterministic and independent
 3. Use appropriate timeouts for async operations
 4. Handle test data cleanup properly
 
 ### Maintenance
+
 1. Update tests when code changes
 2. Remove obsolete tests regularly
 3. Keep test dependencies up to date
@@ -882,7 +917,8 @@ fi
 
 ---
 
-**Note**: These guidelines should be adapted based on specific project requirements and frameworks used. Regular review ensures tests remain effective and maintainable.
+**Note**: These guidelines should be adapted based on specific project requirements and frameworks used. Regular review ensures
+tests remain effective and maintainable.
 
 *Created: 2025-08-23*
 *Last updated: 2025-08-23*

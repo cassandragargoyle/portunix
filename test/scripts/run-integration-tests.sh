@@ -67,61 +67,31 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-# Setup log directory and file
+# Setup log directory and file (per ADR-039: deps managed by uv)
 LOG_DIR="$TEST_DIR/logs"
 mkdir -p "$LOG_DIR"
-LOG_FILE="$LOG_DIR/pip-install-$(date +%Y%m%d-%H%M%S).log"
+LOG_FILE="$LOG_DIR/uv-sync-$(date +%Y%m%d-%H%M%S).log"
 
-# Ensure virtual environment exists and is activated
-VENV_DIR="$TEST_DIR/venv"
-if [ ! -d "$VENV_DIR" ]; then
-    echo -e "${BLUE}📦 Creating Python virtual environment...${NC}"
-    python3 -m venv "$VENV_DIR"
+# Check uv is installed
+if ! command -v uv &> /dev/null; then
+    echo -e "${RED}❌ uv is not installed${NC}"
+    echo "Install with: portunix install uv"
+    echo "Or: curl -LsSf https://astral.sh/uv/install.sh | sh"
+    exit 1
 fi
 
-# Activate virtual environment
-source "$VENV_DIR/bin/activate"
-
-# Check and install required packages
-echo -e "${BLUE}📦 Checking Python dependencies...${NC}"
-REQUIRED_PACKAGES="pytest pytest-xdist pytest-html"
-PACKAGES_TO_INSTALL=""
-for package in $REQUIRED_PACKAGES; do
-    if ! pip show "$package" > /dev/null 2>&1; then
-        PACKAGES_TO_INSTALL="$PACKAGES_TO_INSTALL $package"
-    fi
-done
-
-if [ -n "$PACKAGES_TO_INSTALL" ]; then
-    echo -e "${YELLOW}📝 Installing missing packages (see $LOG_FILE for details)...${NC}"
-    echo "Installing packages:$PACKAGES_TO_INSTALL" >> "$LOG_FILE"
-    pip install $PACKAGES_TO_INSTALL >> "$LOG_FILE" 2>&1
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✅ Packages installed successfully${NC}"
-    else
-        echo -e "${RED}❌ Some packages failed to install. Check $LOG_FILE for details${NC}"
-    fi
+# Provision .venv with test dependencies (idempotent)
+echo -e "${BLUE}📦 Syncing Python test dependencies via uv...${NC}"
+(cd "$PROJECT_ROOT" && uv sync --group test) >> "$LOG_FILE" 2>&1
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ uv sync failed. Check $LOG_FILE for details${NC}"
+    exit 1
 fi
+echo -e "${GREEN}✅ Test dependencies ready${NC}"
 
-# Check if requirements-test.txt exists and install from it
-REQUIREMENTS_FILE="$PROJECT_ROOT/requirements-test.txt"
-if [ -f "$REQUIREMENTS_FILE" ]; then
-    echo -e "${BLUE}📦 Installing from requirements-test.txt (see $LOG_FILE for details)...${NC}"
-    pip install -r "$REQUIREMENTS_FILE" >> "$LOG_FILE" 2>&1
-    if [ $? -eq 0 ]; then
-        echo -e "${GREEN}✅ Requirements installed successfully${NC}"
-    else
-        echo -e "${YELLOW}⚠️  Some requirements failed to install. Check $LOG_FILE for details${NC}"
-    fi
-fi
-
-# Run the Python test runner with all arguments
+# Run the Python test runner via uv run (no activation needed)
 echo -e "${GREEN}🚀 Running integration tests...${NC}"
-python3 "$PYTHON_RUNNER" "$@"
+(cd "$PROJECT_ROOT" && uv run python "$PYTHON_RUNNER" "$@")
 exit_code=$?
 
-# Deactivate virtual environment
-deactivate
-
-# Exit with the same code as the Python runner
 exit $exit_code

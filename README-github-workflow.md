@@ -12,6 +12,7 @@ Tento systém ti umožňuje oddělit lokální development (Gitea) od publikace 
 ## 📋 Enhanced Workflow
 
 ### 1. Lokální development
+
 ```bash
 # Normální development na Gitea
 git add .
@@ -20,12 +21,14 @@ git push origin feature-branch
 ```
 
 ### 2. Sync & Publikace na GitHub
+
 ```bash
 # Když jsi připraven publikovat
 ./scripts/github-02-sync-publish.sh
 ```
 
 **Nový enhanced workflow** ti interaktivně projde:
+
 1. 📥 **GitHub Sync** - stáhne aktuální stav z GitHubu
 2. 📊 **Analýza změn** - analyzuje lokální změny
 3. 🌿 **Vytvoření větve** - s pomocí Claude vytvoří větev s dobrým názvem
@@ -35,6 +38,7 @@ git push origin feature-branch
 7. 🧹 **Cleanup** - volitelné vyčištění
 
 ### 3. Alternativní rychlý workflow
+
 ```bash
 # Pro rychlé squash publikace (původní způsob)
 ./scripts/github-02-quick-publish.sh
@@ -43,6 +47,7 @@ git push origin feature-branch
 ## 📁 Co se odstraňuje před publikací
 
 Založeno na `portunix-cleanup-public.ps1`:
+
 - `CLAUDE.md`, `GEMINI.md`, `NOTES.md`
 - `bin/`, `*.exe`
 - `docs/private/`, `config/dev/`
@@ -52,7 +57,7 @@ Založeno na `portunix-cleanup-public.ps1`:
 
 ## 🎛️ Git remotes struktura
 
-```
+```text
 origin  -> tvůj-gitea-server (development)
 github  -> github.com/cassandragargoyle/Portunix (publikace)
 ```
@@ -67,19 +72,23 @@ github  -> github.com/cassandragargoyle/Portunix (publikace)
 ## 🔍 Troubleshooting
 
 ### GitHub remote neexistuje
+
 ```bash
 git remote add github https://github.com/cassandragargoyle/Portunix.git
 ```
 
 ### Konflikt při push
+
 Script používá `--force-with-lease` pro bezpečnost. Pokud někdo mezitím commitl na GitHub, script se zastaví.
 
 ### Chybné privátní soubory
+
 Uprav seznam v `github-publish.sh` v sekci `PRIVATE_FILES`.
 
 ## 🚀 Aktuální test
 
 Můžeme otestovat na současných Docker změnách:
+
 ```bash
 ./scripts/github-publish.sh
 ```

@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package main
 
 import (
@@ -35,6 +39,10 @@ Supported features:
 	},
 }
 
+// handleCommand dispatches the "python" command routed to this helper by the
+// parent portunix binary (see src/dispatcher/dispatcher.go), plus the discovery
+// meta-flags --version, --description, and --list-commands used by the
+// dispatcher. args arrive without the binary name prefix.
 func handleCommand(args []string) {
 	// Handle dispatched commands: python
 	if len(args) == 0 {

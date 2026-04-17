@@ -22,15 +22,15 @@
             "urls": {
               "x64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_extended_0.150.1_windows-amd64.zip"
             },
-            "extractTo": "C:/Program Files/Hugo",
-            "postInstall": [
-              "setx PATH \"%PATH%;C:\\Program Files\\Hugo\" /m"
-            ]
+            "extractTo": "C:/Program Files/Hugo"
           }
         },
         "verification": {
           "command": "hugo version",
           "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "C:/Program Files/Hugo"
         }
       },
       "linux": {

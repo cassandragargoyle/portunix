@@ -4,7 +4,8 @@ Portunix Ansible Infrastructure as Code Helper - dedicated helper binary for Ans
 
 ## Overview
 
-`ptx-ansible` is a helper binary that handles all Ansible Infrastructure as Code operations within the Portunix ecosystem. It provides `.ptxbook` file parsing, validation, and execution for unified infrastructure management across multiple environments.
+`ptx-ansible` is a helper binary that handles all Ansible Infrastructure as Code operations within the Portunix ecosystem. It provides `.ptxbook` file
+parsing, validation, and execution for unified infrastructure management across multiple environments.
 
 **Architecture Decision Record:** [ADR-016](../../../docs/adr/016-ansible-infrastructure-as-code-integration.md)
 **Issue:** [#056](../../../docs/issues/internal/056-ansible-infrastructure-as-code-integration.md)
@@ -42,7 +43,7 @@ Portunix Ansible Infrastructure as Code Helper - dedicated helper binary for Ans
 
 ## Architecture
 
-```
+```text
 src/helpers/ptx-ansible/
 ├── main.go          # Entry point and command handling
 ├── executor.go      # Playbook execution engine
@@ -175,7 +176,7 @@ ptx-ansible compliance report
 The template engine automatically provides built-in variables:
 
 | Variable | Description |
-|----------|-------------|
+| -------- | ----------- |
 | `os` | Operating system (linux, windows, darwin) |
 | `arch` | Architecture (amd64, arm64) |
 | `os_family` | OS family (unix, windows) |
@@ -215,6 +216,7 @@ variables:
 ```
 
 Supported secret stores:
+
 - `file` - File-based encrypted storage
 - `env` - Environment variables (read-only)
 - `vault` - HashiCorp Vault (planned)
@@ -224,7 +226,7 @@ Supported secret stores:
 Default roles:
 
 | Role | Description | Permissions |
-|------|-------------|-------------|
+| ---- | ----------- | ----------- |
 | `admin` | Full system administrator | All permissions |
 | `developer` | Standard developer access | Read/write playbooks, local/container execution |
 | `operator` | Production operations | Read/execute playbooks, VM execution |
@@ -233,7 +235,7 @@ Default roles:
 ## CI/CD Provider Support
 
 | Provider | Config Generation | Webhook Support |
-|----------|-------------------|-----------------|
+| -------- | ----------------- | --------------- |
 | GitHub Actions | ✅ | ✅ |
 | GitLab CI | ✅ | ✅ |
 | Jenkins | ✅ | ✅ |

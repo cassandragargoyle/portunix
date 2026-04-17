@@ -22,15 +22,15 @@
             "urls": {
               "x64": "https://github.com/rhysd/actionlint/releases/download/v1.7.4/actionlint_1.7.4_windows_amd64.zip"
             },
-            "extractTo": "C:/Program Files/Actionlint",
-            "postInstall": [
-              "setx PATH \"%PATH%;C:\\Program Files\\Actionlint\" /m"
-            ]
+            "extractTo": "C:/Program Files/Actionlint"
           }
         },
         "verification": {
           "command": "actionlint --version",
           "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "C:/Program Files/Actionlint"
         }
       },
       "linux": {

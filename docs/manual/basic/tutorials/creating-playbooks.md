@@ -6,15 +6,18 @@
 
 ## Quick Start
 
-Portunix playbooks (`.ptxbook` files) are simple YAML-based configuration files that automate infrastructure tasks using Ansible. Think of them as recipes for setting up and managing your development environments.
+Portunix playbooks (`.ptxbook` files) are simple YAML-based configuration files that automate infrastructure tasks using Ansible.
+Think of them as recipes for setting up and managing your development environments.
 
 ## What You'll Learn
+
 - How to create your first playbook
 - Basic playbook structure
 - Running and validating playbooks
 - Common patterns and examples
 
 ## Prerequisites
+
 - Portunix v1.7.0+ installed
 - Basic understanding of YAML syntax
 - Target environment (local, container, or VM)
@@ -62,7 +65,8 @@ portunix playbook validate hello-world.ptxbook
 ```
 
 **Expected output:**
-```
+
+```text
 ✓ Syntax validation passed
 ✓ Task validation passed
 ✓ Dependencies checked
@@ -80,7 +84,8 @@ portunix playbook run hello-world.ptxbook --env container
 ```
 
 **Expected output:**
-```
+
+```text
 🚀 Starting playbook execution: Hello World Infrastructure
 📋 Environment: local
 ⏱️  Estimated duration: 30 seconds
@@ -279,12 +284,14 @@ portunix playbook run my-playbook.ptxbook --env virt --target my-vm
 ## Best Practices
 
 ### 1. Always Validate First
+
 ```bash
 # Never skip validation
 portunix playbook validate my-playbook.ptxbook
 ```
 
 ### 2. Use Descriptive Names
+
 ```yaml
 # Good
 - name: "Install Node.js for React development"
@@ -294,12 +301,14 @@ portunix playbook validate my-playbook.ptxbook
 ```
 
 ### 3. Test in Containers First
+
 ```bash
 # Safe testing
 portunix playbook run my-playbook.ptxbook --env container --dry-run
 ```
 
 ### 4. Use Variables for Reusability
+
 ```yaml
 variables:
   node_version: "18"
@@ -311,6 +320,7 @@ tasks:
 ```
 
 ### 5. Add Error Handling
+
 ```yaml
 tasks:
   - name: "Download application"
@@ -415,18 +425,21 @@ tasks:
 ### Common Issues
 
 **Playbook validation fails:**
+
 ```bash
 # Check YAML syntax
 portunix playbook validate my-playbook.ptxbook --verbose
 ```
 
 **Task execution fails:**
+
 ```bash
 # Run with debug output
 portunix playbook run my-playbook.ptxbook --dry-run --verbose
 ```
 
 **Permission issues:**
+
 ```bash
 # Use container environment for testing
 portunix playbook run my-playbook.ptxbook --env container
@@ -448,16 +461,19 @@ portunix playbook check
 ## Next Steps
 
 ### Learn More
+
 - [Advanced Playbook Features](../expert/advanced-features/infrastructure-as-code.md) - Expert-level features
 - [Secrets Management](secrets-management.md) - Working with sensitive data
 - [Multi-Environment Deployment](multi-environment-deployment.md) - Development to production workflows
 
 ### Practice Projects
+
 1. Create a playbook to set up your preferred development environment
 2. Build a playbook to deploy a simple web application
 3. Create environment-specific configurations for development and staging
 
 ### Advanced Topics
+
 - Using Ansible Galaxy roles
 - Custom Ansible modules
 - Integration with CI/CD pipelines

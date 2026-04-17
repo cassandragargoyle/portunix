@@ -52,20 +52,11 @@ if ($help) {
     exit 0
 }
 
-# Check if Python is available
-$python = $null
-foreach ($cmd in @("python3", "python")) {
-    if (Get-Command $cmd -ErrorAction SilentlyContinue) {
-        $pythonVersion = & $cmd --version 2>&1
-        if ($pythonVersion -match "Python 3") {
-            $python = $cmd
-            break
-        }
-    }
-}
-
-if (-not $python) {
-    Write-Host "❌ Python 3 is not installed" -ForegroundColor Red
+# Check if uv is available (per ADR-039, Python deps managed via uv)
+if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
+    Write-Host "❌ uv is not installed" -ForegroundColor Red
+    Write-Host "Install with: portunix install uv"
+    Write-Host 'Or: powershell -c "irm https://astral.sh/uv/install.ps1 | iex"'
     exit 1
 }
 
@@ -90,74 +81,27 @@ if ($modeCount -eq 0) {
     exit 1
 }
 
-# Setup log directory and file
+# Setup log directory and file (per ADR-039: deps managed by uv)
 $LogDir = Join-Path $TestDir "logs"
 if (-not (Test-Path $LogDir)) {
     New-Item -ItemType Directory -Path $LogDir -Force | Out-Null
 }
 $timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
-$LogFile = Join-Path $LogDir "pip-install-$timestamp.log"
+$LogFile = Join-Path $LogDir "uv-sync-$timestamp.log"
 
-# Setup virtual environment
-$VenvDir = Join-Path $TestDir "venv"
-$VenvActivate = if ($IsWindows -or $env:OS -eq "Windows_NT") {
-    Join-Path $VenvDir "Scripts" "Activate.ps1"
-} else {
-    Join-Path $VenvDir "bin" "Activate.ps1"
-}
-
-# Create virtual environment if it doesn't exist
-if (-not (Test-Path $VenvDir)) {
-    Write-Host "📦 Creating Python virtual environment..." -ForegroundColor Blue
-    & $python -m venv $VenvDir
+# Provision .venv with test dependencies (idempotent)
+Write-Host "📦 Syncing Python test dependencies via uv..." -ForegroundColor Blue
+Push-Location $ProjectRoot
+try {
+    & uv sync --group test *>> $LogFile 2>&1
     if ($LASTEXITCODE -ne 0) {
-        Write-Host "❌ Failed to create virtual environment" -ForegroundColor Red
+        Write-Host "❌ uv sync failed. Check $LogFile for details" -ForegroundColor Red
         exit 1
     }
+} finally {
+    Pop-Location
 }
-
-# Activate virtual environment
-if (Test-Path $VenvActivate) {
-    & $VenvActivate
-} else {
-    Write-Host "⚠️  Virtual environment activation script not found, using system Python" -ForegroundColor Yellow
-}
-
-# Check and install required packages
-Write-Host "📦 Checking Python dependencies..." -ForegroundColor Blue
-$RequiredPackages = @("pytest", "pytest-xdist", "pytest-html")
-$PackagesToInstall = @()
-
-foreach ($package in $RequiredPackages) {
-    $installed = & pip show $package 2>$null
-    if ($LASTEXITCODE -ne 0) {
-        $PackagesToInstall += $package
-    }
-}
-
-if ($PackagesToInstall.Count -gt 0) {
-    Write-Host "📝 Installing missing packages (see $LogFile for details)..." -ForegroundColor Yellow
-    Add-Content -Path $LogFile -Value "Installing packages: $($PackagesToInstall -join ' ')"
-    & pip install $PackagesToInstall *>> $LogFile 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "✅ Packages installed successfully" -ForegroundColor Green
-    } else {
-        Write-Host "❌ Some packages failed to install. Check $LogFile for details" -ForegroundColor Red
-        exit 1
-    }
-}
-
-# Check if requirements-test.txt exists and install from it
-$RequirementsFile = Join-Path $ProjectRoot "requirements-test.txt"
-if (Test-Path $RequirementsFile) {
-    Write-Host "📦 Installing from requirements-test.txt (see $LogFile for details)..." -ForegroundColor Blue
-    & pip install -r $RequirementsFile *>> $LogFile 2>&1
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "✅ Requirements installed successfully" -ForegroundColor Green
-    } else {
-        Write-Host "⚠️  Some requirements failed to install. Check $LogFile for details" -ForegroundColor Yellow
-    }
-}
+Write-Host "✅ Test dependencies ready" -ForegroundColor Green
 
 # Build command arguments
 $args = @()
@@ -189,15 +133,15 @@ if ($html_report) {
     $args += $html_report
 }
 
-# Run the Python test runner
+# Run the Python test runner via uv run (no venv activation needed)
 Write-Host "🚀 Running integration tests..." -ForegroundColor Green
 
-# Build the complete command
-$pythonArgs = @($PythonRunner) + $args
+Push-Location $ProjectRoot
+try {
+    & uv run python $PythonRunner @args
+    $exitCode = $LASTEXITCODE
+} finally {
+    Pop-Location
+}
 
-# Execute Python with arguments
-& $python $pythonArgs
-$exitCode = $LASTEXITCODE
-
-# Exit with the same code as the Python runner
 exit $exitCode

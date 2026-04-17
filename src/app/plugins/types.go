@@ -1,3 +1,8 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
+ 
 package plugins
 
 import (
@@ -52,6 +57,7 @@ type PluginInfo struct {
 	Author              string             `json:"author"`
 	License             string             `json:"license"`
 	Mode                string             `json:"mode"` // service or helper
+	Interfaces          []string           `json:"interfaces,omitempty"`
 	SupportedOS         []string           `json:"supported_os"`
 	Commands            []PluginCommand    `json:"commands"`
 	Capabilities        PluginCapabilities `json:"capabilities"`
@@ -176,10 +182,14 @@ type PluginManifest struct {
 type PluginBinaryConfig struct {
 	Type                string        `json:"type"`
 	Binary              string        `json:"binary"`
-	Mode                string        `json:"mode,omitempty"`            // service (default) or helper
-	Runtime             string        `json:"runtime,omitempty"`         // native, java, python
-	RuntimeVersion      string        `json:"runtime_version,omitempty"` // e.g., ">=21" for Java
-	JVMArgs             []string      `json:"jvm_args,omitempty"`        // JVM arguments for Java plugins
+	Mode                string        `json:"mode,omitempty"`               // service (default) or helper
+	Runtime             string        `json:"runtime,omitempty"`            // native, java, python
+	RuntimeVersion      string        `json:"runtime_version,omitempty"`    // e.g., ">=21" for Java
+	JVMArgs             []string      `json:"jvm_args,omitempty"`           // JVM arguments for Java plugins
+	Wheel               string        `json:"wheel,omitempty"`              // Python wheel filename (.whl)
+	ExtraWheels         []string      `json:"extra_wheels,omitempty"`       // Additional wheel files (glob patterns)
+	PythonMinVersion    string        `json:"python_min_version,omitempty"` // Minimum required Python version
+	Interfaces          []string      `json:"interfaces,omitempty"`         // e.g. ["cli", "grpc"]
 	Port                int           `json:"port"`
 	HealthCheckInterval time.Duration `json:"health_check_interval"`
 }

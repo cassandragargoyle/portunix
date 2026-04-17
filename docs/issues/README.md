@@ -82,7 +82,7 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#079](internal/079-custom-installation-methods-cli-parameter.md) | - | Enhanced Package Installation with Custom URLs and Methods | 📋 Open | High | Enhancement | enhancement, package-management, installation, custom-methods, advanced-cli |
 | [#070](internal/070-ansible-pipx-installation-support.md) | - | Ansible pipx Installation Support | ✅ Implemented | High | Enhancement | enhancement, package-management, ansible, pipx, cross-platform, installation |
 | [#071](internal/071-container-exec-command-implementation.md) | - | Container Exec Command Implementation | ✅ Implemented | High | Bug Fix / Enhancement | bug, enhancement, container-management, core-functionality, exec, helper-binary |
-| [#072](internal/072-cache-architecture-pip-pattern.md) | - | Cache Architecture Redesign Based on pip Pattern | 📋 Open | High | Enhancement | enhancement, cache-system, performance, architecture, cross-platform, pip-pattern |
+| [#072](internal/072-cache-architecture-pip-pattern.md) | - | Cache Architecture Redesign Based on pip Pattern | ✅ Implemented | High | Enhancement | enhancement, cache-system, performance, architecture, cross-platform, pip-pattern |
 | [#073](internal/073-ptx-prompting-helper-implementation.md) | - | PTX-Prompting Helper Implementation | 📋 Open | High | Feature | enhancement, helper-system, ai-integration, template-system |
 | [#074](internal/074-post-release-documentation-automation.md) | - | Post-Release Documentation Automation and Static Site Generation | ✅ Implemented | High | Feature | enhancement, documentation, automation, release-process, github-pages, static-site |
 | [#075](internal/075-implement-hugo-installation-support.md) | - | Implement Hugo Installation Support | ✅ Implemented | High | Enhancement | enhancement, package-management, hugo, documentation, static-site-generator |
@@ -135,6 +135,7 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#124](internal/124-download-progress-indicator.md) | - | Download Progress Indicator | ✅ Implemented | Medium | Enhancement | enhancement, user-experience, ptx-installer, download |
 | [#125](internal/125-cross-platform-binary-distribution.md) | - | Cross-Platform Binary Distribution | 📋 Open | High | Enhancement | enhancement, architecture, distribution, cross-platform, container, vm |
 | [#126](internal/126-gh-installation-package-manager-detection.md) | - | GitHub CLI Installation Package Manager Detection Bug | 🔄 In Progress | High | Bug Fix | bug, package-management, github-cli, arch-linux, detection |
+| [#168](internal/168-gnu-make-installation-support.md) | - | GNU Make Installation Support | ✅ Implemented | Medium | Enhancement | enhancement, package-management, build-tools, cross-platform, direct-download |
 | [#127](internal/127-migrate-openssh-to-ptx-installer.md) | - | Migrate Win32-OpenSSH Installation to ptx-installer | 🔄 In Progress | Medium | Enhancement | enhancement, package-management, openssh, cross-platform, refactoring |
 | [#128](internal/128-docusaurus-container-performance-optimization.md) | - | Docusaurus Container Performance Optimization | ✅ Implemented | High | Enhancement | enhancement, container, docker, performance, docusaurus, playbook |
 | [#129](internal/129-docusaurus-quickstart-script.md) | - | Docusaurus QuickStart Script for GitHub Release | ✅ Implemented | Medium | Enhancement | enhancement, documentation, user-experience, quickstart, docusaurus, release-assets |
@@ -161,6 +162,23 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#152](internal/152-plugin-create-missing-go-mod.md) | - | Plugin Create Missing go.mod | ✅ Implemented | Medium | Bug Fix | bug, plugin-system, cli, developer-experience |
 | [#153](internal/153-deliver-docker-documentation-environment-for-knife.md) | - | Deliver Docker Documentation Environment for KNIFE Project | 📋 Open | High | Feature | feature, documentation, docker, customer-delivery, knife-project |
 | [#154](internal/154-additional-documentation-engines-vitepress-mkdocs.md) | - | Additional Documentation Engines — VitePress, MkDocs | 📋 Open | Medium | Feature | feature, documentation, docker, enhancement |
+| [#155](internal/155-plugin-prerequisites-validation.md) | - | Plugin Prerequisites Validation | 📋 Open | High | Enhancement | enhancement, plugin-system, validation, prerequisites, user-experience |
+| [#156](internal/156-plugin-health-not-enabled-for-helper-plugins.md) | - | Plugin Health Reports "Not Enabled" for All Helper Plugins | ✅ Implemented | Low | Bug Fix | bug, plugin-system, cli, ux |
+| [#157](internal/157-system-info-docker-version-text-truncated.md) | - | System Info Docker Version Text Truncated | ✅ Implemented | Medium | Bug Fix | bug, system-info, docker, text-parsing |
+| [#158](internal/158-python-wheel-plugin-installation-support.md) | - | Python Wheel Plugin Installation Support | ✅ Implemented | High | Enhancement | enhancement, plugin-system, python, wheel, venv, installation |
+| [#159](internal/159-service-orchestration-command-group.md) | - | Service Orchestration Command Group | ✅ Implemented | High | Feature | feature, grpc, service-management, process-orchestration |
+| [#160](internal/160-python-plugin-grpc-service-support.md) | - | Python Plugin gRPC Service Support | ✅ Implemented | High | Enhancement | enhancement, plugin-system, python, grpc, service-management, venv |
+| [#161](internal/161-plugin-install-extra-wheels-support.md) | - | Plugin Install Extra Wheels Support | ✅ Implemented | High | Bug Fix / Enhancement | bug, plugin-system, python, wheel, installation |
+| [#162](internal/162-plugin-interfaces-field-misplacement.md) | - | Plugin Interfaces Field Misplacement — Schema Mismatch | ✅ Implemented | High | Bug Fix | bug, plugin-system, manifest, schema-mismatch, interfaces |
+| [#163](internal/163-helpers-missing-help-ai-help-expert.md) | - | Helpers Missing --help-ai and --help-expert Flags | ✅ Implemented | Medium | Enhancement | helpers, help-system, consistency, preflight |
+| [#164](internal/164-windows-install-ps1-usability-overhaul.md) | - | Windows install.ps1 Usability Overhaul | ✅ Implemented | High | Bug Fix / Enhancement | bug, enhancement, installation, windows, powershell, user-experience, github-distribution |
+| [#165](internal/165-authenticode-code-signing-certificate.md) | - | Authenticode Code Signing Certificate for Windows | 📋 Open | Low | Enhancement | enhancement, installation, windows, powershell, security, code-signing, future |
+| [#166](internal/166-self-signed-certificate-update-verification.md) | - | Self-Signed Certificate for Update Verification | 📋 Open | Medium | Enhancement | enhancement, security, update, code-signing, supply-chain |
+| [#169](internal/169-service-package-windows-build-failure.md) | - | Service Package Windows Build Failure | ✅ Implemented | High | Bug Fix | bug, build, windows, cross-platform, service-orchestration, syscall |
+| [#170](internal/170-dev-setup-script-fixes.md) | - | Dev Setup Script Fixes (nodejs package name + hugo.json trailing comma) | ✅ Implemented | Medium | Bug Fix | bug, dev-setup, package-management, json, developer-experience |
+| [#171](internal/171-uv-python-tooling-migration.md) | - | Migrate Python Tooling to uv | ✅ Implemented | Medium | Enhancement / Refactoring | enhancement, tooling, python, uv, developer-experience, ci-cd |
+| [#172](internal/172-odoo-installation-support.md) | - | Odoo Installation Support | ✅ Implemented | High | Feature | enhancement, package-management, odoo, erp, python, postgresql, container, cross-platform, ptx-installer |
+| [#173](internal/173-portunix-container-missing-subcommands.md) | - | Portunix Container: Missing `network`, `volume`, `inspect` Subcommands | ✅ Implemented | Medium | Enhancement | enhancement, container, podman, docker, test-methodology, ptx-container |
 
 ## Directory Structure
 

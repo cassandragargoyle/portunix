@@ -17,7 +17,8 @@
 
 ## What is Maven?
 
-Maven is a build automation tool for managing Java projects. Think of it as your project's assistant that handles all the tedious tasks you'd otherwise do manually.
+Maven is a build automation tool for managing Java projects. Think of it as your project's assistant that handles all the tedious
+tasks you'd otherwise do manually.
 
 ### What Maven solves
 
@@ -39,7 +40,7 @@ Maven is a build automation tool for managing Java projects. Think of it as your
 - One command builds everything
 - Dependencies of dependencies handled automatically
 
-### What Maven Does For You:
+### What Maven Does For You
 
 - **Dependency Management**: Downloads libraries and their dependencies from internet
 - **Standard Project Structure**: Everyone knows where to find source code, tests, resources
@@ -273,7 +274,7 @@ mvn clean package  # Clean and rebuild JAR
 
 ### Build Plugins
 
-**Important:** Maven has default plugins that work automatically! 
+**Important:** Maven has default plugins that work automatically !
 You don't need to add them to pom.xml unless you want to customize their behavior.
 
 **Default Plugins (work without configuration):**
@@ -516,9 +517,10 @@ Add maven-assembly-plugin to create a JAR with all dependencies:
 ```
 
 3. **Review Process:**
-   - All pom.xml changes go through code review
-   - CI/CD pipeline checks for security issues
-   - Dependency updates tested in staging first
+
+- All pom.xml changes go through code review
+- CI/CD pipeline checks for security issues
+- Dependency updates tested in staging first
 
 ## Advanced Tips for Growth
 

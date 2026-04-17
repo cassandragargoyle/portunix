@@ -1,7 +1,9 @@
 # Issue Management Guidelines
 
 ## Purpose
-This document defines the process for creating and managing issues in CassandraGargoyle projects that have GitHub repositories. It covers two primary workflows for issue creation and ensures proper synchronization between internal team discussions and public GitHub tracking.
+
+This document defines the process for creating and managing issues in CassandraGargoyle projects that have GitHub repositories. It covers two primary
+workflows for issue creation and ensures proper synchronization between internal team discussions and public GitHub tracking.
 
 ## Issue Creation Models
 
@@ -12,6 +14,7 @@ This document defines the process for creating and managing issues in CassandraG
 **Overview**: This model maintains separate internal and public issue tracks with controlled synchronization.
 
 #### Internal Issues (`docs/issues/internal/`)
+
 - **Purpose**: Detailed technical planning, sensitive information, team discussions
 - **Numbering**: Sequential `001-feature.md`, `002-bug.md`, etc.
 - **Location**: `docs/issues/internal/XXX-title.md`
@@ -24,12 +27,14 @@ This document defines the process for creating and managing issues in CassandraG
   - Detailed implementation plans
 
 #### Public GitHub Issues
+
 - **Purpose**: Community engagement, public roadmap, external contributions
 - **Numbering**: GitHub automatic (#1, #2, #3...)
 - **Content**: Sanitized version of internal issues
 - **Visibility**: Full public access
 
 #### Issue Mapping (`docs/issues/public/mapping.json`)
+
 ```json
 {
   "description": "Mapping between internal issue numbers and public GitHub issue numbers",
@@ -47,8 +52,10 @@ This document defines the process for creating and managing issues in CassandraG
 }
 ```
 
-#### Workflow Process:
+#### Workflow Process
+
 1. **Create Internal Issue**
+
    ```bash
    # Create docs/issues/internal/018-new-feature.md
    # Update docs/issues/README.md with status
@@ -65,6 +72,7 @@ This document defines the process for creating and managing issues in CassandraG
    - Create GitHub issue with public-appropriate description
 
 4. **Update Mapping**
+
    ```json
    "PUB-018": {
      "internal": "018", 
@@ -81,7 +89,8 @@ This document defines the process for creating and managing issues in CassandraG
    - Close both when resolved
    - Update mapping status accordingly
 
-#### Internal Issue Template:
+#### Internal Issue Template
+
 ```markdown
 # [Internal] Feature Title
 
@@ -104,6 +113,7 @@ This document defines the process for creating and managing issues in CassandraG
 ```
 
 **Benefits of Dual-Track Model**:
+
 - **Security**: Sensitive info stays internal
 - **Transparency**: Public roadmap visible to community  
 - **Flexibility**: Not all internal planning needs to be public
@@ -115,7 +125,9 @@ This document defines the process for creating and managing issues in CassandraG
 **When to use**: For bugs, feature requests, or issues that can be discussed publicly from the start and don't require internal planning.
 
 **Process**:
+
 1. **Create GitHub Issue**
+
    - Go to the project's GitHub repository
    - Click "Issues" → "New issue"
    - Choose appropriate template (Bug Report, Feature Request, etc.)
@@ -139,7 +151,8 @@ This document defines the process for creating and managing issues in CassandraG
    - Close when resolved with summary
 
 **Example GitHub Issue Creation**:
-```
+
+```text
 Title: PowerShell installation fails on Fedora 40
 
 Description:
@@ -169,11 +182,12 @@ Milestone: v1.3.0
 
 ### Model C: Team-First Issue Creation (Legacy)
 
-**When to use**: For sensitive issues, internal planning, or when initial discussion is needed before public visibility. 
+**When to use**: For sensitive issues, internal planning, or when initial discussion is needed before public visibility.
 
 **Note**: For Portunix project, prefer Model A (Dual-Track) which provides better structure and traceability.
 
 **Process**:
+
 1. **Internal Team Discussion**
    - Discuss the issue in team channels (Slack, Discord, etc.)
    - Gather initial requirements and scope
@@ -192,7 +206,8 @@ Milestone: v1.3.0
    - Update both systems as work progresses
 
 **Example Team-First Workflow**:
-```
+
+```text
 Internal Discussion:
 Team Member 1: "We need better error handling for container failures"
 Team Member 2: "Yes, and we should add retry logic"
@@ -232,7 +247,8 @@ Assignee: developer-username
 ## Portunix-Specific Issue Management
 
 ### File Structure
-```
+
+```text
 docs/
 ├── issues/
 │   ├── README.md              # Issue index and status tracking
@@ -245,6 +261,7 @@ docs/
 ```
 
 ### Quick Reference Commands
+
 ```bash
 # Create new internal issue
 touch docs/issues/internal/018-new-feature.md
@@ -256,6 +273,7 @@ vim docs/issues/public/mapping.json
 ```
 
 ### Mapping JSON Schema
+
 ```json
 {
   "PUB-XXX": {
@@ -273,11 +291,13 @@ vim docs/issues/public/mapping.json
 ## Issue Numbering and References
 
 ### GitHub Issue Numbers
+
 - Use GitHub's automatic numbering (#1, #2, #3, etc.)
 - Reference in commits: `git commit -m "Fix container timeout (refs #42)"`
 - Close with commits: `git commit -m "Add retry logic (closes #42)"`
 
 ### Internal Tracking Integration
+
 - Format: `SD-XXX` for team tracking, `#XXX` for GitHub
 - Example: "Internal issue SD-042 corresponds to GitHub issue #42"
 - Document mapping in project tracking systems
@@ -285,6 +305,7 @@ vim docs/issues/public/mapping.json
 ## Issue Templates
 
 ### Bug Report Template
+
 ```markdown
 ## Bug Report
 
@@ -309,6 +330,7 @@ Any other relevant information, logs, screenshots
 ```
 
 ### Feature Request Template
+
 ```markdown
 ## Feature Request
 
@@ -328,6 +350,7 @@ Any other relevant information or examples
 ## Labels and Classification
 
 ### Standard Labels
+
 - **Type**: `bug`, `enhancement`, `question`, `documentation`
 - **Priority**: `low`, `medium`, `high`, `critical`
 - **Component**: `installation`, `docker`, `ssh`, `testing`, `ui`
@@ -335,6 +358,7 @@ Any other relevant information or examples
 - **Platform**: `windows`, `linux`, `macos`, `cross-platform`
 
 ### Label Usage Guidelines
+
 1. **Always assign type label** (bug, enhancement, etc.)
 2. **Add component labels** for easier filtering
 3. **Use priority labels** for important issues
@@ -343,11 +367,13 @@ Any other relevant information or examples
 ## Milestones and Planning
 
 ### Milestone Creation
+
 - Create milestones for major releases: `v1.3.0`, `v1.4.0`
 - Use milestones for sprint planning: `Sprint 2024-Q1`
 - Include target dates and release notes
 
 ### Issue Assignment
+
 - Assign issues to specific milestones during planning
 - Move issues between milestones as priorities change
 - Close milestone when all issues are resolved
@@ -355,12 +381,14 @@ Any other relevant information or examples
 ## Communication Guidelines
 
 ### Issue Comments
+
 - **Be constructive** and professional
 - **Provide context** for decisions and changes
 - **Tag relevant team members** with @mentions
 - **Update status** when significant progress is made
 
 ### Cross-References
+
 - Reference related issues: "Related to #42"
 - Link pull requests: "PR #123 addresses this issue"
 - Reference commits: "Fixed in commit abc1234"
@@ -368,6 +396,7 @@ Any other relevant information or examples
 ## Integration with Development Workflow
 
 ### Commit Messages
+
 ```bash
 # Reference issue
 git commit -m "Add logging for container operations (refs #42)"
@@ -380,6 +409,7 @@ git commit -m "Refactor error handling (refs #42, #43, closes #44)"
 ```
 
 ### Pull Request Integration
+
 ```markdown
 ## Pull Request
 
@@ -402,6 +432,7 @@ Brief description of changes made
 ## Best Practices
 
 ### Issue Creation
+
 1. **Use descriptive titles** that summarize the issue
 2. **Provide complete context** in the description
 3. **Add appropriate labels** and assignments immediately
@@ -409,6 +440,7 @@ Brief description of changes made
 5. **Define acceptance criteria** for features
 
 ### Issue Management
+
 1. **Triage new issues** within 24-48 hours
 2. **Update issue status** regularly
 3. **Close resolved issues** promptly
@@ -416,6 +448,7 @@ Brief description of changes made
 5. **Review and update** issue templates periodically
 
 ### Team Coordination
+
 1. **Discuss complex issues** in team channels first
 2. **Document decisions** in issue comments
 3. **Coordinate assignments** to avoid duplication
@@ -425,12 +458,14 @@ Brief description of changes made
 ## Tools and Automation
 
 ### GitHub Features
+
 - **Issue templates** for consistent reporting
 - **Labels and milestones** for organization
 - **Projects** for kanban-style tracking
 - **Actions** for automated workflows
 
 ### Integration Options
+
 - **Slack/Discord bots** for notifications
 - **Project management tools** (Jira, Trello, etc.)
 - **CI/CD integration** for automatic issue updates
@@ -438,7 +473,8 @@ Brief description of changes made
 
 ---
 
-**Note**: These guidelines should be adapted based on specific project requirements and team preferences. Regular review and updates ensure the process remains effective and relevant.
+**Note**: These guidelines should be adapted based on specific project requirements and team preferences. Regular review and updates
+ensure the process remains effective and relevant.
 
 *Created: 2025-08-23*
 *Last updated: 2025-08-29 - Added Dual-Track Issue Management (Model A) for Portunix project*

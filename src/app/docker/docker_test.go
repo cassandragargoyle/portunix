@@ -147,6 +147,7 @@ func (suite *DockerTestSuite) TestGenerateDockerfile_Ubuntu() {
 	suite.Contains(dockerfile, "RUN apt-get update")
 	suite.Contains(dockerfile, "RUN apt-get install -y openssh-server")
 	suite.Contains(dockerfile, "EXPOSE 22")
+}
 
 // Test InstallSoftwareInContainer function
 func (suite *DockerTestSuite) TestInstallSoftwareInContainer_EmptyType() {
@@ -157,7 +158,7 @@ func (suite *DockerTestSuite) TestInstallSoftwareInContainer_EmptyType() {
 	// Mock execInContainer to avoid actual Docker calls
 	originalExec := execInContainer
 	defer func() { execInContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -165,7 +166,7 @@ func (suite *DockerTestSuite) TestInstallSoftwareInContainer_EmptyType() {
 	}
 
 	err := InstallSoftwareInContainer("test-container", "empty", pkgManager)
-	
+
 	suite.NoError(err)
 	suite.Empty(executedCommands) // No commands should be executed for empty type
 }
@@ -178,10 +179,10 @@ func (suite *DockerTestSuite) TestInstallSoftwareInContainer_GoType() {
 	// Mock os.Executable to return test binary path
 	originalExec := execInContainer
 	defer func() { execInContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	var executedCopyCommands []string
-	
+
 	execInContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
 		return nil
@@ -189,7 +190,7 @@ func (suite *DockerTestSuite) TestInstallSoftwareInContainer_GoType() {
 
 	// Test will fail on actual copy, but we can test the logic flow
 	err := InstallSoftwareInContainer("test-container", "go", pkgManager)
-	
+
 	// Error expected because we can't actually copy files in unit test
 	suite.Error(err)
 	suite.Contains(err.Error(), "failed to copy Portunix binary")
@@ -203,7 +204,7 @@ func (suite *DockerTestSuite) TestInstallSoftwareInContainer_InvalidType() {
 	// Mock execInContainer to track calls
 	originalExec := execInContainer
 	defer func() { execInContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -211,7 +212,7 @@ func (suite *DockerTestSuite) TestInstallSoftwareInContainer_InvalidType() {
 	}
 
 	err := InstallSoftwareInContainer("test-container", "invalid-type", pkgManager)
-	
+
 	// Should fail on copy step before reaching invalid type check
 	suite.Error(err)
 }
@@ -221,7 +222,7 @@ func (suite *DockerTestSuite) TestCopyPortunixToContainer_MockedSuccess() {
 	// Mock execInContainer to avoid actual Docker calls
 	originalExec := execInContainer
 	defer func() { execInContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -231,7 +232,7 @@ func (suite *DockerTestSuite) TestCopyPortunixToContainer_MockedSuccess() {
 	// This will still fail because we can't mock os.Executable and docker cp easily
 	// But we can test the function structure
 	err := copyPortunixToContainer("test-container")
-	
+
 	// Expected to fail on docker cp command in unit test environment
 	suite.Error(err)
 	suite.Contains(err.Error(), "failed to copy Portunix binary")
@@ -242,7 +243,7 @@ func (suite *DockerTestSuite) TestRunPortunixInstallInContainer_Success() {
 	// Mock execInContainer to avoid actual Docker calls
 	originalExec := execInContainer
 	defer func() { execInContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -250,7 +251,7 @@ func (suite *DockerTestSuite) TestRunPortunixInstallInContainer_Success() {
 	}
 
 	err := runPortunixInstallInContainer("test-container", "go")
-	
+
 	suite.NoError(err)
 	suite.Len(executedCommands, 1)
 	suite.Equal([]string{"portunix", "install", "go"}, executedCommands[0])
@@ -260,7 +261,7 @@ func (suite *DockerTestSuite) TestRunPortunixInstallInContainer_Python() {
 	// Mock execInContainer
 	originalExec := execInContainer
 	defer func() { execInContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -268,7 +269,7 @@ func (suite *DockerTestSuite) TestRunPortunixInstallInContainer_Python() {
 	}
 
 	err := runPortunixInstallInContainer("test-container", "python")
-	
+
 	suite.NoError(err)
 	suite.Len(executedCommands, 1)
 	suite.Equal([]string{"portunix", "install", "python"}, executedCommands[0])
@@ -278,7 +279,7 @@ func (suite *DockerTestSuite) TestRunPortunixInstallInContainer_Default() {
 	// Mock execInContainer
 	originalExec := execInContainer
 	defer func() { execInContainer = originalExec }()
-	
+
 	var executedCommands [][]string
 	execInContainer = func(containerName string, command []string) error {
 		executedCommands = append(executedCommands, command)
@@ -286,7 +287,7 @@ func (suite *DockerTestSuite) TestRunPortunixInstallInContainer_Default() {
 	}
 
 	err := runPortunixInstallInContainer("test-container", "default")
-	
+
 	suite.NoError(err)
 	suite.Len(executedCommands, 1)
 	suite.Equal([]string{"portunix", "install", "default"}, executedCommands[0])
@@ -296,13 +297,13 @@ func (suite *DockerTestSuite) TestRunPortunixInstallInContainer_ExecError() {
 	// Mock execInContainer to return error
 	originalExec := execInContainer
 	defer func() { execInContainer = originalExec }()
-	
+
 	execInContainer = func(containerName string, command []string) error {
 		return fmt.Errorf("container not found")
 	}
 
 	err := runPortunixInstallInContainer("test-container", "go")
-	
+
 	suite.Error(err)
 	suite.Contains(err.Error(), "failed to run 'portunix install go'")
 	suite.Contains(err.Error(), "container not found")

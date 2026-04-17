@@ -2,7 +2,8 @@
 
 ## Purpose
 
-This document defines the standardized process for reporting, documenting, and tracking bugs across all CassandraGargoyle projects. It ensures consistent bug documentation and efficient resolution workflow.
+This document defines the standardized process for reporting, documenting, and tracking bugs across all CassandraGargoyle projects.
+It ensures consistent bug documentation and efficient resolution workflow.
 
 ## Bug Reporting Process
 

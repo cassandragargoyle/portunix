@@ -5,35 +5,36 @@ This document describes the complete workflow for publishing Portunix to the Arc
 ## Prerequisites
 
 1. **SSH Access to AUR**
-   
-   ```bash
-   # Generate SSH key (if you don't have one)
-   ssh-keygen -t ed25519 -C "your_email@example.com"
 
-   # Add public key to AUR account
-   # https://aur.archlinux.org/account/
+```bash
+# Generate SSH key (if you don't have one)
+ssh-keygen -t ed25519 -C "your_email@example.com"
 
-   # Test connection
-   ssh -T aur@aur.archlinux.org
-   # Should return: "Hi username, you've successfully authenticated..."
-   ```
+# Add public key to AUR account
+# https://aur.archlinux.org/account/
+
+# Test connection
+ssh -T aur@aur.archlinux.org
+# Should return: "Hi username, you've successfully authenticated..."
+```
 
 2. **GitHub Release Created**
-   - Git tag must exist on GitHub
-   - Release tarball must be downloadable
-   - URL format: `https://github.com/cassandragargoyle/Portunix/archive/refs/tags/v1.7.5.tar.gz`
+
+- Git tag must exist on GitHub
+- Release tarball must be downloadable
+- URL format: `https://github.com/cassandragargoyle/Portunix/archive/refs/tags/v1.7.5.tar.gz`
 
 3. **Portunix Binary Built**
-   
-   ```bash
-   make build
-   ```
+
+```bash
+make build
+```
 
 ## Complete Workflow
 
 ### Step 1: Create GitHub Release
 
-**Option A: Quick manual tag (recommended for testing)**
+#### Option A: Quick manual tag (recommended for testing)
 
 ```bash
 # Create and push tag
@@ -43,7 +44,7 @@ git push origin v1.7.5
 # Then create release on GitHub with this existing tag
 ```
 
-**Option B: Use make-release.sh (for full release)**
+#### Option B: Use make-release.sh (for full release)
 
 ```bash
 # Build cross-platform binaries
@@ -57,9 +58,9 @@ git push origin v1.7.5
 # Then create GitHub release and upload files from dist/
 ```
 
-**Option C: GitHub web interface**
+#### Option C: GitHub web interface
 
-1. Go to: https://github.com/cassandragargoyle/Portunix/releases/new
+1. Go to: <https://github.com/cassandragargoyle/Portunix/releases/new>
 2. Create new tag: `v1.7.5`
 3. Add release title: "Release v1.7.5"
 4. Add release notes (or use dist/RELEASE_NOTES_v1.7.5.md)
@@ -301,10 +302,10 @@ You can develop on Debian/Ubuntu/Fedora and publish to AUR without any Arch-spec
 
 ## References
 
-- **AUR Documentation**: https://wiki.archlinux.org/title/AUR
-- **PKGBUILD Guide**: https://wiki.archlinux.org/title/PKGBUILD
-- **AUR Submission Guidelines**: https://wiki.archlinux.org/title/AUR_submission_guidelines
-- **Portunix on AUR**: https://aur.archlinux.org/packages/portunix
+- **AUR Documentation**: <https://wiki.archlinux.org/title/AUR>
+- **PKGBUILD Guide**: <https://wiki.archlinux.org/title/PKGBUILD>
+- **AUR Submission Guidelines**: <https://wiki.archlinux.org/title/AUR_submission_guidelines>
+- **Portunix on AUR**: <https://aur.archlinux.org/packages/portunix>
 
 ---
 

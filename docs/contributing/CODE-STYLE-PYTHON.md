@@ -1,17 +1,20 @@
 # Python Code Style Guidelines
 
 ## Purpose
+
 This document defines the Python coding standards for CassandraGargoyle projects, based on PEP 8 and modern Python best practices.
 
 ## General Principles
 
 ### 1. Follow Python Standards
+
 - Adhere to PEP 8 for style conventions
 - Use PEP 257 for docstring conventions
 - Embrace Python idioms: \"Pythonic\" code
 - Follow the Zen of Python principles
 
 ### 2. Code Quality
+
 - Write readable, self-documenting code
 - Use type hints for better code clarity
 - Prefer composition over inheritance
@@ -20,8 +23,10 @@ This document defines the Python coding standards for CassandraGargoyle projects
 ## File and Project Structure
 
 ### File Naming
+
 Use snake_case for all file and directory names:
-```
+
+```text
 ✅ package_installer.py
 ✅ config_manager.py
 ✅ system_detector.py
@@ -30,7 +35,8 @@ Use snake_case for all file and directory names:
 ```
 
 ### Project Structure
-```
+
+```text
 project/
 ├── src/
 │   └── cassandragargoyle/
@@ -54,12 +60,14 @@ project/
 │   └── install/
 │       └── test_package_installer.py
 ├── docs/
-├── requirements.txt
-├── pyproject.toml
+├── pyproject.toml     # project metadata + dependency groups
+├── uv.lock            # pinned dependency tree (managed by uv)
+├── .python-version    # pinned interpreter
 └── README.md
 ```
 
 ### Module Organization
+
 ```python
 #!/usr/bin/env python3
 \"\"\"
@@ -87,7 +95,9 @@ from cassandragargoyle.project.util import FileUtils
 ## Naming Conventions
 
 ### Variables and Functions
+
 Use snake_case for variables and functions:
+
 ```python
 # Variables
 package_name = \"python3\"
@@ -105,7 +115,9 @@ def is_package_installed(package_name: str) -> bool:
 ```
 
 ### Classes
+
 Use PascalCase for class names:
+
 ```python
 class PackageInstaller:
     \"\"\"Cross-platform package installer.\"\"\"
@@ -121,7 +133,9 @@ class SystemDetector:
 ```
 
 ### Constants
+
 Use UPPER_CASE with underscores for constants:
+
 ```python
 # Module-level constants
 DEFAULT_CONFIG_PATH = \"/etc/cassandragargoyle/config.yaml\"
@@ -135,7 +149,9 @@ class PackageInstaller:
 ```
 
 ### Private Members
+
 Use single underscore prefix for internal use:
+
 ```python
 class PackageInstaller:
     def __init__(self):
@@ -151,7 +167,9 @@ class PackageInstaller:
 ## Type Hints
 
 ### Basic Type Hints
+
 Use type hints for all public interfaces:
+
 ```python
 from typing import Dict, List, Optional, Union, Any, Callable
 from pathlib import Path
@@ -174,6 +192,7 @@ def load_configuration(config_path: Path) -> Dict[str, Any]:
 ```
 
 ### Complex Type Hints
+
 ```python
 from typing import Dict, List, Optional, Protocol, TypedDict, Union
 from dataclasses import dataclass
@@ -211,12 +230,15 @@ PackageRegistry = Dict[str, PackageInfo]  # Type alias
 ## Code Formatting
 
 ### Line Length and Indentation
+
 - Maximum line length: 88 characters (Black formatter default)
 - Use 4 spaces for indentation
 - No trailing whitespace
 
 ### String Formatting
+
 Prefer f-strings for string formatting:
+
 ```python
 # Good
 package_name = \"python3\"
@@ -232,6 +254,7 @@ message = \"Installing %s version %s\" % (package_name, version)
 ```
 
 ### List and Dictionary Formatting
+
 ```python
 # Short lists/dicts on single line
 packages = [\"python3\", \"git\", \"vim\"]
@@ -259,7 +282,9 @@ default_config = {
 ## Class Design
 
 ### Class Structure
+
 Organize class members in this order:
+
 1. Class docstring
 2. Class variables and constants
 3. `__init__` method
@@ -339,6 +364,7 @@ class PackageInstaller:
 ### Property Usage
 
 Use properties for getter/setter behavior:
+
 ```python
 class ConfigurationManager:
     \"\"\"Manages application configuration.\"\"\"
@@ -1108,13 +1134,13 @@ repos:
 ```makefile
 .PHONY: install dev-install test lint format type-check clean docs
 
-# Install package
+# Install package (uv-based, per ADR-039)
 install:
-\tpip install .
+\tuv sync
 
 # Install development dependencies
 dev-install:
-\tpip install -e \".[dev]\"
+\tuv sync --group dev
 \tpre-commit install
 
 # Run tests
@@ -1157,7 +1183,8 @@ prepare: format check
 
 ---
 
-**Note**: These guidelines should be adapted based on specific project requirements and team preferences. Regular updates ensure alignment with evolving Python best practices.
+**Note**: These guidelines should be adapted based on specific project requirements and team preferences.
+Regular updates ensure alignment with evolving Python best practices.
 
 *Created: 2025-08-23*
 *Last updated: 2025-08-23*

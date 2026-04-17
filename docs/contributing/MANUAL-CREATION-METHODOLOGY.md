@@ -6,7 +6,8 @@
 
 ## Overview
 
-This document defines the standardized methodology for creating comprehensive documentation for Portunix using Markdown files. The documentation system follows the same three-tier approach as the help system: **Basic**, **Expert**, and **AI Assistant** variants.
+This document defines the standardized methodology for creating comprehensive documentation for Portunix using Markdown files.
+The documentation system follows the same three-tier approach as the help system: **Basic**, **Expert**, and **AI Assistant** variants.
 
 ## Documentation Philosophy
 
@@ -193,9 +194,9 @@ docs/
 - Complete task workflows
 - Multi-step processes
 - Error recovery procedures
-```
 
 **Style Guidelines**:
+
 - Structured data where possible
 - Machine-parseable formats
 - Complete context information
@@ -207,6 +208,7 @@ docs/
 ### Mapping CLI Help to Documentation
 
 Each Portunix command supports three help levels:
+
 - `portunix command --help` → Basic documentation
 - `portunix command --help-expert` → Expert documentation
 - `portunix command --help-ai` → AI assistant documentation
@@ -233,8 +235,8 @@ portunix [command] [subcommand] [flags]
 
 ## Subcommands
 
-| Subcommand | Description | Example |
-| ---------- | ----------- | ------- |
+| Subcommand | Description | Example                |
+| ---------- | ----------- | ---------------------- |
 | subcmd1    | Description | `portunix cmd subcmd1` |
 
 ## Flags
@@ -277,7 +279,8 @@ portunix command advanced --flag value
 ## Notes
 
 [Version-specific notes, limitations, future changes]
-```
+
+```text
 
 ## Creation Workflow
 
@@ -521,12 +524,16 @@ go run ./docs/tools/generate-ai-data.go --commands-only
 
 ## Conclusion
 
-This methodology provides a comprehensive framework for creating and maintaining high-quality documentation for Portunix. By following these standards and procedures, we ensure that documentation serves all user types effectively while maintaining consistency and quality across the entire documentation ecosystem.
+This methodology provides a comprehensive framework for creating and maintaining high-quality documentation for Portunix. By following these standards
+and procedures, we ensure that documentation serves all user types effectively while maintaining consistency and quality across
+the entire documentation ecosystem.
 
-The three-tier approach (Basic, Expert, AI) ensures that each user type gets appropriate information at the right level of detail, improving the overall user experience and adoption of Portunix features.
+The three-tier approach (Basic, Expert, AI) ensures that each user type gets appropriate information at the right level of detail, improving
+the overall user experience and adoption of Portunix features.
 
 ---
 
-**Document Maintenance**: This methodology should be reviewed and updated quarterly to ensure it continues to meet the needs of the Portunix project and its users.
+**Document Maintenance**: This methodology should be reviewed and updated quarterly to ensure it continues to meet the needs
+of the Portunix project and its users.
 
 **Feedback**: Suggestions for improvements to this methodology should be submitted as issues or discussed in team meetings.

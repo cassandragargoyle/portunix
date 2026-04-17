@@ -2,9 +2,11 @@
 
 ## Quick Start
 
-The `install` command is one of the most frequently used commands in Portunix. It enables cross-platform installation of development tools, programming languages, and packages.
+The `install` command is one of the most frequently used commands in Portunix.
+It enables cross-platform installation of development tools, programming languages, and packages.
 
 ### Simplest Usage
+
 ```bash
 portunix install nodejs
 ```
@@ -12,11 +14,13 @@ portunix install nodejs
 This command installs Node.js with default settings for your platform.
 
 ### Basic Syntax
+
 ```bash
 portunix install <package-name> [options]
 ```
 
 ### Most Common Packages
+
 - `python` - Python programming language
 - `nodejs` - Node.js JavaScript runtime
 - `java` - Java Development Kit (OpenJDK)
@@ -51,6 +55,7 @@ portunix install nodejs --dry-run
 ```
 
 Output shows:
+
 - Which package will be installed
 - Installation method to be used
 - Dependencies to be installed
@@ -97,6 +102,7 @@ The Portunix installation system uses a multi-layered architecture:
 ### Supported Installation Methods
 
 #### Windows
+
 - **Chocolatey** - Preferred package manager
 - **WinGet** - Microsoft Package Manager
 - **MSI** - Direct MSI installer
@@ -104,6 +110,7 @@ The Portunix installation system uses a multi-layered architecture:
 - **Direct Download** - Download and extract
 
 #### Linux
+
 - **APT** (Debian/Ubuntu) - `apt-get install`
 - **YUM/DNF** (RHEL/Fedora) - `yum install` / `dnf install`
 - **Snap** - Universal Linux packages
@@ -163,6 +170,7 @@ portunix install claude-code
 ```
 
 Dependency graph:
+
 - `claude-code` → requires → `nodejs`
 - `maven` → requires → `java`
 - `python-full` → includes → `pip`, `venv`, `setuptools`
@@ -354,6 +362,7 @@ portunix install nodejs --channel beta
 ### Common Problems and Solutions
 
 #### 1. Permission Denied
+
 ```bash
 # Linux/Mac
 sudo portunix install nodejs
@@ -362,6 +371,7 @@ sudo portunix install nodejs
 ```
 
 #### 2. Package Manager Not Available
+
 ```bash
 # Install Chocolatey on Windows
 portunix install chocolatey
@@ -371,6 +381,7 @@ portunix install homebrew
 ```
 
 #### 3. Version Conflict
+
 ```bash
 # Show installed versions
 portunix install nodejs --check-installed
@@ -381,6 +392,7 @@ portunix install nodejs
 ```
 
 #### 4. Network Timeouts
+
 ```bash
 # Increase timeout
 portunix install nodejs --timeout 60m
@@ -405,6 +417,7 @@ portunix install nodejs --trace
 ## Integration Examples
 
 ### Docker Container Setup
+
 ```bash
 # Create container with Node.js
 portunix docker run ubuntu
@@ -412,6 +425,7 @@ portunix docker exec my-container portunix install nodejs
 ```
 
 ### Virtual Machine Setup
+
 ```bash
 # Set up VM with development environment
 portunix virt create dev-vm --iso ubuntu.iso
@@ -419,6 +433,7 @@ portunix virt exec dev-vm "portunix install default"
 ```
 
 ### MCP Integration
+
 ```bash
 # Install tools for AI assistants
 portunix install claude-code
@@ -428,6 +443,7 @@ portunix mcp configure
 ## API Integration
 
 ### REST API
+
 ```bash
 # Trigger installation via REST API
 curl -X POST http://localhost:8080/api/install \
@@ -436,6 +452,7 @@ curl -X POST http://localhost:8080/api/install \
 ```
 
 ### gRPC API
+
 ```go
 // Go client example
 client := portunix.NewClient()
@@ -449,16 +466,19 @@ result, err := client.Install(context.Background(), &InstallRequest{
 ## Performance Optimization
 
 ### Caching Strategy
+
 - **Level 1**: Memory cache (in-process)
 - **Level 2**: Disk cache (persistent)
 - **Level 3**: Network cache (shared)
 
 ### Parallelization
+
 - File downloads: up to 5 concurrent connections
 - Independent package installation: parallel execution
 - Verification: asynchronous validation
 
 ### Resource Limits
+
 ```bash
 # Limit CPU usage
 portunix install nodejs --cpu-limit 50%
@@ -473,6 +493,7 @@ portunix install nodejs --io-limit 10MB/s
 ## Security Considerations
 
 ### Checksum Verification
+
 All downloaded files are verified using SHA256:
 
 ```bash
@@ -484,6 +505,7 @@ portunix install nodejs --skip-checksum
 ```
 
 ### Signature Verification
+
 ```bash
 # Verify GPG signature
 portunix install nodejs --verify-signature
@@ -493,6 +515,7 @@ portunix install --import-key https://nodejs.org/key.asc
 ```
 
 ### Sandboxed Installation
+
 ```bash
 # Install in sandbox environment
 portunix sandbox create test-env
@@ -502,13 +525,13 @@ portunix sandbox exec test-env portunix install nodejs
 ## Compatibility Matrix
 
 | Package | Windows | Linux | macOS | Min Version | Max Version |
-|---------|---------|-------|-------|-------------|-------------|
-| nodejs | ✅ | ✅ | ✅ | 18.0.0 | latest |
-| python | ✅ | ✅ | ✅ | 3.8 | 3.13 |
-| java | ✅ | ✅ | ✅ | 8 | 21 |
-| go | ✅ | ✅ | ✅ | 1.20 | latest |
-| docker | ⚠️ | ✅ | ✅ | 20.10 | latest |
-| vscode | ✅ | ✅ | ✅ | stable | insider |
+| ------- | ------- | ----- | ----- | ----------- | ----------- |
+| nodejs  | ✅      | ✅    | ✅    | 18.0.0      | latest      |
+| python  | ✅      | ✅    | ✅    | 3.8         | 3.13        |
+| java    | ✅      | ✅    | ✅    | 8           | 21          |
+| go      | ✅      | ✅    | ✅    | 1.20        | latest      |
+| docker  | ⚠️      | ✅    | ✅    | 20.10       | latest      |
+| vscode  | ✅      | ✅    | ✅    | stable      | insider     |
 
 ## Related Commands
 
@@ -521,42 +544,42 @@ portunix sandbox exec test-env portunix install nodejs
 
 ### Complete Parameter List
 
-| Parameter | Type | Default | Description |
-|-----------|------|---------|-------------|
-| `--variant` | string | `latest` | Package variant to install |
-| `--dry-run` | boolean | `false` | Preview what would be installed |
-| `--force` | boolean | `false` | Force reinstallation |
-| `--version` | string | - | Specific version to install |
-| `--platform` | string | auto | Target platform |
-| `--timeout` | duration | `30m` | Installation timeout |
-| `--cache-dir` | string | `~/.portunix/cache` | Cache directory |
-| `--no-cache` | boolean | `false` | Don't use cache |
-| `--parallel` | boolean | `false` | Parallel installation |
-| `--silent` | boolean | `false` | Silent mode |
-| `--output` | string | `text` | Output format (text/json/yaml) |
-| `--rollback-on-error` | boolean | `true` | Rollback on error |
-| `--verify` | boolean | `true` | Verify installation |
-| `--proxy` | string | - | Proxy server |
-| `--mirror` | string | - | Mirror URL |
-| `--cpu-limit` | string | - | CPU limit |
-| `--memory-limit` | string | - | Memory limit |
-| `--io-limit` | string | - | I/O limit |
+| Parameter              | Type     | Default              | Description                     |
+| ---------------------- | -------- | -------------------- | ------------------------------- |
+| `--variant`            | string   | `latest`             | Package variant to install      |
+| `--dry-run`            | boolean  | `false`              | Preview what would be installed |
+| `--force`              | boolean  | `false`              | Force reinstallation            |
+| `--version`            | string   | -                    | Specific version to install     |
+| `--platform`           | string   | auto                 | Target platform                 |
+| `--timeout`            | duration | `30m`                | Installation timeout            |
+| `--cache-dir`          | string   | `~/.portunix/cache`  | Cache directory                 |
+| `--no-cache`           | boolean  | `false`              | Don't use cache                 |
+| `--parallel`           | boolean  | `false`              | Parallel installation           |
+| `--silent`             | boolean  | `false`              | Silent mode                     |
+| `--output`             | string   | `text`               | Output format (text/json/yaml)  |
+| `--rollback-on-error`  | boolean  | `true`               | Rollback on error               |
+| `--verify`             | boolean  | `true`               | Verify installation             |
+| `--proxy`              | string   | -                    | Proxy server                    |
+| `--mirror`             | string   | -                    | Mirror URL                      |
+| `--cpu-limit`          | string   | -                    | CPU limit                       |
+| `--memory-limit`       | string   | -                    | Memory limit                    |
+| `--io-limit`           | string   | -                    | I/O limit                       |
 
 ## Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Successful installation |
-| 1 | General error |
-| 2 | Package not found |
-| 3 | Already installed (without --force) |
-| 4 | Dependency error |
-| 5 | Network error |
-| 6 | Permission denied |
-| 7 | Checksum mismatch |
-| 8 | Timeout |
-| 9 | Rollback performed |
-| 10 | Platform not supported |
+| Code | Meaning                             |
+| ---- | ----------------------------------- |
+| 0    | Successful installation             |
+| 1    | General error                       |
+| 2    | Package not found                   |
+| 3    | Already installed (without --force) |
+| 4    | Dependency error                    |
+| 5    | Network error                       |
+| 6    | Permission denied                   |
+| 7    | Checksum mismatch                   |
+| 8    | Timeout                             |
+| 9    | Rollback performed                  |
+| 10   | Platform not supported              |
 
 ## Version History
 

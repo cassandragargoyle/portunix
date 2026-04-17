@@ -5,7 +5,8 @@ This document provides solutions for VirtualBox E_ACCESSDENIED errors that commo
 ## Problem Description
 
 When running VirtualBox commands, you may encounter errors like:
-```
+
+```text
 VBoxManage.exe: error: The object functionality is limited
 VBoxManage.exe: error: Details: code E_ACCESSDENIED (0x80070005), component MachineWrap, interface IMachine, callee IUnknown
 VBoxManage.exe: error: Context: "COMGETTER(Platform)(platform.asOutParam())" at line 1116 of file VBoxManageInfo.cpp
@@ -16,6 +17,7 @@ VBoxManage.exe: error: Context: "COMGETTER(Platform)(platform.asOutParam())" at 
 **This is the most effective solution for most users experiencing E_ACCESSDENIED errors.**
 
 **Steps**:
+
 1. Completely uninstall VirtualBox from Control Panel → Programs and Features
 2. Restart your computer
 3. Download the latest VirtualBox installer from https://www.virtualbox.org/
@@ -30,6 +32,7 @@ VBoxManage.exe: error: Context: "COMGETTER(Platform)(platform.asOutParam())" at 
 **Issue**: Installing VirtualBox under Administrator account and then using it under a different user account.
 
 **Correct Installation Process**:
+
 1. Log in to your regular user account
 2. Right-click the VirtualBox installer
 3. Select "Run as administrator"
@@ -42,6 +45,7 @@ VBoxManage.exe: error: Context: "COMGETTER(Platform)(platform.asOutParam())" at 
 **Issue**: VirtualBox installer sets incorrect permissions for COM objects.
 
 **Steps to fix**:
+
 1. Press `Win + R` and type `dcomcnfg`
 2. Navigate to: Component Services → Computers → My Computer → DCOM Config
 3. Find "VirtualBox Application" in the list
@@ -57,6 +61,7 @@ VBoxManage.exe: error: Context: "COMGETTER(Platform)(platform.asOutParam())" at 
 **Issue**: VirtualBox service processes (VBoxSVC.exe) may remain running and block access.
 
 **Steps to fix**:
+
 1. Open Task Manager (Ctrl + Shift + Esc)
 2. Look for processes starting with "VBox*"
 3. End all VirtualBox-related processes:
@@ -73,6 +78,7 @@ VBoxManage.exe: error: Context: "COMGETTER(Platform)(platform.asOutParam())" at 
 **Symptoms**: .vbox files have zero size or contain invalid data.
 
 **Steps to fix**:
+
 1. Navigate to your VM folder (usually in `%USERPROFILE%\VirtualBox VMs\[VM Name]\`)
 2. Look for files with `.vbox-prev` extension
 3. Rename the corrupted `.vbox` file to `.vbox.backup`

@@ -4,7 +4,8 @@ This document analyzes the synergies and collaboration opportunities between the
 
 ## 🎯 About nektos/act
 
-**nektos/act** is an open-source tool for running GitHub Actions workflows locally. It uses Docker containers to simulate GitHub runners, enabling developers to test CI/CD pipelines without pushing to GitHub.
+**nektos/act** is an open-source tool for running GitHub Actions workflows locally. It uses Docker containers to simulate GitHub runners, enabling
+developers to test CI/CD pipelines without pushing to GitHub.
 
 ## 🔗 Key Synergies Between nektos/act and Portunix
 
@@ -44,7 +45,7 @@ This document analyzes the synergies and collaboration opportunities between the
 #### **Installation & Package Management**
 
 - **act**: Requires installation and dependency management
-- **Portunix**: 
+- **Portunix**:
   - Universal installer system
   - Cross-platform package installation
   - **Already includes act** in `install-packages.json`
@@ -117,7 +118,7 @@ portunix docker run ubuntu --ssh
 act --container-architecture linux/amd64
 ```
 
-#### **Development Workflow**
+#### **Combined Development Workflow**
 
 ```bash
 # Complete workflow: environment setup + local testing
@@ -168,7 +169,9 @@ act push
 
 ## Conclusion
 
-The synergy between **nektos/act** and **Portunix** is significant and mutually beneficial. Both projects share similar technology stacks, target audiences, and development philosophies. The collaboration can enhance developer productivity, expand user bases, and accelerate innovation in the GitHub Actions and development environment management space.
+The synergy between **nektos/act** and **Portunix** is significant and mutually beneficial. Both projects share similar technology stacks, target
+audiences, and development philosophies. The collaboration can enhance developer productivity, expand user bases, and accelerate innovation in the
+GitHub Actions and development environment management space.
 
 The partnership represents a strategic alignment that can benefit both projects while providing substantial value to the developer community.
 

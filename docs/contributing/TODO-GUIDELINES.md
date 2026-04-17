@@ -1,17 +1,20 @@
 # TODO Guidelines
 
 ## Purpose
+
 This document defines the standardized format for TODO comments and placeholders used in the CassandraGargoyle team.
 
 ## TODO Format
 
 ### Standard Format
-```
+
+```text
 TODO:NNN description
 TODO:NNN XX: description
 ```
 
 Where:
+
 - **TODO:** - Fixed prefix (uppercase)
 - **:** - Colon separator (no space before, one space after)
 - **NNN** - Three-digit number with leading zeros (001, 002, 003, etc.)
@@ -19,6 +22,7 @@ Where:
 - **description** - Brief description of what needs to be done
 
 ### Examples
+
 ```markdown
 TODO:001 JS: Complete the Creating New Projects section
 TODO:002 MK: Add Wiki documentation structure
@@ -26,6 +30,7 @@ TODO:003 Refine Quick Command Reference commands
 ```
 
 ### Team Initials Assignment (Optional)
+
 You can optionally add team initials to assign TODO to a specific team member:
 
 - Format: `TODO:NNN XX: description`
@@ -37,6 +42,7 @@ You can optionally add team initials to assign TODO to a specific team member:
 ## Numbering System
 
 ### Per-File Sequential Numbering
+
 - Each file maintains its own TODO numbering sequence
 - Start from 001 in each file
 - Increment sequentially within the file: 001, 002, 003, etc.
@@ -44,11 +50,13 @@ You can optionally add team initials to assign TODO to a specific team member:
 - Do not reuse numbers within the same file even after completion
 
 ### Temporary Placeholder
+
 - You can temporarily write `TODO:XXX description` as a placeholder
 - Ask your AI assistant to assign proper numbering based on existing TODOs in the file
 - Replace XXX with the next available number sequence
 
 ### File Scope
+
 - TODO numbers are unique only within each individual file
 - Different files can have the same TODO numbers (e.g., README.md:TODO:001 and setup.sh:TODO:001)
 - Check existing TODOs within the same file before assigning new numbers
@@ -57,18 +65,21 @@ You can optionally add team initials to assign TODO to a specific team member:
 ## Usage Guidelines
 
 ### When to Use TODOs
+
 - ✅ Incomplete documentation sections
 - ✅ Placeholder content that needs refinement
 - ✅ Features planned for future implementation
 - ✅ Configuration that needs customization
 
 ### When NOT to Use TODOs
+
 - ❌ Critical functionality that breaks the system
 - ❌ Security issues (use FIXME or create immediate issues)
 - ❌ Simple typos or formatting issues
 - ❌ Temporary debugging code
 
 ### TODO Lifecycle
+
 1. **Creation**: Add TODO with next available number
 2. **Tracking**: Reference in issues or project boards
 3. **Resolution**: Replace TODO with actual content
@@ -77,12 +88,15 @@ You can optionally add team initials to assign TODO to a specific team member:
 ## Integration with Issues
 
 ### Issue Creation
+
 When creating issues for TODOs:
+
 - Reference TODO numbers in issue titles
 - Include TODO descriptions in issue content
 - Link related TODOs together when appropriate
 
 ### Example Issue Structure
+
 ```markdown
 # Issue #001: Complete TODO items in README.md
 
@@ -106,6 +120,7 @@ Note: When referencing TODOs in issues, always specify the file name since TODO 
 ## Search and Management
 
 ### Finding TODOs
+
 ```bash
 # Find all TODOs in project
 grep -r "TODO:" .
@@ -124,6 +139,7 @@ grep -r "TODO:" . | wc -l
 ```
 
 ### Documentation
+
 - Keep this guidelines file updated
 - Reference TODO format in contributing documentation
 - Include examples in code review templates
@@ -131,11 +147,13 @@ grep -r "TODO:" . | wc -l
 ---
 
 ## Version History
+
 - **v1.0** - Initial TODO guidelines established
 - Created: 2025-08-23
 - Last Updated: 2025-08-23
 
 ## Related Documents
+
 - [Contributing Guidelines](../CONTRIBUTING.md)
 - [Issue Templates](../../.github/ISSUE_TEMPLATE/)
 - [Code Review Guidelines](./CODE-REVIEW.md)

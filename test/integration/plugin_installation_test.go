@@ -138,7 +138,7 @@ func testPluginInstall(t *testing.T, portunixBin string) {
 
 	if err != nil {
 		// Check if plugin is already installed
-		if strings.Contains(string(output), "already installed") {
+		if strings.Contains(string(output), "already installed") || strings.Contains(string(output), "already exists") {
 			t.Log("Plugin already installed, continuing...")
 			return
 		}
