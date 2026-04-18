@@ -154,7 +154,11 @@ def upload_release(version: str, archives: List[Path], checksum_file: Optional[P
     print_step(f"Creating GitHub release {version}...")
 
     # Build command
-    cmd = ["gh", "release", "create", version]
+    # Always pin the target repo explicitly — the Portunix local development
+    # repository is Gitea-only and intentionally has no GitHub remote, so
+    # `gh release create` cannot auto-detect the target.
+    cmd = ["gh", "release", "create", version,
+           "--repo", "cassandragargoyle/portunix"]
 
     # Add options
     cmd.extend(["--title", f"Portunix {version}"])

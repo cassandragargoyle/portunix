@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Build script with version embedding and portunix.rc update for all binaries
-VERSION=${1:-v1.10.8}
+VERSION=${1:-v2.2.3}
 
 # Remove 'v' prefix if present for version numbers
 VERSION_NUM=${VERSION#v}
@@ -38,7 +38,7 @@ fi
 
 # Build main binary with ldflags to set version
 echo "Building main binary: portunix..."
-go build -ldflags "-X main.version=$VERSION -s -w" -o portunix${EXT} .
+go build -ldflags "-X main.version=$VERSION -X portunix.ai/app/update.Version=$VERSION -s -w" -o portunix${EXT} .
 
 if [ $? -ne 0 ]; then
     echo "Main binary build failed!"
@@ -51,70 +51,70 @@ echo "Building helper binaries..."
 # Build ptx-container
 echo "Building ptx-container..."
 cd src/helpers/ptx-container
-go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-container${EXT} .
+go build -ldflags "-X main.version=$VERSION -X portunix.ai/app/update.Version=$VERSION -s -w" -o ../../../ptx-container${EXT} .
 CONTAINER_BUILD=$?
 cd ../../..
 
 # Build ptx-mcp
 echo "Building ptx-mcp..."
 cd src/helpers/ptx-mcp
-go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-mcp${EXT} .
+go build -ldflags "-X main.version=$VERSION -X portunix.ai/app/update.Version=$VERSION -s -w" -o ../../../ptx-mcp${EXT} .
 MCP_BUILD=$?
 cd ../../..
 
 # Build ptx-virt
 echo "Building ptx-virt..."
 cd src/helpers/ptx-virt
-go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-virt${EXT} .
+go build -ldflags "-X main.version=$VERSION -X portunix.ai/app/update.Version=$VERSION -s -w" -o ../../../ptx-virt${EXT} .
 VIRT_BUILD=$?
 cd ../../..
 
 # Build ptx-ansible
 echo "Building ptx-ansible..."
 cd src/helpers/ptx-ansible
-go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-ansible${EXT} .
+go build -ldflags "-X main.version=$VERSION -X portunix.ai/app/update.Version=$VERSION -s -w" -o ../../../ptx-ansible${EXT} .
 ANSIBLE_BUILD=$?
 cd ../../..
 
 # Build ptx-prompting
 echo "Building ptx-prompting..."
 cd src/helpers/ptx-prompting
-go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-prompting${EXT} .
+go build -ldflags "-X main.version=$VERSION -X portunix.ai/app/update.Version=$VERSION -s -w" -o ../../../ptx-prompting${EXT} .
 PROMPTING_BUILD=$?
 cd ../../..
 
 # Build ptx-aiops
 echo "Building ptx-aiops..."
 cd src/helpers/ptx-aiops
-go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-aiops${EXT} .
+go build -ldflags "-X main.version=$VERSION -X portunix.ai/app/update.Version=$VERSION -s -w" -o ../../../ptx-aiops${EXT} .
 AIOPS_BUILD=$?
 cd ../../..
 
 # Build ptx-make
 echo "Building ptx-make..."
 cd src/helpers/ptx-make
-go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-make${EXT} .
+go build -ldflags "-X main.version=$VERSION -X portunix.ai/app/update.Version=$VERSION -s -w" -o ../../../ptx-make${EXT} .
 MAKE_BUILD=$?
 cd ../../..
 
 # Build ptx-pft
 echo "Building ptx-pft..."
 cd src/helpers/ptx-pft
-go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-pft${EXT} .
+go build -ldflags "-X main.version=$VERSION -X portunix.ai/app/update.Version=$VERSION -s -w" -o ../../../ptx-pft${EXT} .
 PFT_BUILD=$?
 cd ../../..
 
 # Build ptx-trace
 echo "Building ptx-trace..."
 cd src/helpers/ptx-trace
-go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-trace${EXT} .
+go build -ldflags "-X main.version=$VERSION -X portunix.ai/app/update.Version=$VERSION -s -w" -o ../../../ptx-trace${EXT} .
 TRACE_BUILD=$?
 cd ../../..
 
 # Build ptx-installer
 echo "Building ptx-installer..."
 cd src/helpers/ptx-installer
-go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-installer${EXT} .
+go build -ldflags "-X main.version=$VERSION -X portunix.ai/app/update.Version=$VERSION -s -w" -o ../../../ptx-installer${EXT} .
 INSTALLER_BUILD=$?
 cd ../../..
 

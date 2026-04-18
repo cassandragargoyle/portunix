@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"portunix.ai/app/update"
 )
 
 // Options represents installation options
@@ -291,8 +293,7 @@ func getConfigDir() (string, error) {
 
 // getVersion returns the current version
 func getVersion() string {
-	// This will be set by the update module
-	return "v1.5.7"
+	return update.Version
 }
 
 // installAllBinaries installs main binary and all helper binaries
@@ -315,39 +316,43 @@ func installAllBinaries(sourcePath, targetPath string) error {
 	sourceDir := filepath.Dir(sourcePath)
 	targetDir := filepath.Dir(targetPath)
 
-	// Helper binaries to install
-	binSuffix := ""
-	if runtime.GOOS == "windows" {
-		binSuffix = ".exe"
+	// Discover helper binaries by globbing ptx-* in the source directory so
+	// new helpers added under src/helpers/ do not require a change here.
+	pattern := filepath.Join(sourceDir, "ptx-*")
+	matches, err := filepath.Glob(pattern)
+	if err != nil {
+		return fmt.Errorf("failed to enumerate helper binaries: %w", err)
 	}
 
-	helpers := []string{"ptx-container", "ptx-mcp", "ptx-virt", "ptx-ansible"}
+	for _, helperSource := range matches {
+		name := filepath.Base(helperSource)
 
-	for _, helper := range helpers {
-		helperSource := filepath.Join(sourceDir, helper+binSuffix)
-		helperTarget := filepath.Join(targetDir, helper+binSuffix)
-
-		// Check if helper binary exists
-		if _, err := os.Stat(helperSource); os.IsNotExist(err) {
-			fmt.Printf("⚠ Warning: Helper binary %s not found, skipping\n", helper+binSuffix)
+		// On non-Windows hosts, skip Windows binaries that may coexist in a
+		// dev checkout after cross-compilation. On Windows, only .exe
+		// binaries are meaningful.
+		if runtime.GOOS == "windows" {
+			if filepath.Ext(name) != ".exe" {
+				continue
+			}
+		} else if filepath.Ext(name) == ".exe" {
 			continue
 		}
 
-		// Copy helper binary
+		helperTarget := filepath.Join(targetDir, name)
+
 		if err := copyFile(helperSource, helperTarget); err != nil {
-			fmt.Printf("⚠ Warning: Failed to copy %s: %v\n", helper+binSuffix, err)
+			fmt.Printf("⚠ Warning: Failed to copy %s: %v\n", name, err)
 			continue
 		}
 
-		// Make executable on Unix systems
 		if runtime.GOOS != "windows" {
 			if err := os.Chmod(helperTarget, 0755); err != nil {
-				fmt.Printf("⚠ Warning: Failed to set executable permissions for %s: %v\n", helper+binSuffix, err)
+				fmt.Printf("⚠ Warning: Failed to set executable permissions for %s: %v\n", name, err)
 				continue
 			}
 		}
 
-		fmt.Printf("✓ Helper binary (%s) installed\n", helper+binSuffix)
+		fmt.Printf("✓ Helper binary (%s) installed\n", name)
 	}
 
 	return nil

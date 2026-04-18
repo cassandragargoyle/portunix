@@ -17,6 +17,16 @@ portunix install <package-name> --dry-run
 
 ## Package Catalog
 
+### ○ Application / Erp
+
+#### `odoo`
+
+Odoo Community
+
+[Homepage](https://www.odoo.com/) | [Documentation](https://www.odoo.com/documentation/19.0/) | License: LGPL-3.0 | Maintainer: Odoo S.A.
+
+---
+
 ### ○ Database / Search
 
 #### `elasticsearch`
@@ -54,6 +64,14 @@ Google Gemini CLI
 ---
 
 ### ⛭ Build Tools
+
+#### `make`
+
+GNU Make
+
+[Homepage](https://www.gnu.org/software/make/) | [Documentation](https://www.gnu.org/software/make/manual/) | License: GPL-3.0-or-later | Maintainer: GNU Project
+
+---
 
 #### `maven`
 
@@ -179,6 +197,24 @@ PowerShell
 
 ---
 
+### ○ Development / Testing
+
+#### `playwright-browsers`
+
+Playwright Browser Binaries
+
+[Homepage](https://playwright.dev/) | [Documentation](https://playwright.dev/docs/browsers) | License: Apache-2.0 | Maintainer: CassandraGargoyle
+
+---
+
+#### `playwright-go`
+
+Playwright for Go
+
+[Homepage](https://github.com/playwright-community/playwright-go) | [Documentation](https://playwright-community.github.io/playwright-go/) | License: MIT | Maintainer: CassandraGargoyle
+
+---
+
 ### ⚙ Development Tools
 
 #### `act`
@@ -258,6 +294,14 @@ Protocol Buffers Compiler
 Tea (Gitea CLI)
 
 [Homepage](https://gitea.com/gitea/tea) | [Documentation](https://gitea.com/gitea/tea/src/branch/main/docs/CLI.md) | License: MIT | Maintainer: Gitea
+
+---
+
+#### `uv`
+
+uv
+
+[Homepage](https://docs.astral.sh/uv/) | [Documentation](https://docs.astral.sh/uv/) | License: MIT OR Apache-2.0 | Maintainer: Astral
 
 ---
 
@@ -465,8 +509,18 @@ Windows Package Manager
 
 ---
 
+### ○ Tools / Ocr
 
-**Total packages available: 50**
+#### `tesseract`
+
+Tesseract OCR
+
+[Homepage](https://github.com/tesseract-ocr/tesseract) | [Documentation](https://tesseract-ocr.github.io/tessdoc/) | License: Apache-2.0 | Maintainer: Tesseract OCR Project
+
+---
+
+
+**Total packages available: 56**
 
 ## Getting Package Details
 

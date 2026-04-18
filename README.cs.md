@@ -24,10 +24,12 @@
 ### Z Releases (doporučeno)
 
 ```bash
-# Linux (amd64)
-wget https://github.com/cassandragargoyle/portunix/releases/latest/download/portunix_linux_amd64.tar.gz
-tar -xzf portunix_linux_amd64.tar.gz
-sudo mv portunix /usr/local/bin/
+# Linux (amd64) — archiv obsahuje portunix + 12 ptx-* helperů + install.sh
+mkdir portunix-install && cd portunix-install
+wget https://github.com/cassandragargoyle/portunix/releases/latest/download/portunix_2.2.3_linux_amd64.tar.gz
+tar -xzf portunix_2.2.3_linux_amd64.tar.gz
+sudo bash install.sh         # nainstaluje všechny binárky přes `portunix install-self`
+cd .. && rm -rf portunix-install
 
 # Ověření instalace
 portunix version
@@ -37,7 +39,7 @@ portunix version
 
 ```bash
 git clone https://github.com/cassandragargoyle/portunix.git
-cd Portunix
+cd portunix
 make build
 ```
 
@@ -343,7 +345,7 @@ export PORTUNIX_CACHE_DIR=/custom/cache/path
 ```bash
 # Klonování a nastavení
 git clone https://github.com/cassandragargoyle/portunix.git
-cd Portunix
+cd portunix
 make dev-setup
 
 # Spustit testy

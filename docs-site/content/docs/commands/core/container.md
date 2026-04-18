@@ -25,13 +25,16 @@ Available Commands:
   cp               Copy files/folders between container and host
   exec             Execute command in container (universal runtime)
   info             Show container runtime information and availability
+  inspect          Show low-level container details (universal runtime)
   list             List containers from all available runtimes
   logs             Show container logs (universal runtime)
+  network          Manage container networks (create/list/inspect/rm)
   rm               Remove container (universal runtime)
   run              Run new container (universal runtime)
   run-in-container Run installation in container (RECOMMENDED for testing)
   start            Start stopped container (universal runtime)
   stop             Stop container (universal runtime)
+  volume           Manage container volumes (create/list/inspect/rm/prune)
 
 Flags:
   -h, --help   help for container
@@ -54,13 +57,16 @@ Use "portunix container [command] --help" for more information about a command.
 | [cp](#cp) | Copy files/folders between container and host |
 | [exec](#exec) | Execute command in container (universal runtime) |
 | [info](#info) | Show container runtime information and availability |
+| [inspect](#inspect) | Show low-level container details (universal runtime) |
 | [list](#list) | List containers from all available runtimes |
 | [logs](#logs) | Show container logs (universal runtime) |
+| [network](#network) | Manage container networks (create/list/inspect/rm) |
 | [rm](#rm) | Remove container (universal runtime) |
 | [run](#run) | Run new container (universal runtime) |
 | [run-in-container](#run-in-container) | Run installation in container (RECOMMENDED for testing) |
 | [start](#start) | Start stopped container (universal runtime) |
 | [stop](#stop) | Stop container (universal runtime) |
+| [volume](#volume) | Manage container volumes (create/list/inspect/rm/prune) |
 
 ### check
 
@@ -240,6 +246,28 @@ Examples:
   portunix container info
 ```
 
+### inspect
+
+Show low-level container details (universal runtime)
+
+```
+Usage: portunix container inspect [OPTIONS] <container-name> [<container-name>...]
+
+🔎 INSPECT CONTAINER
+
+Return low-level information on the given container(s) from the
+automatically selected runtime (Podman first, Docker fallback).
+
+Options:
+  -f, --format <tmpl>   Go template for selective output (runtime semantics)
+  -h, --help            Show this help message
+
+Examples:
+  portunix container inspect my-container
+  portunix container inspect my-container -f '{{.NetworkSettings.Networks}}'
+  portunix container inspect my-container --format '{{.Config.Env}}'
+```
+
 ### list
 
 List containers from all available runtimes
@@ -290,6 +318,36 @@ Examples:
   portunix container logs web-server --follow
   portunix container logs python-dev
   portunix container logs db-container -f
+```
+
+### network
+
+Manage container networks (create/list/inspect/rm)
+
+```
+Usage: portunix container network <subcommand> [options]
+
+🌐 MANAGE CONTAINER NETWORKS
+
+Universal network management that auto-selects Podman or Docker.
+
+Subcommands:
+  create <name> [--driver <drv>] [--subnet <CIDR>] [--gateway <IP>]
+                  Create a network (idempotent — existing network is a no-op)
+  list            List available networks
+  inspect <name> [-f '<tmpl>']
+                  Show low-level network information
+  rm <name>...    Remove one or more networks
+
+Options:
+  -h, --help      Show this help message
+
+Examples:
+  portunix container network create portunix-odoo-net
+  portunix container network create my-net --driver bridge --subnet 10.88.0.0/16
+  portunix container network list
+  portunix container network inspect portunix-odoo-net -f '{{.Subnets}}'
+  portunix container network rm portunix-odoo-net
 ```
 
 ### rm
@@ -349,6 +407,7 @@ Supported flags:
   -i, --interactive: Keep STDIN open
   -t, --tty: Allocate pseudo-TTY
   --name: Assign a name to the container
+  --network: Connect container to a network
   -p, --port: Publish container ports to host
   -v, --volume: Bind mount volumes
   -e, --env: Set environment variables
@@ -442,5 +501,36 @@ Examples:
   portunix container stop test-container
   portunix container stop web-server
   portunix container stop python-dev
+```
+
+### volume
+
+Manage container volumes (create/list/inspect/rm/prune)
+
+```
+Usage: portunix container volume <subcommand> [options]
+
+📦 MANAGE CONTAINER VOLUMES
+
+Universal volume management that auto-selects Podman or Docker.
+
+Subcommands:
+  create <name> [--driver <drv>]
+                  Create a named volume (idempotent)
+  list            List available volumes
+  inspect <name> [-f '<tmpl>']
+                  Show low-level volume information
+  rm <name>...    Remove one or more volumes
+  prune [--force] Remove all unused volumes
+
+Options:
+  -h, --help      Show this help message
+
+Examples:
+  portunix container volume create odoo-data
+  portunix container volume list
+  portunix container volume inspect odoo-data
+  portunix container volume rm odoo-data
+  portunix container volume prune --force
 ```
 

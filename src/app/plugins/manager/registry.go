@@ -41,10 +41,10 @@ type RegistryPlugin struct {
 	License             string                      `json:"license"`
 	InstallPath         string                      `json:"install_path"`
 	BinaryName          string                      `json:"binary_name"`
-	Mode                string                      `json:"mode"`            // service or helper
-	Runtime             string                      `json:"runtime"`                    // native, java, python
-	RuntimeVersion      string                      `json:"runtime_version"`            // e.g., ">=21" for Java
-	JVMArgs             []string                    `json:"jvm_args"`                   // JVM arguments for Java plugins
+	Mode                string                      `json:"mode"`                         // service or helper
+	Runtime             string                      `json:"runtime"`                      // native, java, python
+	RuntimeVersion      string                      `json:"runtime_version"`              // e.g., ">=21" for Java
+	JVMArgs             []string                    `json:"jvm_args"`                     // JVM arguments for Java plugins
 	Wheel               string                      `json:"wheel,omitempty"`              // Python wheel filename
 	ExtraWheels         []string                    `json:"extra_wheels,omitempty"`       // Additional wheel files
 	PythonMinVersion    string                      `json:"python_min_version,omitempty"` // Minimum Python version

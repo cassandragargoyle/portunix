@@ -2,7 +2,7 @@
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
- 
+
 package plugins
 
 import (
@@ -62,8 +62,8 @@ type ToolCheckResult struct {
 
 // PrerequisiteCheckResult holds the complete result of all prerequisite checks
 type PrerequisiteCheckResult struct {
-	PluginName      string             `json:"plugin"`
-	PluginVersion   string             `json:"version"`
+	PluginName      string              `json:"plugin"`
+	PluginVersion   string              `json:"version"`
 	Runtime         *RuntimeCheckResult `json:"runtime,omitempty"`
 	PortunixVersion *VersionCheckResult `json:"portunix_version,omitempty"`
 	OSSupport       *OSCheckResult      `json:"os_support,omitempty"`
