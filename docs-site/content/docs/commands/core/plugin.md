@@ -20,6 +20,7 @@ Usage:
   portunix plugin [command]
 
 Available Commands:
+  check          Check plugin prerequisites
   create         Create a new plugin template
   disable        Disable a plugin
   enable         Enable a plugin
@@ -50,6 +51,7 @@ Use "portunix plugin [command] --help" for more information about a command.
 
 | Subcommand | Description |
 |------------|-------------|
+| [check](#check) | Check plugin prerequisites |
 | [create](#create) | Create a new plugin template |
 | [disable](#disable) | Disable a plugin |
 | [enable](#enable) | Enable a plugin |
@@ -64,6 +66,24 @@ Use "portunix plugin [command] --help" for more information about a command.
 | [stop](#stop) | Stop a plugin |
 | [uninstall](#uninstall) | Uninstall a plugin |
 | [validate](#validate) | Validate a plugin |
+
+### check
+
+Check plugin prerequisites
+
+```
+Usage:
+  portunix plugin check [plugin-name] [flags]
+
+Flags:
+      --all    Check prerequisites for all installed plugins
+  -h, --help   help for check
+      --json   Output results in JSON format
+
+Global Flags:
+      --help-ai       Show machine-readable help in JSON format
+      --help-expert   Show extended help with all options and examples
+```
 
 ### create
 
@@ -157,7 +177,8 @@ Usage:
   portunix plugin install <plugin-path> [flags]
 
 Flags:
-  -h, --help   help for install
+  -f, --force   Force reinstall if plugin already exists
+  -h, --help    help for install
 
 Global Flags:
       --help-ai       Show machine-readable help in JSON format

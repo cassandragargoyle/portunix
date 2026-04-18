@@ -39,9 +39,9 @@ type CategoryConfig struct {
 
 // Config holds cache configuration
 type Config struct {
-	Enabled    bool                       `json:"enabled"`
-	BaseDir    string                     `json:"directory"`
-	MaxSize    int64                      `json:"max_size"`
+	Enabled    bool                        `json:"enabled"`
+	BaseDir    string                      `json:"directory"`
+	MaxSize    int64                       `json:"max_size"`
 	Categories map[Category]CategoryConfig `json:"categories"`
 }
 
@@ -157,20 +157,20 @@ func CacheKey(identifier string) string {
 
 // Info holds statistics about the cache
 type Info struct {
-	BaseDir     string              `json:"base_dir"`
-	TotalSize   int64               `json:"total_size"`
-	TotalFiles  int                 `json:"total_files"`
-	MaxSize     int64               `json:"max_size"`
-	Enabled     bool                `json:"enabled"`
-	Categories  map[Category]CategoryInfo `json:"categories"`
+	BaseDir    string                    `json:"base_dir"`
+	TotalSize  int64                     `json:"total_size"`
+	TotalFiles int                       `json:"total_files"`
+	MaxSize    int64                     `json:"max_size"`
+	Enabled    bool                      `json:"enabled"`
+	Categories map[Category]CategoryInfo `json:"categories"`
 }
 
 // CategoryInfo holds statistics for a single cache category
 type CategoryInfo struct {
-	Dir      string `json:"dir"`
-	Size     int64  `json:"size"`
-	Files    int    `json:"files"`
-	MaxSize  int64  `json:"max_size"`
+	Dir     string `json:"dir"`
+	Size    int64  `json:"size"`
+	Files   int    `json:"files"`
+	MaxSize int64  `json:"max_size"`
 }
 
 // GetInfo returns information about the cache

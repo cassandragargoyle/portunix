@@ -5,6 +5,25 @@ All notable changes to Portunix will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.3] - 2026-04-17
+
+### Fixed in 2.2.3
+
+- **`portunix install-self` installed only 4 of 12 ptx-* helpers** — the hardcoded helpers list in `src/app/selfinstall/install.go` was missing `ptx-prompting`, `ptx-python`, `ptx-installer`, `ptx-aiops`, `ptx-make`, `ptx-pft`, `ptx-credential`, and `ptx-trace`. Users running `install.sh` from a release archive ended up with a partial install. Replaced with a `ptx-*` glob so new helpers are picked up automatically.
+- **`portunix install-self` reported a hardcoded `v1.5.7`** — `selfinstall.getVersion()` returned a literal string from a long-abandoned TODO. Now reads `update.Version`, which is set at build time via ldflags and already propagated from `main.version` at startup.
+- **GitHub repo path was inconsistent between uppercase and lowercase** — the repository was renamed on GitHub from `Portunix` to `portunix`; `github.com/...` URLs redirect, but `github.io/Portunix/` did not, so GitHub Pages shipped with broken asset and link references. Normalized 143 occurrences across 47 files to lowercase. Added two sensitive-pattern rules so the preflight check fails if the uppercase form reappears.
+- **`scripts/upload-release-to-github.py` failed from the Gitea clone** — `gh release create` could not auto-detect the target repo because the Gitea dev clone intentionally has no GitHub remote. Pin `--repo cassandragargoyle/portunix` explicitly.
+- **README install snippets pointed at non-existent archive names** — release archives are named `portunix_<ver>_<os>_<arch>.tar.gz`, not `portunix_<os>_<arch>.tar.gz`. Updated the snippet to the versioned filename, extract into a dedicated `portunix-install/` directory (archives have no top-level wrapper folder), and use the bundled `install.sh` via `sudo bash install.sh` so all 13 binaries are installed.
+
+### Added in 2.2.3
+
+- **Root `CONTRIBUTING.md`** — GitHub's Community Standards page recognizes `CONTRIBUTING.md` only in root, `.github/`, or `docs/`. The existing `docs/contributing/` directory (subdirectory + README) was not surfaced. The new root-level entry point carries a quick-start workflow, ground rules, and links into the detailed methodology docs.
+
+### Changed in 2.2.3
+
+- **GoReleaser ldflags** — added `-X portunix.ai/app/update.Version={{ .Version }}` and corrected the stale `portunix.cz/app/version.ProductVersion` module path to `portunix.ai/app/version.ProductVersion`.
+- **`docs/contributing/README-DUAL-SYSTEM.md` + `.claude/commands/cs/deploy-github.md`** — document the new CHANGELOG check step (KROK 3.5) and the `gh api` based GitHub state lookup that avoids registering a `github` remote on the Gitea repo.
+
 ## [2.2.2] - 2026-04-17
 
 ### Added in 2.2.2

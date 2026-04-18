@@ -34,7 +34,8 @@ builds:
         goarch: arm64
     ldflags:
       - -X main.version={{ .Version }}
-      - -X portunix.cz/app/version.ProductVersion={{ .Version }}
+      - -X portunix.ai/app/update.Version={{ .Version }}
+      - -X portunix.ai/app/version.ProductVersion={{ .Version }}
       - -s -w
     env:
       - CGO_ENABLED=0
