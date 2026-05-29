@@ -9,7 +9,9 @@
     "homepage": "https://caddyserver.com/",
     "documentation": "https://caddyserver.com/docs/",
     "license": "Apache-2.0",
-    "maintainer": "Caddy Server"
+    "maintainer": "Caddy Server",
+    "installationDocsUrl": "https://caddyserver.com/docs/install",
+    "latestVersionUrl": "https://github.com/caddyserver/caddy/releases/latest"
   },
   "spec": {
     "hasVariants": true,
@@ -48,6 +50,7 @@
             ]
           },
           "apt": {
+            "type": "apt",
             "version": "latest",
             "repositorySetup": [
               "curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg",

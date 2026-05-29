@@ -1,0 +1,63 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "spice-server",
+    "displayName": "SPICE Server",
+    "description": "SPICE server library for QEMU/KVM VM display and clipboard sharing",
+    "category": "infrastructure/virtualization",
+    "homepage": "https://www.spice-space.org/",
+    "documentation": "https://www.spice-space.org/documentation.html",
+    "license": "LGPL-2.1",
+    "maintainer": "SPICE Project",
+    "installationDocsUrl": "https://www.spice-space.org/download.html",
+    "latestVersionUrl": "https://www.spice-space.org/download.html"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "apt": {
+            "version": "latest",
+            "packages": ["libspice-server1"],
+            "postInstall": [
+              "echo '✅ SPICE server library installed'",
+              "echo '💡 Used by QEMU for VM display and clipboard channels'"
+            ]
+          },
+          "dnf": {
+            "type": "dnf",
+            "version": "latest",
+            "packages": ["spice-server"],
+            "postInstall": [
+              "echo '✅ SPICE server library installed'",
+              "echo '💡 Used by QEMU for VM display and clipboard channels'"
+            ]
+          },
+          "pacman": {
+            "type": "pacman",
+            "version": "latest",
+            "packages": ["spice"],
+            "postInstall": [
+              "echo '✅ SPICE server library installed'",
+              "echo '💡 Used by QEMU for VM display and clipboard channels'"
+            ]
+          }
+        },
+        "verification": {
+          "command": "pkg-config --modversion spice-server",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check SPICE project releases and Linux distribution repositories for spice-server versions.",
+      "urlResolution": "Install via package managers (apt: libspice-server1, dnf: spice-server, pacman: spice). On Windows the SPICE server is bundled with QEMU.",
+      "updateGuidance": "Monitor SPICE project releases for security updates. Required for clipboard sharing and remote display with QEMU/KVM VMs."
+    },
+    "dependencies": [],
+    "templates": ["apt-package"]
+  }
+}

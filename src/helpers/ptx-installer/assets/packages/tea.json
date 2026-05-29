@@ -9,13 +9,15 @@
     "homepage": "https://gitea.com/gitea/tea",
     "documentation": "https://gitea.com/gitea/tea/src/branch/main/docs/CLI.md",
     "license": "MIT",
-    "maintainer": "Gitea"
+    "maintainer": "Gitea",
+    "installationDocsUrl": "https://gitea.com/gitea/tea#installation",
+    "latestVersionUrl": "https://gitea.com/gitea/tea/releases"
   },
   "spec": {
     "hasVariants": true,
     "platforms": {
       "windows": {
-        "type": "exe",
+        "type": "download",
         "variants": {
           "latest": {
             "version": "0.11.1",
@@ -23,7 +25,7 @@
               "x64": "https://gitea.com/gitea/tea/releases/download/v0.11.1/tea-0.11.1-windows-amd64.exe"
             },
             "binary": "tea.exe",
-            "installPath": "C:/Program Files/tea"
+            "extractTo": "${LOCALAPPDATA}\\Programs\\tea"
           }
         },
         "verification": {
@@ -31,7 +33,7 @@
           "expectedExitCode": 0
         },
         "environment": {
-          "PATH_APPEND": "C:/Program Files/tea"
+          "PATH_APPEND": "${LOCALAPPDATA}\\Programs\\tea"
         }
       },
       "linux": {

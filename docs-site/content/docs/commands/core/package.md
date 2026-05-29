@@ -24,6 +24,8 @@ Available subcommands:
   list     List all available packages
   search   Search for packages by name or description
   info     Show detailed information about a package
+  detect   Detect installed AI assistants
+  update   Reinstall a package's latest available version
 
 Options:
   -h, --help   Show this help message
@@ -33,6 +35,8 @@ Examples:
   portunix package list --category development/languages
   portunix package search python
   portunix package info nodejs
+  portunix package detect
+  portunix package detect --json
 
 ```
 
@@ -43,5 +47,7 @@ Examples:
   portunix package list --category development/languages
   portunix package search python
   portunix package info nodejs
+  portunix package detect
+  portunix package detect --json
 
 ```

@@ -493,7 +493,7 @@ func (suite *TestAnsibleInfrastructureIssue056) testAnsiblePackageDefinition(t *
 
 	expectedOutputs := []string{
 		"Ansible",
-		"Infrastructure as Code automation platform",
+		"IT automation platform",
 	}
 
 	for _, expected := range expectedOutputs {

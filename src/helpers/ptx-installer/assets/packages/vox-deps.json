@@ -7,7 +7,9 @@
     "description": "System-level audio dependencies for Vox TTS/STT plugin",
     "category": "plugins/dependencies",
     "license": "Various",
-    "maintainer": "CassandraGargoyle"
+    "maintainer": "CassandraGargoyle",
+    "installationDocsUrl": "https://github.com/cassandragargoyle/portunix",
+    "latestVersionUrl": "https://github.com/cassandragargoyle/portunix/releases/latest"
   },
   "spec": {
     "hasVariants": true,
@@ -45,6 +47,11 @@
           }
         }
       }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check distribution package repositories for current versions of system audio libraries: libasound2-dev (Debian/Ubuntu), alsa-lib-devel (Fedora/RHEL), alsa-lib (Arch); libsndfile1/libsndfile; ffmpeg. Versions are managed by the OS package manager — verify availability via `apt-cache show <pkg>`, `dnf info <pkg>`, or `pacman -Si <pkg>`. No upstream version pinning needed.",
+      "urlResolution": "Install via native package managers — no direct URLs. Debian/Ubuntu/Mint: apt. Fedora/RHEL/CentOS: dnf. Arch/Manjaro: pacman. On Windows no system packages are required (Piper ONNX runtime is bundled with the Vox plugin).",
+      "updateGuidance": "These are stable ALSA/ffmpeg system libraries — rarely need updates outside normal OS patching. Only revisit if Vox plugin upstream changes audio backend or adds new audio format support. When adding a new Linux distribution, follow the existing variants pattern (variant name = package-manager name, set requiresSudo: true, list distribution-specific package names)."
     },
     "dependencies": [],
     "templates": ["apt-package"]

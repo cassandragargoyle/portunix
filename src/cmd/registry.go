@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package cmd
 
 import (
@@ -8,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"portunix.ai/app/install"
+	"portunix.ai/portunix/src/pkg/packageregistry"
 )
 
 var registryCmd = &cobra.Command{
@@ -140,7 +144,7 @@ func init() {
 
 // listPackages lists all packages in the registry
 func listPackages(args []string) {
-	registry, err := install.LoadPackageRegistry("./assets")
+	registry, err := packageregistry.LoadPackageRegistry("./assets")
 	if err != nil {
 		fmt.Printf("❌ Failed to load registry: %v\n", err)
 		return
@@ -156,7 +160,7 @@ func listPackages(args []string) {
 	fmt.Println("================================")
 
 	// Group by category
-	categories := make(map[string][]*install.Package)
+	categories := make(map[string][]*packageregistry.Package)
 	for _, pkg := range packages {
 		category := pkg.Metadata.Category
 		categories[category] = append(categories[category], pkg)
@@ -192,7 +196,7 @@ func showPackageInfo(args []string) {
 	}
 
 	packageName := args[0]
-	registry, err := install.LoadPackageRegistry("./assets")
+	registry, err := packageregistry.LoadPackageRegistry("./assets")
 	if err != nil {
 		fmt.Printf("❌ Failed to load registry: %v\n", err)
 		return
@@ -253,13 +257,13 @@ func showPackageInfo(args []string) {
 
 // checkUpdates checks for updates for specified package or all packages
 func checkUpdates(args []string) {
-	registry, err := install.LoadPackageRegistry("./assets")
+	registry, err := packageregistry.LoadPackageRegistry("./assets")
 	if err != nil {
 		fmt.Printf("❌ Failed to load registry: %v\n", err)
 		return
 	}
 
-	aiManager := install.NewAIPackageManager(registry)
+	aiManager := packageregistry.NewAIPackageManager(registry)
 
 	if len(args) > 0 {
 		// Check specific package
@@ -297,7 +301,7 @@ func checkUpdates(args []string) {
 }
 
 // displayUpdateResult displays a single update check result
-func displayUpdateResult(result *install.VersionDiscoveryResult) {
+func displayUpdateResult(result *packageregistry.VersionDiscoveryResult) {
 	if result.Error != "" {
 		fmt.Printf("❌ %s: %s\n", result.PackageName, result.Error)
 	} else if result.UpdateAvailable {
@@ -311,13 +315,13 @@ func displayUpdateResult(result *install.VersionDiscoveryResult) {
 
 // generateUpdateReport generates a comprehensive update report
 func generateUpdateReport(cmd *cobra.Command, args []string) {
-	registry, err := install.LoadPackageRegistry("./assets")
+	registry, err := packageregistry.LoadPackageRegistry("./assets")
 	if err != nil {
 		fmt.Printf("❌ Failed to load registry: %v\n", err)
 		return
 	}
 
-	aiManager := install.NewAIPackageManager(registry)
+	aiManager := packageregistry.NewAIPackageManager(registry)
 
 	fmt.Println("📊 Generating update report...")
 	report, err := aiManager.GenerateUpdateReport()
@@ -342,7 +346,7 @@ func generateUpdateReport(cmd *cobra.Command, args []string) {
 
 // validateRegistry validates all package definitions in the registry
 func validateRegistry(args []string) {
-	registry, err := install.LoadPackageRegistry("./assets")
+	registry, err := packageregistry.LoadPackageRegistry("./assets")
 	if err != nil {
 		fmt.Printf("❌ Failed to load registry: %v\n", err)
 		return
@@ -383,7 +387,7 @@ func validateRegistry(args []string) {
 
 // showRegistryStats shows registry statistics
 func showRegistryStats(args []string) {
-	registry, err := install.LoadPackageRegistry("./assets")
+	registry, err := packageregistry.LoadPackageRegistry("./assets")
 	if err != nil {
 		fmt.Printf("❌ Failed to load registry: %v\n", err)
 		return
@@ -432,7 +436,7 @@ func showRegistryStats(args []string) {
 
 // searchPackages searches for packages by query string with optional filters
 func searchPackages(cmd *cobra.Command, args []string) {
-	registry, err := install.LoadPackageRegistry("./assets")
+	registry, err := packageregistry.LoadPackageRegistry("./assets")
 	if err != nil {
 		fmt.Printf("❌ Failed to load registry: %v\n", err)
 		return
@@ -447,7 +451,7 @@ func searchPackages(cmd *cobra.Command, args []string) {
 	aiEnabledOnly, _ := cmd.Flags().GetBool("ai-enabled")
 
 	packages := registry.GetAllPackages()
-	var matches []*install.Package
+	var matches []*packageregistry.Package
 
 	fmt.Printf("🔍 SEARCHING PACKAGES: \"%s\"\n", strings.Join(args, " "))
 	if categoryFilter != "" {
@@ -504,7 +508,7 @@ func searchPackages(cmd *cobra.Command, args []string) {
 	fmt.Println("================================")
 
 	// Group by category for better organization
-	categories := make(map[string][]*install.Package)
+	categories := make(map[string][]*packageregistry.Package)
 	for _, pkg := range matches {
 		category := pkg.Metadata.Category
 		categories[category] = append(categories[category], pkg)
@@ -536,7 +540,7 @@ func searchPackages(cmd *cobra.Command, args []string) {
 
 // showDependencies shows dependency information for a package
 func showDependencies(cmd *cobra.Command, args []string) {
-	registry, err := install.LoadPackageRegistry("./assets")
+	registry, err := packageregistry.LoadPackageRegistry("./assets")
 	if err != nil {
 		fmt.Printf("❌ Failed to load registry: %v\n", err)
 		return
@@ -613,7 +617,7 @@ func showDependencies(cmd *cobra.Command, args []string) {
 }
 
 // showDependencyTree displays dependencies in tree format
-func showDependencyTree(registry *install.PackageRegistry, packageName string, prefix string, visited map[string]bool) {
+func showDependencyTree(registry *packageregistry.PackageRegistry, packageName string, prefix string, visited map[string]bool) {
 	if visited[packageName] {
 		fmt.Printf("%s%s (circular reference)\n", prefix, packageName)
 		return
@@ -651,7 +655,7 @@ func showDependencyTree(registry *install.PackageRegistry, packageName string, p
 
 // updatePackages automatically updates package definitions with latest versions
 func updatePackages(cmd *cobra.Command, args []string) {
-	registry, err := install.LoadPackageRegistry("./assets")
+	registry, err := packageregistry.LoadPackageRegistry("./assets")
 	if err != nil {
 		fmt.Printf("❌ Failed to load registry: %v\n", err)
 		return
@@ -662,7 +666,7 @@ func updatePackages(cmd *cobra.Command, args []string) {
 	force, _ := cmd.Flags().GetBool("force")
 	categoryFilter, _ := cmd.Flags().GetString("category")
 
-	aiManager := install.NewAIPackageManager(registry)
+	aiManager := packageregistry.NewAIPackageManager(registry)
 
 	var packagesToUpdate []string
 	if len(args) > 0 {
@@ -759,7 +763,7 @@ func updatePackages(cmd *cobra.Command, args []string) {
 }
 
 // updatePackageDefinition updates a package definition file with new version info
-func updatePackageDefinition(packageName string, result *install.VersionDiscoveryResult) error {
+func updatePackageDefinition(packageName string, result *packageregistry.VersionDiscoveryResult) error {
 	// This is a placeholder for the actual update logic
 	// In a full implementation, this would:
 	// 1. Read the package JSON file

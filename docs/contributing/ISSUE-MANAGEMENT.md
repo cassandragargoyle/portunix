@@ -1,3 +1,14 @@
+---
+title: Issue Management
+description: Workflow for creating, tracking, and archiving issues in portunix — dual-track between internal docs (docs/issues/internal/) and public GitHub, with docs/issues/internal/done/ archive on completion.
+applies_to:
+  - docs/issues/**
+  - docs/issues/README.md
+type: contributing-guide
+status: active
+last_updated: 2026-05-08
+---
+
 # Issue Management Guidelines
 
 ## Purpose

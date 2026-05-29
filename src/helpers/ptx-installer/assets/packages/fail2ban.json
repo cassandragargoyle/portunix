@@ -9,7 +9,9 @@
     "homepage": "https://www.fail2ban.org/",
     "documentation": "https://www.fail2ban.org/wiki/",
     "license": "GPL-2.0",
-    "maintainer": "Fail2ban Community"
+    "maintainer": "Fail2ban Community",
+    "installationDocsUrl": "https://github.com/fail2ban/fail2ban/blob/master/INSTALL",
+    "latestVersionUrl": "https://github.com/fail2ban/fail2ban/releases/latest"
   },
   "spec": {
     "hasVariants": true,
@@ -22,6 +24,7 @@
             "packages": ["fail2ban"]
           },
           "dnf": {
+            "type": "dnf",
             "version": "latest",
             "packages": ["fail2ban"]
           }

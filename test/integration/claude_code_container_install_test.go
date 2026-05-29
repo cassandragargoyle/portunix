@@ -145,7 +145,7 @@ func (suite *ClaudeCodeContainerTestSuite) setupEnvironment() {
 func (suite *ClaudeCodeContainerTestSuite) createDevelopmentContainer() {
 	// Remove existing container using Portunix
 	suite.tf.Info(suite.t, "Cleaning up any existing development containers")
-	cleanupCmd := exec.Command(suite.binaryPath, "container", "remove", suite.containerName)
+	cleanupCmd := exec.Command(suite.binaryPath, "container", "rm", suite.containerName)
 	cleanupCmd.Run() // Ignore errors - container might not exist
 
 	suite.tf.Info(suite.t, "Creating Ubuntu 22.04 container with dev tools using Portunix")
@@ -179,7 +179,7 @@ func (suite *ClaudeCodeContainerTestSuite) createDevelopmentContainer() {
 func (suite *ClaudeCodeContainerTestSuite) createTestContainer() {
 	// Remove existing container using Portunix
 	suite.tf.Info(suite.t, "Cleaning up any existing test containers")
-	cleanupCmd := exec.Command(suite.binaryPath, "container", "remove", suite.containerName)
+	cleanupCmd := exec.Command(suite.binaryPath, "container", "rm", suite.containerName)
 	cleanupCmd.Run() // Ignore errors - container might not exist
 
 	suite.tf.Info(suite.t, "Creating minimal test container for package testing")
@@ -221,6 +221,25 @@ func (suite *ClaudeCodeContainerTestSuite) installPortunixInContainer() {
 		suite.tf.Error(suite.t, "Failed to copy portunix to container via Portunix", err.Error())
 		suite.tf.Output(suite.t, string(output), 500)
 		suite.t.Fatalf("Copy failed: %v", err)
+	}
+
+	// Also copy ptx-installer — the dispatcher routes `install` commands to
+	// this helper, and src/cmd/install.go is only a fallback that exits 1
+	// when the helper is missing. Without it, `install claude-code` in the
+	// container would fail before doing any work.
+	installerPath := filepath.Join(filepath.Dir(suite.binaryPath), "ptx-installer")
+	if _, err := os.Stat(installerPath); err == nil {
+		cpCmd := exec.Command(suite.binaryPath, "container", "cp", installerPath, suite.containerName+":/usr/local/bin/ptx-installer")
+		if output, err := cpCmd.CombinedOutput(); err != nil {
+			suite.tf.Error(suite.t, "Failed to copy ptx-installer to container", err.Error())
+			suite.tf.Output(suite.t, string(output), 500)
+			suite.t.Fatalf("ptx-installer copy failed: %v", err)
+		}
+		if _, err := suite.runContainerCommand("chmod", "+x", "/usr/local/bin/ptx-installer"); err != nil {
+			suite.t.Fatalf("Failed to make ptx-installer executable: %v", err)
+		}
+	} else {
+		suite.t.Skipf("ptx-installer helper not built at %s — run `make build` first", installerPath)
 	}
 
 	// Make executable
@@ -458,8 +477,8 @@ func (suite *ClaudeCodeContainerTestSuite) cleanup() {
 	suite.tf.Info(suite.t, "Cleaning up test environment")
 
 	// Remove test container using Portunix
-	suite.tf.Command(suite.t, suite.binaryPath, []string{"container", "remove", suite.containerName})
-	cmd := exec.Command(suite.binaryPath, "container", "remove", suite.containerName)
+	suite.tf.Command(suite.t, suite.binaryPath, []string{"container", "rm", suite.containerName})
+	cmd := exec.Command(suite.binaryPath, "container", "rm", suite.containerName)
 	cmd.Run() // Ignore errors in cleanup
 
 	suite.tf.Success(suite.t, "Cleanup completed using Portunix container system")

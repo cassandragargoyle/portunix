@@ -5,6 +5,143 @@ All notable changes to Portunix will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.1] - 2026-05-29
+
+### Added in 2.4.1
+
+- **AI assistant installation & detection** (Issue #035) — `Bundle` package type with `ai-assistant-basic` / `ai-assistant-full` / `mcp-ready` bundles;
+  `portunix package detect` (table + `--json`) reporting install state and version; `portunix install --recommend-ai` to list and install missing
+  assistants; `mcp init` auto-dependency hook with `--install-missing`; `portunix install <pkg> --version <v>` version selection; macOS install support
+  for `claude-desktop` and `gemini-cli`.
+- **Capability Registry** — methodology, registry infrastructure bootstrap, and Portunix product/capabilities/operations records (with Czech translation).
+- **MCP plugin development templates** (Issue #033) — Java, JavaScript, and Rust plugin templates and guides for AI agents.
+- **`PATH_APPEND` placeholder expansion** (Issue #187, Phase 2) — `${install_path}` and `${extract_to}` expanded in `PATH_APPEND` entries.
+- **Plugin list improvements** (Issue #188) — rune-safe description truncation and `--verbose` full-description output.
+- **Markdown frontmatter convention** — documented convention (with Czech translation).
+
+### Fixed in 2.4.1
+
+- **Release build of `ptx-container`** — built from its package directory (multi-file) instead of a single `main.go`, fixing the release pipeline.
+- **Tools Recommendations guide** — corrected the "last updated" date and minor formatting.
+
+### Changed in 2.4.1
+
+- **Go toolchain & dependencies** — updated `go.mod` / `go.sum` (Go 1.25.0) and aligned the `ptx-prompting` go directive with the root module.
+
+## [2.4.0] - 2026-05-20
+
+### Added in 2.4.0
+
+- **`ptx-python` helper** (Issue #097) — Phase 3 + Phase 4 implementation of the dedicated Python helper binary.
+- **`ptx-wizard` helper** (Issue #014) — interactive YAML-based CLI installation wizard migrated to a standalone helper binary with non-interactive engine,
+  dispatcher routing, and conditional navigation.
+- **MCP wizard advanced features** (Issue #034) — real handshake, scope/env/timeout configuration, desktop config merge, and TLS support.
+- **Version management strategy** (Issue #140, ADR-036) — internal
+  `vX.Y.Z+dev.N` builds vs. clean `vX.Y.Z` GitHub releases; warning in `build-with-version.sh` for clean stable builds outside the `github` context.
+- **Universal container management** (Issue #032) — `portunix container restart` and cross-runtime discovery between Docker and Podman.
+- **SPICE server, client, and guest agent packages** (Issue #093) — package definitions for the QEMU/KVM display protocol on Linux distributions.
+- **AI prompts for vox packages** (Issue #081) — completed AI prompts coverage for the remaining vox packages from the discovery list.
+- **`docker install` / `podman install` aliases** (Issue #019) — routed through `ptx-container` for parity with native package managers.
+- **`ptx-trace` SDK `EtlPipeline` example** — example class demonstrating SDK usage for ETL pipelines.
+
+### Fixed in 2.4.0
+
+- **Installer variant type override** — registry-wide override applied; explicit type override added for dnf/pacman variants (Issue #093) preventing wrong
+  package-manager detection.
+- **Build pipeline `portunix.syso` regeneration** — `portunix.syso` is now regenerated on every build with an explicit `asInvoker` manifest, fixing stale
+  version info embedded in the binary.
+- **MCP wizard error handling** (Issue #034) — proper error propagation for unknown AI assistants and malformed desktop configuration files.
+- **`cs/` skill relative paths** (Issue #140) — corrected relative paths to docs from the `cs/` skill files.
+
+### Changed in 2.4.0
+
+- **`ptx-installer` legacy cleanup** (Issue #186) — major refactor over four sub-tasks: (186a) extracted package registry into a shared package, (186b)
+  `ptx-mcp` now installs `claude-code` via `ptx-installer` subprocess, (186c) extracted `installconfig` into a shared package, (186d) migrated
+  `install apt`/`iso`/`chocolatey` admin subcommands to `ptx-installer`. Legacy `src/app/install/` directory removed.
+- **License headers and documentation** — added MIT license headers to multiple Go source files across `src/app/` and `src/helpers/`; new README documentation
+  for the `cmd` package; improved formatting in `CONTRIBUTING.md`.
+- **Repository housekeeping** — `.gitignore` reorganised by category with `ptx-*` helper glob; outdated `TODO.md` removed; legacy `refactor.md` prompt
+  removed.
+
+## [2.3.0] - 2026-05-11
+
+### Added in 2.3.0
+
+- **`ptx-database` helper** (Issue #013, Phase 1) — new helper binary providing PostgreSQL and SQLite management: install, backup, MCP integration.
+- **`ptx-github` helper** (Issue #025) — repository, releases, and authentication operations: clone (pure-Go go-git), checkout, tags, releases, download, info,
+  status, AES-256-GCM-encrypted token store at `~/.portunix/github/auth.json`, resume + SHA-256 verification for asset downloads.
+- **`ptx-specpm` helper** (Issues #183, #184) — Phase 1 scaffolding for project-management specifications via spec-kit-pm; Phase 2 adds `upgrade`
+  command, drift line, and air-gapped workflow (ADR-040, ADR-041).
+- **Container lifecycle management** (Issue #027) — `portunix container` gains run/stop/start/restart with cleanup guarantees.
+- **Ed25519 update signature verification** (Issues #165, #166) — self-signed release signing for the update channel and verification of downloaded
+  updates (ADR-042).
+- **Package installation enhancements** (Issue #079, Phase 1) — `--method` alias for `--variant`, `--list-variants` / `--list-methods` to discover
+  variants, improved error message for unknown variants.
+- **Package metadata URL tracking** (Issue #080, ADR-019) — every package manifest now carries `installationDocsUrl` and `latestVersionUrl` in
+  metadata; lightweight jq CI guard in the lint job prevents new manifests without these fields.
+- **Terraform installation** (Issue #065).
+- **Double Commander installation** (Issue #066).
+- **VitePress and MkDocs documentation engines** (Issue #154).
+- **`ptx-trace` Bash integration** (Issue #141).
+- **`pprof` profiling for system info** (Issue #118).
+- **Docker install UX on Windows** (Issues #178, #179) — auto-elevation via UAC, interactive prerequisite selection when WSL2/Hyper-V are missing,
+  standalone `portunix install wsl` via Windows features.
+
+### Fixed in 2.3.0
+
+- **System info performance** (Issue #099) — reduced `portunix system info` execution from ~1.2 s to <60 ms.
+- **Docker Desktop admin elevation check on Windows** (Issue #177) — added a pre-install elevation check.
+- **`install docker` missing data-root directory prompt** (Issue #176) — restored.
+- **Container `ls` / `ps` not recognized** (Issue #181) — now accepted as aliases for `list`.
+- **Python wheel plugins fail on Windows** (Issue #182) — handle `.exe` suffix and skip exec-bit check in venv path.
+- **`portunix enable` warning on unsupported OS** (Issue #155) — also makes test binary OS-aware.
+
+### Changed in 2.3.0
+
+- **Sandbox / `ptx-installer` shared download/extract code** (Issue #127) — refactored into a common path.
+- **MCP wizard rewrite** (Issue #034) — advanced features completion.
+
+## [2.2.5] - 2026-04-20
+
+### Added in 2.2.5
+
+- **`ptx-proxmox` helper** (Issue #167) — complete Proxmox VE management via the REST API. Phase 1: auth profiles in `~/.config/portunix/proxmox.json`
+  (mode 0600) with API-token and password (ticket-based) authentication. Phase 2: VM/CT lifecycle — `list`, `info`, `status`, `start`, `stop`,
+  `shutdown`, `restart`, `delete`, plus `template list`, `create vm`, `create ct` and `cloud-init` configuration. Phase 3: `snapshot
+  create|list|revert|delete`, `resolve-ip`, and interactive `ssh` / `exec` / `copy` with guest IP resolved via QEMU guest agent or LXC interfaces.
+  Phase 4: `.ptxbook` files can target `environment.type: proxmox` (integrated in `ptx-ansible`) with `create_if_missing` for
+  auto-provisioning. 36 unit tests + 54-scenario acceptance protocol (`docs/testing/internal/acceptance-167*.md`).
+- **`ptx-plugin-registry` helper** (Issue #175) — local gRPC daemon that serves the PluginRegistryService so hosting platforms (Synapse, Pack,
+  Agent) can discover which installed Portunix plugins target them. Unix-socket transport on Linux/macOS, TCP loopback on Windows; on-demand
+  lifecycle (no systemd integration in v1). Exposed via `portunix plugin-registry serve …`.
+
+### Changed in 2.2.5
+
+- **License headers** — added `CassandraGargoyle Community Project` / MIT banner to multiple Go source files across `src/app/` and `src/helpers/`
+  that were missing it. No functional changes.
+
+## [2.2.4] - 2026-04-18
+
+### Added in 2.2.4
+
+- **`ptx-ssh` helper** (Issue #174) — unified SSH client registered as `portunix ssh` / `portunix scp`. Native Go client plus opt-in pty wrapper mode,
+  with non-interactive password auth via `ptx-credential` (`--credential`, `--credential-fd`, `--credential-file`, `--credential-env`) and interactive
+  `--ask-user` / `--ask-pass` prompts. Subcommands: `connect`, `exec`, `copy`, `rsync`, `bootstrap-key`, `trust`, `known-hosts`, `agent`, `sshpass-compat`.
+  Passwords are masked by a `SecretString` type; `--password` on the CLI is rejected, `--host-key-check=off` refuses under `PORTUNIX_CI=1`. See
+  `docs/helpers/ptx-ssh.md`.
+- **Version-bump workflow** (`.claude/commands/cs/bump-version.md`) — reusable skill for SemVer bump + CHANGELOG + tag in the right order.
+
+### Fixed in 2.2.4
+
+- **`ssh copy` ignored non-default port** in `user@host:port:/path` — parser folded the port into the path and always dialed 22. Fixed.
+- **`ssh exec` did not propagate remote exit codes** — the dispatcher masked `*exec.ExitError` as exit 1. Now `portunix ssh exec … "exit 42"` returns 42.
+- **`known-hosts remove host:port` missed `[host]:port` entries** — matcher was literal; now normalises bracketed forms on both sides.
+- **CI test suite unblocked + deprecated GitHub Actions migrated** (commit `25bd7bf`).
+
+### Changed in 2.2.4
+
+- **`LnxExecutePyScriptSsh` rewritten as a shim over `ptx-ssh`** (Issue #174, AC-5) — removes the hardcoded key path and `ssh.InsecureIgnoreHostKey()`.
+
 ## [2.2.3] - 2026-04-17
 
 ### Fixed in 2.2.3

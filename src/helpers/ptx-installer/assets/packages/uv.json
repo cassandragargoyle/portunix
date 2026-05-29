@@ -9,7 +9,9 @@
     "homepage": "https://docs.astral.sh/uv/",
     "documentation": "https://docs.astral.sh/uv/",
     "license": "MIT OR Apache-2.0",
-    "maintainer": "Astral"
+    "maintainer": "Astral",
+    "installationDocsUrl": "https://docs.astral.sh/uv/getting-started/installation/",
+    "latestVersionUrl": "https://github.com/astral-sh/uv/releases/latest"
   },
   "spec": {
     "hasVariants": true,

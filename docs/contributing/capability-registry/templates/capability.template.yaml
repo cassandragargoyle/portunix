@@ -1,0 +1,18 @@
+# Capability node — docs/architecture/capability-registry/nodes/capabilities/<domain>.<name>.yaml
+# Vendor-neutral: name by MEANING, never by product (capability:provisioning.package-install,
+# NOT capability:portunix.install). <domain> must exist in _vocabulary/domains.yaml.
+id: capability:provisioning.package-install
+name: Package installation
+category: functional        # business | domain | functional | technical | ai
+description: Install software packages and tools across platforms.
+ai:
+  canBeAutomated: true
+  riskLevel: medium         # low | medium | high | critical
+  humanApprovalRequired: true
+  typicalTasks:
+    - installPackageFromManifest
+    - resolvePrerequisites
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-26"

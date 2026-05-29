@@ -1,0 +1,56 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "availability.schema.json",
+  "title": "Availability",
+  "description": "Conditions under which a capability is available. Used inline on a provides relation or as a standalone node.",
+  "type": "object",
+  "required": ["status"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^availability:[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*){0,2}$",
+      "description": "availability:<product>.<capability-ns> (standalone node only)"
+    },
+    "appliesTo": {
+      "type": "string",
+      "description": "Capability or product the standalone node constrains."
+    },
+    "status": {
+      "enum": ["active", "preview", "beta", "deprecated", "disabled", "removed", "unknown"]
+    },
+    "license": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "required": { "type": "boolean" },
+        "plans": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "version": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "min": { "type": ["string", "null"] },
+        "max": { "type": ["string", "null"] }
+      }
+    },
+    "edition": { "type": "array", "items": { "type": "string" } },
+    "modules": { "type": "array", "items": { "type": "string" } },
+    "featureFlags": { "type": "array", "items": { "type": "string" } },
+    "permissions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "roles": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "region": { "type": "array", "items": { "type": "string" } },
+    "deployment": {
+      "type": "array",
+      "items": { "enum": ["windows", "linux", "macos", "container", "cloud", "on-premise"] }
+    },
+    "limits": { "type": "object" },
+    "verification": { "$ref": "verification.schema.json" }
+  }
+}

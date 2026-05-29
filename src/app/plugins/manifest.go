@@ -6,14 +6,25 @@
 package plugins
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
 	"portunix.ai/app/version"
 )
+
+// platformNamePattern is the canonical identifier shape for a hosting platform
+// declared in supported_platforms[] (e.g. "synapse", "pack", "agent"). Must match
+// the regex in plugin-manifest.schema.json v1.1.0.
+var platformNamePattern = regexp.MustCompile(`^[a-z][a-z0-9_-]*$`)
+
+// featureTokenPattern is the shape for capability tokens in
+// supported_platforms[].features. Must match the regex in plugin-manifest.schema.json v1.1.0.
+var featureTokenPattern = regexp.MustCompile(`^[a-z][a-z0-9._-]*$`)
 
 // LoadManifest loads a plugin manifest from a JSON file
 func LoadManifest(manifestPath string) (*PluginManifest, error) {
@@ -168,6 +179,80 @@ func ValidateManifest(manifest *PluginManifest) error {
 		}
 	}
 
+	// Validate supported_platforms[] (schema v1.1.0, additive). Portunix checks
+	// only the shape — platform_payload content is opaque and owned by the
+	// target platform.
+	if err := validateSupportedPlatforms(manifest.SupportedPlatforms); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// validateSupportedPlatforms validates the shape of each supported_platforms[]
+// entry. Any malformed entry fails plugin install so the target platform
+// never sees a broken declaration at runtime.
+func validateSupportedPlatforms(entries []SupportedPlatform) error {
+	seen := make(map[string]struct{}, len(entries))
+	for i, sp := range entries {
+		if sp.Name == "" {
+			return fmt.Errorf("supported_platforms[%d]: name is required", i)
+		}
+		if !platformNamePattern.MatchString(sp.Name) {
+			return fmt.Errorf("supported_platforms[%d]: invalid name %q (must match %s)",
+				i, sp.Name, platformNamePattern.String())
+		}
+		if _, dup := seen[sp.Name]; dup {
+			return fmt.Errorf("supported_platforms: platform %q declared more than once", sp.Name)
+		}
+		seen[sp.Name] = struct{}{}
+
+		var minVer, maxVer *semver
+		if sp.MinVersion != "" {
+			v, err := parseSemver(sp.MinVersion)
+			if err != nil {
+				return fmt.Errorf("supported_platforms[%s].min_version: %w", sp.Name, err)
+			}
+			minVer = &v
+		}
+		if sp.MaxVersion != "" {
+			v, err := parseSemver(sp.MaxVersion)
+			if err != nil {
+				return fmt.Errorf("supported_platforms[%s].max_version: %w", sp.Name, err)
+			}
+			maxVer = &v
+		}
+		if minVer != nil && maxVer != nil && compareSemver(*minVer, *maxVer) > 0 {
+			return fmt.Errorf("supported_platforms[%s]: min_version %q must not exceed max_version %q",
+				sp.Name, sp.MinVersion, sp.MaxVersion)
+		}
+
+		featSeen := make(map[string]struct{}, len(sp.Features))
+		for j, f := range sp.Features {
+			if !featureTokenPattern.MatchString(f) {
+				return fmt.Errorf("supported_platforms[%s].features[%d]: invalid feature %q (must match %s)",
+					sp.Name, j, f, featureTokenPattern.String())
+			}
+			if _, dup := featSeen[f]; dup {
+				return fmt.Errorf("supported_platforms[%s].features: feature %q declared more than once", sp.Name, f)
+			}
+			featSeen[f] = struct{}{}
+		}
+
+		// platform_payload must be a JSON object when present. Portunix does
+		// not interpret its content — only that it is shaped as an object so
+		// platforms receive a structured payload.
+		if len(sp.PlatformPayload) > 0 {
+			trimmed := bytes.TrimSpace(sp.PlatformPayload)
+			if len(trimmed) == 0 || trimmed[0] != '{' {
+				return fmt.Errorf("supported_platforms[%s].platform_payload: must be a JSON object", sp.Name)
+			}
+			var probe map[string]json.RawMessage
+			if err := json.Unmarshal(sp.PlatformPayload, &probe); err != nil {
+				return fmt.Errorf("supported_platforms[%s].platform_payload: invalid JSON object: %w", sp.Name, err)
+			}
+		}
+	}
 	return nil
 }
 

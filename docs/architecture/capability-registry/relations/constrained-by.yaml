@@ -1,0 +1,3 @@
+# constrained_by — Product/Capability has a separate (standalone) Availability node.
+# Use only when decision-availability.md criteria are met (default is inline availability).
+relations: []

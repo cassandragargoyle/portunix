@@ -144,21 +144,33 @@ This interactive wizard will guide you through:
 - Testing the integration
 
 Examples:
-  portunix mcp init                                          # Interactive wizard
-  portunix mcp init --assistant claude-code                  # Claude Code with stdio (default)
-  portunix mcp init --assistant claude-code --type stdio     # Claude Code with stdio (explicit)
-  portunix mcp init --assistant claude-desktop --type remote # Claude Desktop with remote server
-  portunix mcp init --preset development                     # Use development preset
+  portunix mcp init                                                    # Interactive wizard
+  portunix mcp init --assistant claude-code                            # Claude Code with stdio (default)
+  portunix mcp init --assistant claude-code --scope user               # Claude Code with user scope
+  portunix mcp init --assistant claude-code --env KEY=VAL,FOO=bar      # Pass env vars to server
+  portunix mcp init --assistant claude-code --timeout 60s              # Custom startup timeout
+  portunix mcp init --from-json path/to/config.json                    # Import full configuration
+  portunix mcp init --assistant claude-desktop --type remote           # Claude Desktop with remote server
+  portunix mcp init --assistant gemini-cli --install-missing           # Install gemini-cli first if absent
+  portunix mcp init --preset development                               # Use development preset
 
 Usage:
   portunix mcp init [flags]
 
 Flags:
-      --assistant string   AI assistant to configure (claude-code, claude-desktop, gemini-cli)
-      --force              Force reconfiguration even if already configured
-  -h, --help               help for init
-      --preset string      Use preset configuration (development, standard)
-      --type string        Server type (stdio, remote)
+      --assistant string      AI assistant to configure (claude-code, claude-desktop, gemini-cli)
+      --bind-address string   Bind address for remote MCP server (localhost, 0.0.0.0, or IP)
+      --env string            Environment variables passed to MCP server (KEY=VAL,KEY2=VAL2)
+      --force                 Force reconfiguration even if already configured
+      --from-json string      Path to a JSON configuration file to import
+  -h, --help                  help for init
+      --install-missing       Auto-install missing AI assistants via ptx-installer
+      --preset string         Use preset configuration (development, standard)
+      --scope string          Claude Code configuration scope (local, project, user)
+      --timeout string        Startup timeout for MCP server (e.g. 30s, 2m)
+      --tls-cert string       Path to TLS certificate for https/wss
+      --tls-key string        Path to TLS key for https/wss
+      --type string           Server type (stdio, remote)
 ```
 
 ### reconfigure
@@ -334,11 +346,8 @@ Test MCP server connection with AI assistants
 ```
 Test the MCP server connection and verify integration with AI assistants.
 
-This command will:
-- Check if MCP server is running
-- Test connection to the server
-- Verify assistant integration
-- Run basic functionality tests
+This command performs a real JSON-RPC initialize handshake against the
+configured MCP server and reports the negotiated protocol version.
 
 Examples:
   portunix mcp test                         # Test all configured assistants

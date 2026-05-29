@@ -229,7 +229,7 @@ func forceReconfiguration() error {
 	}
 
 	fmt.Println("\nStarting configuration wizard...")
-	return runInteractiveWizard(true)
+	return runInteractiveWizard(true, false)
 }
 
 func addAssistantConfiguration(assistant string) error {

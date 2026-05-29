@@ -300,6 +300,19 @@ func StartContainer(containerID string) error {
 	return nil
 }
 
+// RestartContainer restarts a running or stopped container
+func RestartContainer(containerID string) error {
+	fmt.Printf("Restarting container %s...\n", containerID)
+
+	cmd := exec.Command("docker", "restart", containerID)
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("failed to restart container: %w", err)
+	}
+
+	fmt.Printf("✓ Container %s restarted\n", containerID)
+	return nil
+}
+
 // RemoveContainer removes a container
 func RemoveContainer(containerID string, force bool) error {
 	fmt.Printf("Removing container %s...\n", containerID)

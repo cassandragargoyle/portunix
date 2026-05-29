@@ -1,0 +1,23 @@
+# Availability — preferred form is INLINE on a provides relation (see relation.template.yaml).
+# Use a STANDALONE node (this file) only when decision-availability.md criteria are met:
+#   docs/architecture/capability-registry/nodes/availability/<product>.<capability-ns>.yaml
+id: availability:portunix.provisioning.package-install
+appliesTo: capability:provisioning.package-install
+status: active              # active | preview | beta | deprecated | disabled | removed | unknown
+license:
+  required: false           # Portunix is open source
+  plans: []
+version:
+  min: "1.0"
+  max: null
+edition: []
+featureFlags: []
+permissions:
+  roles: []
+region: []
+deployment: [windows, linux]
+limits: {}
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-26"

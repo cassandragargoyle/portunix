@@ -1,0 +1,93 @@
+# provides — Product (or Module) provides a Capability, optionally with an inline
+# availability block. Append items to `relations:`; do not overwrite the file.
+relations:
+  - from: product:portunix
+    type: provides
+    to: capability:provisioning.package-install
+    availability:
+      status: active
+      license: { required: false, plans: [] }
+      version: { min: "1.0", max: null }
+      deployment: [windows, linux]
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: product:portunix
+    type: provides
+    to: capability:container.lifecycle-management
+    availability:
+      status: active
+      license: { required: false, plans: [] }
+      version: { min: "1.0", max: null }
+      deployment: [windows, linux]
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: product:portunix
+    type: provides
+    to: capability:virtualization.sandbox
+    availability:
+      status: active
+      license: { required: false, plans: [] }
+      version: { min: "1.0", max: null }
+      deployment: [windows, linux]
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: product:portunix
+    type: provides
+    to: capability:plugin.lifecycle-management
+    availability:
+      status: active
+      license: { required: false, plans: [] }
+      version: { min: "1.0", max: null }
+      deployment: [windows, linux]
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: product:portunix
+    type: provides
+    to: capability:ai-integration.mcp-server
+    availability:
+      status: active
+      license: { required: false, plans: [] }
+      version: { min: "1.0", max: null }
+      deployment: [windows, linux]
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: product:portunix
+    type: provides
+    to: capability:update.self-update
+    availability:
+      status: active
+      license: { required: false, plans: [] }
+      version: { min: "1.0", max: null }
+      deployment: [windows, linux]
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: product:portunix
+    type: provides
+    to: capability:system.info-detection
+    availability:
+      status: active
+      license: { required: false, plans: [] }
+      version: { min: "1.0", max: null }
+      deployment: [windows, linux]
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"

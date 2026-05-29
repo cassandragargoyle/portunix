@@ -1,0 +1,16 @@
+# Capability node — vendor-neutral
+id: capability:provisioning.package-install
+name: Package installation
+category: functional
+description: Install software packages and tools across platforms from a package manifest.
+ai:
+  canBeAutomated: true
+  riskLevel: medium
+  humanApprovalRequired: true
+  typicalTasks:
+    - installPackageFromManifest
+    - resolvePrerequisites
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"

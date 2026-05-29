@@ -7,6 +7,7 @@ package plugins
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 )
 
@@ -166,16 +167,29 @@ type ExecuteResponse struct {
 
 // PluginManifest represents the plugin.json manifest file
 type PluginManifest struct {
-	Name          string              `json:"name"`
-	Version       string              `json:"version"`
-	Description   string              `json:"description"`
-	Author        string              `json:"author"`
-	License       string              `json:"license"`
-	Plugin        PluginBinaryConfig  `json:"plugin"`
-	Dependencies  PluginDependencies  `json:"dependencies"`
-	AIIntegration AIIntegrationConfig `json:"ai_integration"`
-	Permissions   PluginPermissions   `json:"permissions"`
-	Commands      []PluginCommand     `json:"commands"`
+	Name               string              `json:"name"`
+	Version            string              `json:"version"`
+	Description        string              `json:"description"`
+	Author             string              `json:"author"`
+	License            string              `json:"license"`
+	Plugin             PluginBinaryConfig  `json:"plugin"`
+	Dependencies       PluginDependencies  `json:"dependencies"`
+	AIIntegration      AIIntegrationConfig `json:"ai_integration"`
+	Permissions        PluginPermissions   `json:"permissions"`
+	Commands           []PluginCommand     `json:"commands"`
+	SupportedPlatforms []SupportedPlatform `json:"supported_platforms,omitempty"`
+}
+
+// SupportedPlatform declares that this plugin extends a hosting platform
+// (e.g. Synapse, Pack, Agent). Schema v1.1.0. PlatformPayload is kept as
+// json.RawMessage so it round-trips byte-identically — Portunix must not
+// interpret its content.
+type SupportedPlatform struct {
+	Name            string          `json:"name"`
+	MinVersion      string          `json:"min_version,omitempty"`
+	MaxVersion      string          `json:"max_version,omitempty"`
+	Features        []string        `json:"features,omitempty"`
+	PlatformPayload json.RawMessage `json:"platform_payload,omitempty"`
 }
 
 // PluginBinaryConfig holds binary-specific configuration

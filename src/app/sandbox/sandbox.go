@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"portunix.ai/app"
+	"portunix.ai/portunix/src/pkg/archive"
 )
 
 // SandboxConfig defines the configuration for the .wsb file
@@ -428,6 +429,9 @@ func EnsureNotepadPlusPlus(tempDir string) error {
 	return nil
 }
 
+// Win32OpenSSHURL is the GitHub release URL for the latest Win32-OpenSSH x64 build
+const Win32OpenSSHURL = "https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win64.zip"
+
 // EnsureWin32OpenSSH ensures Win32-OpenSSH is available in .cache and copies it to the temp directory
 func EnsureWin32OpenSSH(tempDir string) error {
 	cacheDir := ".cache"
@@ -441,10 +445,14 @@ func EnsureWin32OpenSSH(tempDir string) error {
 
 	// Check if Win32-OpenSSH is already cached
 	if _, err := os.Stat(sshExecutable); os.IsNotExist(err) {
-		fmt.Println("Downloading Win32-OpenSSH...")
-		if err := downloadWin32OpenSSH(sshCacheDir); err != nil {
+		zipPath, err := archive.DownloadFileWithProperFilename(Win32OpenSSHURL, sshCacheDir)
+		if err != nil {
 			return fmt.Errorf("failed to download Win32-OpenSSH: %w", err)
 		}
+		if err := archive.ExtractZip(zipPath, sshCacheDir); err != nil {
+			return fmt.Errorf("failed to extract Win32-OpenSSH: %w", err)
+		}
+		_ = os.Remove(zipPath)
 	} else {
 		fmt.Println("Win32-OpenSSH found in cache")
 	}
@@ -458,44 +466,6 @@ func EnsureWin32OpenSSH(tempDir string) error {
 	fmt.Println("Copying Win32-OpenSSH to temp directory...")
 	if err := copyDirectory(sshCacheDir, sshTempDir); err != nil {
 		return fmt.Errorf("failed to copy Win32-OpenSSH: %w", err)
-	}
-
-	return nil
-}
-
-// downloadWin32OpenSSH downloads and extracts Win32-OpenSSH from GitHub
-func downloadWin32OpenSSH(destDir string) error {
-	// Win32-OpenSSH latest release URL
-	url := "https://github.com/PowerShell/Win32-OpenSSH/releases/latest/download/OpenSSH-Win64.zip"
-
-	// Download the zip file
-	resp, err := http.Get(url)
-	if err != nil {
-		return fmt.Errorf("failed to download: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("download failed with status: %s", resp.Status)
-	}
-
-	// Create temporary file for download
-	tempFile, err := os.CreateTemp("", "openssh_*.zip")
-	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
-	}
-	defer os.Remove(tempFile.Name())
-	defer tempFile.Close()
-
-	// Copy download to temp file
-	_, err = io.Copy(tempFile, resp.Body)
-	if err != nil {
-		return fmt.Errorf("failed to save download: %w", err)
-	}
-
-	// Extract zip file
-	if err := extractZip(tempFile.Name(), destDir); err != nil {
-		return fmt.Errorf("failed to extract zip: %w", err)
 	}
 
 	return nil

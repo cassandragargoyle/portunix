@@ -1,0 +1,10 @@
+# Operation node — product-specific
+id: operation:portunix.system.info
+name: Show system info
+product: product:portunix
+description: Detect and report operating system and host system information.
+command: portunix system info
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"

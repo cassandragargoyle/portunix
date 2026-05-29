@@ -1,0 +1,122 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "postgresql",
+    "displayName": "PostgreSQL",
+    "description": "Powerful, open-source object-relational database system",
+    "category": "infrastructure/database",
+    "homepage": "https://www.postgresql.org/",
+    "documentation": "https://www.postgresql.org/docs/",
+    "license": "PostgreSQL",
+    "maintainer": "PostgreSQL Global Development Group",
+    "installationDocsUrl": "https://www.postgresql.org/download/",
+    "latestVersionUrl": "https://www.postgresql.org/ftp/source/"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "Default distribution package (PostgreSQL server + client)",
+            "packages": ["postgresql", "postgresql-client"]
+          },
+          "apt": {
+            "version": "latest",
+            "packages": ["postgresql", "postgresql-client"]
+          },
+          "dnf": {
+            "type": "dnf",
+            "version": "latest",
+            "packages": ["postgresql-server", "postgresql"]
+          },
+          "container": {
+            "type": "container",
+            "version": "16",
+            "description": "PostgreSQL as a container service",
+            "container": {
+              "image": "postgres",
+              "tag": "16",
+              "name": "portunix-postgres",
+              "ports": ["5432:5432"],
+              "environment": {
+                "POSTGRES_PASSWORD": "postgres"
+              },
+              "volumes": ["portunix-postgres-data:/var/lib/postgresql/data"],
+              "detach": true,
+              "healthCheck": {
+                "endpoint": "pg_isready -U postgres",
+                "timeout": 60,
+                "interval": 5,
+                "retries": 12
+              }
+            }
+          }
+        },
+        "verification": {
+          "command": "psql --version",
+          "expectedExitCode": 0
+        }
+      },
+      "windows": {
+        "type": "chocolatey",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "packages": ["postgresql"]
+          },
+          "chocolatey": {
+            "version": "latest",
+            "packages": ["postgresql"]
+          },
+          "container": {
+            "type": "container",
+            "version": "16",
+            "description": "PostgreSQL as a container service (requires Docker Desktop)",
+            "container": {
+              "image": "postgres",
+              "tag": "16",
+              "name": "portunix-postgres",
+              "ports": ["5432:5432"],
+              "environment": {
+                "POSTGRES_PASSWORD": "postgres"
+              },
+              "volumes": ["portunix-postgres-data:/var/lib/postgresql/data"],
+              "detach": true
+            }
+          }
+        },
+        "verification": {
+          "command": "psql --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "container": {
+        "type": "docker",
+        "url": "https://hub.docker.com/_/postgres",
+        "apiEndpoint": "https://hub.docker.com/v2/repositories/library/postgres/tags",
+        "pattern": "postgres:{tag}"
+      }
+    },
+    "features": [
+      "ACID transactions",
+      "Native JSON/JSONB support",
+      "Full-text search",
+      "Container deployment via Docker/Podman",
+      "Native installation via apt/dnf/chocolatey",
+      "TimescaleDB extension support (Phase 3)"
+    ],
+    "aiPrompts": {
+      "versionDiscovery": "PostgreSQL ships LTS lines. Check https://www.postgresql.org/docs/ for supported versions (currently 14, 15, 16, 17). Container images at hub.docker.com/_/postgres.",
+      "urlResolution": "Native: distribution package manager. Container: postgres:{version} from Docker Hub.",
+      "updateGuidance": "PostgreSQL major versions are released annually. Minor releases include security patches; container :{major} tag tracks the latest minor."
+    },
+    "dependencies": [],
+    "templates": ["apt-package", "container-service"]
+  }
+}

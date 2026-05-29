@@ -50,57 +50,43 @@ entry point — the full set of guidelines lives under
 
 ## Ground Rules
 
-- All code, comments, commit messages, and PR descriptions are written in
-  English.
-- Follow existing conventions — explore the codebase before introducing new
-  patterns.
-- Write tests for new features and bug fixes.
-  See [TEST_GUIDE.md](TEST_GUIDE.md) and
+- All code, comments, commit messages, and PR descriptions are written in English.
+- Follow existing conventions — explore the codebase before introducing new patterns.
+- Write tests for new features and bug fixes. See [TEST_GUIDE.md](TEST_GUIDE.md) and
   [`docs/contributing/TESTING_METHODOLOGY.md`](docs/contributing/TESTING_METHODOLOGY.md).
-- Software-installation tests **must** run in containers, never directly on
-  the host — see the container-based testing policy in
+- Software-installation tests **must** run in containers, never directly on the host — see the container-based testing policy in
   [`docs/contributing/ISSUE-DEVELOPMENT-METHODOLOGY.md`](docs/contributing/ISSUE-DEVELOPMENT-METHODOLOGY.md).
 - Do not add co-authored-by attributions for AI tools in commits.
-- `CHANGELOG.md` is kept current — add an entry under the target version when
-  landing a user-visible change.
+- `CHANGELOG.md` is kept current — add an entry under the target version when landing a user-visible change.
 
 ## Detailed Guidelines
 
-The `docs/contributing/` directory contains the full set of project
-standards. A few of the most frequently referenced documents:
+The `docs/contributing/` directory contains the full set of project standards. A few of the most frequently referenced documents:
 
 - [README](docs/contributing/README.md) — index of all contributing docs
-- [Issue Development Methodology](docs/contributing/ISSUE-DEVELOPMENT-METHODOLOGY.md) —
-  the mandatory issue → branch → test → merge flow
-- [Testing Methodology](docs/contributing/TESTING_METHODOLOGY.md) — the
-  TestFramework, verbose mode, container-based testing rules
+- [Issue Development Methodology](docs/contributing/ISSUE-DEVELOPMENT-METHODOLOGY.md) — the mandatory issue → branch → test → merge flow
+- [Testing Methodology](docs/contributing/TESTING_METHODOLOGY.md) — the TestFramework, verbose mode, container-based testing rules
 - [Go Code Style](docs/contributing/CODE-STYLE-GO.md),
   [Python Code Style](docs/contributing/CODE-STYLE-PYTHON.md),
   [Markdown Style](docs/contributing/MARKDOWN-STYLE.md)
 - [Git Workflow](docs/contributing/GIT-WORKFLOW.md) and
   [GitHub Workflow](docs/contributing/GITHUB-WORKFLOW.md)
 - [Bug Reporting](docs/contributing/BUG-REPORTING.md)
-- [Helper Binary Development](docs/contributing/HELPER-BINARY-DEVELOPMENT.md) —
-  required checklist when adding a new `ptx-*` helper
+- [Helper Binary Development](docs/contributing/HELPER-BINARY-DEVELOPMENT.md) — required checklist when adding a new `ptx-*` helper
 - [Versioning](docs/contributing/VERSIONING.md)
 - [Terminology](docs/contributing/TERMINOLOGY.md)
 
 ## Reporting Bugs and Requesting Features
 
-- **Bugs** — open an issue using the bug reporting guidelines in
-  [`docs/contributing/BUG-REPORTING.md`](docs/contributing/BUG-REPORTING.md).
-  Include Portunix version (`portunix --version`), OS, steps to reproduce,
-  expected vs. actual behavior, and relevant logs.
-- **Feature requests** — open an issue describing the use case and the
-  motivation. For substantial changes, an ADR in `docs/adr/` may be
+- **Bugs** — open an issue using the bug reporting guidelines in [`docs/contributing/BUG-REPORTING.md`](docs/contributing/BUG-REPORTING.md).
+  Include Portunix version (`portunix --version`), OS, steps to reproduce, expected vs. actual behavior, and relevant logs.
+- **Feature requests** — open an issue describing the use case and the motivation. For substantial changes, an ADR in `docs/adr/` may be
   proposed alongside the feature request.
 
 ## Security
 
-For security-sensitive reports, please do not open a public issue.
-Instead, contact the maintainers privately — see the
-[CassandraGargoyle team](https://github.com/cassandragargoyle) page for
-contact options.
+For security-sensitive reports, please do not open a public issue. Instead, contact the maintainers privately — see the
+[CassandraGargoyle team](https://github.com/cassandragargoyle) page for contact options.
 
 ## License
 

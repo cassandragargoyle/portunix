@@ -1,0 +1,127 @@
+wizard:
+  id: "project-init"
+  name: "Project Initialization Wizard"
+  version: "1.0"
+  description: "Scaffold a new project: pick a language, framework, and git setup"
+
+  variables:
+    project_name: ""
+    language: ""
+    framework: ""
+    git_init: true
+    license: ""
+
+  pages:
+    - id: "welcome"
+      type: "info"
+      title: "Project Initialization"
+      content: |
+        This wizard scaffolds a new project skeleton.
+
+        We will guide you through:
+          - Project name
+          - Language and framework
+          - Git and license setup
+      next:
+        page: "project_name"
+
+    - id: "project_name"
+      type: "input"
+      title: "Project Name"
+      prompt: "Enter project name:"
+      variable: "project_name"
+      validate:
+        required: true
+        min_length: 2
+        max_length: 64
+        pattern: "^[a-zA-Z0-9._-]+$"
+        message: "Use letters, digits, '.', '_' or '-' only (2-64 chars)"
+      next:
+        page: "language"
+
+    - id: "language"
+      type: "select"
+      title: "Primary Language"
+      prompt: "Pick the primary language:"
+      options:
+        - value: "go"
+          label: "Go"
+          description: "Compiled, statically typed, great for CLIs and services"
+        - value: "python"
+          label: "Python"
+          description: "Dynamic, scripting, data, automation"
+        - value: "node"
+          label: "Node.js / TypeScript"
+          description: "JavaScript runtime, web servers, tooling"
+      variable: "language"
+      next:
+        page: "framework"
+
+    - id: "framework"
+      type: "select"
+      title: "Framework / Style"
+      prompt: "Choose a framework or project style:"
+      options:
+        - value: "cli"
+          label: "CLI application"
+          description: "Command-line tool (cobra / argparse / commander)"
+        - value: "service"
+          label: "Service / HTTP server"
+          description: "Long-running daemon exposing an API"
+        - value: "library"
+          label: "Library"
+          description: "Reusable package, no executable"
+      variable: "framework"
+      next:
+        page: "git_init"
+
+    - id: "git_init"
+      type: "confirm"
+      title: "Initialize Git"
+      prompt: "Initialize a git repository now?"
+      variable: "git_init"
+      next:
+        page: "license"
+
+    - id: "license"
+      type: "select"
+      title: "License"
+      prompt: "Pick a project license:"
+      options:
+        - value: "mit"
+          label: "MIT"
+          description: "Permissive, widely used"
+        - value: "apache-2.0"
+          label: "Apache-2.0"
+          description: "Permissive with patent grant"
+        - value: "gpl-3.0"
+          label: "GPL-3.0"
+          description: "Strong copyleft"
+        - value: "none"
+          label: "None / proprietary"
+          description: "No open-source license"
+      variable: "license"
+      next:
+        page: "summary"
+
+    - id: "summary"
+      type: "info"
+      title: "Review"
+      content: |
+        About to scaffold:
+          Project: {{project_name}}
+          Language: {{language}}
+          Framework: {{framework}}
+          Git init: {{git_init}}
+          License: {{license}}
+      next:
+        page: "done"
+
+    - id: "done"
+      type: "success"
+      title: "Project Ready"
+      content: |
+        Project '{{project_name}}' configured.
+        Next steps:
+          cd {{project_name}}
+          # follow your framework's getting-started guide

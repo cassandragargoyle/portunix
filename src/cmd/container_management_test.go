@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package cmd
 
 import (
@@ -297,7 +301,8 @@ func TestContainerCommandHelp(t *testing.T) {
 	}{
 		{containerStopCmd, "stop", "stop <container-name>"},
 		{containerStartCmd, "start", "start <container-name>"},
-		{containerRemoveCmd, "remove", "remove <container-name>"},
+		{containerRestartCmd, "restart", "restart <container-name>"},
+		{containerRemoveCmd, "remove", "rm <container-name>"},
 		{containerLogsCmd, "logs", "logs <container-name>"},
 		{containerListCmd, "list", "list"},
 	}
@@ -318,6 +323,7 @@ func TestContainerCommandExamples(t *testing.T) {
 	commands := []*cobra.Command{
 		containerStopCmd,
 		containerStartCmd,
+		containerRestartCmd,
 		containerRemoveCmd,
 		containerLogsCmd,
 		containerListCmd,
@@ -355,7 +361,7 @@ func TestContainerCommandFlags(t *testing.T) {
 
 // Integration test to verify all commands are properly registered
 func TestContainerCommandRegistration(t *testing.T) {
-	expectedCommands := []string{"run-in-container", "exec", "info", "stop", "start", "remove", "logs", "list"}
+	expectedCommands := []string{"run-in-container", "exec", "info", "stop", "start", "restart", "rm", "logs", "list"}
 
 	actualCommands := make([]string, 0)
 	for _, cmd := range containerCmd.Commands() {
@@ -385,8 +391,8 @@ func TestContainerCommandErrorMessages(t *testing.T) {
 
 	t.Run("All commands mention runtime delegation", func(t *testing.T) {
 		commands := []*cobra.Command{
-			containerStopCmd, containerStartCmd, containerRemoveCmd,
-			containerLogsCmd, containerListCmd,
+			containerStopCmd, containerStartCmd, containerRestartCmd,
+			containerRemoveCmd, containerLogsCmd, containerListCmd,
 		}
 
 		for _, cmd := range commands {

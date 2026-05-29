@@ -9,7 +9,9 @@
     "homepage": "https://ai.google.dev/",
     "documentation": "https://ai.google.dev/docs/",
     "license": "Apache-2.0",
-    "maintainer": "Google"
+    "maintainer": "Google",
+    "installationDocsUrl": "https://github.com/google-gemini/gemini-cli#installation",
+    "latestVersionUrl": "https://www.npmjs.com/package/@google/gemini-cli"
   },
   "spec": {
     "hasVariants": false,
@@ -32,6 +34,23 @@
         }
       },
       "linux": {
+        "type": "npm",
+        "variants": {
+          "latest": {
+            "version": "latest",
+            "packages": ["@google/gemini-cli"],
+            "installScript": "npm install -g @google/gemini-cli",
+            "preInstall": [
+              "which node || echo 'Node.js is required. Please install Node.js first.'"
+            ]
+          }
+        },
+        "verification": {
+          "command": "gemini --version",
+          "expectedExitCode": 0
+        }
+      },
+      "darwin": {
         "type": "npm",
         "variants": {
           "latest": {

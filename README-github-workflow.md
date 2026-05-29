@@ -48,7 +48,7 @@ git push origin feature-branch
 
 Založeno na `portunix-cleanup-public.ps1`:
 
-- `CLAUDE.md`, `GEMINI.md`, `NOTES.md`
+- `CLAUDE.md`, `AGENTS.md`, `GEMINI.md`, `NOTES.md`
 - `bin/`, `*.exe`
 - `docs/private/`, `config/dev/`
 - Build scripty (`.bat`, `.sh`)

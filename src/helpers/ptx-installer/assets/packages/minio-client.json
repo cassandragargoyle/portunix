@@ -9,7 +9,9 @@
     "homepage": "https://min.io/",
     "documentation": "https://docs.min.io/docs/minio-client-complete-guide.html",
     "license": "AGPL-3.0",
-    "maintainer": "MinIO Inc."
+    "maintainer": "MinIO Inc.",
+    "installationDocsUrl": "https://min.io/docs/minio/linux/reference/minio-mc.html",
+    "latestVersionUrl": "https://github.com/minio/mc/releases/latest"
   },
   "spec": {
     "hasVariants": true,

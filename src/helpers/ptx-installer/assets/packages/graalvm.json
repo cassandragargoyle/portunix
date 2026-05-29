@@ -8,7 +8,9 @@
     "category": "development/languages",
     "homepage": "https://www.graalvm.org/",
     "license": "GPL-2.0 with Classpath Exception",
-    "maintainer": "Oracle"
+    "maintainer": "Oracle",
+    "installationDocsUrl": "https://www.graalvm.org/latest/docs/getting-started/",
+    "latestVersionUrl": "https://github.com/graalvm/graalvm-ce-builds/releases/latest"
   },
   "spec": {
     "hasVariants": true,

@@ -141,6 +141,64 @@ func (d *Dispatcher) registerHelpers() {
 		Binary:   "ptx-virt",
 		Required: false,
 	}
+
+	// Issue #174: PTX-SSH Helper for unified SSH client with non-interactive password auth
+	d.helpers["ptx-ssh"] = &HelperConfig{
+		Commands: []string{"ssh", "scp"},
+		Binary:   "ptx-ssh",
+		Required: false,
+	}
+
+	// Issue #175: PTX-Plugin-Registry Helper serves the plugin-registry gRPC API
+	// used by hosting platforms (Synapse, Pack, Agent) to discover which
+	// installed Portunix plugins target them.
+	d.helpers["ptx-plugin-registry"] = &HelperConfig{
+		Commands: []string{"plugin-registry"},
+		Binary:   "ptx-plugin-registry",
+		Required: false,
+	}
+
+	// Issue #167: PTX-Proxmox Helper for remote Proxmox VE management
+	// (Phase 1: authentication profiles and credential validation)
+	d.helpers["ptx-proxmox"] = &HelperConfig{
+		Commands: []string{"proxmox"},
+		Binary:   "ptx-proxmox",
+		Required: false,
+	}
+
+	// Issue #183: PTX-SpecPM Helper for spec-kit-pm project-management
+	// scaffolding (ADR-040). Phase 1: init / check / version / integration list.
+	d.helpers["ptx-specpm"] = &HelperConfig{
+		Commands: []string{"specpm"},
+		Binary:   "ptx-specpm",
+		Required: false,
+	}
+
+	// Issue #013: PTX-Database Helper for installing, managing, and inspecting
+	// database engines (Phase 1: PostgreSQL native+container, SQLite embedded).
+	d.helpers["ptx-database"] = &HelperConfig{
+		Commands: []string{"database", "db"},
+		Binary:   "ptx-database",
+		Required: false,
+	}
+
+	// Issue #025: PTX-GitHub Helper for GitHub repository, releases, and
+	// authentication operations (Phase 2: go-git clone/checkout, encrypted
+	// token store; Phase 3: portunix github CLI commands).
+	d.helpers["ptx-github"] = &HelperConfig{
+		Commands: []string{"github"},
+		Binary:   "ptx-github",
+		Required: false,
+	}
+
+	// Issue #014: PTX-Wizard Helper - interactive YAML-based CLI wizards
+	// (single-/multi-select, input, password, confirm, progress, themes,
+	// non-interactive mode via --config/--preset).
+	d.helpers["ptx-wizard"] = &HelperConfig{
+		Commands: []string{"wizard"},
+		Binary:   "ptx-wizard",
+		Required: false,
+	}
 }
 
 // ShouldDispatch checks if a command should be dispatched to a helper binary

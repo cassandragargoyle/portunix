@@ -198,12 +198,20 @@ func findAvailablePorts(count int) []int {
 	return availablePorts
 }
 
-// MCPConfiguration represents MCP server configuration
+// MCPConfiguration represents MCP server configuration.
+// New fields use omitempty to preserve backward compatibility with
+// configuration files written by older versions of ptx-mcp.
 type MCPConfiguration struct {
 	ServerType      string            `json:"server_type"`
 	Port            int               `json:"port,omitempty"`
 	Protocol        string            `json:"protocol,omitempty"`
+	BindAddress     string            `json:"bind_address,omitempty"`
+	TLSCert         string            `json:"tls_cert,omitempty"`
+	TLSKey          string            `json:"tls_key,omitempty"`
 	SecurityProfile string            `json:"security_profile"`
+	Scope           string            `json:"scope,omitempty"`
+	Timeout         string            `json:"timeout,omitempty"`
+	Env             map[string]string `json:"env,omitempty"`
 	Assistants      []AssistantConfig `json:"assistants"`
 }
 
@@ -305,23 +313,31 @@ func isAssistantInstalled(assistant string) bool {
 	}
 }
 
+// knownAssistants lists the AI assistants the MCP wizard can detect and install
+// as dependencies, in recommended order (issue #035 auto-dependency hook).
+var knownAssistants = []string{"claude-code", "claude-desktop", "gemini-cli"}
+
 // detectInstalledAssistants returns list of installed AI assistants
 func detectInstalledAssistants() []string {
 	var assistants []string
-
-	if isClaudeCodeInstalled() {
-		assistants = append(assistants, "claude-code")
+	for _, name := range knownAssistants {
+		if isAssistantInstalled(name) {
+			assistants = append(assistants, name)
+		}
 	}
-
-	if isClaudeDesktopInstalled() {
-		assistants = append(assistants, "claude-desktop")
-	}
-
-	if isGeminiCLIInstalled() {
-		assistants = append(assistants, "gemini-cli")
-	}
-
 	return assistants
+}
+
+// missingAssistants returns the known AI assistants that are not installed
+// (issue #035 auto-dependency hook).
+func missingAssistants() []string {
+	var missing []string
+	for _, name := range knownAssistants {
+		if !isAssistantInstalled(name) {
+			missing = append(missing, name)
+		}
+	}
+	return missing
 }
 
 // getDefaultServerType returns default server type for assistant
@@ -420,6 +436,119 @@ var (
 	_ = bufio.NewReader
 	_ = syscall.SIGTERM
 )
+
+// validProtocols are the supported protocols for remote MCP servers
+var validProtocols = []string{"http", "https", "ws", "wss"}
+
+// isValidProtocol reports whether the given protocol is supported for remote
+// MCP servers.
+func isValidProtocol(protocol string) bool {
+	for _, p := range validProtocols {
+		if p == protocol {
+			return true
+		}
+	}
+	return false
+}
+
+// isValidBindAddress validates a bind address. Accepts "localhost", "0.0.0.0",
+// or any other IP address (IPv4 or IPv6).
+func isValidBindAddress(addr string) bool {
+	if addr == "" {
+		return false
+	}
+	if addr == "localhost" || addr == "0.0.0.0" {
+		return true
+	}
+	return net.ParseIP(addr) != nil
+}
+
+// parseEnvFlag parses a comma-separated list of KEY=VALUE pairs into a map.
+// Returns an error if any entry does not contain '='.
+func parseEnvFlag(s string) (map[string]string, error) {
+	result := make(map[string]string)
+	if s == "" {
+		return result, nil
+	}
+	for _, pair := range strings.Split(s, ",") {
+		pair = strings.TrimSpace(pair)
+		if pair == "" {
+			continue
+		}
+		idx := strings.Index(pair, "=")
+		if idx <= 0 {
+			return nil, fmt.Errorf("invalid env entry %q (expected KEY=VALUE)", pair)
+		}
+		key := strings.TrimSpace(pair[:idx])
+		value := pair[idx+1:]
+		result[key] = value
+	}
+	return result, nil
+}
+
+// loadMCPConfigurationFromFile loads and validates an MCPConfiguration from
+// an arbitrary JSON file. Used by `mcp init --from-json`.
+func loadMCPConfigurationFromFile(path string) (*MCPConfiguration, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read %s: %w", path, err)
+	}
+	var config MCPConfiguration
+	if err := json.Unmarshal(data, &config); err != nil {
+		return nil, fmt.Errorf("invalid JSON in %s: %w", path, err)
+	}
+	if err := validateMCPConfiguration(&config); err != nil {
+		return nil, fmt.Errorf("invalid configuration in %s: %w", path, err)
+	}
+	return &config, nil
+}
+
+// validateMCPConfiguration checks an MCPConfiguration for required fields
+// and consistency.
+func validateMCPConfiguration(c *MCPConfiguration) error {
+	if c.ServerType == "" {
+		return fmt.Errorf("server_type is required")
+	}
+	if c.ServerType != "stdio" && c.ServerType != "remote" {
+		return fmt.Errorf("server_type must be stdio or remote (got %q)", c.ServerType)
+	}
+	if c.ServerType == "remote" {
+		if c.Port <= 0 || c.Port > 65535 {
+			return fmt.Errorf("port must be in range 1-65535 (got %d)", c.Port)
+		}
+		if c.Protocol != "" && !isValidProtocol(c.Protocol) {
+			return fmt.Errorf("protocol must be one of %v (got %q)", validProtocols, c.Protocol)
+		}
+		if c.BindAddress != "" && !isValidBindAddress(c.BindAddress) {
+			return fmt.Errorf("invalid bind_address %q", c.BindAddress)
+		}
+		if c.Protocol == "https" || c.Protocol == "wss" {
+			if c.TLSCert == "" || c.TLSKey == "" {
+				return fmt.Errorf("tls_cert and tls_key are required for %s", c.Protocol)
+			}
+		}
+	}
+	if c.SecurityProfile != "" {
+		switch c.SecurityProfile {
+		case "development", "standard", "restricted":
+		default:
+			return fmt.Errorf("security_profile must be development, standard or restricted (got %q)", c.SecurityProfile)
+		}
+	}
+	if c.Scope != "" {
+		switch c.Scope {
+		case "local", "project", "user":
+		default:
+			return fmt.Errorf("scope must be local, project or user (got %q)", c.Scope)
+		}
+	}
+	if c.Timeout != "" {
+		if _, err := time.ParseDuration(c.Timeout); err != nil {
+			return fmt.Errorf("invalid timeout %q: %w", c.Timeout, err)
+		}
+	}
+	return nil
+}
 
 // getPortunixExecutablePath finds the main portunix binary path
 func getPortunixExecutablePath() (string, error) {

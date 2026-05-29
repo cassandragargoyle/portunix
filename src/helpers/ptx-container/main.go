@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -89,15 +90,22 @@ func handleCommand(args []string) {
 			fmt.Println("  exec             Execute command in container (universal runtime)")
 			fmt.Println("  info             Show container runtime information and availability")
 			fmt.Println("  inspect          Show low-level container details (universal runtime)")
-			fmt.Println("  list             List containers from all available runtimes")
+			fmt.Println("  list             List containers from all available runtimes (aliases: ls, ps)")
 			fmt.Println("  logs             Show container logs (universal runtime)")
 			fmt.Println("  network          Manage container networks (create/list/inspect/rm)")
-			fmt.Println("  rm               Remove container (universal runtime)")
+			fmt.Println("  cleanup          Remove portunix-managed containers (TTL/age/pattern filters)")
+			fmt.Println("  lifecycle        Manage container lifecycle policies (list/inspect/extend/policy)")
+			fmt.Println("  restart          Restart container (universal runtime)")
+			fmt.Println("  rm               Remove container (universal runtime, alias: remove)")
 			fmt.Println("  run              Run new container (universal runtime)")
 			fmt.Println("  run-in-container Run installation in container (RECOMMENDED for testing)")
+			fmt.Println("  service          Background lifecycle service (start/stop/status)")
 			fmt.Println("  start            Start stopped container (universal runtime)")
 			fmt.Println("  stop             Stop container (universal runtime)")
 			fmt.Println("  volume           Manage container volumes (create/list/inspect/rm/prune)")
+			if command == "docker" || command == "podman" {
+				fmt.Printf("  install          Install %s (alias for 'portunix install %s')\n", command, command)
+			}
 			fmt.Println("\nFlags:")
 			fmt.Println("  -h, --help   help for", command)
 			fmt.Println("\nGlobal Flags:")
@@ -130,13 +138,15 @@ func handleContainerSubcommand(command string, subArgs []string) {
 		handleRunInContainer(cmdArgs)
 	case "exec":
 		handleContainerExec(cmdArgs)
-	case "list":
+	case "list", "ls", "ps":
 		handleContainerList(cmdArgs)
 	case "stop":
 		handleContainerStop(cmdArgs)
 	case "start":
 		handleContainerStart(cmdArgs)
-	case "rm":
+	case "restart":
+		handleContainerRestart(cmdArgs)
+	case "rm", "remove":
 		handleContainerRm(cmdArgs)
 	case "logs":
 		handleContainerLogs(cmdArgs)
@@ -156,9 +166,54 @@ func handleContainerSubcommand(command string, subArgs []string) {
 		handleContainerVolume(cmdArgs)
 	case "inspect":
 		handleContainerInspect(cmdArgs)
+	case "cleanup":
+		handleContainerCleanup(cmdArgs)
+	case "lifecycle":
+		handleContainerLifecycle(cmdArgs)
+	case "service":
+		handleContainerService(cmdArgs)
+	case "install":
+		handleContainerInstall(command, cmdArgs)
 	default:
 		fmt.Printf("Unknown %s subcommand: %s\n", command, subcommand)
-		fmt.Printf("Available subcommands: run, run-in-container, exec, list, stop, start, rm, logs, cp, info, check, compose, compose-preflight, network, volume, inspect\n")
+		fmt.Printf("Available subcommands: run, run-in-container, exec, list (aliases: ls, ps), stop, start, restart, rm (alias: remove), logs, cp, info, check, compose, compose-preflight, network, volume, inspect, cleanup, lifecycle, service, install\n")
+	}
+}
+
+// handleContainerInstall handles `portunix docker|podman install`. It is a
+// thin alias for `portunix install <runtime>` so both forms share the
+// ptx-installer code path (Issue #019, "Inconsistent Commands"). For the
+// neutral `container` parent the call is rejected because there is no
+// single runtime to install.
+func handleContainerInstall(command string, args []string) {
+	if command == "container" {
+		fmt.Println("❌ Error: 'portunix container install' is not supported.")
+		fmt.Println("   Use 'portunix install docker' or 'portunix install podman' explicitly.")
+		os.Exit(1)
+	}
+
+	exePath, err := os.Executable()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: failed to resolve portunix executable: %v\n", err)
+		os.Exit(1)
+	}
+	portunixPath := filepath.Join(filepath.Dir(exePath), "portunix")
+	if runtime.GOOS == "windows" {
+		portunixPath += ".exe"
+	}
+
+	forwarded := append([]string{"install", command}, args...)
+	c := exec.Command(portunixPath, forwarded...)
+	c.Stdin = os.Stdin
+	c.Stdout = os.Stdout
+	c.Stderr = os.Stderr
+
+	if err := c.Run(); err != nil {
+		if ee, ok := err.(*exec.ExitError); ok {
+			os.Exit(ee.ExitCode())
+		}
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		os.Exit(1)
 	}
 }
 
@@ -274,6 +329,14 @@ func showRunHelp() {
 	fmt.Println("  -v, --volume: Bind mount volumes")
 	fmt.Println("  -e, --env: Set environment variables")
 	fmt.Println()
+	fmt.Println("Lifecycle flags (issue #027):")
+	fmt.Println("  --ttl DURATION         Auto-remove container after this duration (e.g. 2h, 7d)")
+	fmt.Println("  --auto-cleanup         Mark container for cleanup-on-exit")
+	fmt.Println("  --cleanup-policy P     Cleanup policy: on-exit | ttl | manual")
+	fmt.Println("  --health-check CMD     Health check command (recorded as label + --health-cmd)")
+	fmt.Println("  --max-memory SIZE      Memory limit alias (forwarded to --memory)")
+	fmt.Println("  --max-cpu COUNT        CPU limit alias (forwarded to --cpus)")
+	fmt.Println()
 	fmt.Println("💡 TIP: For development environments, use 'run-in-container' instead.")
 	fmt.Println("Use -- to separate flags from command arguments when needed.")
 }
@@ -297,8 +360,26 @@ func handleContainerRun(args []string) {
 		return
 	}
 
-	image := args[0]
-	command := args[1:]
+	// Lifecycle flags (#027) are extracted before the args are handed off to
+	// the runtime so podman/docker only see flags they recognise.
+	cleaned, lc, err := extractLifecycleFlags(args)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ %v\n", err)
+		os.Exit(2)
+	}
+
+	if lc.HasAny() {
+		runtime, err := selectRuntime()
+		if err != nil {
+			fmt.Println("❌ Error: Neither Podman nor Docker is available")
+			os.Exit(1)
+		}
+		runManagedContainer(runtime, lc, cleaned)
+		return
+	}
+
+	image := cleaned[0]
+	command := cleaned[1:]
 
 	// Try Podman first, then Docker
 	if isPodmanAvailable() {
@@ -430,19 +511,20 @@ func handleContainerStop(args []string) {
 
 	containerName := args[0]
 
-	// Try Podman first, then Docker
-	if isPodmanAvailable() {
-		if err := stopPodmanContainer(containerName); err != nil {
-			fmt.Fprintf(os.Stderr, "❌ Error stopping container: %v\n", err)
-			return
-		}
-	} else if isDockerAvailable() {
-		if err := stopDockerContainer(containerName); err != nil {
-			fmt.Fprintf(os.Stderr, "❌ Error stopping container: %v\n", err)
-			return
-		}
-	} else {
-		fmt.Println("❌ Error: Neither Podman nor Docker is available")
+	runtime, err := findContainerRuntime(containerName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		return
+	}
+
+	switch runtime {
+	case "podman":
+		err = stopPodmanContainer(containerName)
+	case "docker":
+		err = stopDockerContainer(containerName)
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error stopping container: %v\n", err)
 		return
 	}
 
@@ -466,23 +548,62 @@ func handleContainerStart(args []string) {
 
 	containerName := args[0]
 
-	// Try Podman first, then Docker
-	if isPodmanAvailable() {
-		if err := startPodmanContainer(containerName); err != nil {
-			fmt.Fprintf(os.Stderr, "❌ Error starting container: %v\n", err)
-			return
-		}
-	} else if isDockerAvailable() {
-		if err := startDockerContainer(containerName); err != nil {
-			fmt.Fprintf(os.Stderr, "❌ Error starting container: %v\n", err)
-			return
-		}
-	} else {
-		fmt.Println("❌ Error: Neither Podman nor Docker is available")
+	runtime, err := findContainerRuntime(containerName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		return
+	}
+
+	switch runtime {
+	case "podman":
+		err = startPodmanContainer(containerName)
+	case "docker":
+		err = startDockerContainer(containerName)
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error starting container: %v\n", err)
 		return
 	}
 
 	fmt.Printf("✅ Container '%s' started successfully\n", containerName)
+}
+
+// handleContainerRestart stops and restarts a container in whichever runtime
+// owns it (Issue #032). Mirrors stop/start cross-runtime discovery.
+func handleContainerRestart(args []string) {
+	for _, arg := range args {
+		if arg == "--help" || arg == "-h" {
+			showRestartHelp()
+			return
+		}
+	}
+
+	if len(args) < 1 {
+		fmt.Println("❌ Error: Container name required")
+		fmt.Println("Usage: portunix container restart <container-name>")
+		return
+	}
+
+	containerName := args[0]
+
+	runtime, err := findContainerRuntime(containerName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		return
+	}
+
+	switch runtime {
+	case "podman":
+		err = restartPodmanContainer(containerName)
+	case "docker":
+		err = restartDockerContainer(containerName)
+	}
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error restarting container: %v\n", err)
+		return
+	}
+
+	fmt.Printf("✅ Container '%s' restarted successfully\n", containerName)
 }
 
 func handleContainerRm(args []string) {
@@ -545,17 +666,21 @@ func handleContainerLogs(args []string) {
 		return
 	}
 
-	// Show logs
-	if isPodmanAvailable() {
+	runtime, err := findContainerRuntime(containerName)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Error: %v\n", err)
+		return
+	}
+
+	switch runtime {
+	case "podman":
 		if err := showPodmanLogs(containerName, follow); err != nil {
 			fmt.Fprintf(os.Stderr, "❌ Error showing logs: %v\n", err)
 		}
-	} else if isDockerAvailable() {
+	case "docker":
 		if err := showDockerLogs(containerName, follow); err != nil {
 			fmt.Fprintf(os.Stderr, "❌ Error showing logs: %v\n", err)
 		}
-	} else {
-		fmt.Println("❌ Error: Neither Podman nor Docker is available")
 	}
 }
 
@@ -1400,6 +1525,38 @@ func selectRuntime() (string, error) {
 	return "", fmt.Errorf("neither Podman nor Docker is available")
 }
 
+// containerExistsIn returns true when a container with the given name exists in
+// the specified runtime. The check uses `<runtime> inspect <name>` and ignores
+// stderr so a missing container reports cleanly as false.
+func containerExistsIn(runtime, name string) bool {
+	if runtime != "docker" && runtime != "podman" {
+		return false
+	}
+	cmd := exec.Command(runtime, "inspect", name)
+	return cmd.Run() == nil
+}
+
+// findContainerRuntime locates the runtime that owns the given container.
+// Both runtimes are queried so the universal commands keep working when Docker
+// and Podman are installed side by side. Returns an error when the container
+// is not present in any available runtime.
+func findContainerRuntime(name string) (string, error) {
+	podmanOK := isPodmanAvailable()
+	dockerOK := isDockerAvailable()
+
+	if !podmanOK && !dockerOK {
+		return "", fmt.Errorf("neither Podman nor Docker is available")
+	}
+
+	if podmanOK && containerExistsIn("podman", name) {
+		return "podman", nil
+	}
+	if dockerOK && containerExistsIn("docker", name) {
+		return "docker", nil
+	}
+	return "", fmt.Errorf("container '%s' not found in any available runtime", name)
+}
+
 // runPassthrough runs a runtime command with inherited stdio and returns its exit code.
 // Used for subcommands that should surface the runtime's native output and exit status
 // verbatim (list, inspect, volume prune, etc.).
@@ -2013,12 +2170,17 @@ func printContainerTable(containers []ContainerInfo) {
 
 // removeContainer removes a container using the appropriate runtime
 func removeContainer(containerName string, force bool) error {
-	if isPodmanAvailable() {
+	runtime, err := findContainerRuntime(containerName)
+	if err != nil {
+		return err
+	}
+	switch runtime {
+	case "podman":
 		return removePodmanContainer(containerName, force)
-	} else if isDockerAvailable() {
+	case "docker":
 		return removeDockerContainer(containerName, force)
 	}
-	return fmt.Errorf("neither Podman nor Docker is available")
+	return fmt.Errorf("unsupported runtime: %s", runtime)
 }
 
 func removePodmanContainer(containerName string, force bool) error {
@@ -2080,6 +2242,24 @@ func startPodmanContainer(containerName string) error {
 
 func startDockerContainer(containerName string) error {
 	cmd := exec.Command("docker", "start", containerName)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s", string(output))
+	}
+	return nil
+}
+
+func restartPodmanContainer(containerName string) error {
+	cmd := exec.Command("podman", "restart", containerName)
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("%s", string(output))
+	}
+	return nil
+}
+
+func restartDockerContainer(containerName string) error {
+	cmd := exec.Command("docker", "restart", containerName)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("%s", string(output))
@@ -2223,6 +2403,28 @@ func showStartHelp() {
 	fmt.Println("  portunix container start test-container")
 	fmt.Println("  portunix container start web-server")
 	fmt.Println("  portunix container start python-dev")
+}
+
+func showRestartHelp() {
+	fmt.Println("Usage: portunix container restart [OPTIONS] <container-name>")
+	fmt.Println()
+	fmt.Println("🔄 RESTART CONTAINER")
+	fmt.Println()
+	fmt.Println("Stop and start a container using the automatically selected runtime.")
+	fmt.Println()
+	fmt.Println("🌟 UNIVERSAL OPERATION:")
+	fmt.Println("  ✅ Works with both Docker and Podman containers")
+	fmt.Println("  ✅ Automatic runtime detection")
+	fmt.Println("  ✅ Preserves container state and data")
+	fmt.Println("  ✅ Consistent behavior across runtimes")
+	fmt.Println()
+	fmt.Println("Options:")
+	fmt.Println("  -h, --help      Show this help message")
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  portunix container restart test-container")
+	fmt.Println("  portunix container restart web-server")
+	fmt.Println("  portunix container restart python-dev")
 }
 
 func showCpHelp() {

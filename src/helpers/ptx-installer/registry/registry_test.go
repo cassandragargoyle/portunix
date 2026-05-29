@@ -80,6 +80,61 @@ func TestValidateVariant_AdditionalFiles(t *testing.T) {
 	}
 }
 
+func TestValidatePackage_Bundle(t *testing.T) {
+	r := &PackageRegistry{}
+
+	validMeta := Metadata{
+		Name:        "ai-assistant-basic",
+		DisplayName: "AI Assistant (Basic)",
+		Description: "Basic AI assistant setup",
+		Category:    "development/ai-tools",
+	}
+
+	// Bundle with members and no platforms is valid
+	bundle := &Package{
+		APIVersion: "v1",
+		Kind:       "Bundle",
+		Metadata:   validMeta,
+		Spec:       PackageSpec{Bundle: []string{"claude-code", "gemini-cli"}},
+	}
+	if err := r.validatePackage(bundle); err != nil {
+		t.Errorf("valid bundle should pass validation, got: %v", err)
+	}
+
+	// Bundle with empty member list is invalid
+	emptyBundle := &Package{
+		APIVersion: "v1",
+		Kind:       "Bundle",
+		Metadata:   validMeta,
+		Spec:       PackageSpec{},
+	}
+	if err := r.validatePackage(emptyBundle); err == nil {
+		t.Error("bundle without members should be invalid")
+	}
+
+	// Regular package still requires platforms
+	pkgNoPlatforms := &Package{
+		APIVersion: "v1",
+		Kind:       "Package",
+		Metadata:   validMeta,
+		Spec:       PackageSpec{},
+	}
+	if err := r.validatePackage(pkgNoPlatforms); err == nil {
+		t.Error("Kind: Package without platforms should be invalid")
+	}
+
+	// Unknown kind is rejected
+	badKind := &Package{
+		APIVersion: "v1",
+		Kind:       "Widget",
+		Metadata:   validMeta,
+		Spec:       PackageSpec{Bundle: []string{"claude-code"}},
+	}
+	if err := r.validatePackage(badKind); err == nil {
+		t.Error("unknown kind should be rejected")
+	}
+}
+
 func TestAdditionalFileStruct(t *testing.T) {
 	af := AdditionalFile{
 		URL:      "https://example.com/model.onnx.json",

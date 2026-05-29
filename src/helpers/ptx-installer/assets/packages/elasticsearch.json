@@ -9,7 +9,9 @@
     "homepage": "https://www.elastic.co/elasticsearch/",
     "documentation": "https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html",
     "license": "Elastic-2.0",
-    "maintainer": "Elastic"
+    "maintainer": "Elastic",
+    "installationDocsUrl": "https://www.elastic.co/guide/en/elasticsearch/reference/current/install-elasticsearch.html",
+    "latestVersionUrl": "https://www.elastic.co/downloads/elasticsearch"
   },
   "spec": {
     "hasVariants": true,

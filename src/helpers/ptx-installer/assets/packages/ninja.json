@@ -9,7 +9,9 @@
     "homepage": "https://ninja-build.org/",
     "documentation": "https://ninja-build.org/manual.html",
     "license": "Apache-2.0",
-    "maintainer": "Ninja Contributors"
+    "maintainer": "Ninja Contributors",
+    "installationDocsUrl": "https://github.com/ninja-build/ninja/wiki/Pre-built-Ninja-packages",
+    "latestVersionUrl": "https://github.com/ninja-build/ninja/releases/latest"
   },
   "spec": {
     "hasVariants": true,

@@ -45,17 +45,17 @@ portunix install hugo
 
 ## Engine Comparison
 
-| Feature | Docusaurus | Hugo | Docsy | Docsify |
-| ------- | ---------- | ---- | ----- | ------- |
-| **Language** | JavaScript (React) | Go | Go (Hugo + theme) | JavaScript |
-| **Best for** | Product docs, API docs | Blogs, corporate sites | Technical project docs | Simple docs |
-| **Build speed** | Medium | Very fast | Fast | No build step |
-| **Live-reload** | Yes | Yes | Yes | Yes |
-| **Search** | Built-in (Algolia) | Plugin-based | Built-in | Plugin-based |
-| **Versioning** | Built-in | Manual | Manual | Manual |
-| **i18n** | Built-in | Built-in | Built-in | Plugin-based |
-| **Port** | 3000 | 1313 | 1313 | 3000 |
-| **Requirements** | Node.js | Hugo binary | Hugo + Go | Node.js |
+| Feature | Docusaurus | Hugo | Docsy | Docsify | VitePress | MkDocs |
+| ------- | ---------- | ---- | ----- | ------- | --------- | ------ |
+| **Language** | JavaScript (React) | Go | Go (Hugo + theme) | JavaScript | JavaScript (Vue) | Python |
+| **Best for** | Product docs, API docs | Blogs, corporate sites | Technical project docs | Simple docs | Vue/Vite ecosystems, fast docs | Python projects, technical docs |
+| **Build speed** | Medium | Very fast | Fast | No build step | Very fast (Vite) | Fast |
+| **Live-reload** | Yes | Yes | Yes | Yes | Yes | Yes |
+| **Search** | Built-in (Algolia) | Plugin-based | Built-in | Plugin-based | Built-in (local) | Built-in (Material theme) |
+| **Versioning** | Built-in | Manual | Manual | Manual | Plugin-based | Plugin (mike) |
+| **i18n** | Built-in | Built-in | Built-in | Plugin-based | Built-in | Plugin (Material theme) |
+| **Port** | 3000 | 1313 | 1313 | 3000 | 5173 | 8000 |
+| **Requirements** | Node.js | Hugo binary | Hugo + Go | Node.js | Node.js | Python |
 
 ### When to Use What
 
@@ -63,6 +63,16 @@ portunix install hugo
 - **Hugo**: You want the fastest build times and a lightweight setup
 - **Docsy**: You're building technical documentation for an open-source project (Google-style)
 - **Docsify**: You want zero-build simplicity for a small project
+- **VitePress**: You're in the Vue ecosystem or want a lightweight, very-fast Vite-powered site
+- **MkDocs**: You're a Python project, want minimal setup, or prefer the Material theme out of the box
+
+### Platform Notes
+
+- **VitePress / Docusaurus / Docsify**: file watching may be slower on Windows/macOS host folders
+  bind-mounted into Linux containers. Portunix uses named volumes for `node_modules` to mitigate this.
+- **MkDocs**: on Linux hosts where the system Python is externally managed (PEP 668), Portunix
+  falls back between `pip install --user` and `pip install --break-system-packages --user`.
+  Use the `pipx` variant (`portunix install mkdocs --variant pipx`) for a fully isolated environment.
 
 ## Step-by-Step Walkthrough
 
@@ -89,6 +99,12 @@ portunix playbook init my-docs --template static-docs --engine docsy --target co
 
 # Docsify
 portunix playbook init my-docs --template static-docs --engine docsify --target container
+
+# VitePress
+portunix playbook init my-docs --template static-docs --engine vitepress --target container
+
+# MkDocs (Material theme)
+portunix playbook init my-docs --template static-docs --engine mkdocs --target container
 ```
 
 This generates a `my-docs.ptxbook` file — an infrastructure-as-code definition for your documentation environment.
@@ -111,6 +127,8 @@ Open your browser:
 
 - Docusaurus / Docsify: `http://localhost:3000`
 - Hugo / Docsy: `http://localhost:1313`
+- VitePress: `http://localhost:5173`
+- MkDocs: `http://localhost:8000`
 
 ### 5. Edit Content
 
@@ -119,6 +137,8 @@ Edit files in your local project directory. Changes are reflected immediately in
 - **Docusaurus**: Edit files in `./site/docs/`
 - **Hugo / Docsy**: Edit files in `./content/`
 - **Docsify**: Edit files in `./docs/`
+- **VitePress**: Edit files in `./site/docs/`
+- **MkDocs**: Edit files in `./docs/`
 
 ### 6. Build for Production
 
@@ -130,6 +150,8 @@ Output is generated in:
 
 - Docusaurus: `./site/build/`
 - Hugo / Docsy: `./public/`
+- VitePress: `./site/docs/.vitepress/dist/`
+- MkDocs: `./site/`
 
 ## Shared Folder Workflow
 
@@ -237,7 +259,12 @@ portunix playbook template show <name>                                  # Templa
 portunix install docusaurus          # Install Docusaurus (auto-installs Node.js)
 portunix install hugo                # Install Hugo
 portunix install hugo --variant extended  # Install Hugo Extended
+portunix install vitepress           # Install VitePress (auto-installs Node.js)
+portunix install mkdocs              # Install MkDocs + Material theme (auto-installs Python)
+portunix install mkdocs --variant pipx    # Install MkDocs in isolated pipx environment (Linux)
+portunix install mkdocs --variant core    # Install MkDocs without Material theme
 portunix install nodejs              # Install Node.js
+portunix install python              # Install Python
 ```
 
 ### Useful Container Commands

@@ -459,9 +459,9 @@ func (suite *TestAnsibleInfrastructurePhase2Issue056) testPlaybookHelpEnhanced(t
 		"--env ENVIRONMENT",
 		"--target TARGET",
 		"--image IMAGE",
-		"Execution environment (local, container, virt)",
+		"execution environment (local, container, virt)",
 		"Target for virt environment",
-		"Container image for container environment",
+		"Override container image",
 	}
 
 	for _, expected := range expectedOutputs {

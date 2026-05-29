@@ -36,14 +36,19 @@ builds:
       - -X main.version={{ .Version }}
       - -X portunix.ai/app/update.Version={{ .Version }}
       - -X portunix.ai/app/version.ProductVersion={{ .Version }}
+      # Issue #165: embed Ed25519 update-signing pubkey if PORTUNIX_UPDATE_PUBKEY
+      # is exported (make-release.py reads assets/update-signing-pubkey.txt and
+      # exports it). Empty value disables verification (backward compatible).
+      - -X portunix.ai/app/update.PublicKeyHex={{ with index .Env "PORTUNIX_UPDATE_PUBKEY" }}{{ . }}{{ end }}
       - -s -w
     env:
       - CGO_ENABLED=0
 
-  # Helper binary: ptx-container (single file)
+  # Helper binary: ptx-container (multi-file package, separate module)
   - id: ptx-container
     binary: ptx-container
-    main: ./src/helpers/ptx-container/main.go
+    main: ./
+    dir: ./src/helpers/ptx-container/
     goos:
       - linux
       - windows
@@ -291,6 +296,153 @@ builds:
     env:
       - CGO_ENABLED=0
 
+  # Helper binary: ptx-ssh (Unified SSH client with non-interactive password auth, Issue #174)
+  - id: ptx-ssh
+    binary: ptx-ssh
+    main: ./
+    dir: ./src/helpers/ptx-ssh/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-plugin-registry (Plugin platform-capability gRPC daemon, Issue #175)
+  - id: ptx-plugin-registry
+    binary: ptx-plugin-registry
+    main: ./
+    dir: ./src/helpers/ptx-plugin-registry/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-proxmox (Remote Proxmox VE management, Issue #167)
+  - id: ptx-proxmox
+    binary: ptx-proxmox
+    main: ./
+    dir: ./src/helpers/ptx-proxmox/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-specpm (spec-kit-pm scaffolding, Issue #183 / ADR-040)
+  - id: ptx-specpm
+    binary: ptx-specpm
+    main: ./
+    dir: ./src/helpers/ptx-specpm/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-database (database engine management, Issue #013)
+  - id: ptx-database
+    binary: ptx-database
+    main: ./
+    dir: ./src/helpers/ptx-database/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-github (GitHub integration, Issue #025)
+  - id: ptx-github
+    binary: ptx-github
+    main: ./
+    dir: ./src/helpers/ptx-github/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
+  # Helper binary: ptx-wizard (interactive CLI wizards, Issue #014)
+  - id: ptx-wizard
+    binary: ptx-wizard
+    main: ./
+    dir: ./src/helpers/ptx-wizard/
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ignore:
+      - goos: darwin
+        goarch: arm64
+    ldflags:
+      - -X main.version={{ .Version }}
+      - -s -w
+    env:
+      - CGO_ENABLED=0
+
 archives:
   - id: default
     name_template: "{{ .ProjectName }}_{{ .Version }}_{{- tolower .Os }}_{{ .Arch }}"
@@ -314,6 +466,13 @@ archives:
       - ptx-python
       - ptx-installer
       - ptx-trace
+      - ptx-ssh
+      - ptx-plugin-registry
+      - ptx-proxmox
+      - ptx-specpm
+      - ptx-database
+      - ptx-github
+      - ptx-wizard
     files:
       - src: scripts/install.sh
         dst: install.sh
@@ -366,12 +525,19 @@ release:
     - ptx-python helper (Python environment management)
     - ptx-installer helper (Package installation engine)
     - ptx-trace helper (Universal tracing system for software development)
+    - ptx-ssh helper (Unified SSH client with non-interactive password auth)
+    - ptx-plugin-registry helper (Plugin platform-capability gRPC daemon for Synapse/Pack/Agent integration)
+    - ptx-proxmox helper (Remote Proxmox VE management — phase 1: authentication)
+    - ptx-specpm helper (spec-kit-pm project-management scaffolding — Issue #183 / ADR-040)
+    - ptx-database helper (database engine management — Issue #013, Phase 1: PostgreSQL + SQLite)
+    - ptx-github helper (GitHub repositories, releases, and authentication — Issue #025)
+    - ptx-wizard helper (Interactive YAML-based CLI installation wizards — Issue #014)
 
   footer: |
     ## Installation
 
     Download and extract the appropriate archive for your platform, then run the installation script.
-    The archive contains all necessary binaries (portunix, ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-make, ptx-aiops, ptx-pft, ptx-prompting, ptx-credential, ptx-python, ptx-installer, ptx-trace).
+    The archive contains all necessary binaries (portunix, ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-make, ptx-aiops, ptx-pft, ptx-prompting, ptx-credential, ptx-python, ptx-installer, ptx-trace, ptx-ssh, ptx-plugin-registry, ptx-proxmox, ptx-specpm, ptx-database, ptx-github, ptx-wizard).
 
     ### Linux/macOS
     ```bash

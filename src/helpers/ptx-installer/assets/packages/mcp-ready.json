@@ -1,0 +1,14 @@
+{
+  "apiVersion": "v1",
+  "kind": "Bundle",
+  "metadata": {
+    "name": "mcp-ready",
+    "displayName": "MCP-Ready Environment",
+    "description": "MCP-ready development environment: Python, Claude Code and Gemini CLI",
+    "category": "development/ai-tools",
+    "maintainer": "Portunix"
+  },
+  "spec": {
+    "bundle": ["python", "claude-code", "gemini-cli"]
+  }
+}

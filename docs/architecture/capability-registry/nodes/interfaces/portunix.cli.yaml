@@ -1,0 +1,10 @@
+# Interface node — docs/architecture/capability-registry/nodes/interfaces/<product>.<name>.yaml
+id: interface:portunix.cli
+name: Portunix CLI
+type: cli
+description: The single command-line interface exposing all Portunix capabilities.
+spec: portunix --help
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"

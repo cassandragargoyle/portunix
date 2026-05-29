@@ -211,6 +211,90 @@ permissions:
 
 ```
 
+### Declaring Platform Support (schema v1.1.0, issue #175)
+
+Plugins that extend a higher-level hosting platform — **Portunix Synapse**, Pack,
+Agent, and similar — declare themselves as extensions via the optional
+`supported_platforms[]` manifest field. The hosting platform queries the local
+Portunix registry with `ptx plugin list --platform=<name>` (or the
+`PluginRegistryService.ListPluginsForPlatform` gRPC RPC) to discover which
+installed plugins it should embed and retrieve each plugin's
+platform-specific registration payload.
+
+**This field is optional.** Plugins that do not target a hosting platform omit
+it and continue to work unchanged. The field is purely additive — older
+Portunix releases ignore it.
+
+#### Minimal example
+
+```json
+{
+  "name": "my-connector",
+  "version": "1.0.0",
+  "supported_platforms": [
+    {
+      "name": "synapse",
+      "min_version": "0.3.0",
+      "max_version": "0.9.9",
+      "features": ["connector.command"],
+      "platform_payload": {
+        "surfaces": {"connector.command": true},
+        "command": {
+          "supportedCapabilities": ["erp.customer.lookup"]
+        }
+      }
+    }
+  ]
+}
+```
+
+#### Field semantics
+
+- `name` (required) — canonical platform identifier matching
+  `^[a-z][a-z0-9_-]*$`. Examples: `synapse`, `pack`, `agent`.
+- `min_version` / `max_version` (optional) — inclusive SemVer bounds of the
+  platform version the plugin is compatible with. Omit a bound to leave that
+  side unbounded.
+- `features` (optional) — short capability tokens (e.g. `connector.command`).
+  Platforms may filter plugins with `--feature=<token>` as an **AND-filter**:
+  a plugin is returned only if every requested token is present in its
+  `features` list.
+- `platform_payload` (optional) — **opaque** to Portunix. Portunix validates
+  only that this is a JSON object and stores it byte-identical for round-trip
+  delivery to the platform. The target platform (e.g. Synapse) validates the
+  content against its own schema. **Do not put plugin-sensitive data here** —
+  any caller that queries by platform can read it.
+
+#### Querying from the hosting platform
+
+```bash
+# CLI — returns JSON array of matching plugins with manifest + platform_payload
+portunix plugin list --platform=synapse --platform-version=0.3.2 \
+                     --feature=connector.command -o json
+```
+
+The gRPC form is served by the `ptx-plugin-registry` helper over a unix socket
+on Linux/macOS (TCP loopback on Windows). See
+`src/app/plugins/proto/plugin_registry.proto` for the
+`PluginRegistryService.ListPluginsForPlatform` contract. Start the daemon:
+
+```bash
+portunix plugin-registry serve                              # platform default
+portunix plugin-registry serve --mode unix --socket /tmp/ptx-reg.sock
+portunix plugin-registry serve --mode tcp --port 9500
+```
+
+#### Validation at install time
+
+Malformed `supported_platforms[]` entries fail `portunix plugin install` with
+an actionable error. Common failure modes:
+
+- missing or invalid `name` (must match the pattern above)
+- un-parseable `min_version` or `max_version` (must be SemVer)
+- `min_version > max_version`
+- `platform_payload` that is not a JSON object
+- duplicated platform names or feature tokens
+
 ## Next Steps
 
 1. **Choose your language** and follow the specific guide

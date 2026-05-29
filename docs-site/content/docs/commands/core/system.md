@@ -85,6 +85,7 @@ Usage:
   portunix system info [flags]
 
 Flags:
+      --check-https         Verify HTTPS connectivity (network probe)
       --cpuprofile string   Write CPU profile to file
   -h, --help                help for info
   -j, --json                Output as JSON

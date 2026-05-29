@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"portunix.ai/portunix/src/pkg/archive"
 )
 
 // PodmanInstaller handles Podman installation on various platforms
@@ -106,7 +108,7 @@ func (p *PodmanInstaller) installWindows() error {
 	installerURL := "https://github.com/containers/podman-desktop/releases/latest/download/podman-desktop-setup.exe"
 	installerPath := filepath.Join(os.TempDir(), "podman-desktop-setup.exe")
 
-	if _, err := DownloadFileWithProperFilename(installerURL, os.TempDir()); err != nil {
+	if _, err := archive.DownloadFileWithProperFilename(installerURL, os.TempDir()); err != nil {
 		return fmt.Errorf("failed to download Podman Desktop: %w", err)
 	}
 

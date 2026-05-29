@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "module.schema.json",
+  "title": "Module node",
+  "description": "Component of a modular product. Create only when product.composition=modular.",
+  "type": "object",
+  "required": ["id", "name", "product", "verification"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^module:[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*$",
+      "description": "module:<product>.<name>"
+    },
+    "name": { "type": "string" },
+    "product": {
+      "type": "string",
+      "pattern": "^product:[a-z][a-z0-9-]*$",
+      "description": "Parent product (module belongs to exactly one product)."
+    },
+    "description": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "verification": { "$ref": "verification.schema.json" }
+  }
+}

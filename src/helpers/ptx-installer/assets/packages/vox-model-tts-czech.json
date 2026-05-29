@@ -8,7 +8,9 @@
     "category": "plugins/models",
     "homepage": "https://huggingface.co/rhasspy/piper-voices",
     "license": "MIT",
-    "maintainer": "CassandraGargoyle"
+    "maintainer": "CassandraGargoyle",
+    "installationDocsUrl": "https://huggingface.co/rhasspy/piper-voices",
+    "latestVersionUrl": "https://huggingface.co/rhasspy/piper-voices"
   },
   "spec": {
     "platforms": {
@@ -44,6 +46,11 @@
           }
         }
       }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Piper voice models are hosted on Hugging Face at rhasspy/piper-voices. There is no semantic version per voice — the repository is updated in-place. Check the file's git history via the Hugging Face API: https://huggingface.co/api/models/rhasspy/piper-voices/tree/main/cs/cs_CZ/jirka/medium — look at the `lastCommit` field of cs_CZ-jirka-medium.onnx. The `version` field in this package is an internal Portunix model revision, bump it (e.g., 1.0.0 → 1.0.1) when the upstream blob changes.",
+      "urlResolution": "Download URL pattern: https://huggingface.co/rhasspy/piper-voices/resolve/main/{lang}/{locale}/{voice}/{quality}/{locale}-{voice}-{quality}.onnx — for Czech use cs/cs_CZ/jirka/medium. Always pair the .onnx file with its matching .onnx.json config file (same path, different extension). To browse other Czech voices: https://huggingface.co/rhasspy/piper-voices/tree/main/cs/cs_CZ — currently only `jirka` exists, but new voices may appear (e.g., other speakers or quality tiers: low/medium/high).",
+      "updateGuidance": "Update only if upstream Piper publishes an improved cs_CZ-jirka-medium model (rare) or if a higher-quality Czech voice becomes available. To switch voice, change the URL path segment and the extractTo directory name to match new voice id. Model file size ~61 MB — keep in sync between Linux and Windows variants. The .onnx.json config defines speaker/phoneme config and MUST be downloaded alongside the .onnx weights; missing it breaks inference."
     },
     "dependencies": ["vox-deps"],
     "templates": ["download"]

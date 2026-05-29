@@ -9,51 +9,12 @@ import (
 	"testing"
 
 	"portunix.ai/app"
-	"portunix.ai/app/install"
 )
 
-// Test for InstallJavaWinRunDry.
-func TestInstallJavaRunDry(t *testing.T) {
-	err := install.WinInstallJavaRun("", "", true)
-
-	if err != nil {
-		t.Errorf("InstallJava error %s", err)
-	}
-
-	err = install.WinInstallJavaRun("11", "", true)
-
-	if err != nil {
-		t.Errorf("InstallJava error %s", err)
-	}
-}
-
-func TestProcessArgumentsInstallJava(t *testing.T) {
-	arguments := []string{"11", "openjdk"}
-	result := install.ProcessArgumentsInstallJava(arguments)
-	expected := "11"
-	paramName := "version"
-	if result[paramName] != expected {
-		t.Errorf("Expected %s but got %s", expected, result[paramName])
-	}
-	expected = "openjdk"
-	paramName = "variant"
-	if result[paramName] != expected {
-		t.Errorf("Expected %s but got %s", expected, result[paramName])
-	}
-
-	arguments = []string{"-version", "11", "-variant", "openjdk"}
-	result = install.ProcessArgumentsInstallJava(arguments)
-	expected = "11"
-	paramName = "version"
-	if result[paramName] != expected {
-		t.Errorf("Expected %s but got %s", expected, result[paramName])
-	}
-	expected = "openjdk"
-	paramName = "variant"
-	if result[paramName] != expected {
-		t.Errorf("Expected %s but got %s", expected, result[paramName])
-	}
-}
+// Issue #186 final cleanup (2026-05-19): TestInstallJavaRunDry and
+// TestProcessArgumentsInstallJava were removed together with the
+// legacy app/install package they exercised. Java installation is now
+// owned by ptx-installer; integration tests live next to that helper.
 
 func TestProcessArgumentsUnzip(t *testing.T) {
 	arguments := []string{"tp.cli.zip"}

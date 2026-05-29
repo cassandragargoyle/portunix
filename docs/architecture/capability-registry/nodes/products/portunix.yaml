@@ -1,0 +1,15 @@
+# Product node — docs/architecture/capability-registry/nodes/products/<slug>.yaml
+id: product:portunix
+name: Portunix
+type: software
+composition: monolith
+vendor: CassandraGargoyle
+description: Unified AI plugin and task platform for development environments.
+website: https://github.com/cassandragargoyle/portunix
+tags: [cross-platform, cli, devtools, open-source]
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"
+  evidence:
+    - docs/FEATURES_OVERVIEW.md

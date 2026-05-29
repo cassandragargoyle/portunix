@@ -1,0 +1,10 @@
+# Operation node — product-specific
+id: operation:portunix.update.run
+name: Update Portunix
+product: product:portunix
+description: Check for and install the latest Portunix release with backup and rollback.
+command: portunix update
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"

@@ -9,7 +9,9 @@
     "homepage": "https://chocolatey.org/",
     "documentation": "https://docs.chocolatey.org/",
     "license": "Apache-2.0",
-    "maintainer": "Chocolatey Software"
+    "maintainer": "Chocolatey Software",
+    "installationDocsUrl": "https://docs.chocolatey.org/en-us/choco/setup",
+    "latestVersionUrl": "https://github.com/chocolatey/choco/releases/latest"
   },
   "spec": {
     "hasVariants": false,

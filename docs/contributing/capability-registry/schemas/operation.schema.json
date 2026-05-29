@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "operation.schema.json",
+  "title": "Operation node",
+  "description": "Product-specific realization of a capability.",
+  "type": "object",
+  "required": ["id", "name", "product", "verification"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^operation:[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*$",
+      "description": "operation:<product>.<entity>.<action>"
+    },
+    "name": { "type": "string" },
+    "product": {
+      "type": "string",
+      "pattern": "^product:[a-z][a-z0-9-]*$"
+    },
+    "description": { "type": "string" },
+    "command": {
+      "type": "string",
+      "description": "Concrete invocation, e.g. 'portunix install <pkg>'."
+    },
+    "verification": { "$ref": "verification.schema.json" }
+  }
+}

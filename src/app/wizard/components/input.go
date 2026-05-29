@@ -34,6 +34,17 @@ func (i *InputComponent) Render(ctx *wizard.WizardContext) error {
 		fmt.Println(strings.Repeat("-", len(i.Title)))
 	}
 
+	if ctx.NonInteractive {
+		if i.Value == "" {
+			i.Value = i.Default
+		}
+		if err := i.Validate(); err != nil {
+			return fmt.Errorf("non-interactive: %w", err)
+		}
+		fmt.Printf("%s %s\n", i.Prompt, i.Value)
+		return nil
+	}
+
 	prompt := &survey.Input{
 		Message: i.Prompt,
 		Default: i.Default,
@@ -130,6 +141,17 @@ func (p *PasswordComponent) Render(ctx *wizard.WizardContext) error {
 		fmt.Println(strings.Repeat("-", len(p.Title)))
 	}
 
+	if ctx.NonInteractive {
+		if p.Value == "" {
+			return fmt.Errorf("non-interactive: missing value for password '%s'", p.Prompt)
+		}
+		if err := p.Validate(); err != nil {
+			return fmt.Errorf("non-interactive: %w", err)
+		}
+		fmt.Printf("%s ********\n", p.Prompt)
+		return nil
+	}
+
 	prompt := &survey.Password{
 		Message: p.Prompt,
 		Help:    p.Help,
@@ -167,6 +189,13 @@ func (c *ConfirmComponent) Render(ctx *wizard.WizardContext) error {
 	if c.Title != "" {
 		fmt.Printf("\n%s\n", formatTitle(c.Title, ctx.Theme))
 		fmt.Println(strings.Repeat("-", len(c.Title)))
+	}
+
+	if ctx.NonInteractive {
+		// In non-interactive mode, c.Value was set by the engine from
+		// preloaded variables; if not, fall back to Default.
+		fmt.Printf("%s %v\n", c.Prompt, c.Value)
+		return nil
 	}
 
 	prompt := &survey.Confirm{

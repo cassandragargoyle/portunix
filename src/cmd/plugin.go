@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package cmd
 
 import (
@@ -10,6 +14,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/term"
 	"gopkg.in/yaml.v3"
 	"portunix.ai/app"
 	"portunix.ai/app/github"
@@ -57,12 +62,39 @@ Examples:
 var pluginListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List installed plugins",
-	Long:  `List all installed plugins with their status and information.`,
+	Long: `List all installed plugins with their status and information.
+
+In the default compact view, long descriptions are truncated. Pass --verbose
+(-v) to print the full description (wrapped to the terminal width) below each
+plugin row.
+
+Platform-capability query (schema v1.1.0+):
+  Use --platform to list only plugins that declare support for a given hosting
+  platform (e.g. synapse, pack, agent) in their supported_platforms[] manifest
+  field. Optional --platform-version applies SemVer range matching against the
+  plugin's min_version/max_version bounds. Optional --feature (repeatable)
+  AND-filters plugins by declared capability tokens.
+
+  In platform-query mode the JSON / YAML output includes each matched plugin's
+  manifest together with the resolved platform_payload and matched_features.
+  Human-readable output stays compact — pass --verbose to print the
+  platform_payload.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		showAll, _ := cmd.Flags().GetBool("all")
 		outputFormat, _ := cmd.Flags().GetString("output")
+		platform, _ := cmd.Flags().GetString("platform")
+		platformVersion, _ := cmd.Flags().GetString("platform-version")
+		features, _ := cmd.Flags().GetStringArray("feature")
+		verbose, _ := cmd.Flags().GetBool("verbose")
 
-		return listPlugins(showAll, outputFormat)
+		if platform != "" {
+			return listPluginsForPlatform(platform, platformVersion, features, outputFormat, verbose)
+		}
+		if platformVersion != "" || len(features) > 0 {
+			return fmt.Errorf("--platform-version and --feature require --platform")
+		}
+
+		return listPlugins(showAll, outputFormat, verbose)
 	},
 }
 
@@ -334,6 +366,12 @@ func init() {
 	// Flags for list command
 	pluginListCmd.Flags().BoolP("all", "a", false, "Show all plugins (including disabled)")
 	pluginListCmd.Flags().StringP("output", "o", "table", "Output format: table, json, yaml")
+	pluginListCmd.Flags().String("platform", "", "Filter plugins by declared hosting platform (e.g. synapse, pack)")
+	pluginListCmd.Flags().String("platform-version", "", "Platform SemVer for range matching; requires --platform")
+	pluginListCmd.Flags().StringArray("feature", nil, "Required capability token(s); AND-filter, repeatable; requires --platform")
+	pluginListCmd.Flags().BoolP("verbose", "v", false,
+		"Default listing: print full description wrapped to terminal width; "+
+			"platform-query mode: include platform_payload in human-readable output")
 
 	// Flags for install command
 	pluginInstallCmd.Flags().BoolP("force", "f", false, "Force reinstall if plugin already exists")
@@ -382,7 +420,7 @@ func initializePluginManager() error {
 }
 
 // listPlugins lists all installed plugins
-func listPlugins(showAll bool, outputFormat string) error {
+func listPlugins(showAll bool, outputFormat string, verbose bool) error {
 	plugins, err := pluginManager.ListPlugins()
 	if err != nil {
 		return fmt.Errorf("failed to list plugins: %w", err)
@@ -399,8 +437,66 @@ func listPlugins(showAll bool, outputFormat string) error {
 	case "yaml":
 		return outputYAML(plugins)
 	default:
-		return outputPluginTable(plugins, showAll)
+		return outputPluginTable(plugins, showAll, verbose)
 	}
+}
+
+// listPluginsForPlatform runs the platform-capability query added in schema
+// v1.1.0. Structured outputs include each matched plugin's registry record,
+// resolved SupportedPlatform (with platform_payload byte-identical), and the
+// subset of requested features the plugin declared. This is the CLI face of
+// Registry.ListPluginsForPlatform (DEC-5) — the future gRPC server will
+// produce the same dataset from the same function.
+func listPluginsForPlatform(platform, platformVersion string, features []string, outputFormat string, verbose bool) error {
+	matches, err := pluginManager.ListPluginsForPlatform(platform, platformVersion, features)
+	if err != nil {
+		return fmt.Errorf("platform query failed: %w", err)
+	}
+
+	switch outputFormat {
+	case "json":
+		return outputJSON(matches)
+	case "yaml":
+		return outputYAML(matches)
+	}
+
+	if len(matches) == 0 {
+		fmt.Printf("No plugins found for platform %q", platform)
+		if platformVersion != "" {
+			fmt.Printf(" at version %s", platformVersion)
+		}
+		fmt.Println(".")
+		return nil
+	}
+
+	fmt.Printf("%-20s %-10s %-20s %s\n", "NAME", "VERSION", "MATCHED FEATURES", "PLATFORM RANGE")
+	fmt.Printf("%-20s %-10s %-20s %s\n", "----", "-------", "----------------", "--------------")
+	for _, m := range matches {
+		matched := strings.Join(m.MatchedFeatures, ",")
+		if matched == "" {
+			matched = "-"
+		}
+		rangeStr := formatPlatformRange(m.Platform.MinVersion, m.Platform.MaxVersion)
+		fmt.Printf("%-20s %-10s %-20s %s\n", m.Plugin.Name, m.Plugin.Version, matched, rangeStr)
+		if verbose && len(m.Platform.PlatformPayload) > 0 {
+			fmt.Printf("    platform_payload: %s\n", string(m.Platform.PlatformPayload))
+		}
+	}
+	return nil
+}
+
+// formatPlatformRange renders a user-facing summary of a SemVer range. Open
+// bounds render as '*' on the unbounded side.
+func formatPlatformRange(minV, maxV string) string {
+	lo := minV
+	if lo == "" {
+		lo = "*"
+	}
+	hi := maxV
+	if hi == "" {
+		hi = "*"
+	}
+	return fmt.Sprintf("%s..%s", lo, hi)
 }
 
 // installPlugin installs a plugin
@@ -915,10 +1011,14 @@ func outputYAML(data interface{}) error {
 }
 
 // Helper functions for output formatting
-func outputPluginTable(pluginList []plugins.PluginInfo, showAll bool) error {
-	// Implementation for table output
-	fmt.Printf("%-20s %-10s %-12s %-15s %-30s\n", "NAME", "VERSION", "INTERFACE", "STATUS", "DESCRIPTION")
-	fmt.Printf("%-20s %-10s %-12s %-15s %-30s\n", "----", "-------", "---------", "------", "-----------")
+func outputPluginTable(pluginList []plugins.PluginInfo, showAll, verbose bool) error {
+	if verbose {
+		fmt.Printf("%-20s %-10s %-12s %-15s\n", "NAME", "VERSION", "INTERFACE", "STATUS")
+		fmt.Printf("%-20s %-10s %-12s %-15s\n", "----", "-------", "---------", "------")
+	} else {
+		fmt.Printf("%-20s %-10s %-12s %-15s %-30s\n", "NAME", "VERSION", "INTERFACE", "STATUS", "DESCRIPTION")
+		fmt.Printf("%-20s %-10s %-12s %-15s %-30s\n", "----", "-------", "---------", "------", "-----------")
+	}
 
 	for _, plugin := range pluginList {
 		status := plugin.Status.String()
@@ -940,22 +1040,112 @@ func outputPluginTable(pluginList []plugins.PluginInfo, showAll bool) error {
 				iface = "grpc"
 			}
 		}
-		fmt.Printf("%-20s %-10s %-12s %-15s %-30s\n",
-			plugin.Name,
-			plugin.Version,
-			iface,
-			status,
-			truncateString(plugin.Description, 30))
+		if verbose {
+			fmt.Printf("%-20s %-10s %-12s %-15s\n",
+				plugin.Name, plugin.Version, iface, status)
+			for _, line := range wrapForTerminal(plugin.Description, 4) {
+				fmt.Println(line)
+			}
+		} else {
+			fmt.Printf("%-20s %-10s %-12s %-15s %-30s\n",
+				plugin.Name,
+				plugin.Version,
+				iface,
+				status,
+				truncateString(plugin.Description, 30))
+		}
 	}
 
 	return nil
 }
 
+// truncateString shortens s to at most maxLen runes, appending an ASCII
+// ellipsis ("...") when truncation occurs. Operates on runes, not bytes, so
+// multi-byte UTF-8 sequences are never split.
 func truncateString(s string, maxLen int) string {
-	if len(s) <= maxLen {
+	runes := []rune(s)
+	if len(runes) <= maxLen {
 		return s
 	}
-	return s[:maxLen-3] + "..."
+	if maxLen <= 3 {
+		return string(runes[:maxLen])
+	}
+	return string(runes[:maxLen-3]) + "..."
+}
+
+// terminalWidth returns the current stdout terminal width in columns, falling
+// back to 80 when the width cannot be detected (non-TTY, redirected output).
+func terminalWidth() int {
+	if w, _, err := term.GetSize(int(os.Stdout.Fd())); err == nil && w > 0 {
+		return w
+	}
+	return 80
+}
+
+// wrapForTerminal wraps text into lines that fit within the current terminal
+// width when each line is prefixed with `indent` spaces. Word boundaries are
+// preferred; tokens longer than the available width are hard-broken at the
+// column boundary. The returned strings include the indent prefix.
+func wrapForTerminal(text string, indent int) []string {
+	width := terminalWidth() - indent
+	if width < 10 {
+		width = 10
+	}
+	prefix := strings.Repeat(" ", indent)
+	if strings.TrimSpace(text) == "" {
+		return []string{prefix}
+	}
+
+	var lines []string
+	var current []rune
+	currentLen := 0
+
+	flush := func() {
+		if len(current) > 0 {
+			lines = append(lines, prefix+string(current))
+			current = current[:0]
+			currentLen = 0
+		}
+	}
+
+	for _, word := range strings.Fields(text) {
+		wordRunes := []rune(word)
+		wordLen := len(wordRunes)
+
+		// Hard-break tokens longer than the available width.
+		if wordLen > width {
+			flush()
+			for len(wordRunes) > 0 {
+				take := width
+				if take > len(wordRunes) {
+					take = len(wordRunes)
+				}
+				lines = append(lines, prefix+string(wordRunes[:take]))
+				wordRunes = wordRunes[take:]
+			}
+			continue
+		}
+
+		switch {
+		case currentLen == 0:
+			current = append(current, wordRunes...)
+			currentLen = wordLen
+		case currentLen+1+wordLen <= width:
+			current = append(current, ' ')
+			current = append(current, wordRunes...)
+			currentLen += 1 + wordLen
+		default:
+			flush()
+			current = append(current, wordRunes...)
+			currentLen = wordLen
+		}
+	}
+	flush()
+
+	if len(lines) == 0 {
+		return []string{prefix}
+	}
+	return lines
 }
 
 // goVersion returns major.minor Go version for go.mod (e.g. "1.24")

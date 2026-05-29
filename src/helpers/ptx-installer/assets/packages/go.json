@@ -9,7 +9,9 @@
     "homepage": "https://go.dev/",
     "documentation": "https://go.dev/doc/",
     "license": "BSD-3-Clause",
-    "maintainer": "Google"
+    "maintainer": "Google",
+    "installationDocsUrl": "https://go.dev/doc/install",
+    "latestVersionUrl": "https://go.dev/dl/"
   },
   "spec": {
     "hasVariants": false,

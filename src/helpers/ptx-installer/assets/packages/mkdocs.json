@@ -1,0 +1,85 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "mkdocs",
+    "displayName": "MkDocs Static Documentation Site",
+    "description": "Project documentation with Markdown — fast, simple, and beautiful (with Material theme by default)",
+    "category": "development/tools",
+    "homepage": "https://www.mkdocs.org/",
+    "documentation": "https://www.mkdocs.org/getting-started/",
+    "license": "BSD-2-Clause",
+    "maintainer": "MkDocs Authors",
+    "installationDocsUrl": "https://www.mkdocs.org/user-guide/installation/",
+    "latestVersionUrl": "https://pypi.org/project/mkdocs/"
+  },
+  "spec": {
+    "hasVariants": true,
+    "dependencies": ["python"],
+    "platforms": {
+      "windows": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "MkDocs with Material theme (recommended)",
+            "installScript": [
+              "python -m pip install --user mkdocs-material"
+            ],
+            "postInstall": ["mkdocs --version"]
+          },
+          "core": {
+            "version": "latest",
+            "description": "MkDocs without theme extras",
+            "installScript": [
+              "python -m pip install --user mkdocs"
+            ],
+            "postInstall": ["mkdocs --version"]
+          }
+        },
+        "verification": {
+          "command": "mkdocs --version",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "MkDocs with Material theme (recommended)",
+            "installScript": [
+              "if [ \"$(id -u)\" = \"0\" ]; then python3 -m pip install --break-system-packages mkdocs-material || python3 -m pip install mkdocs-material; else python3 -m pip install --break-system-packages --user mkdocs-material || python3 -m pip install --user mkdocs-material; fi"
+            ],
+            "postInstall": ["sh -c 'PATH=$HOME/.local/bin:$PATH mkdocs --version'"]
+          },
+          "core": {
+            "version": "latest",
+            "description": "MkDocs without theme extras",
+            "installScript": [
+              "if [ \"$(id -u)\" = \"0\" ]; then python3 -m pip install --break-system-packages mkdocs || python3 -m pip install mkdocs; else python3 -m pip install --break-system-packages --user mkdocs || python3 -m pip install --user mkdocs; fi"
+            ],
+            "postInstall": ["sh -c 'PATH=$HOME/.local/bin:$PATH mkdocs --version'"]
+          },
+          "pipx": {
+            "version": "latest",
+            "description": "MkDocs Material installed via pipx (isolated environment)",
+            "installScript": [
+              "pipx install mkdocs-material"
+            ],
+            "postInstall": ["mkdocs --version"]
+          }
+        },
+        "verification": {
+          "command": "sh -c 'PATH=$HOME/.local/bin:$PATH mkdocs --version'",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "MkDocs and mkdocs-material are distributed via PyPI. Check https://pypi.org/project/mkdocs/ and https://pypi.org/project/mkdocs-material/ for latest versions.",
+      "updateGuidance": "MkDocs follows semantic versioning. The Material theme depends on MkDocs and tracks its releases. Installing mkdocs-material pulls mkdocs as a transitive dependency."
+    },
+    "templates": ["pip-package"]
+  }
+}

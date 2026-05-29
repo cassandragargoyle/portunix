@@ -1,0 +1,32 @@
+# Controlled vocabulary of capability/entity domains.
+# A <domain> is the first level of capability:<domain>.<name> and entity:<domain>.<name>.
+# Domains must be stable, broadly understandable, and orthogonal — never
+# product-specific or temporary. Add a new domain in the same PR that uses it.
+domains:
+  - slug: provisioning
+    name: Provisioning
+    description: Installing, configuring, and updating software and tools.
+
+  - slug: container
+    name: Containers
+    description: Container and image lifecycle (Docker/Podman, run, build, ssh).
+
+  - slug: virtualization
+    name: Virtualization
+    description: Sandboxes, virtual machines, and remote hypervisor management.
+
+  - slug: plugin
+    name: Plugins
+    description: Plugin lifecycle, registry, and gRPC plugin communication.
+
+  - slug: ai-integration
+    name: AI integration
+    description: MCP server and AI-assistant-facing capabilities.
+
+  - slug: update
+    name: Update
+    description: Self-update and version management of the product itself.
+
+  - slug: system
+    name: System
+    description: OS detection, system information, and host utilities.

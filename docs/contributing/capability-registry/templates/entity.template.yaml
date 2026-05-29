@@ -1,0 +1,8 @@
+# Entity node — docs/architecture/capability-registry/nodes/entities/<domain>.<name>.yaml
+id: entity:provisioning.package
+name: Package
+description: A software package definition (assets/install-packages.json entry).
+verification:
+  status: documented
+  source: assets/install-packages.json
+  lastChecked: "2026-05-26"

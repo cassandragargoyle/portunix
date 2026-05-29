@@ -9,7 +9,9 @@
     "homepage": "https://wiki.mozilla.org/CA",
     "documentation": "https://wiki.mozilla.org/CA/Included_Certificates",
     "license": "MPL-2.0",
-    "maintainer": "Mozilla"
+    "maintainer": "Mozilla",
+    "installationDocsUrl": "https://wiki.mozilla.org/CA/Included_Certificates",
+    "latestVersionUrl": "https://wiki.mozilla.org/CA/Included_Certificates"
   },
   "spec": {
     "hasVariants": false,
@@ -22,6 +24,7 @@
             "packages": ["ca-certificates"]
           },
           "dnf": {
+            "type": "dnf",
             "version": "latest",
             "packages": ["ca-certificates"]
           }

@@ -5,26 +5,37 @@
 package engine
 
 import (
+	"bufio"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
+
+	"portunix.ai/portunix/src/pkg/archive"
 )
 
 // DockerInstaller handles Docker installation on various platforms
 type DockerInstaller struct {
-	storage *StorageAnalyzer
-	dryRun  bool
+	storage        *StorageAnalyzer
+	dryRun         bool
+	dataRoot       string // Explicit --data-root path (empty when not provided)
+	nonInteractive bool   // --yes: suppress prompts and use recommended defaults
 }
 
-// NewDockerInstaller creates a new Docker installer instance
-func NewDockerInstaller(dryRun bool) *DockerInstaller {
+// NewDockerInstaller creates a new Docker installer instance.
+// dataRoot overrides storage selection when non-empty; nonInteractive suppresses
+// the interactive directory prompt and falls back to the recommended default.
+func NewDockerInstaller(dryRun bool, dataRoot string, nonInteractive bool) *DockerInstaller {
 	return &DockerInstaller{
-		storage: NewStorageAnalyzer(10), // 10 GB minimum for Docker
-		dryRun:  dryRun,
+		storage:        NewStorageAnalyzer(10), // 10 GB minimum for Docker
+		dryRun:         dryRun,
+		dataRoot:       dataRoot,
+		nonInteractive: nonInteractive,
 	}
 }
 
@@ -78,8 +89,216 @@ func (d *DockerInstaller) verifyInstallation() error {
 	return nil
 }
 
-// installWindows installs Docker Desktop on Windows
+// checkWindowsAdminRequired returns an error when a real Docker Desktop
+// installation would fail without Administrator privileges. Dry-run is allowed
+// from a non-elevated shell so users can preview the installation plan.
+//
+// Used as the safety-net message when UAC auto-elevation is unavailable or
+// declined. The happy path now uses decideElevation + runWithUAC instead.
+func checkWindowsAdminRequired(dryRun, isAdmin bool) error {
+	if dryRun || isAdmin {
+		return nil
+	}
+	return fmt.Errorf("❌ Docker Desktop installation requires Administrator privileges.\n" +
+		"   Please run Portunix from an elevated PowerShell or cmd and try again.\n" +
+		"   Tip: --dry-run works from a non-elevated shell.")
+}
+
+// elevationAction tells the Docker installer how to launch the Docker Desktop
+// installer EXE based on the current process's privilege state.
+type elevationAction int
+
+const (
+	// elevationDirect: run the installer in-process. Either we already have
+	// admin, or we're in dry-run and skip the launch entirely.
+	elevationDirect elevationAction = iota
+	// elevationUAC: spawn the installer through a UAC consent prompt because
+	// the current process is not elevated.
+	elevationUAC
+)
+
+// decideElevation picks how to launch Docker Desktop's installer. Pure
+// function so the policy is unit-testable without touching the OS.
+func decideElevation(dryRun, isAdmin bool) elevationAction {
+	if dryRun || isAdmin {
+		return elevationDirect
+	}
+	return elevationUAC
+}
+
+// runDockerInstaller launches Docker Desktop's installer, escalating via UAC
+// when the current process is not elevated. On UAC decline it surfaces a
+// clear, actionable error pointing at the elevated-shell fallback.
+func (d *DockerInstaller) runDockerInstaller(installerPath string, args []string) error {
+	switch decideElevation(d.dryRun, IsAdmin()) {
+	case elevationDirect:
+		cmd := exec.Command(installerPath, args...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return fmt.Errorf("Docker Desktop installation failed: %w", err)
+		}
+		return nil
+
+	case elevationUAC:
+		fmt.Println("🔐 Requesting Administrator privileges for Docker Desktop installer...")
+		fmt.Println("   A UAC prompt will appear — please click Yes to continue.")
+		fmt.Println("   Note: installer output won't appear in this console — watch the Docker installer's own progress dialog.")
+		err := runWithUAC(installerPath, args)
+		if err == nil {
+			return nil
+		}
+		if errors.Is(err, errUACDeclined) {
+			return fmt.Errorf("❌ UAC elevation was declined.\n" +
+				"   Docker Desktop installer requires Administrator privileges.\n" +
+				"   Please re-run `portunix install docker` and approve the UAC prompt,\n" +
+				"   or run Portunix from an elevated PowerShell or cmd.")
+		}
+		return fmt.Errorf("Docker Desktop installation failed: %w", err)
+	}
+	return fmt.Errorf("unexpected elevation action")
+}
+
+// prereqChoice identifies which Docker virtualization backend the user
+// picked from the interactive menu.
+type prereqChoice int
+
+const (
+	prereqNone prereqChoice = iota
+	prereqWSL
+	prereqHyperV
+	prereqCancel
+)
+
+// decidePrereqChoice picks a prerequisite choice from (hasWSL, hasHyperV,
+// dryRun, nonInteractive, userInput). Pure function — all I/O happens at the
+// call site. `userInput` is the trimmed text the user typed ("" = accept
+// default).
+func decidePrereqChoice(hasWSL, hasHyperV, dryRun, nonInteractive bool, userInput string) (prereqChoice, error) {
+	if hasWSL || hasHyperV {
+		return prereqNone, nil
+	}
+	if dryRun || nonInteractive {
+		return prereqWSL, nil
+	}
+	switch strings.TrimSpace(userInput) {
+	case "", "1":
+		return prereqWSL, nil
+	case "2":
+		return prereqHyperV, nil
+	case "3":
+		return prereqCancel, nil
+	default:
+		return prereqNone, fmt.Errorf("invalid choice: %q", userInput)
+	}
+}
+
+// hasWindowsWSL reports whether WSL is installed and usable. `wsl --status`
+// returns exit 0 only when the WSL runtime is present.
+func hasWindowsWSL() bool {
+	return exec.Command("wsl", "--status").Run() == nil
+}
+
+// hasWindowsHyperV reports whether the Hyper-V Windows feature is enabled.
+// Uses PowerShell because there is no lightweight native Go query.
+func hasWindowsHyperV() bool {
+	cmd := exec.Command("powershell", "-NoProfile", "-NonInteractive", "-Command",
+		"(Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -ErrorAction SilentlyContinue).State -eq 'Enabled'")
+	out, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(out)) == "True"
+}
+
+// enableWindowsHyperV enables the Hyper-V Windows feature without an
+// immediate restart. Must be called from an elevated process.
+func enableWindowsHyperV(dryRun bool) error {
+	if dryRun {
+		fmt.Println("🔍 DRY RUN - Would enable Windows feature Microsoft-Hyper-V-All")
+		return nil
+	}
+	fmt.Println("\n🔧 Enabling Hyper-V Windows feature (this may take a minute)...")
+	if err := enableWindowsOptionalFeature("Microsoft-Hyper-V-All"); err != nil {
+		return fmt.Errorf("failed to enable Hyper-V: %w", err)
+	}
+	fmt.Println("\n✅ Hyper-V enabled successfully!")
+	fmt.Println("⚠️  A system restart is required before Hyper-V is usable.")
+	fmt.Println("   After restart, you can run: portunix install docker")
+	return nil
+}
+
+// ensureWindowsVirtualizationPrereqs interactively resolves missing
+// WSL2/Hyper-V prerequisites for Docker Desktop. Returns true when Docker
+// install may proceed (prereqs already satisfied). When a prereq is
+// installed inline it returns false + prereqInstalledError so the caller
+// can exit cleanly after pointing the user at the restart step.
+func (d *DockerInstaller) ensureWindowsVirtualizationPrereqs() (bool, error) {
+	hasWSL := hasWindowsWSL()
+	hasHV := hasWindowsHyperV()
+	if hasWSL || hasHV {
+		return true, nil
+	}
+
+	fmt.Println("\n❌ Docker Desktop requires WSL2 or Hyper-V, but neither is available.")
+
+	userInput := ""
+	if !d.dryRun && !d.nonInteractive {
+		fmt.Println("\n📁 Select prerequisite to install:")
+		fmt.Println("   1. WSL2 (recommended — requires restart)")
+		fmt.Println("   2. Hyper-V (requires restart)")
+		fmt.Println("   3. Cancel (install Docker later)")
+		fmt.Print("Choice [1]: ")
+
+		reader := bufio.NewReader(os.Stdin)
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			return false, fmt.Errorf("failed to read choice: %w", err)
+		}
+		userInput = line
+	}
+
+	choice, err := decidePrereqChoice(hasWSL, hasHV, d.dryRun, d.nonInteractive, userInput)
+	if err != nil {
+		return false, err
+	}
+
+	switch choice {
+	case prereqWSL:
+		if err := NewWSLInstaller(d.dryRun).Install(); err != nil {
+			return false, err
+		}
+		return false, nil
+	case prereqHyperV:
+		if err := enableWindowsHyperV(d.dryRun); err != nil {
+			return false, err
+		}
+		return false, nil
+	case prereqCancel:
+		fmt.Println("   Docker install aborted. Run `portunix install wsl` later when ready.")
+		return false, nil
+	}
+	return false, fmt.Errorf("unexpected prereq choice: %v", choice)
+}
+
+// installWindows installs Docker Desktop on Windows.
+//
+// Elevation policy: the early admin fail-fast from #177 is gone — the
+// installer EXE itself is now launched through a UAC prompt (issue #178)
+// when the current process is not elevated. Download and prereq detection
+// run non-elevated; only the installer EXE crosses the UAC boundary.
 func (d *DockerInstaller) installWindows() error {
+	proceed, err := d.ensureWindowsVirtualizationPrereqs()
+	if err != nil {
+		return err
+	}
+	if !proceed {
+		// A prerequisite was installed inline (or user cancelled). The user
+		// message is already printed by the inner installer; we skip the
+		// Docker install and exit cleanly.
+		return nil
+	}
+
 	fmt.Println("\n📊 Analyzing available storage...")
 
 	drives, err := d.storage.GetWindowsDrives()
@@ -98,18 +317,18 @@ func (d *DockerInstaller) installWindows() error {
 		fmt.Printf("   %s:\\ - %s free / %s total%s\n", drive.Letter, drive.FreeSpace, drive.TotalSpace, status)
 	}
 
-	// Get recommended drive
-	selectedDrive, err := d.storage.AnalyzeStorage()
+	// Resolve final data-root: explicit flag, interactive prompt, or recommended default.
+	dataRoot, explicit, err := d.resolveWindowsDataRoot(drives)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("\n✅ Selected storage: %s:\\ (optimal choice)\n", selectedDrive)
+	fmt.Printf("\n✅ Selected Docker data-root: %s\n", dataRoot)
 
 	if d.dryRun {
 		fmt.Println("\n🔍 DRY RUN - Would perform the following:")
 		fmt.Printf("   1. Download Docker Desktop installer\n")
-		fmt.Printf("   2. Install Docker Desktop with data-root: %s:\\docker-data\n", selectedDrive)
+		fmt.Printf("   2. Install Docker Desktop with data-root: %s\n", dataRoot)
 		fmt.Printf("   3. Configure Docker settings\n")
 		fmt.Printf("   4. Verify installation\n")
 		return nil
@@ -119,7 +338,7 @@ func (d *DockerInstaller) installWindows() error {
 	fmt.Println("\n📥 Downloading Docker Desktop for Windows...")
 	dockerURL := "https://desktop.docker.com/win/main/amd64/Docker%20Desktop%20Installer.exe"
 
-	installerPath, err := DownloadFileWithProperFilename(dockerURL, os.TempDir())
+	installerPath, err := archive.DownloadFileWithProperFilename(dockerURL, os.TempDir())
 	if err != nil {
 		return fmt.Errorf("failed to download Docker Desktop: %w", err)
 	}
@@ -131,25 +350,23 @@ func (d *DockerInstaller) installWindows() error {
 
 	// Run installer
 	fmt.Println("🔧 Installing Docker Desktop...")
-	dataRoot := fmt.Sprintf("%s:\\docker-data", selectedDrive)
 
-	// Docker Desktop installer arguments
+	// Docker Desktop installer arguments.
+	// NOTE: --quiet is intentionally omitted so Docker's built-in progress
+	// dialog stays visible during the ~1-2 minute install.
 	args := []string{
 		"install",
 		"--accept-license",
-		"--quiet",
 	}
 
-	cmd := exec.Command(installerPath, args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("Docker Desktop installation failed: %w", err)
+	if err := d.runDockerInstaller(installerPath, args); err != nil {
+		return err
 	}
 
-	// Configure data-root if not on C:
-	if selectedDrive != "C" {
+	// Configure data-root when the user chose explicitly, or when the automatic
+	// pick landed on a non-C drive (legacy behavior: leave Docker Desktop's
+	// default alone for auto-selected C:).
+	if explicit || !strings.EqualFold(filepath.VolumeName(dataRoot), "C:") {
 		fmt.Printf("⚙️  Configuring Docker data-root to: %s\n", dataRoot)
 		if err := d.configureWindowsDataRoot(dataRoot); err != nil {
 			fmt.Printf("⚠️  Could not configure data-root: %v\n", err)
@@ -231,14 +448,13 @@ func (d *DockerInstaller) installLinux() error {
 		fmt.Printf("   %s - %s free / %s total%s\n", part.MountPoint, part.FreeSpace, part.TotalSpace, status)
 	}
 
-	// Get recommended partition
-	selectedPath, err := d.storage.AnalyzeStorage()
+	// Resolve final data-root: explicit flag, interactive prompt, or recommended default.
+	dataRoot, _, err := d.resolveLinuxDataRoot(partitions)
 	if err != nil {
 		return err
 	}
 
-	dataRoot := filepath.Join(selectedPath, "docker-data")
-	fmt.Printf("\n✅ Selected storage: %s (optimal choice)\n", dataRoot)
+	fmt.Printf("\n✅ Selected Docker data-root: %s\n", dataRoot)
 
 	if d.dryRun {
 		fmt.Println("\n🔍 DRY RUN - Would perform the following:")
@@ -505,4 +721,203 @@ func (d *DockerInstaller) installMacOS() error {
 	fmt.Println("   Open Docker Desktop from Applications to complete setup")
 
 	return nil
+}
+
+// resolveWindowsDataRoot determines the final Docker data-root path on Windows.
+// Precedence: explicit --data-root flag > interactive prompt > recommended default.
+// Returns the chosen path and explicit=true when the user (or flag) actively picked it.
+func (d *DockerInstaller) resolveWindowsDataRoot(drives []DriveInfo) (string, bool, error) {
+	if d.dataRoot != "" {
+		if err := d.validateWindowsPath(d.dataRoot, drives); err != nil {
+			return "", false, err
+		}
+		return d.dataRoot, true, nil
+	}
+
+	recommended, err := d.storage.analyzeWindowsStorage()
+	if err != nil {
+		return "", false, err
+	}
+
+	if d.nonInteractive {
+		return fmt.Sprintf("%s:\\docker-data", recommended), false, nil
+	}
+
+	return d.promptWindowsDataRoot(drives, recommended)
+}
+
+// resolveLinuxDataRoot determines the final Docker data-root path on Linux.
+// Precedence: explicit --data-root flag > interactive prompt > recommended default.
+func (d *DockerInstaller) resolveLinuxDataRoot(partitions []PartitionInfo) (string, bool, error) {
+	if d.dataRoot != "" {
+		return d.dataRoot, true, nil
+	}
+
+	recommended, err := d.storage.analyzeLinuxStorage()
+	if err != nil {
+		return "", false, err
+	}
+
+	if d.nonInteractive {
+		return filepath.Join(recommended, "docker-data"), false, nil
+	}
+
+	return d.promptLinuxDataRoot(partitions, recommended)
+}
+
+// promptWindowsDataRoot shows an interactive menu of eligible drives plus a custom
+// path option. Pressing Enter accepts the recommended drive.
+func (d *DockerInstaller) promptWindowsDataRoot(drives []DriveInfo, recommended string) (string, bool, error) {
+	var eligible []DriveInfo
+	for _, dr := range drives {
+		if parseSpaceString(dr.FreeSpace) >= d.storage.minSpace {
+			eligible = append(eligible, dr)
+		}
+	}
+	if len(eligible) == 0 {
+		return "", false, fmt.Errorf("no drives with sufficient space (>= %d GB)", d.storage.minSpace/(1024*1024*1024))
+	}
+
+	defaultIdx := 0
+	for i, dr := range eligible {
+		if dr.Letter == recommended {
+			defaultIdx = i
+			break
+		}
+	}
+
+	fmt.Println("\n📁 Select Docker data-root location:")
+	for i, dr := range eligible {
+		marker := ""
+		if i == defaultIdx {
+			marker = " (recommended)"
+		}
+		fmt.Printf("   %d. %s:\\docker-data - %s free%s\n", i+1, dr.Letter, dr.FreeSpace, marker)
+	}
+	customIdx := len(eligible) + 1
+	fmt.Printf("   %d. Custom path (enter manually)\n", customIdx)
+	fmt.Printf("Choice [%d]: ", defaultIdx+1)
+
+	reader := bufio.NewReader(os.Stdin)
+	line, err := reader.ReadString('\n')
+	if err != nil {
+		return "", false, fmt.Errorf("failed to read choice: %w", err)
+	}
+	line = strings.TrimSpace(line)
+
+	choice := defaultIdx + 1
+	if line != "" {
+		n, err := strconv.Atoi(line)
+		if err != nil || n < 1 || n > customIdx {
+			return "", false, fmt.Errorf("invalid choice: %q", line)
+		}
+		choice = n
+	}
+
+	if choice == customIdx {
+		fmt.Print("Enter custom path (e.g. D:\\docker-data): ")
+		custom, err := reader.ReadString('\n')
+		if err != nil {
+			return "", false, fmt.Errorf("failed to read path: %w", err)
+		}
+		custom = strings.TrimSpace(custom)
+		if custom == "" {
+			return "", false, fmt.Errorf("custom path cannot be empty")
+		}
+		if err := d.validateWindowsPath(custom, drives); err != nil {
+			return "", false, err
+		}
+		return custom, true, nil
+	}
+
+	return fmt.Sprintf("%s:\\docker-data", eligible[choice-1].Letter), true, nil
+}
+
+// promptLinuxDataRoot shows an interactive menu of eligible partitions plus a
+// custom path option. Pressing Enter accepts the recommended partition.
+func (d *DockerInstaller) promptLinuxDataRoot(partitions []PartitionInfo, recommended string) (string, bool, error) {
+	var eligible []PartitionInfo
+	for _, p := range partitions {
+		if parseSpaceString(p.FreeSpace) >= d.storage.minSpace {
+			eligible = append(eligible, p)
+		}
+	}
+	if len(eligible) == 0 {
+		return "", false, fmt.Errorf("no partitions with sufficient space (>= %d GB)", d.storage.minSpace/(1024*1024*1024))
+	}
+
+	defaultIdx := 0
+	for i, p := range eligible {
+		if p.MountPoint == recommended {
+			defaultIdx = i
+			break
+		}
+	}
+
+	fmt.Println("\n📁 Select Docker data-root location:")
+	for i, p := range eligible {
+		marker := ""
+		if i == defaultIdx {
+			marker = " (recommended)"
+		}
+		fmt.Printf("   %d. %s - %s free%s\n", i+1, filepath.Join(p.MountPoint, "docker-data"), p.FreeSpace, marker)
+	}
+	customIdx := len(eligible) + 1
+	fmt.Printf("   %d. Custom path (enter manually)\n", customIdx)
+	fmt.Printf("Choice [%d]: ", defaultIdx+1)
+
+	reader := bufio.NewReader(os.Stdin)
+	line, err := reader.ReadString('\n')
+	if err != nil {
+		return "", false, fmt.Errorf("failed to read choice: %w", err)
+	}
+	line = strings.TrimSpace(line)
+
+	choice := defaultIdx + 1
+	if line != "" {
+		n, err := strconv.Atoi(line)
+		if err != nil || n < 1 || n > customIdx {
+			return "", false, fmt.Errorf("invalid choice: %q", line)
+		}
+		choice = n
+	}
+
+	if choice == customIdx {
+		fmt.Print("Enter custom path (e.g. /mnt/data/docker): ")
+		custom, err := reader.ReadString('\n')
+		if err != nil {
+			return "", false, fmt.Errorf("failed to read path: %w", err)
+		}
+		custom = strings.TrimSpace(custom)
+		if custom == "" {
+			return "", false, fmt.Errorf("custom path cannot be empty")
+		}
+		if !filepath.IsAbs(custom) {
+			return "", false, fmt.Errorf("custom path must be absolute: %q", custom)
+		}
+		return custom, true, nil
+	}
+
+	return filepath.Join(eligible[choice-1].MountPoint, "docker-data"), true, nil
+}
+
+// validateWindowsPath checks that the Windows path has a drive letter and the
+// drive has at least the minimum required free space. Uses the pre-fetched
+// drives list to avoid re-running the PowerShell query.
+func (d *DockerInstaller) validateWindowsPath(path string, drives []DriveInfo) error {
+	vol := filepath.VolumeName(path)
+	if len(vol) < 2 || vol[1] != ':' {
+		return fmt.Errorf("invalid Windows path: %q (must include drive letter, e.g. D:\\docker-data)", path)
+	}
+	letter := strings.TrimSuffix(vol, ":")
+	for _, dr := range drives {
+		if strings.EqualFold(dr.Letter, letter) {
+			if parseSpaceString(dr.FreeSpace) < d.storage.minSpace {
+				return fmt.Errorf("drive %s:\\ has insufficient free space (%s, need >= %d GB)",
+					letter, dr.FreeSpace, d.storage.minSpace/(1024*1024*1024))
+			}
+			return nil
+		}
+	}
+	return fmt.Errorf("drive %s:\\ not found", letter)
 }

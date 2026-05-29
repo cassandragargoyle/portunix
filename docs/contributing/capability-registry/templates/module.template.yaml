@@ -1,0 +1,10 @@
+# Module node — docs/architecture/capability-registry/nodes/modules/<product>.<name>.yaml
+# Create ONLY when the parent product.composition == modular.
+id: module:example.crm
+name: CRM module
+product: product:example        # parent product (exactly one)
+description: Component whose capabilities/licenses/versions are module-scoped.
+tags: []
+verification:
+  status: unknown
+  lastChecked: "2026-05-26"

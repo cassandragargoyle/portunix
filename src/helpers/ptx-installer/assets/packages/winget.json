@@ -9,7 +9,9 @@
     "homepage": "https://docs.microsoft.com/en-us/windows/package-manager/",
     "documentation": "https://docs.microsoft.com/en-us/windows/package-manager/winget/",
     "license": "MIT",
-    "maintainer": "Microsoft"
+    "maintainer": "Microsoft",
+    "installationDocsUrl": "https://learn.microsoft.com/en-us/windows/package-manager/winget/",
+    "latestVersionUrl": "https://github.com/microsoft/winget-cli/releases/latest"
   },
   "spec": {
     "hasVariants": true,

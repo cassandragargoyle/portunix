@@ -1,0 +1,57 @@
+# exposed_via — a Capability is reachable through an Interface.
+relations:
+  - from: capability:provisioning.package-install
+    type: exposed_via
+    to: interface:portunix.cli
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: capability:container.lifecycle-management
+    type: exposed_via
+    to: interface:portunix.cli
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: capability:virtualization.sandbox
+    type: exposed_via
+    to: interface:portunix.cli
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: capability:plugin.lifecycle-management
+    type: exposed_via
+    to: interface:portunix.cli
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: capability:ai-integration.mcp-server
+    type: exposed_via
+    to: interface:portunix.cli
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: capability:update.self-update
+    type: exposed_via
+    to: interface:portunix.cli
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: capability:system.info-detection
+    type: exposed_via
+    to: interface:portunix.cli
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"

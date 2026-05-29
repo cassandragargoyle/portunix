@@ -9,7 +9,9 @@
     "homepage": "https://podman.io/",
     "documentation": "https://docs.podman.io/",
     "license": "Apache-2.0",
-    "maintainer": "Red Hat"
+    "maintainer": "Red Hat",
+    "installationDocsUrl": "https://podman.io/docs/installation",
+    "latestVersionUrl": "https://github.com/containers/podman/releases/latest"
   },
   "spec": {
     "hasVariants": false,

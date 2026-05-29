@@ -22,6 +22,7 @@ These are the built-in commands available in Portunix.
 | [make](make/) | Cross-platform Makefile utilities |
 | [package](package/) | Package management and registry |
 | [pft](pft/) | Product feedback tool integration |
+| [specpm](specpm/) | Initialize project-management specifications (spec-kit-pm) |
 | [playbook](playbook/) | Infrastructure as Code management |
 | [python](python/) | Python development tools |
 | [aiops](aiops/) | AI operations and GPU management |

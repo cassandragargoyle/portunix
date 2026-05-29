@@ -1,0 +1,84 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "sqlite",
+    "displayName": "SQLite",
+    "description": "Self-contained, serverless, zero-configuration SQL database engine (CLI tool)",
+    "category": "infrastructure/database",
+    "homepage": "https://www.sqlite.org/",
+    "documentation": "https://www.sqlite.org/docs.html",
+    "license": "Public Domain",
+    "maintainer": "SQLite Consortium",
+    "installationDocsUrl": "https://www.sqlite.org/download.html",
+    "latestVersionUrl": "https://www.sqlite.org/changes.html"
+  },
+  "spec": {
+    "hasVariants": false,
+    "platforms": {
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "apt": {
+            "version": "latest",
+            "packages": ["sqlite3"]
+          },
+          "dnf": {
+            "type": "dnf",
+            "version": "latest",
+            "packages": ["sqlite"]
+          }
+        },
+        "verification": {
+          "command": "sqlite3 --version",
+          "expectedExitCode": 0
+        }
+      },
+      "windows": {
+        "type": "chocolatey",
+        "variants": {
+          "chocolatey": {
+            "version": "latest",
+            "packages": ["sqlite"]
+          },
+          "winget": {
+            "type": "winget",
+            "version": "latest",
+            "packages": ["SQLite.SQLite"]
+          }
+        },
+        "verification": {
+          "command": "sqlite3 --version",
+          "expectedExitCode": 0
+        }
+      },
+      "darwin": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "SQLite ships with macOS; install latest via Homebrew if needed",
+            "installScript": "brew install sqlite"
+          }
+        },
+        "verification": {
+          "command": "sqlite3 --version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "features": [
+      "Embedded — no server process required",
+      "Single-file databases",
+      "Public-domain license",
+      "Standard SQL with extensions"
+    ],
+    "aiPrompts": {
+      "versionDiscovery": "SQLite is bundled with most distributions. Check https://www.sqlite.org/changes.html for the latest version.",
+      "urlResolution": "Install via distribution package managers (apt/dnf/chocolatey/winget/brew).",
+      "updateGuidance": "SQLite is API-stable; new minor versions are drop-in compatible."
+    },
+    "dependencies": [],
+    "templates": ["apt-package"]
+  }
+}

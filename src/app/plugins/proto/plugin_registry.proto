@@ -1,0 +1,90 @@
+// Copyright (c) CassandraGargoyle Community Project.
+// Licensed under the MIT License - see LICENSE file for details.
+
+syntax = "proto3";
+
+package portunix.plugins.registry.v1;
+
+option go_package = "portunix.ai/app/plugins/proto/pluginregistry";
+
+// PluginRegistryService is the ptx-side gRPC face of the local plugin registry.
+// Hosting platforms (Synapse, Pack, Agent, ...) query this service to discover
+// which installed Portunix plugins target them and retrieve each plugin's
+// platform-specific registration payload.
+//
+// This service is served by the ptx-plugin-registry helper binary (issue #175,
+// DEC-1 / DEC-2). It is distinct from PluginService in plugin.proto — that
+// service is implemented by plugins (Portunix is the client) and cannot answer
+// for the registry as a whole.
+service PluginRegistryService {
+    // ListPluginsForPlatform returns the subset of installed plugins whose
+    // supported_platforms[] declares the requested platform. Optional SemVer
+    // range matching and feature AND-filter are applied identically to the
+    // CLI form (`ptx plugin list --platform=... --platform-version=... --feature=...`).
+    rpc ListPluginsForPlatform(ListPluginsForPlatformRequest)
+        returns (ListPluginsForPlatformResponse);
+
+    // HealthCheck is a lightweight liveness probe for the ptx-plugin-registry
+    // helper. Callers use it to verify the daemon started before issuing the
+    // first ListPluginsForPlatform call.
+    rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// ListPluginsForPlatformRequest parameters.
+message ListPluginsForPlatformRequest {
+    // Canonical platform identifier (e.g. "synapse"). Required.
+    string platform = 1;
+
+    // Platform SemVer; when set, a plugin matches only if its
+    // supported_platforms[platform].min_version / max_version admit this
+    // version. Inclusive on both bounds; empty bound = unbounded.
+    string platform_version = 2;
+
+    // Required capability tokens. Plugin must declare ALL listed features
+    // (AND-filter). Empty list disables the filter.
+    repeated string features = 3;
+}
+
+// ListPluginsForPlatformResponse envelope.
+message ListPluginsForPlatformResponse {
+    repeated MatchedPlugin plugins = 1;
+}
+
+// MatchedPlugin is one entry in the query result — plugin identity plus the
+// resolved supported_platforms entry for the requested platform.
+message MatchedPlugin {
+    // Plugin identity. These mirror the plugin-manifest.schema.json shape.
+    string name = 1;
+    string version = 2;
+    string description = 3;
+    string author = 4;
+    string license = 5;
+
+    // SemVer range the plugin declared for the requested platform. Either
+    // field may be empty to indicate an unbounded side.
+    string min_version = 6;
+    string max_version = 7;
+
+    // All capability tokens declared by the plugin for this platform.
+    repeated string declared_features = 8;
+
+    // Subset of the caller's requested features that the plugin declared.
+    // When the request features list was empty, this field is empty.
+    repeated string matched_features = 9;
+
+    // Opaque platform_payload from the plugin manifest. Carried as raw JSON
+    // bytes to preserve byte-identical round-trip (DEC-7 / acceptance
+    // criterion). Portunix does not interpret the content — the target
+    // platform (e.g. Synapse) validates it against its own schema.
+    bytes platform_payload_json = 10;
+}
+
+// HealthCheckRequest is an empty probe.
+message HealthCheckRequest {}
+
+// HealthCheckResponse reports daemon readiness and build version.
+message HealthCheckResponse {
+    bool healthy = 1;
+    string status = 2;
+    string version = 3;
+}

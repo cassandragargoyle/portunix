@@ -6,7 +6,7 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/cassandragargoyle/portunix)](https://goreportcard.com/report/github.com/cassandragargoyle/portunix)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-> 🌐 **Language / Jazyk**: **English** | [Čeština](README.cs.md)
+> **Language / Jazyk**: **English** | [Čeština](README.cs.md)
 
 **Unified AI plugin and task platform for development environments** — with intelligent OS detection, Docker container support, and automated software installation.
 
@@ -23,6 +23,8 @@
 
 ### From Releases (Recommended)
 
+#### On Linux
+
 ```bash
 # Linux (amd64) — archive contains portunix + 12 ptx-* helpers + install.sh
 mkdir portunix-install && cd portunix-install
@@ -33,6 +35,12 @@ cd .. && rm -rf portunix-install
 
 # Verify installation
 portunix version
+```
+
+#### On Windows
+
+```bash
+powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/cassandragargoyle/portunix/main/scripts/install.ps1 | iex"
 ```
 
 ### From Source
@@ -316,29 +324,46 @@ export PORTUNIX_CACHE_DIR=/custom/cache/path
 - Docker/Podman management with intelligent installation
 - Multi-platform container support with SSH-enabled development containers
 - Container orchestration with docker-compose/podman-compose
+- Container lifecycle management with cleanup guarantees (#27)
+- Universal container management — restart + cross-runtime discovery (#32)
 - MCP server for AI assistant integration
+- MCP wizard with advanced features — handshake, TLS, scope/env/timeout (#34)
 - Package registry system with automatic discovery
 - Multi-level help system (basic, expert, AI)
 - QEMU/KVM virtualization with Windows 11 support and snapshots
+- Proxmox VE management — VM/CT lifecycle, snapshots, SSH (#167)
 - Product feedback tool (ptx-pft) with Fider/ClearFlask/Eververse providers
 - AIOps helper for GPU/AI container workloads
 - Make helper for cross-platform builds
 - Ansible infrastructure as code integration
 - Self-update system with rollback capability
+- Ed25519-signed update channel verification (#165, #166)
 - Comprehensive testing architecture and CI/CD pipeline
 - Python development helper with project-local venv support
 - Plugin system with gRPC architecture (#7)
+- Plugin registry for platform-capability discovery (#175)
 - Playbook template system for documentation environments
 - Auto-dependency resolution for package installation
-- Docusaurus, Hugo, Docsy, Docsify support
+- Docusaurus, Hugo, Docsy, Docsify, VitePress, MkDocs support (#154)
+- Interactive wizard framework — `ptx-wizard` helper (#14)
+- Database helper — PostgreSQL + SQLite, backup, MCP (#13)
+- GitHub integration helper — clone, releases, encrypted token store (#25)
+- SpecPM helper for spec-kit-pm integration (#183, #184)
+- SSH helper — unified `portunix ssh` / `scp` (#174)
+- Docker install UX on Windows — UAC, WSL2, `install wsl` (#178, #179)
+- Version management strategy with internal `+dev.N` builds (#140, ADR-036)
+- AI assistant install & detection — bundles, `package detect`, `--recommend-ai`, MCP auto-hook (#35, partial)
 
 ### Upcoming Features
 
-- Virtual development disk management (#8)
 - Configurable datastore backends (#9)
-- Interactive wizard framework (#14)
-- AI assistant installation support (#35)
-- VSCode development containers integration
+- AI assistant install — version pinning/downgrade + uninstall (#35)
+- PTX-Prompting helper for template-based prompt generation (#73)
+- PTX-Vocalio helper — speech recognition + TTS (#98)
+- Disk image files helper (VDI/VMDK/VHD/QCOW2) (#67)
+- Cross-platform binary distribution (#125)
+- Distributed MCP server ecosystem for plugins (#150)
+- Plugin security hardening — TLS, signing, audit (#185)
 
 ## Contributing
 

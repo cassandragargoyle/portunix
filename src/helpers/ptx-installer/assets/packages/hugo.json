@@ -9,7 +9,9 @@
     "homepage": "https://gohugo.io/",
     "documentation": "https://gohugo.io/documentation/",
     "license": "Apache-2.0",
-    "maintainer": "Hugo Authors"
+    "maintainer": "Hugo Authors",
+    "installationDocsUrl": "https://gohugo.io/installation/",
+    "latestVersionUrl": "https://github.com/gohugoio/hugo/releases/latest"
   },
   "spec": {
     "hasVariants": true,
@@ -68,10 +70,12 @@
             ]
           },
           "apt": {
+            "type": "apt",
             "version": "latest",
             "packages": ["hugo"]
           },
           "snap": {
+            "type": "snap",
             "version": "latest",
             "packages": ["hugo"],
             "installArgs": ["--channel=extended"]

@@ -11,11 +11,12 @@ var Version = "v1.10.8"
 
 // ReleaseInfo contains information about a GitHub release
 type ReleaseInfo struct {
-	Version     string
-	DownloadURL string
-	ChecksumURL string
-	Size        int64
-	PublishedAt string
+	Version      string
+	DownloadURL  string
+	ChecksumURL  string
+	SignatureURL string
+	Size         int64
+	PublishedAt  string
 }
 
 // GitHubRelease represents a GitHub release API response
@@ -70,6 +71,12 @@ func GetChecksumName(version string) string {
 
 	// Format: checksums_1.5.0.txt
 	return fmt.Sprintf("checksums_%s.txt", version)
+}
+
+// GetSignatureName returns the expected signature file name (Ed25519
+// detached signature over the checksums file).
+func GetSignatureName(version string) string {
+	return GetChecksumName(version) + ".sig"
 }
 
 // CompareVersions compares two semantic versions

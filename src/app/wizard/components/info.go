@@ -34,6 +34,10 @@ func (i *InfoComponent) Render(ctx *wizard.WizardContext) error {
 		fmt.Printf("%s\n", content)
 	}
 
+	if ctx.NonInteractive {
+		return nil
+	}
+
 	fmt.Print("\nPress Enter to continue...")
 	fmt.Scanln()
 	return nil
@@ -80,6 +84,10 @@ func (s *SuccessComponent) Render(ctx *wizard.WizardContext) error {
 		fmt.Printf("✅ %s\n", content)
 	}
 
+	if ctx.NonInteractive {
+		return nil
+	}
+
 	fmt.Print("\nPress Enter to finish...")
 	fmt.Scanln()
 	return nil
@@ -117,6 +125,10 @@ func (e *ErrorComponent) Render(ctx *wizard.WizardContext) error {
 
 	if e.Error != nil {
 		fmt.Printf("Error details: %v\n", e.Error)
+	}
+
+	if ctx.NonInteractive {
+		return nil
 	}
 
 	fmt.Print("\nPress Enter to exit...")

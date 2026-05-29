@@ -9,7 +9,9 @@
     "homepage": "https://www.python.org/",
     "documentation": "https://docs.python.org/",
     "license": "PSF-2.0",
-    "maintainer": "Python Software Foundation"
+    "maintainer": "Python Software Foundation",
+    "installationDocsUrl": "https://www.python.org/downloads/",
+    "latestVersionUrl": "https://www.python.org/downloads/"
   },
   "spec": {
     "hasVariants": true,

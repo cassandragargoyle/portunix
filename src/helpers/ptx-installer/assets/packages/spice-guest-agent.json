@@ -1,0 +1,86 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "spice-guest-agent",
+    "displayName": "SPICE Guest Agent",
+    "description": "SPICE guest-side agent for clipboard sharing, dynamic resolution, and host-guest integration (alias of spice-guest-tools)",
+    "category": "infrastructure/virtualization",
+    "homepage": "https://www.spice-space.org/",
+    "documentation": "https://www.spice-space.org/documentation.html",
+    "license": "GPL-2.0",
+    "maintainer": "SPICE Project",
+    "installationDocsUrl": "https://www.spice-space.org/download.html",
+    "latestVersionUrl": "https://www.spice-space.org/download.html"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "apt": {
+            "version": "latest",
+            "packages": ["spice-vdagent"],
+            "postInstall": [
+              "sudo systemctl enable spice-vdagentd",
+              "sudo systemctl start spice-vdagentd",
+              "echo '✅ SPICE guest agent installed and service enabled'",
+              "echo '💡 Clipboard sharing requires a SPICE channel in the VM XML'"
+            ]
+          },
+          "dnf": {
+            "type": "dnf",
+            "version": "latest",
+            "packages": ["spice-vdagent"],
+            "postInstall": [
+              "sudo systemctl enable spice-vdagentd",
+              "sudo systemctl start spice-vdagentd",
+              "echo '✅ SPICE guest agent installed and service enabled'",
+              "echo '💡 Clipboard sharing requires a SPICE channel in the VM XML'"
+            ]
+          },
+          "pacman": {
+            "type": "pacman",
+            "version": "latest",
+            "packages": ["spice-vdagent"],
+            "postInstall": [
+              "sudo systemctl enable spice-vdagentd",
+              "sudo systemctl start spice-vdagentd",
+              "echo '✅ SPICE guest agent installed and service enabled'",
+              "echo '💡 Clipboard sharing requires a SPICE channel in the VM XML'"
+            ]
+          }
+        },
+        "verification": {
+          "command": "systemctl is-enabled spice-vdagentd",
+          "expectedExitCode": 0
+        }
+      },
+      "windows": {
+        "type": "script",
+        "variants": {
+          "latest": {
+            "version": "latest",
+            "installScript": "$url = 'https://www.spice-space.org/download/windows/spice-guest-tools/spice-guest-tools-latest.exe'; $output = Join-Path $env:TEMP 'spice-guest-tools.exe'; Invoke-WebRequest -Uri $url -OutFile $output; Start-Process -FilePath $output -ArgumentList '/S' -Wait; Remove-Item $output",
+            "postInstall": [
+              "echo '✅ SPICE guest tools installed on Windows'",
+              "echo '💡 Reboot the guest to activate the agent and VirtIO drivers'"
+            ]
+          }
+        },
+        "verification": {
+          "command": "Get-Service spice-agent",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check SPICE project website for guest agent versions. Linux uses distribution package repositories (spice-vdagent).",
+      "urlResolution": "Linux: install spice-vdagent via package managers. Windows: download spice-guest-tools-latest.exe from spice-space.org.",
+      "updateGuidance": "Monitor SPICE guest agent updates. Required inside guest VMs for clipboard sharing with the host."
+    },
+    "dependencies": [],
+    "templates": ["apt-package", "exe-installer"]
+  }
+}

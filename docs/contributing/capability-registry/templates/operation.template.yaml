@@ -1,0 +1,11 @@
+# Operation node — docs/architecture/capability-registry/nodes/operations/<product>.<entity>.<action>.yaml
+# Always product-specific.
+id: operation:portunix.package.install
+name: Install package
+product: product:portunix
+description: Install a package defined in assets/install-packages.json.
+command: portunix install <package>
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-26"

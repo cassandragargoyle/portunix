@@ -81,18 +81,27 @@ func GetLatestRelease() (*ReleaseInfo, error) {
 		return nil, fmt.Errorf("failed to parse release: %w", err)
 	}
 
-	// Find the appropriate asset for this platform
+	return buildReleaseInfo(&release)
+}
+
+// buildReleaseInfo locates the platform-specific binary, checksum and
+// signature assets in a GitHub release and assembles a ReleaseInfo.
+func buildReleaseInfo(release *GitHubRelease) (*ReleaseInfo, error) {
 	binaryName := GetBinaryName(release.TagName)
 	checksumName := GetChecksumName(release.TagName)
+	signatureName := GetSignatureName(release.TagName)
 
-	var binaryAsset, checksumAsset *GitHubAsset
+	var binaryAsset, checksumAsset, signatureAsset *GitHubAsset
 
 	for i := range release.Assets {
 		asset := &release.Assets[i]
-		if asset.Name == binaryName {
+		switch asset.Name {
+		case binaryName:
 			binaryAsset = asset
-		} else if asset.Name == checksumName {
+		case checksumName:
 			checksumAsset = asset
+		case signatureName:
+			signatureAsset = asset
 		}
 	}
 
@@ -109,6 +118,10 @@ func GetLatestRelease() (*ReleaseInfo, error) {
 
 	if checksumAsset != nil {
 		info.ChecksumURL = checksumAsset.BrowserDownloadURL
+	}
+
+	if signatureAsset != nil {
+		info.SignatureURL = signatureAsset.BrowserDownloadURL
 	}
 
 	return info, nil
@@ -152,38 +165,7 @@ func GetMostRecentRelease() (*ReleaseInfo, error) {
 
 	// Use the first release (most recent)
 	release := releases[0]
-
-	// Find the appropriate asset for this platform
-	binaryName := GetBinaryName(release.TagName)
-	checksumName := GetChecksumName(release.TagName)
-
-	var binaryAsset, checksumAsset *GitHubAsset
-
-	for i := range release.Assets {
-		asset := &release.Assets[i]
-		if asset.Name == binaryName {
-			binaryAsset = asset
-		} else if asset.Name == checksumName {
-			checksumAsset = asset
-		}
-	}
-
-	if binaryAsset == nil {
-		return nil, fmt.Errorf("no binary found for %s/%s", GetOS(), GetArch())
-	}
-
-	info := &ReleaseInfo{
-		Version:     release.TagName,
-		DownloadURL: binaryAsset.BrowserDownloadURL,
-		Size:        binaryAsset.Size,
-		PublishedAt: release.PublishedAt,
-	}
-
-	if checksumAsset != nil {
-		info.ChecksumURL = checksumAsset.BrowserDownloadURL
-	}
-
-	return info, nil
+	return buildReleaseInfo(&release)
 }
 
 // GetRelease fetches a specific release by version
@@ -223,37 +205,7 @@ func GetRelease(version string) (*ReleaseInfo, error) {
 		return nil, fmt.Errorf("failed to parse release: %w", err)
 	}
 
-	// Find the appropriate asset for this platform
-	binaryName := GetBinaryName(release.TagName)
-	checksumName := GetChecksumName(release.TagName)
-
-	var binaryAsset, checksumAsset *GitHubAsset
-
-	for i := range release.Assets {
-		asset := &release.Assets[i]
-		if asset.Name == binaryName {
-			binaryAsset = asset
-		} else if asset.Name == checksumName {
-			checksumAsset = asset
-		}
-	}
-
-	if binaryAsset == nil {
-		return nil, fmt.Errorf("no binary found for %s/%s", GetOS(), GetArch())
-	}
-
-	info := &ReleaseInfo{
-		Version:     release.TagName,
-		DownloadURL: binaryAsset.BrowserDownloadURL,
-		Size:        binaryAsset.Size,
-		PublishedAt: release.PublishedAt,
-	}
-
-	if checksumAsset != nil {
-		info.ChecksumURL = checksumAsset.BrowserDownloadURL
-	}
-
-	return info, nil
+	return buildReleaseInfo(&release)
 }
 
 // DownloadUpdate downloads the update archive and extracts the binary
@@ -293,13 +245,13 @@ func DownloadUpdate(release *ReleaseInfo) (string, error) {
 		return "", fmt.Errorf("failed to save download: %w", err)
 	}
 
-	// Verify archive checksum if available
+	// Verify archive checksum (and signature, if present) if checksum is available
 	if release.ChecksumURL != "" {
 		// Extract archive name from download URL
 		urlParts := strings.Split(release.DownloadURL, "/")
 		archiveName := urlParts[len(urlParts)-1]
 
-		if err := VerifyArchiveChecksum(tmpArchive.Name(), release.ChecksumURL, archiveName); err != nil {
+		if err := VerifyArchiveChecksumSigned(tmpArchive.Name(), release.ChecksumURL, release.SignatureURL, archiveName); err != nil {
 			return "", fmt.Errorf("checksum verification failed: %w", err)
 		}
 	}

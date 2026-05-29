@@ -212,9 +212,13 @@ Usage:
   portunix plugin list [flags]
 
 Flags:
-  -a, --all             Show all plugins (including disabled)
-  -h, --help            help for list
-  -o, --output string   Output format: table, json, yaml (default "table")
+  -a, --all                       Show all plugins (including disabled)
+      --feature stringArray       Required capability token(s); AND-filter, repeatable; requires --platform
+  -h, --help                      help for list
+  -o, --output string             Output format: table, json, yaml (default "table")
+      --platform string           Filter plugins by declared hosting platform (e.g. synapse, pack)
+      --platform-version string   Platform SemVer for range matching; requires --platform
+  -v, --verbose                   Default listing: print full description wrapped to terminal width; platform-query mode: include platform_payload in human-readable output
 
 Global Flags:
       --help-ai       Show machine-readable help in JSON format

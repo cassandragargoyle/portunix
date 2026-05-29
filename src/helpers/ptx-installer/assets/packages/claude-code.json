@@ -9,7 +9,9 @@
     "homepage": "https://claude.ai/cli",
     "documentation": "https://docs.claude.com/en/docs/claude-code/",
     "license": "Proprietary",
-    "maintainer": "Anthropic"
+    "maintainer": "Anthropic",
+    "installationDocsUrl": "https://docs.claude.com/en/docs/claude-code/setup",
+    "latestVersionUrl": "https://www.npmjs.com/package/@anthropic-ai/claude-code"
   },
   "spec": {
     "hasVariants": true,

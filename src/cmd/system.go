@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package cmd
 
 import (
@@ -40,11 +44,15 @@ Performance profiling flags:
   --time           Show execution time
   --cpuprofile     Write CPU profile to file
   --memprofile     Write memory profile to file
-  --trace          Write execution trace to file`,
+  --trace          Write execution trace to file
+
+Optional probes (off by default for speed):
+  --check-https    Verify live HTTPS connectivity to well-known endpoints`,
 	Run: func(cmd *cobra.Command, args []string) {
 		formatJSON, _ := cmd.Flags().GetBool("json")
 		formatShort, _ := cmd.Flags().GetBool("short")
 		showTime, _ := cmd.Flags().GetBool("time")
+		checkHTTPS, _ := cmd.Flags().GetBool("check-https")
 		cpuProfile, _ := cmd.Flags().GetString("cpuprofile")
 		memProfile, _ := cmd.Flags().GetString("memprofile")
 		traceFile, _ := cmd.Flags().GetString("trace")
@@ -82,7 +90,9 @@ Performance profiling flags:
 		// Measure execution time
 		startTime := time.Now()
 
-		sysInfo, err := system.GetSystemInfo()
+		sysInfo, err := system.GetSystemInfoWithOptions(system.SystemInfoOptions{
+			CheckHTTPS: checkHTTPS,
+		})
 		if err != nil {
 			fmt.Printf("Error getting system information: %v\n", err)
 			os.Exit(1)
@@ -429,7 +439,11 @@ func printSystemInfo(info *system.SystemInfo) {
 		certInfo := info.Capabilities.CertificateInfo
 		fmt.Printf("Available:    %t", certInfo.Available)
 		if certInfo.Available {
-			fmt.Printf("\nHTTPS:        %t", certInfo.HTTPSWorking)
+			if certInfo.HTTPSChecked {
+				fmt.Printf("\nHTTPS:        %t", certInfo.HTTPSWorking)
+			} else {
+				fmt.Printf("\nHTTPS:        not checked (use --check-https)")
+			}
 			if certInfo.Path != "" {
 				fmt.Printf("\nPath:         %s", certInfo.Path)
 			}
@@ -455,6 +469,9 @@ func init() {
 	systemInfoCmd.Flags().String("cpuprofile", "", "Write CPU profile to file")
 	systemInfoCmd.Flags().String("memprofile", "", "Write memory profile to file")
 	systemInfoCmd.Flags().String("trace", "", "Write execution trace to file")
+
+	// Optional slow probes (off by default)
+	systemInfoCmd.Flags().Bool("check-https", false, "Verify HTTPS connectivity (network probe)")
 
 	// Add flags for dispatcher command
 	systemDispatcherCmd.Flags().BoolP("json", "j", false, "Output as JSON")

@@ -9,7 +9,9 @@
     "homepage": "https://jinja.palletsprojects.com/",
     "documentation": "https://jinja.palletsprojects.com/en/3.1.x/",
     "license": "BSD-3-Clause",
-    "maintainer": "Pallets"
+    "maintainer": "Pallets",
+    "installationDocsUrl": "https://jinja.palletsprojects.com/en/3.1.x/intro/#installation",
+    "latestVersionUrl": "https://pypi.org/project/Jinja2/"
   },
   "spec": {
     "hasVariants": true,

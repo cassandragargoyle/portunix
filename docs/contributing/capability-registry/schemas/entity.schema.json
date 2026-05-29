@@ -1,0 +1,19 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "entity.schema.json",
+  "title": "Entity node",
+  "description": "Data object a capability operates on.",
+  "type": "object",
+  "required": ["id", "name", "verification"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^entity:[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*$",
+      "description": "entity:<domain>.<name>"
+    },
+    "name": { "type": "string" },
+    "description": { "type": "string" },
+    "verification": { "$ref": "verification.schema.json" }
+  }
+}

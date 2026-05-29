@@ -1,0 +1,10 @@
+# Operation node — product-specific
+id: operation:portunix.plugin.install
+name: Install plugin
+product: product:portunix
+description: Install a plugin from a directory or registry.
+command: portunix plugin install <path>
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"

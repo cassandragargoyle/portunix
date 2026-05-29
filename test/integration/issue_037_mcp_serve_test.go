@@ -2,6 +2,7 @@ package integration
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"fmt"
 	"net"
@@ -21,6 +22,23 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// procAttrSetpgid returns SysProcAttr that puts the child in its own process
+// group, so killProcessGroup can SIGKILL the whole tree (parent dispatcher +
+// orphaned ptx-* helper). Without this, the helper survives the parent's
+// death and keeps holding stdio pipes, hanging tests indefinitely.
+func procAttrSetpgid() *syscall.SysProcAttr {
+	return &syscall.SysProcAttr{Setpgid: true}
+}
+
+// killProcessGroup sends SIGKILL to the negated PID, which addresses the
+// whole process group (created via Setpgid above).
+func killProcessGroup(cmd *exec.Cmd) {
+	if cmd.Process == nil {
+		return
+	}
+	_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
 }
 
 // TestMCPServeIssue037 Integration tests for Issue #037 - MCP Serve Implementation
@@ -315,27 +333,33 @@ func (suite *TestMCPServeIssue037) testUnixSocketMode(t *testing.T) {
 	os.Remove(socketPath)
 	defer os.Remove(socketPath)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	tf.Step(t, "Execute MCP serve with Unix socket mode")
 	tf.Command(t, suite.binaryPath, []string{"mcp", "serve", "--mode", "unix", "--socket", socketPath})
 
-	cmd := exec.CommandContext(ctx, suite.binaryPath, "mcp", "serve", "--mode", "unix", "--socket", socketPath)
+	cmd := exec.Command(suite.binaryPath, "mcp", "serve", "--mode", "unix", "--socket", socketPath)
 	cmd.Dir = "../.."
+	// Run helper in its own process group so we can SIGKILL the whole tree.
+	// exec.CommandContext only kills the direct child (main `portunix`), and
+	// the dispatcher's cmd.Run() leaves the ptx-mcp helper as an orphan that
+	// keeps holding the stdout pipe — which would make CombinedOutput() block
+	// forever (blew up the suite at 4m44s before this change).
+	cmd.SysProcAttr = procAttrSetpgid()
+
+	var stdoutBuf, stderrBuf bytes.Buffer
+	cmd.Stdout = &stdoutBuf
+	cmd.Stderr = &stderrBuf
 
 	tf.Info(t, "Waiting for Unix socket server startup", "5s timeout")
-	output, err := cmd.CombinedOutput()
-
-	if err != nil {
-		if ctx.Err() == context.DeadlineExceeded {
-			tf.Info(t, "Context timeout reached", "Expected behavior")
-		} else {
-			tf.Warning(t, "Command error", err.Error())
-		}
+	if err := cmd.Start(); err != nil {
+		tf.Error(t, "Failed to start MCP server", err.Error())
+		success = false
+		return
 	}
+	time.Sleep(5 * time.Second)
+	killProcessGroup(cmd)
+	_ = cmd.Wait()
 
-	outputStr := string(output)
+	outputStr := stdoutBuf.String() + stderrBuf.String()
 	tf.Output(t, outputStr, 400)
 
 	expectedMsg := fmt.Sprintf("Starting MCP Server in Unix socket mode: %s", socketPath)

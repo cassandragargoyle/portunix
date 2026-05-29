@@ -1,0 +1,75 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "vitepress",
+    "displayName": "VitePress Static Documentation Site",
+    "description": "Vite & Vue powered static site generator for technical documentation",
+    "category": "development/tools",
+    "homepage": "https://vitepress.dev/",
+    "documentation": "https://vitepress.dev/guide/getting-started",
+    "license": "MIT",
+    "maintainer": "Vue.js Team",
+    "installationDocsUrl": "https://vitepress.dev/guide/getting-started",
+    "latestVersionUrl": "https://www.npmjs.com/package/vitepress"
+  },
+  "spec": {
+    "hasVariants": true,
+    "dependencies": ["nodejs"],
+    "requiresPath": true,
+    "defaultPath": {
+      "windows": ".\\site",
+      "linux": "./site"
+    },
+    "platforms": {
+      "windows": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "VitePress with non-interactive scaffold (docs/, .vitepress/config.js, npm scripts)",
+            "installScript": [
+              "if not exist \"${INSTALL_PATH}\" mkdir \"${INSTALL_PATH}\"",
+              "cd /d \"${INSTALL_PATH}\" && npm.cmd init -y",
+              "cd /d \"${INSTALL_PATH}\" && npm.cmd install --save-dev vitepress",
+              "cd /d \"${INSTALL_PATH}\" && if not exist docs\\.vitepress mkdir docs\\.vitepress",
+              "cd /d \"${INSTALL_PATH}\\docs\" && (if not exist index.md echo # Welcome > index.md)",
+              "cd /d \"${INSTALL_PATH}\\docs\\.vitepress\" && (if not exist config.js echo export default { title: \"VitePress Site\", description: \"A VitePress site\" } > config.js)",
+              "cd /d \"${INSTALL_PATH}\" && npm.cmd pkg set scripts.docs:dev=\"vitepress dev docs\" scripts.docs:build=\"vitepress build docs\" scripts.docs:preview=\"vitepress preview docs\""
+            ]
+          }
+        },
+        "verification": {
+          "command": "if exist ${INSTALL_PATH}\\node_modules\\vitepress (exit 0) else (exit 1)",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "latest",
+            "description": "VitePress with non-interactive scaffold (docs/, .vitepress/config.js, npm scripts)",
+            "installScript": [
+              "mkdir -p ${INSTALL_PATH}/docs/.vitepress",
+              "cd ${INSTALL_PATH} && npm init -y",
+              "cd ${INSTALL_PATH} && npm install --save-dev vitepress",
+              "test -f ${INSTALL_PATH}/docs/index.md || printf '# Welcome\\n\\nThis is a VitePress documentation site.\\n' > ${INSTALL_PATH}/docs/index.md",
+              "test -f ${INSTALL_PATH}/docs/.vitepress/config.js || printf 'export default {\\n  title: \"VitePress Site\",\\n  description: \"A VitePress site\"\\n}\\n' > ${INSTALL_PATH}/docs/.vitepress/config.js",
+              "cd ${INSTALL_PATH} && npm pkg set scripts.docs:dev='vitepress dev docs' scripts.docs:build='vitepress build docs' scripts.docs:preview='vitepress preview docs'"
+            ]
+          }
+        },
+        "verification": {
+          "command": "test -d ${INSTALL_PATH}/node_modules/vitepress && test -f ${INSTALL_PATH}/docs/index.md && test -f ${INSTALL_PATH}/docs/.vitepress/config.js",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "VitePress is distributed via npm. Check latest version at https://www.npmjs.com/package/vitepress",
+      "updateGuidance": "VitePress follows semantic versioning. Installing via npm always pulls the newest stable version. Major releases may require Node.js >= 18."
+    },
+    "templates": ["npm-create"]
+  }
+}

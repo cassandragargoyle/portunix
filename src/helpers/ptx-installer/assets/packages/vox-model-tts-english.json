@@ -8,7 +8,9 @@
     "category": "plugins/models",
     "homepage": "https://huggingface.co/rhasspy/piper-voices",
     "license": "MIT",
-    "maintainer": "CassandraGargoyle"
+    "maintainer": "CassandraGargoyle",
+    "installationDocsUrl": "https://huggingface.co/rhasspy/piper-voices",
+    "latestVersionUrl": "https://huggingface.co/rhasspy/piper-voices"
   },
   "spec": {
     "platforms": {
@@ -44,6 +46,11 @@
           }
         }
       }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Piper voice models are hosted on Hugging Face at rhasspy/piper-voices. There is no semantic version per voice — the repository is updated in-place. Check the file's git history via the Hugging Face API: https://huggingface.co/api/models/rhasspy/piper-voices/tree/main/en/en_US/lessac/medium — look at the `lastCommit` field of en_US-lessac-medium.onnx. The `version` field in this package is an internal Portunix model revision, bump it (e.g., 1.0.0 → 1.0.1) when the upstream blob changes.",
+      "urlResolution": "Download URL pattern: https://huggingface.co/rhasspy/piper-voices/resolve/main/{lang}/{locale}/{voice}/{quality}/{locale}-{voice}-{quality}.onnx — for English use en/en_US/lessac/medium. Always pair the .onnx file with its matching .onnx.json config file (same path, different extension). To browse other English voices: https://huggingface.co/rhasspy/piper-voices/tree/main/en/en_US — many speakers exist (amy, danny, joe, kathleen, lessac, libritts, ryan) with low/medium/high quality tiers; lessac/medium is a balanced default.",
+      "updateGuidance": "Update only if upstream Piper publishes an improved en_US-lessac-medium model or if requirements change (e.g., switch to higher quality, different speaker). To switch voice, change the URL path segment and the extractTo directory name to match new voice id. Model file size ~60 MB — keep in sync between Linux and Windows variants. The .onnx.json config defines speaker/phoneme config and MUST be downloaded alongside the .onnx weights; missing it breaks inference."
     },
     "dependencies": ["vox-deps"],
     "templates": ["download"]

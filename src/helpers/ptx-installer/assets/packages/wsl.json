@@ -1,0 +1,48 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "wsl",
+    "displayName": "Windows Subsystem for Linux",
+    "description": "WSL2 kernel — Linux virtualization layer for Windows, required by Docker Desktop",
+    "category": "development/runtime",
+    "homepage": "https://learn.microsoft.com/windows/wsl/",
+    "documentation": "https://learn.microsoft.com/windows/wsl/install",
+    "license": "MIT",
+    "maintainer": "Microsoft",
+    "installationDocsUrl": "https://learn.microsoft.com/windows/wsl/install",
+    "latestVersionUrl": "https://learn.microsoft.com/en-us/windows/wsl/release-notes"
+  },
+  "spec": {
+    "hasVariants": false,
+    "installationType": "builtin",
+    "platforms": {
+      "windows": {
+        "type": "builtin",
+        "variants": {
+          "default": {
+            "version": "2",
+            "description": "WSL2 kernel without a default Linux distribution"
+          }
+        },
+        "verification": {
+          "command": "wsl --status",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "features": [
+      "Runs `wsl --install --no-distribution` (kernel only, no Ubuntu)",
+      "Requires Administrator privileges",
+      "Requires system restart before WSL is usable",
+      "Prerequisite for Docker Desktop with WSL2 backend"
+    ],
+    "aiPrompts": {
+      "versionDiscovery": "WSL is an OS component; version is managed by Windows Update",
+      "urlResolution": "Built-in via `wsl --install` (no external download)",
+      "updateGuidance": "Use 'portunix install wsl' to install the WSL2 kernel. For distributions, run `wsl --install <Distro>` after."
+    },
+    "dependencies": [],
+    "templates": []
+  }
+}

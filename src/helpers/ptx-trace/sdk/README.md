@@ -9,6 +9,7 @@ This directory contains official SDKs for the PTX-TRACE system - a universal tra
 | **Python** | [`python/`](python/) | Stable | Python 3.8+ |
 | **Java** | [`java/`](java/) | Stable | Java 21+ |
 | **TypeScript** | [`typescript/`](typescript/) | Stable | Node.js 16+ |
+| **Bash** | [`bash/`](bash/) | Stable | Bash 4.0+ |
 | **Go** | Built-in | Stable | Go 1.21+ |
 
 ## Architecture
@@ -16,17 +17,17 @@ This directory contains official SDKs for the PTX-TRACE system - a universal tra
 All external SDKs communicate with the PTX-TRACE system via CLI subprocess calls:
 
 ```text
-┌─────────────────┐     ┌─────────────────┐     ┌─────────────────┐
-│   Python SDK    │     │    Java SDK     │     │ TypeScript SDK  │
-│                 │     │                 │     │                 │
-│  Session        │     │  Session        │     │  Session        │
-│  Operation      │     │  Operation      │     │  Operation      │
-│  OperationBuilder     │  OperationBuilder     │  OperationBuilder
-└────────┬────────┘     └────────┬────────┘     └────────┬────────┘
-         │                       │                       │
-         │  subprocess/exec      │  ProcessBuilder       │  spawn
-         │                       │                       │
-         ▼                       ▼                       ▼
+┌──────────────────┐     ┌─────────────────┐     ┌─────────────────┐
+│   Python SDK     │     │    Java SDK     │     │ TypeScript SDK  │
+│                  │     │                 │     │                 │
+│  Session         │     │  Session        │     │  Session        │
+│  Operation       │     │  Operation      │     │  Operation      │
+│  OperationBuilder│     │ OperationBuilder│     │ OperationBuilder│
+└────────┬─────────┘     └────────┬────────┘     └────────┬────────┘
+         │                        │                       │
+         │  subprocess/exec       │  ProcessBuilder       │  spawn
+         │                        │                       │
+         ▼                        ▼                       ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                     portunix trace CLI                          │
 │                                                                 │
@@ -87,6 +88,15 @@ try {
 }
 ```
 
+**Bash:**
+
+```bash
+source /path/to/sdk/bash/ptx-trace.sh
+ptx_trace_start "my-session" --pii-mask
+# operations...
+ptx_trace_end --summary
+```
+
 ### Traced Operations
 
 **Python:**
@@ -118,6 +128,19 @@ await session.withOperation("normalize_phone", async (op) => {
     const result = await normalize(rawPhone);
     op.output("phone", result);
 });
+```
+
+**Bash:**
+
+```bash
+# Single event
+ptx_trace_event "normalize_phone" --input "phone=$raw" --output "phone=$result"
+
+# Pipe-based: trace data flowing through a pipeline
+cat data.csv | ptx_trace_pipe "normalize" --format csv | next-stage
+
+# Wrapper: trace external command execution
+ptx_trace_exec "normalize" --tag transform -- ./normalize.sh "$raw"
 ```
 
 ### Fluent API
@@ -185,6 +208,16 @@ npm install
 npm run build
 ```
 
+### Bash
+
+```bash
+# Source the helper from your script
+source /path/to/portunix/src/helpers/ptx-trace/sdk/bash/ptx-trace.sh
+
+# Optional: override the portunix binary
+export PTX_TRACE_BIN=/opt/portunix/bin/portunix
+```
+
 ## Prerequisites
 
 All SDKs require the `portunix` binary to be available:
@@ -203,6 +236,11 @@ Trace.setDefaultBinaryPath("/opt/portunix/bin/portunix");
 Session.create("my-session", { binaryPath: "/opt/portunix/bin/portunix" });
 ```
 
+```bash
+# Bash
+export PTX_TRACE_BIN=/opt/portunix/bin/portunix
+```
+
 ## Examples
 
 See the [`examples/`](examples/) directory for complete working examples:
@@ -210,14 +248,17 @@ See the [`examples/`](examples/) directory for complete working examples:
 - [`examples/python/etl_pipeline.py`](examples/python/etl_pipeline.py) - Python ETL example
 - [`examples/java/EtlPipeline.java`](examples/java/EtlPipeline.java) - Java ETL example
 - [`examples/typescript/etl-pipeline.ts`](examples/typescript/etl-pipeline.ts) - TypeScript ETL example
+- [`examples/bash/etl-pipeline.sh`](examples/bash/etl-pipeline.sh) - Bash ETL example
 
 ## CLI Commands Used
 
 | SDK Method | CLI Command |
 | ---------- | ----------- |
-| `Session.create()` | `portunix trace start <name>` |
-| `Session.close()` | `portunix trace end` |
-| `Operation.end()` | `portunix trace event <operation>` |
+| `Session.create()` / `ptx_trace_start` | `portunix trace start <name>` |
+| `Session.close()` / `ptx_trace_end` | `portunix trace end` |
+| `Operation.end()` / `ptx_trace_event` | `portunix trace event <operation>` |
+| `ptx_trace_pipe` | `portunix trace pipe <operation>` |
+| `ptx_trace_exec` | `portunix trace exec <operation> -- <cmd>` |
 | `Session.list()` | `portunix trace sessions --format json` |
 | `Session.stats()` | `portunix trace stats --format json` |
 | `Session.events()` | `portunix trace view --format json` |
@@ -225,17 +266,19 @@ See the [`examples/`](examples/) directory for complete working examples:
 
 ## Features by SDK
 
-| Feature | Python | Java | TypeScript | Go |
-| ------- | ------ | ---- | ---------- | --- |
-| Session management | ✅ | ✅ | ✅ | ✅ |
-| Context manager / try-with-resources | ✅ | ✅ | N/A | ✅ |
-| Fluent API | ✅ | ✅ | ✅ | ✅ |
-| Decorator / Annotation | ✅ | ⚠️* | N/A | N/A |
-| Async/await | N/A | N/A | ✅ | ✅ |
-| Source types | ✅ | ✅ | ✅ | ✅ |
-| Error handling | ✅ | ✅ | ✅ | ✅ |
-| PII masking | ✅ | ✅ | ✅ | ✅ |
-| Sampling | ✅ | ✅ | ✅ | ✅ |
+| Feature | Python | Java | TypeScript | Bash | Go |
+| ------- | ------ | ---- | ---------- | ---- | --- |
+| Session management | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Context manager / try-with-resources | ✅ | ✅ | N/A | N/A | ✅ |
+| Fluent API | ✅ | ✅ | ✅ | N/A | ✅ |
+| Decorator / Annotation | ✅ | ⚠️* | N/A | N/A | N/A |
+| Pipe wrapper (stdin → stdout) | N/A | N/A | N/A | ✅ | N/A |
+| Process wrapper (`exec`) | N/A | N/A | N/A | ✅ | N/A |
+| Async/await | N/A | N/A | ✅ | N/A | ✅ |
+| Source types | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Error handling | ✅ | ✅ | ✅ | ✅ | ✅ |
+| PII masking | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Sampling | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 *Java annotation requires AspectJ or similar AOP framework
 
@@ -251,6 +294,7 @@ See the [`examples/`](examples/) directory for complete working examples:
 - [Python SDK README](python/README.md)
 - [Java SDK README](java/README.md)
 - [TypeScript SDK README](typescript/README.md)
+- [Bash SDK README](bash/README.md)
 - [Go SDK](../src/helpers/ptx-trace/sdk/) (built into ptx-trace helper)
 
 ## Support

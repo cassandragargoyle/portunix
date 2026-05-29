@@ -1,0 +1,83 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "virt-viewer",
+    "displayName": "Virt Viewer",
+    "description": "Lightweight SPICE/VNC client for connecting to QEMU/KVM and libvirt virtual machines",
+    "category": "infrastructure/virtualization",
+    "homepage": "https://virt-manager.org/",
+    "documentation": "https://virt-manager.org/docs/",
+    "license": "GPL-2.0",
+    "maintainer": "Virt-Manager Project",
+    "installationDocsUrl": "https://virt-manager.org/download/",
+    "latestVersionUrl": "https://releases.pagure.org/virt-viewer/"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "linux": {
+        "type": "apt",
+        "variants": {
+          "apt": {
+            "version": "latest",
+            "packages": ["virt-viewer"],
+            "postInstall": [
+              "echo '✅ virt-viewer installed'",
+              "echo '💡 Use: remote-viewer spice://<host>:<port> to connect to a VM'",
+              "echo '💡 Use: virt-viewer <vm-name> to connect via libvirt'"
+            ]
+          },
+          "dnf": {
+            "type": "dnf",
+            "version": "latest",
+            "packages": ["virt-viewer"],
+            "postInstall": [
+              "echo '✅ virt-viewer installed'",
+              "echo '💡 Use: remote-viewer spice://<host>:<port> to connect to a VM'",
+              "echo '💡 Use: virt-viewer <vm-name> to connect via libvirt'"
+            ]
+          },
+          "pacman": {
+            "type": "pacman",
+            "version": "latest",
+            "packages": ["virt-viewer"],
+            "postInstall": [
+              "echo '✅ virt-viewer installed'",
+              "echo '💡 Use: remote-viewer spice://<host>:<port> to connect to a VM'",
+              "echo '💡 Use: virt-viewer <vm-name> to connect via libvirt'"
+            ]
+          }
+        },
+        "verification": {
+          "command": "remote-viewer --version",
+          "expectedExitCode": 0
+        }
+      },
+      "windows": {
+        "type": "script",
+        "variants": {
+          "latest": {
+            "version": "11.0",
+            "installScript": "$url = 'https://releases.pagure.org/virt-viewer/virt-viewer-x64-11.0-1.0.msi'; $output = Join-Path $env:TEMP 'virt-viewer-x64.msi'; Invoke-WebRequest -Uri $url -OutFile $output; Start-Process msiexec.exe -ArgumentList '/i', $output, '/quiet', '/norestart' -Wait; Remove-Item $output",
+            "postInstall": [
+              "echo '✅ virt-viewer installed on Windows'",
+              "echo '💡 Use: remote-viewer.exe spice://<host>:<port> to connect to a VM'"
+            ]
+          }
+        },
+        "verification": {
+          "command": "where remote-viewer",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check https://releases.pagure.org/virt-viewer/ for latest Windows MSI releases. Linux uses distribution package repositories.",
+      "urlResolution": "Linux: install via package managers (apt, dnf, pacman). Windows: download MSI from releases.pagure.org/virt-viewer.",
+      "updateGuidance": "Monitor virt-manager.org for new virt-viewer releases. Recommended SPICE/VNC client for connecting to QEMU/KVM VMs."
+    },
+    "dependencies": [],
+    "templates": ["apt-package", "msi-installer"]
+  }
+}
