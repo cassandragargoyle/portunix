@@ -9,7 +9,9 @@
     "homepage": "https://galaxy.ansible.com/",
     "documentation": "https://docs.ansible.com/ansible/latest/collections/",
     "license": "GPL-3.0",
-    "maintainer": "Ansible Community"
+    "maintainer": "Ansible Community",
+    "installationDocsUrl": "https://docs.ansible.com/ansible/latest/collections_guide/collections_installing.html",
+    "latestVersionUrl": "https://galaxy.ansible.com/"
   },
   "spec": {
     "hasVariants": true,

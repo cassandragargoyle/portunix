@@ -9,7 +9,9 @@
     "homepage": "https://github.com/tesseract-ocr/tesseract",
     "documentation": "https://tesseract-ocr.github.io/tessdoc/",
     "license": "Apache-2.0",
-    "maintainer": "Tesseract OCR Project"
+    "maintainer": "Tesseract OCR Project",
+    "installationDocsUrl": "https://tesseract-ocr.github.io/tessdoc/Installation.html",
+    "latestVersionUrl": "https://github.com/tesseract-ocr/tesseract/releases/latest"
   },
   "spec": {
     "hasVariants": false,
@@ -26,6 +28,7 @@
             ]
           },
           "dnf": {
+            "type": "dnf",
             "version": "latest",
             "packages": [
               "tesseract",

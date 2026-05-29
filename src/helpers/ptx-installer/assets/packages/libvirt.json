@@ -9,7 +9,9 @@
     "homepage": "https://libvirt.org/",
     "documentation": "https://libvirt.org/docs.html",
     "license": "LGPL-2.1",
-    "maintainer": "Red Hat"
+    "maintainer": "Red Hat",
+    "installationDocsUrl": "https://libvirt.org/downloads.html",
+    "latestVersionUrl": "https://libvirt.org/news.html"
   },
   "spec": {
     "hasVariants": true,
@@ -26,6 +28,7 @@
             ]
           },
           "dnf": {
+            "type": "dnf",
             "version": "latest",
             "packages": ["libvirt-daemon", "libvirt-client"],
             "postInstall": [
@@ -34,6 +37,7 @@
             ]
           },
           "pacman": {
+            "type": "pacman",
             "version": "latest",
             "packages": ["libvirt"],
             "postInstall": [

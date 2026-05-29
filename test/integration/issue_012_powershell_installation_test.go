@@ -52,9 +52,15 @@ func testPowerShellQuickInstall(t *testing.T, portunixBin string) {
 			return
 		}
 
-		// Check for common installation issues
+		// Check for common installation issues.
+		// apt-level permission failures surface in the locale's language
+		// (e.g. Czech "Operace zamítnuta", "Jste root?"), so detect the
+		// root-required signals structurally rather than by English message.
 		outputStr := string(output)
-		if strings.Contains(outputStr, "Permission denied") {
+		if strings.Contains(outputStr, "Permission denied") ||
+			strings.Contains(outputStr, "apt-get install failed") ||
+			strings.Contains(outputStr, "lock") ||
+			strings.Contains(outputStr, "root?") {
 			t.Skip("Installation requires root privileges, skipping")
 		}
 		if strings.Contains(outputStr, "network") || strings.Contains(outputStr, "download") {

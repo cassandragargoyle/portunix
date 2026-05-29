@@ -1,0 +1,14 @@
+{
+  "apiVersion": "v1",
+  "kind": "Bundle",
+  "metadata": {
+    "name": "ai-assistant-full",
+    "displayName": "AI Assistant (Full)",
+    "description": "Complete AI assistant suite: Claude Code, Claude Desktop and Gemini CLI",
+    "category": "development/ai-tools",
+    "maintainer": "Portunix"
+  },
+  "spec": {
+    "bundle": ["claude-code", "claude-desktop", "gemini-cli"]
+  }
+}

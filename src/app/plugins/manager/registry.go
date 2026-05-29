@@ -61,6 +61,7 @@ type RegistryPlugin struct {
 	OptionalTools       []plugins.OptionalTool      `json:"optional_tools,omitempty"`
 	Enabled             bool                        `json:"enabled"`
 	Interfaces          []string                    `json:"interfaces,omitempty"` // e.g. ["cli", "grpc"]
+	SupportedPlatforms  []plugins.SupportedPlatform `json:"supported_platforms,omitempty"`
 }
 
 // NewRegistry creates a new plugin registry
@@ -154,6 +155,7 @@ func (r *Registry) RegisterPlugin(manifest *plugins.PluginManifest, installPath 
 		OptionalTools:       manifest.Dependencies.OptionalTools,
 		Enabled:             false,
 		Interfaces:          manifest.Plugin.Interfaces,
+		SupportedPlatforms:  manifest.SupportedPlatforms,
 	}
 
 	// Add to registry
@@ -229,6 +231,7 @@ func (r *Registry) ReregisterPlugin(manifest *plugins.PluginManifest, installPat
 		OptionalTools:       manifest.Dependencies.OptionalTools,
 		Enabled:             wasEnabled,
 		Interfaces:          manifest.Plugin.Interfaces,
+		SupportedPlatforms:  manifest.SupportedPlatforms,
 	}
 	r.data.LastUpdate = time.Now()
 
@@ -547,7 +550,109 @@ func (r *Registry) GetPluginRegistryData(name string) (*RegistryPlugin, error) {
 // BinaryPath returns the full path to the plugin binary
 func (rp *RegistryPlugin) BinaryPath() string {
 	if rp.Runtime == "python" && rp.Wheel != "" {
-		return filepath.Join(rp.InstallPath, ".venv", venvBinDir(), rp.BinaryName)
+		return venvExecPath(filepath.Join(rp.InstallPath, ".venv"), rp.BinaryName)
 	}
 	return filepath.Join(rp.InstallPath, rp.BinaryName)
+}
+
+// MatchedPlugin is a registry entry that matched a platform query, together
+// with the resolved SupportedPlatform record for the requested platform. Both
+// CLI and gRPC query paths consume this shape (DEC-5: single source of truth).
+type MatchedPlugin struct {
+	Plugin          *RegistryPlugin           `json:"plugin"`
+	Platform        plugins.SupportedPlatform `json:"platform"`
+	MatchedFeatures []string                  `json:"matched_features,omitempty"`
+}
+
+// ListPluginsForPlatform returns plugins whose supported_platforms[] declares
+// the given platformName. When platformVersion is non-empty, SemVer range
+// matching against min_version/max_version is applied (inclusive on both
+// ends, omitted bound means unbounded on that side). When requiredFeatures
+// is non-empty, only plugins declaring ALL listed features are returned
+// (AND-filter). Plugin registry lookup is a linear scan, sufficient for the
+// expected plugin count; indexing by platform name can be added if it grows.
+func (r *Registry) ListPluginsForPlatform(platformName, platformVersion string, requiredFeatures []string) ([]MatchedPlugin, error) {
+	if platformName == "" {
+		return nil, fmt.Errorf("platform name is required")
+	}
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	out := make([]MatchedPlugin, 0)
+	for _, rp := range r.data.Plugins {
+		sp, ok := findSupportedPlatform(rp.SupportedPlatforms, platformName)
+		if !ok {
+			continue
+		}
+		if platformVersion != "" {
+			within, err := plugins.MatchesVersionRange(platformVersion, sp.MinVersion, sp.MaxVersion)
+			if err != nil {
+				// A malformed version in a stored manifest should not break the
+				// whole query — skip this plugin but surface nothing to the
+				// caller (install-time validation catches malformed bounds).
+				continue
+			}
+			if !within {
+				continue
+			}
+		}
+		if !hasAllFeatures(sp.Features, requiredFeatures) {
+			continue
+		}
+		matched := intersectFeatures(sp.Features, requiredFeatures)
+		out = append(out, MatchedPlugin{
+			Plugin:          rp,
+			Platform:        sp,
+			MatchedFeatures: matched,
+		})
+	}
+	return out, nil
+}
+
+// findSupportedPlatform locates a SupportedPlatform entry by canonical name.
+func findSupportedPlatform(list []plugins.SupportedPlatform, name string) (plugins.SupportedPlatform, bool) {
+	for _, sp := range list {
+		if sp.Name == name {
+			return sp, true
+		}
+	}
+	return plugins.SupportedPlatform{}, false
+}
+
+// hasAllFeatures reports whether declared contains every token in required.
+// An empty required list matches any declaration.
+func hasAllFeatures(declared, required []string) bool {
+	if len(required) == 0 {
+		return true
+	}
+	set := make(map[string]struct{}, len(declared))
+	for _, f := range declared {
+		set[f] = struct{}{}
+	}
+	for _, f := range required {
+		if _, ok := set[f]; !ok {
+			return false
+		}
+	}
+	return true
+}
+
+// intersectFeatures returns the subset of required that is also in declared,
+// preserving the order of required. When required is empty, returns nil so the
+// serialized output omits the field cleanly.
+func intersectFeatures(declared, required []string) []string {
+	if len(required) == 0 {
+		return nil
+	}
+	set := make(map[string]struct{}, len(declared))
+	for _, f := range declared {
+		set[f] = struct{}{}
+	}
+	out := make([]string, 0, len(required))
+	for _, f := range required {
+		if _, ok := set[f]; ok {
+			out = append(out, f)
+		}
+	}
+	return out
 }

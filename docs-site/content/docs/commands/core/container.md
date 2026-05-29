@@ -26,12 +26,16 @@ Available Commands:
   exec             Execute command in container (universal runtime)
   info             Show container runtime information and availability
   inspect          Show low-level container details (universal runtime)
-  list             List containers from all available runtimes
+  list             List containers from all available runtimes (aliases: ls, ps)
   logs             Show container logs (universal runtime)
   network          Manage container networks (create/list/inspect/rm)
-  rm               Remove container (universal runtime)
+  cleanup          Remove portunix-managed containers (TTL/age/pattern filters)
+  lifecycle        Manage container lifecycle policies (list/inspect/extend/policy)
+  restart          Restart container (universal runtime)
+  rm               Remove container (universal runtime, alias: remove)
   run              Run new container (universal runtime)
   run-in-container Run installation in container (RECOMMENDED for testing)
+  service          Background lifecycle service (start/stop/status)
   start            Start stopped container (universal runtime)
   stop             Stop container (universal runtime)
   volume           Manage container volumes (create/list/inspect/rm/prune)
@@ -58,12 +62,16 @@ Use "portunix container [command] --help" for more information about a command.
 | [exec](#exec) | Execute command in container (universal runtime) |
 | [info](#info) | Show container runtime information and availability |
 | [inspect](#inspect) | Show low-level container details (universal runtime) |
-| [list](#list) | List containers from all available runtimes |
+| [list](#list) | List containers from all available runtimes (aliases: ls, ps) |
 | [logs](#logs) | Show container logs (universal runtime) |
 | [network](#network) | Manage container networks (create/list/inspect/rm) |
-| [rm](#rm) | Remove container (universal runtime) |
+| [cleanup](#cleanup) | Remove portunix-managed containers (TTL/age/pattern filters) |
+| [lifecycle](#lifecycle) | Manage container lifecycle policies (list/inspect/extend/policy) |
+| [restart](#restart) | Restart container (universal runtime) |
+| [rm](#rm) | Remove container (universal runtime, alias: remove) |
 | [run](#run) | Run new container (universal runtime) |
 | [run-in-container](#run-in-container) | Run installation in container (RECOMMENDED for testing) |
+| [service](#service) | Background lifecycle service (start/stop/status) |
 | [start](#start) | Start stopped container (universal runtime) |
 | [stop](#stop) | Stop container (universal runtime) |
 | [volume](#volume) | Manage container volumes (create/list/inspect/rm/prune) |
@@ -270,7 +278,7 @@ Examples:
 
 ### list
 
-List containers from all available runtimes
+List containers from all available runtimes (aliases: ls, ps)
 
 ```
 Usage: portunix container list [OPTIONS]
@@ -350,9 +358,88 @@ Examples:
   portunix container network rm portunix-odoo-net
 ```
 
+### cleanup
+
+Remove portunix-managed containers (TTL/age/pattern filters)
+
+```
+Usage: portunix container cleanup [flags]
+
+🧹 CLEANUP MANAGED CONTAINERS
+
+Removes Portunix-managed containers (label portunix.managed=true) that
+match the supplied filter. With no filter, defaults to TTL-expired only.
+
+Flags:
+  --all                 Remove every managed container
+  --expired             Remove only TTL-expired containers (default)
+  --older-than DURATION Match containers older than e.g. 1h, 7d, 30m
+  --pattern GLOB        Match container name against a glob (e.g. 'test-*')
+  --status STATE        Match container status (running, exited, ...)
+  --exclude-running     Skip currently running containers
+  --dry-run             Show what would be removed without acting
+  -f, --force           Force-remove running containers (rm -f)
+  -h, --help            Show this help message
+
+Examples:
+  portunix container cleanup --dry-run
+  portunix container cleanup --older-than 7d --pattern 'dev-*'
+  portunix container cleanup --all --force
+```
+
+### lifecycle
+
+Manage container lifecycle policies (list/inspect/extend/policy)
+
+```
+Usage: portunix container lifecycle <subcommand>
+
+⏳ MANAGE CONTAINER LIFECYCLE POLICIES
+
+Subcommands:
+  list                List all portunix-managed containers with TTL info
+  inspect <name>      Show full lifecycle metadata for a container
+  extend <name> --by <duration>
+                      Extend TTL of a container (e.g. --by 1h)
+  policy <name> <policy>
+                      Change cleanup policy (on-exit | ttl | manual)
+
+Examples:
+  portunix container lifecycle list
+  portunix container lifecycle inspect cosmos-testnet
+  portunix container lifecycle extend cosmos-testnet --by 30m
+  portunix container lifecycle policy cosmos-testnet manual
+```
+
+### restart
+
+Restart container (universal runtime)
+
+```
+Usage: portunix container restart [OPTIONS] <container-name>
+
+🔄 RESTART CONTAINER
+
+Stop and start a container using the automatically selected runtime.
+
+🌟 UNIVERSAL OPERATION:
+  ✅ Works with both Docker and Podman containers
+  ✅ Automatic runtime detection
+  ✅ Preserves container state and data
+  ✅ Consistent behavior across runtimes
+
+Options:
+  -h, --help      Show this help message
+
+Examples:
+  portunix container restart test-container
+  portunix container restart web-server
+  portunix container restart python-dev
+```
+
 ### rm
 
-Remove container (universal runtime)
+Remove container (universal runtime, alias: remove)
 
 ```
 Usage: portunix container rm [OPTIONS] <container-name> [<container-name>...]
@@ -412,6 +499,14 @@ Supported flags:
   -v, --volume: Bind mount volumes
   -e, --env: Set environment variables
 
+Lifecycle flags (issue #027):
+  --ttl DURATION         Auto-remove container after this duration (e.g. 2h, 7d)
+  --auto-cleanup         Mark container for cleanup-on-exit
+  --cleanup-policy P     Cleanup policy: on-exit | ttl | manual
+  --health-check CMD     Health check command (recorded as label + --health-cmd)
+  --max-memory SIZE      Memory limit alias (forwarded to --memory)
+  --max-cpu COUNT        CPU limit alias (forwarded to --cpus)
+
 💡 TIP: For development environments, use 'run-in-container' instead.
 Use -- to separate flags from command arguments when needed.
 ```
@@ -449,6 +544,32 @@ Examples:
 
 💡 RECOMMENDATION: Use this command for testing package installations
    without affecting your host development environment.
+```
+
+### service
+
+Background lifecycle service (start/stop/status)
+
+```
+Usage: portunix container service <subcommand>
+
+⚙️  CONTAINER LIFECYCLE BACKGROUND SERVICE
+
+Polls all portunix-managed containers and removes those whose TTL has
+expired. Daemon state lives under ~/.portunix/container/.
+
+Subcommands:
+  start [--interval D] [--detach|--foreground]
+                  Start the background lifecycle service (default: detach)
+  stop            Stop the background lifecycle service
+  status          Show whether the service is running
+  run [--interval D]
+                  Run the polling loop in the foreground (used by --detach)
+
+Examples:
+  portunix container service start --interval 1m
+  portunix container service status
+  portunix container service stop
 ```
 
 ### start

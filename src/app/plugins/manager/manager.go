@@ -246,6 +246,16 @@ func (m *Manager) EnablePlugin(name string) error {
 		return fmt.Errorf("plugin not found: %w", err)
 	}
 
+	// Warn (do not block) if current OS is not in supported list
+	if len(registryData.SupportedOS) > 0 {
+		osCheck := plugins.CheckOSSupport(registryData.SupportedOS)
+		if osCheck.Status == plugins.CheckStatusError {
+			fmt.Printf("\n⚠️  Plugin %s does not declare support for current OS '%s' (declared: %s).\n"+
+				"   Enabling anyway, but startup may fail. Run 'portunix plugin check %s' for details.\n\n",
+				name, osCheck.Current, strings.Join(osCheck.Required, ", "), name)
+		}
+	}
+
 	// Create plugin configuration
 	config := plugins.PluginConfig{
 		Name:           registryData.Name,
@@ -418,6 +428,13 @@ func (m *Manager) ListPlugins() ([]plugins.PluginInfo, error) {
 	return m.registry.ListPlugins()
 }
 
+// ListPluginsForPlatform returns plugins whose supported_platforms[] declares
+// the given platformName and match the optional version range and feature
+// AND-filter. See Registry.ListPluginsForPlatform for filter semantics.
+func (m *Manager) ListPluginsForPlatform(platformName, platformVersion string, requiredFeatures []string) ([]MatchedPlugin, error) {
+	return m.registry.ListPluginsForPlatform(platformName, platformVersion, requiredFeatures)
+}
+
 // GetPlugin returns information about a specific plugin
 func (m *Manager) GetPlugin(name string) (plugins.PluginInfo, error) {
 	return m.registry.GetPlugin(name)
@@ -458,7 +475,7 @@ func (m *Manager) checkHelperPluginHealth(plugin *RegistryPlugin) plugins.Plugin
 	// For Python wheel plugins, binary is in .venv/bin/
 	var binaryPath string
 	if plugin.Runtime == "python" && plugin.Wheel != "" {
-		binaryPath = filepath.Join(plugin.InstallPath, ".venv", venvBinDir(), plugin.BinaryName)
+		binaryPath = venvExecPath(filepath.Join(plugin.InstallPath, ".venv"), plugin.BinaryName)
 	} else {
 		binaryPath = filepath.Join(plugin.InstallPath, plugin.BinaryName)
 	}
@@ -474,8 +491,8 @@ func (m *Manager) checkHelperPluginHealth(plugin *RegistryPlugin) plugins.Plugin
 		}
 	}
 
-	// Check binary is executable (on Unix)
-	if info.Mode()&0111 == 0 {
+	// Check binary is executable (Unix only — Windows uses extension-based execution)
+	if goruntime.GOOS != "windows" && info.Mode()&0111 == 0 {
 		return plugins.PluginHealth{
 			Healthy:       false,
 			Status:        "not_executable",
@@ -607,7 +624,7 @@ func (m *Manager) setupPythonWheelPlugin(manifest *plugins.PluginManifest, plugi
 	}
 
 	// Install extra wheels before the main wheel (dependency resolution)
-	pipPath := filepath.Join(venvPath, venvBinDir(), "pip")
+	pipPath := venvExecPath(venvPath, "pip")
 	if len(manifest.Plugin.ExtraWheels) > 0 {
 		fmt.Printf("  Installing extra wheels...\n")
 		for _, pattern := range manifest.Plugin.ExtraWheels {
@@ -658,6 +675,15 @@ func venvBinDir() string {
 		return "Scripts"
 	}
 	return "bin"
+}
+
+// venvExecPath returns the absolute path to a venv executable, appending
+// the .exe suffix on Windows when missing
+func venvExecPath(venvDir, name string) string {
+	if goruntime.GOOS == "windows" && !strings.HasSuffix(strings.ToLower(name), ".exe") {
+		name += ".exe"
+	}
+	return filepath.Join(venvDir, venvBinDir(), name)
 }
 
 // copyPluginFiles copies plugin files from source to destination

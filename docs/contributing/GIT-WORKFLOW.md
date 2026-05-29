@@ -1,3 +1,9 @@
+---
+name: git-workflow
+description: Git workflow and conventions for CassandraGargoyle projects
+type: documentation
+---
+
 # Git Workflow Guidelines
 
 ## Purpose

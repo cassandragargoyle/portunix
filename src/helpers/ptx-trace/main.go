@@ -5,10 +5,16 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"os"
+	"os/exec"
+	"os/signal"
 	"strings"
+	"syscall"
 	"text/tabwriter"
 	"time"
 
@@ -289,6 +295,185 @@ Examples:
 		}
 
 		fmt.Printf("Event recorded: %s\n", operation)
+	},
+}
+
+// trace pipe - wrap a stdin->stdout pipe with tracing
+var pipeCmd = &cobra.Command{
+	Use:   "pipe <operation>",
+	Short: "Trace data flowing through a stdin/stdout pipe",
+	Long: `Read stdin and pass it through to stdout while recording a trace event
+with byte/line counts and duration. Useful in shell pipelines.
+
+If no active session exists, an ad-hoc session is created and ended automatically.
+
+Examples:
+  cat data.csv | portunix trace pipe "process_csv" --format csv | process.sh
+  some_producer | portunix trace pipe "filter" --tag etl > out.txt
+  echo "$payload" | portunix trace pipe "stage1" --binary | next-stage`,
+	Args: cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		operation := args[0]
+
+		format, _ := cmd.Flags().GetString("format")
+		tags, _ := cmd.Flags().GetStringSlice("tag")
+		sessionName, _ := cmd.Flags().GetString("session-name")
+		binary, _ := cmd.Flags().GetBool("binary")
+
+		session, ownsSession, err := acquireOrCreateSession(sessionName, operation, tags)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+		op := session.Start(operation)
+		for _, tag := range tags {
+			op.Tag(tag)
+		}
+		if format != "" {
+			op.Input("format", format)
+		}
+
+		var bytesIn int64
+		var lines int64
+		startTime := time.Now()
+
+		if binary {
+			// Stream raw bytes without line counting
+			n, copyErr := streamCopy(os.Stdout, os.Stdin)
+			bytesIn = n
+			if copyErr != nil {
+				op.ErrorWithCode("E_PIPE_COPY", copyErr.Error(), models.SeverityHigh)
+			}
+		} else {
+			// Buffered line-by-line counting
+			reader := bufio.NewReader(os.Stdin)
+			writer := bufio.NewWriter(os.Stdout)
+			defer writer.Flush()
+
+			var copyErr error
+			for {
+				line, readErr := reader.ReadBytes('\n')
+				if len(line) > 0 {
+					bytesIn += int64(len(line))
+					if line[len(line)-1] == '\n' {
+						lines++
+					}
+					if _, werr := writer.Write(line); werr != nil {
+						copyErr = werr
+						break
+					}
+				}
+				if readErr != nil {
+					if readErr != io.EOF {
+						copyErr = readErr
+					}
+					break
+				}
+			}
+			if copyErr != nil {
+				op.ErrorWithCode("E_PIPE_COPY", copyErr.Error(), models.SeverityHigh)
+			}
+		}
+
+		duration := time.Since(startTime)
+		throughput := float64(0)
+		if duration.Seconds() > 0 {
+			throughput = float64(bytesIn) / duration.Seconds()
+		}
+
+		op.Output("bytes", bytesIn)
+		if !binary {
+			op.Output("lines", lines)
+		}
+		op.Output("throughput_bytes_per_sec", int64(throughput))
+		op.Success()
+
+		if endErr := op.End(); endErr != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to record pipe event: %v\n", endErr)
+		}
+
+		if ownsSession {
+			_ = session.End(models.SessionStatusCompleted)
+		}
+	},
+}
+
+// trace exec - wrap an external command with tracing
+var execCmd = &cobra.Command{
+	Use:   "exec <operation> -- <command> [args...]",
+	Short: "Run an external command and record its execution as a trace event",
+	Long: `Execute an external command, forward its stdout/stderr, and record
+a trace event with duration and exit code. The exit code of the wrapped
+command is propagated.
+
+If no active session exists, an ad-hoc session is created and ended automatically.
+
+Examples:
+  portunix trace exec "pg_dump" -- pg_dump -h localhost mydb
+  portunix trace exec "build" --tag ci -- make build
+  portunix trace exec "deploy" --session-name release-2026 -- ./deploy.sh prod`,
+	Args:               cobra.MinimumNArgs(2),
+	DisableFlagParsing: false,
+	Run: func(cmd *cobra.Command, args []string) {
+		operation := args[0]
+		commandArgs := args[1:]
+
+		if len(commandArgs) == 0 {
+			fmt.Fprintf(os.Stderr, "Error: missing command after '--'\n")
+			os.Exit(2)
+		}
+
+		tags, _ := cmd.Flags().GetStringSlice("tag")
+		sessionName, _ := cmd.Flags().GetString("session-name")
+		captureStderr, _ := cmd.Flags().GetBool("capture-stderr")
+
+		session, ownsSession, err := acquireOrCreateSession(sessionName, operation, tags)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+
+		op := session.Start(operation)
+		for _, tag := range tags {
+			op.Tag(tag)
+		}
+		op.Input("command", strings.Join(commandArgs, " "))
+
+		startTime := time.Now()
+
+		exitCode, stderrTail, runErr := runWrappedCommand(commandArgs, captureStderr)
+		duration := time.Since(startTime)
+
+		op.Output("exit_code", exitCode)
+		op.Output("duration_ms", duration.Milliseconds())
+
+		if exitCode == 0 && runErr == nil {
+			op.Success()
+		} else {
+			msg := fmt.Sprintf("command exited with code %d", exitCode)
+			if runErr != nil {
+				msg = runErr.Error()
+			}
+			severity := models.SeverityMedium
+			if exitCode >= 2 || runErr != nil {
+				severity = models.SeverityHigh
+			}
+			op.ErrorWithCode("E_EXEC_FAILED", msg, severity)
+			if captureStderr && stderrTail != "" {
+				op.Context("stderr_tail", stderrTail)
+			}
+		}
+
+		if endErr := op.End(); endErr != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to record exec event: %v\n", endErr)
+		}
+
+		if ownsSession {
+			_ = session.End(models.SessionStatusCompleted)
+		}
+
+		os.Exit(exitCode)
 	},
 }
 
@@ -1623,6 +1808,133 @@ Examples:
 	},
 }
 
+// acquireOrCreateSession returns the active session if present, otherwise creates an ad-hoc one.
+// The second return value is true when the caller owns the session lifecycle and must End() it.
+func acquireOrCreateSession(adHocName, fallbackName string, tags []string) (*sdk.Session, bool, error) {
+	session, err := sdk.GetActiveSession()
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to query active session: %w", err)
+	}
+	if session != nil {
+		return session, false, nil
+	}
+
+	name := adHocName
+	if name == "" {
+		name = fmt.Sprintf("adhoc-%s-%s", fallbackName, time.Now().UTC().Format("20060102T150405Z"))
+	}
+
+	var opts []sdk.SessionOption
+	if len(tags) > 0 {
+		opts = append(opts, sdk.WithTags(tags...))
+	}
+
+	created, err := sdk.NewSession(name, opts...)
+	if err != nil {
+		return nil, false, fmt.Errorf("failed to create ad-hoc session: %w", err)
+	}
+	return created, true, nil
+}
+
+// streamCopy copies src to dst, returning the number of bytes copied.
+func streamCopy(dst io.Writer, src io.Reader) (int64, error) {
+	buf := make([]byte, 32*1024)
+	return io.CopyBuffer(dst, src, buf)
+}
+
+// runWrappedCommand executes the given argv, forwarding stdin/stdout/stderr.
+// When captureStderr is true, the last 4KB of stderr is captured (in addition to forwarding).
+// Returns: exit code, stderr tail (if captured), error from start/wait.
+func runWrappedCommand(argv []string, captureStderr bool) (int, string, error) {
+	cmd := exec.Command(argv[0], argv[1:]...)
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+
+	var stderrTail *tailBuffer
+	if captureStderr {
+		stderrTail = newTailBuffer(4096)
+		cmd.Stderr = io.MultiWriter(os.Stderr, stderrTail)
+	} else {
+		cmd.Stderr = os.Stderr
+	}
+
+	if err := cmd.Start(); err != nil {
+		return 127, "", err
+	}
+
+	// Forward common termination signals to the child process.
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	done := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case sig := <-sigCh:
+				if cmd.Process != nil {
+					_ = cmd.Process.Signal(sig)
+				}
+			case <-done:
+				return
+			}
+		}
+	}()
+	defer func() {
+		signal.Stop(sigCh)
+		close(done)
+	}()
+
+	waitErr := cmd.Wait()
+	tail := ""
+	if stderrTail != nil {
+		tail = stderrTail.String()
+	}
+
+	if waitErr == nil {
+		return 0, tail, nil
+	}
+
+	var exitErr *exec.ExitError
+	if errors.As(waitErr, &exitErr) {
+		// Map signal-killed children to POSIX 128+signum convention so the
+		// shell sees a recognizable code instead of Go's -1 (which truncates
+		// to 255 in os.Exit).
+		if status, ok := exitErr.ProcessState.Sys().(syscall.WaitStatus); ok && status.Signaled() {
+			return 128 + int(status.Signal()), tail, nil
+		}
+		return exitErr.ExitCode(), tail, nil
+	}
+	return 1, tail, waitErr
+}
+
+// tailBuffer is a fixed-size ring buffer that retains the last N bytes written.
+type tailBuffer struct {
+	buf   []byte
+	max   int
+	total int
+}
+
+func newTailBuffer(max int) *tailBuffer {
+	return &tailBuffer{buf: make([]byte, 0, max), max: max}
+}
+
+func (t *tailBuffer) Write(p []byte) (int, error) {
+	t.total += len(p)
+	if len(p) >= t.max {
+		t.buf = append(t.buf[:0], p[len(p)-t.max:]...)
+		return len(p), nil
+	}
+	overflow := len(t.buf) + len(p) - t.max
+	if overflow > 0 {
+		t.buf = t.buf[overflow:]
+	}
+	t.buf = append(t.buf, p...)
+	return len(p), nil
+}
+
+func (t *tailBuffer) String() string {
+	return string(t.buf)
+}
+
 func init() {
 	// Add trace command to root
 	rootCmd.AddCommand(traceCmd)
@@ -1631,6 +1943,8 @@ func init() {
 	traceCmd.AddCommand(startCmd)
 	traceCmd.AddCommand(endCmd)
 	traceCmd.AddCommand(eventCmd)
+	traceCmd.AddCommand(pipeCmd)
+	traceCmd.AddCommand(execCmd)
 	traceCmd.AddCommand(sessionsCmd)
 	traceCmd.AddCommand(viewCmd)
 	traceCmd.AddCommand(statsCmd)
@@ -1680,6 +1994,17 @@ func init() {
 	eventCmd.Flags().Int64("duration", 0, "Duration in microseconds")
 	eventCmd.Flags().String("error", "", "Error message")
 	eventCmd.Flags().StringSliceP("tag", "t", []string{}, "Add tag")
+
+	// pipe command flags
+	pipeCmd.Flags().String("format", "", "Hint about input format (csv, json, ndjson, ...)")
+	pipeCmd.Flags().StringSliceP("tag", "t", []string{}, "Add tag (repeatable)")
+	pipeCmd.Flags().String("session-name", "", "Name for ad-hoc session if no active session exists")
+	pipeCmd.Flags().Bool("binary", false, "Treat stdin as opaque bytes (no line counting)")
+
+	// exec command flags
+	execCmd.Flags().StringSliceP("tag", "t", []string{}, "Add tag (repeatable)")
+	execCmd.Flags().String("session-name", "", "Name for ad-hoc session if no active session exists")
+	execCmd.Flags().Bool("capture-stderr", false, "Capture last 4KB of stderr into the trace event on failure")
 
 	// sessions command flags
 	sessionsCmd.Flags().IntP("limit", "n", 0, "Limit number of results")
@@ -1786,6 +2111,8 @@ func showHelpAI() {
 			{Name: "trace end", Description: "End active trace session", Category: "session"},
 			{Name: "trace sessions", Description: "List trace sessions", Category: "session"},
 			{Name: "trace event", Description: "Record a trace event", Category: "recording"},
+			{Name: "trace pipe", Description: "Trace data flowing through a stdin/stdout pipe", Category: "recording"},
+			{Name: "trace exec", Description: "Run an external command and trace its execution", Category: "recording"},
 			{Name: "trace view", Description: "View session details and events", Category: "analysis"},
 			{Name: "trace stats", Description: "Show session statistics", Category: "analysis"},
 			{Name: "trace query", Description: "Query events with filters", Category: "analysis"},
@@ -1833,6 +2160,13 @@ func showHelpExpert() {
 	fmt.Println("EVENT RECORDING:")
 	fmt.Println("  trace event <type> <message>   Record an event")
 	fmt.Println("    Types: transform, validate, error, warning, info, skip, enrich")
+	fmt.Println("  trace pipe <op>          Trace stdin/stdout flow (auto bytes/lines)")
+	fmt.Println("    --format <hint>          Format hint (csv, json, ndjson, ...)")
+	fmt.Println("    -t, --tag <tag>          Add tag (repeatable)")
+	fmt.Println("    --binary                 Treat stdin as opaque bytes")
+	fmt.Println("  trace exec <op> -- <cmd> Wrap external command with tracing")
+	fmt.Println("    -t, --tag <tag>          Add tag (repeatable)")
+	fmt.Println("    --capture-stderr         Record last 4KB of stderr on failure")
 	fmt.Println()
 	fmt.Println("ANALYSIS:")
 	fmt.Println("  trace view [session-id]   View session details and events")
@@ -1864,6 +2198,8 @@ func showHelpExpert() {
 	fmt.Println("EXAMPLES:")
 	fmt.Println("  portunix trace start \"import-customers\" --source data.csv --tag production")
 	fmt.Println("  portunix trace event transform \"Mapped field: email -> contact_email\"")
+	fmt.Println("  cat data.csv | portunix trace pipe \"process_csv\" --format csv | next.sh")
+	fmt.Println("  portunix trace exec \"backup\" --tag prod -- pg_dump -h localhost mydb")
 	fmt.Println("  portunix trace end --summary")
 	fmt.Println("  portunix trace export ai --last 5")
 	fmt.Println("  portunix trace query \"error\" --since 24h")

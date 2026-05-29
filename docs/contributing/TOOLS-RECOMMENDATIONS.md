@@ -516,7 +516,7 @@ choose the right tool for their needs.
 | Virtual Machine | VirtualBox | VMware Workstation | vSphere |
 | VM Automation | Multipass | Vagrant | Terraform |
 | Dev Environment Setup | Portunix | Ansible | Chef/Puppet |
-| Container | Docker | Podman | Kubernetes |
+| Container † | Docker | Podman | Kubernetes |
 | Text Search | grep | ripgrep | Elasticsearch |
 | Code Search | ag | fzf | GitHub Search |
 | Log Search | grep/zgrep | Loki | Splunk |
@@ -529,6 +529,12 @@ choose the right tool for their needs.
 | Documentation | Markdown | MkDocs | Confluence |
 | CI/CD | GitHub Actions | GitLab CI | Jenkins |
 | Secrets | .env files | git-crypt | HashiCorp Vault |
+
+> † **Container**: the listed engines (Docker, Podman, Kubernetes) still apply as
+> the underlying technology, but do **not** invoke them directly — use
+> `portunix container`, which auto-detects the available engine (Docker/Podman)
+> and provides a unified workflow. Reach for raw `docker`/`podman` only when
+> `portunix container` cannot cover the case.
 
 ## Choosing Criteria
 
@@ -548,4 +554,4 @@ When selecting a tool, consider:
 **Note**: Tool preferences depend on specific use cases. This guide provides general recommendations. Always evaluate based on your requirements.
 
 *Created: 2025-08-23*
-*Last updated: 2025-08-23*
+*Last updated: 2025-05-26*

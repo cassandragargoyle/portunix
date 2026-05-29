@@ -1,0 +1,57 @@
+# implements — a Capability is realized by a product-specific Operation.
+relations:
+  - from: capability:provisioning.package-install
+    type: implements
+    to: operation:portunix.package.install
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: capability:container.lifecycle-management
+    type: implements
+    to: operation:portunix.container.run
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: capability:virtualization.sandbox
+    type: implements
+    to: operation:portunix.sandbox.create
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: capability:plugin.lifecycle-management
+    type: implements
+    to: operation:portunix.plugin.install
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: capability:ai-integration.mcp-server
+    type: implements
+    to: operation:portunix.mcp.serve
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: capability:update.self-update
+    type: implements
+    to: operation:portunix.update.run
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"
+
+  - from: capability:system.info-detection
+    type: implements
+    to: operation:portunix.system.info
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-27"

@@ -115,6 +115,31 @@ func showPythonHelp() {
 	fmt.Println("  build wheel                  - Build wheel distribution package")
 	fmt.Println("  build sdist                  - Build source distribution package")
 	fmt.Println()
+	fmt.Println("Code Quality:")
+	fmt.Println("  check syntax [paths...]      - Validate Python syntax via AST")
+	fmt.Println("  lint [paths...]              - Run linter (default: ruff)")
+	fmt.Println("  lint --linter pylint|flake8|ruff   - Choose linter")
+	fmt.Println("  lint --format json|html|github     - Output format")
+	fmt.Println("  format [paths...]            - Format code (default: black)")
+	fmt.Println("  format --formatter autopep8|black  - Choose formatter")
+	fmt.Println("  format --check               - Do not modify; CI mode")
+	fmt.Println("  typecheck [paths...]         - Run mypy")
+	fmt.Println("  test [paths...]              - Run pytest")
+	fmt.Println("  test --coverage              - Run with coverage report")
+	fmt.Println("  test --watch                 - Re-run on file changes")
+	fmt.Println()
+	fmt.Println("Version Management:")
+	fmt.Println("  version list                 - List installed Python versions")
+	fmt.Println("  version use <ver>            - Pin project version (.python-version)")
+	fmt.Println("  version detect               - Detect project Python requirement")
+	fmt.Println()
+	fmt.Println("Environment & Project:")
+	fmt.Println("  env show                     - Show Python env configuration")
+	fmt.Println("  env set <VAR> <value>        - Print shell snippet to set env var")
+	fmt.Println("  init project <name>          - Scaffold new Python project")
+	fmt.Println("  init project <n> --template console|library|web|package")
+	fmt.Println("  audit                        - Security scan (pip-audit/safety)")
+	fmt.Println()
 	fmt.Println("Options:")
 	fmt.Println("  --local                      - Use project-local venv (./.venv)")
 	fmt.Println("  --path <path>                - Use venv at custom location")
@@ -141,7 +166,21 @@ func handlePythonCommand(args []string) {
 	case "build":
 		handleBuildCommand(subArgs)
 	case "check":
-		handleCheckCommand()
+		handleCheckCommand(subArgs)
+	case "lint":
+		handleLintCommand(subArgs)
+	case "format":
+		handleFormatCommand(subArgs)
+	case "typecheck":
+		handleTypecheckCommand(subArgs)
+	case "test":
+		handleTestCommand(subArgs)
+	case "version":
+		handleVersionCommand(subArgs)
+	case "env":
+		handleEnvCommand(subArgs)
+	case "audit":
+		handleAuditCommand(subArgs)
 	case "--help", "-h":
 		showPythonHelp()
 	default:
@@ -150,8 +189,14 @@ func handlePythonCommand(args []string) {
 	}
 }
 
-// handleInitCommand initializes a Python project with local venv
+// handleInitCommand initializes a Python project with local venv. The
+// "project" subcommand scaffolds a brand-new project directory instead.
 func handleInitCommand(args []string) {
+	if len(args) > 0 && args[0] == "project" {
+		handleInitProject(args[1:])
+		return
+	}
+
 	force := false
 	pythonVersion := ""
 	customPath := ""
@@ -306,10 +351,75 @@ func handlePipCommand(args []string) {
 	}
 }
 
-func handleCheckCommand() {
-	fmt.Println("Checking Python environment...")
-	// TODO: Implement Python detection and helper status check
-	fmt.Println("✅ ptx-python helper is available")
+// handleCheckCommand handles 'check' and its subcommands. With no args it
+// prints helper status; with 'syntax [paths...]' it validates Python syntax
+// via the AST parser (Phase 3).
+func handleCheckCommand(args []string) {
+	if len(args) == 0 {
+		fmt.Println("Checking Python environment...")
+		fmt.Println("✅ ptx-python helper is available")
+		return
+	}
+
+	switch args[0] {
+	case "syntax":
+		target, paths, _ := parseQualityArgs(args[1:])
+		qm, err := NewQualityManager()
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+		if err := qm.CheckSyntax(target, paths); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+	case "--help", "-h":
+		fmt.Println("Usage: portunix python check [syntax <paths...>]")
+	default:
+		fmt.Printf("Unknown check subcommand: %s\n", args[0])
+		fmt.Println("Run 'portunix python check --help' for available commands")
+	}
+}
+
+// parseQualityArgs extracts common venv-target flags (--local, --path, --venv)
+// from a quality-tool argument list, plus the remaining positional paths and
+// unknown flags (returned as extras to be passed through to the underlying
+// tool). Auto-detection of ./.venv is enabled.
+func parseQualityArgs(args []string) (target *VenvTarget, paths []string, extras []string) {
+	venvName, pathFlag := "", ""
+	localFlag := false
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch a {
+		case "--local", "-l":
+			localFlag = true
+		case "--path":
+			if i+1 < len(args) {
+				pathFlag = args[i+1]
+				i++
+			}
+		case "--venv":
+			if i+1 < len(args) {
+				venvName = args[i+1]
+				i++
+			}
+		default:
+			if strings.HasPrefix(a, "-") {
+				extras = append(extras, a)
+			} else {
+				paths = append(paths, a)
+			}
+		}
+	}
+
+	vm, err := NewVenvManager()
+	if err == nil {
+		t, terr := vm.ResolveVenvPath(localFlag, pathFlag, venvName, true)
+		if terr == nil {
+			target = t
+		}
+	}
+	return target, paths, extras
 }
 
 func showVenvHelp() {
@@ -1194,6 +1304,298 @@ func handleBuildSdist(args []string) {
 	}
 
 	if err := bm.BuildSdist(venvName, projectPath); err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+// ===== Phase 3: Code Quality handlers =====
+
+func handleLintCommand(args []string) {
+	linter := "ruff"
+	format := ""
+	outputFile := ""
+	extras := []string{}
+	rest := []string{}
+
+	// Pull linter-specific flags out first so they don't end up in extras.
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch a {
+		case "--linter":
+			if i+1 < len(args) {
+				linter = args[i+1]
+				i++
+			}
+		case "--format":
+			if i+1 < len(args) {
+				format = args[i+1]
+				i++
+			}
+		case "--output":
+			if i+1 < len(args) {
+				outputFile = args[i+1]
+				i++
+			}
+		default:
+			rest = append(rest, a)
+		}
+	}
+
+	target, paths, passthrough := parseQualityArgs(rest)
+	extras = append(extras, passthrough...)
+
+	qm, err := NewQualityManager()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+	if err := qm.Lint(LintOptions{
+		Target:     target,
+		Paths:      paths,
+		Linter:     linter,
+		Format:     format,
+		OutputFile: outputFile,
+		ExtraArgs:  extras,
+	}); err != nil {
+		// Linters return non-zero on findings; surface their exit code.
+		os.Exit(1)
+	}
+}
+
+func handleFormatCommand(args []string) {
+	formatter := "black"
+	check := false
+	rest := []string{}
+
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch a {
+		case "--formatter":
+			if i+1 < len(args) {
+				formatter = args[i+1]
+				i++
+			}
+		case "--check":
+			check = true
+		default:
+			rest = append(rest, a)
+		}
+	}
+
+	target, paths, extras := parseQualityArgs(rest)
+
+	qm, err := NewQualityManager()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+	if err := qm.Format(FormatOptions{
+		Target:    target,
+		Paths:     paths,
+		Formatter: formatter,
+		Check:     check,
+		ExtraArgs: extras,
+	}); err != nil {
+		os.Exit(1)
+	}
+}
+
+func handleTypecheckCommand(args []string) {
+	target, paths, extras := parseQualityArgs(args)
+	qm, err := NewQualityManager()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+	if err := qm.Typecheck(TypecheckOptions{
+		Target:    target,
+		Paths:     paths,
+		ExtraArgs: extras,
+	}); err != nil {
+		os.Exit(1)
+	}
+}
+
+func handleTestCommand(args []string) {
+	coverage := false
+	watch := false
+	rest := []string{}
+
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch a {
+		case "--coverage":
+			coverage = true
+		case "--watch":
+			watch = true
+		default:
+			rest = append(rest, a)
+		}
+	}
+
+	target, paths, extras := parseQualityArgs(rest)
+
+	qm, err := NewQualityManager()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+	if err := qm.Test(TestOptions{
+		Target:    target,
+		Paths:     paths,
+		Coverage:  coverage,
+		Watch:     watch,
+		ExtraArgs: extras,
+	}); err != nil {
+		os.Exit(1)
+	}
+}
+
+// ===== Phase 4: Version / Env / Audit / Init Project handlers =====
+
+func handleVersionCommand(args []string) {
+	if len(args) == 0 {
+		fmt.Println("Usage: portunix python version [list|use <ver>|detect]")
+		return
+	}
+	sub := args[0]
+	subArgs := args[1:]
+
+	vm := NewVersionManager()
+
+	switch sub {
+	case "list", "ls":
+		installs, err := vm.ListInstalls()
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+		if len(installs) == 0 {
+			fmt.Println("No Python interpreters found.")
+			return
+		}
+		fmt.Println("Installed Python interpreters:")
+		for _, p := range installs {
+			fmt.Printf("  Python %-8s  %-10s  %s\n", p.Version, "["+p.Source+"]", p.Executable)
+		}
+	case "use":
+		if len(subArgs) == 0 {
+			fmt.Println("Usage: portunix python version use <ver>")
+			os.Exit(1)
+		}
+		ver := subArgs[0]
+		if err := vm.WriteProjectVersion(ver); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Printf("✅ Wrote .python-version (%s)\n", ver)
+		fmt.Println()
+		fmt.Println("Tools that honor .python-version: pyenv, uv, hatch.")
+		fmt.Println("For Portunix venv creation, pass --python explicitly:")
+		fmt.Printf("  portunix python venv create myenv --python %s\n", ver)
+	case "detect":
+		ver, err := vm.DetectProjectVersion()
+		if err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+		if ver == "" {
+			fmt.Println("No project Python version found (.python-version or pyproject.toml).")
+			return
+		}
+		fmt.Printf("Detected project Python: %s\n", ver)
+	case "--help", "-h":
+		fmt.Println("Usage: portunix python version [list|use <ver>|detect]")
+	default:
+		fmt.Printf("Unknown version subcommand: %s\n", sub)
+		os.Exit(1)
+	}
+}
+
+func handleEnvCommand(args []string) {
+	if len(args) == 0 {
+		fmt.Println("Usage: portunix python env [show|set <VAR> <value>]")
+		return
+	}
+	em, err := NewEnvManager()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	sub := args[0]
+	subArgs := args[1:]
+	switch sub {
+	case "show":
+		if err := em.ShowEnv(); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+	case "set":
+		if len(subArgs) < 2 {
+			fmt.Println("Usage: portunix python env set <VAR> <value>")
+			os.Exit(1)
+		}
+		if err := em.SetEnv(subArgs[0], strings.Join(subArgs[1:], " ")); err != nil {
+			fmt.Printf("Error: %v\n", err)
+			os.Exit(1)
+		}
+	case "--help", "-h":
+		fmt.Println("Usage: portunix python env [show|set <VAR> <value>]")
+	default:
+		fmt.Printf("Unknown env subcommand: %s\n", sub)
+		os.Exit(1)
+	}
+}
+
+func handleAuditCommand(args []string) {
+	em, err := NewEnvManager()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+	target, _, extras := parseQualityArgs(args)
+	if err := em.Audit(target, extras); err != nil {
+		os.Exit(1)
+	}
+}
+
+// handleInitProject scaffolds a new Python project (called from
+// handleInitCommand when the first arg is "project").
+func handleInitProject(args []string) {
+	if len(args) == 0 {
+		fmt.Println("Usage: portunix python init project <name> [--template console|library|web|package] [--path <dir>]")
+		os.Exit(1)
+	}
+
+	opts := InitProjectOptions{Template: "console"}
+	for i := 0; i < len(args); i++ {
+		a := args[i]
+		switch a {
+		case "--template":
+			if i+1 < len(args) {
+				opts.Template = args[i+1]
+				i++
+			}
+		case "--path":
+			if i+1 < len(args) {
+				opts.Path = args[i+1]
+				i++
+			}
+		default:
+			if !strings.HasPrefix(a, "-") && opts.Name == "" {
+				opts.Name = a
+			}
+		}
+	}
+
+	em, err := NewEnvManager()
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		os.Exit(1)
+	}
+	if err := em.InitProject(opts); err != nil {
 		fmt.Printf("Error: %v\n", err)
 		os.Exit(1)
 	}

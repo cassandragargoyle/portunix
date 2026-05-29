@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document defines formatting rules for Markdown files in the Portunix ecosystem.
+This document defines formatting rules for Markdown files.
 All documentation — specifications, component READMEs, contributing guides, ADRs — MUST
 follow these conventions so that documents are consistent and machine-parseable.
 

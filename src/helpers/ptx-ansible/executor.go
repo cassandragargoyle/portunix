@@ -17,8 +17,8 @@ import (
 // ExecutionOptions contains options for playbook execution
 type ExecutionOptions struct {
 	DryRun        bool
-	Environment   string   // "local", "container", "virt"
-	Target        string   // For multi-environment execution (VM name, container name)
+	Environment   string   // "local", "container", "virt", "proxmox"
+	Target        string   // For multi-environment execution (VM name, container name, proxmox target)
 	Image         string   // Container image for container environment
 	Runtime       string   // Container runtime: "docker", "podman", or "" for auto-detect
 	ContainerName string   // Custom container name (optional)
@@ -29,6 +29,10 @@ type ExecutionOptions struct {
 	User          string   // Phase 4: User executing the playbook
 	ScriptFilter  []string // Phase 1 #128: Filter scripts to run (empty = all)
 	ListScripts   bool     // Phase 1 #128: Just list available scripts
+	// PlaybookEnvironment carries the parsed spec.environment map so env-specific
+	// setup functions (e.g., setupProxmoxEnvironment) can read their settings
+	// without re-parsing the .ptxbook file. Populated by ExecutePlaybook.
+	PlaybookEnvironment map[string]interface{}
 }
 
 // ExecutionResult contains the result of playbook execution
@@ -146,6 +150,9 @@ func ExecutePlaybook(filePath string, options ExecutionOptions) (*ExecutionResul
 	// Phase 2: Setup environment if not local
 	var envCtx *EnvironmentContext
 	if options.Environment != "local" {
+		// Pass spec.environment map through so env-specific setup
+		// (e.g., setupProxmoxEnvironment in issue #167) can read it.
+		options.PlaybookEnvironment = ptxbook.Spec.Environment
 		var setupErr error
 		envCtx, setupErr = setupEnvironment(options)
 		if setupErr != nil {
@@ -654,6 +661,8 @@ func setupEnvironment(options ExecutionOptions) (*EnvironmentContext, error) {
 		return setupContainerEnvironment(options)
 	case "virt":
 		return setupVirtEnvironment(options)
+	case "proxmox":
+		return setupProxmoxEnvironment(options)
 	default:
 		return nil, fmt.Errorf("unsupported environment: %s", options.Environment)
 	}

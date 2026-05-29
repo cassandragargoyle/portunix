@@ -14,6 +14,8 @@ lifecycle.
    - [Java Plugin Development](languages/java/getting-started.md)
    - [JavaScript/Node.js Plugin Development](languages/javascript/getting-started.md)
    - [Rust Plugin Development](languages/rust/getting-started.md)
+4. **Examples**
+   - [Synapse Extension Manifest](examples/synapse-extension-manifest.md) — declaring a plugin as a Portunix Synapse extension via `supported_platforms[]` (issue #175)
 
 ## Plugin System Overview
 

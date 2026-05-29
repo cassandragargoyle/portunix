@@ -1,31 +1,49 @@
+# =============================================================================
+# Build artifacts
+# =============================================================================
+
+# Main binary (Linux + Windows + backup + zipped distro)
+/portunix
+portunix.exe
+portunix.backup
+portunix-windows.zip
+
+# Helper binaries — Git-like dispatcher pattern (ptx-*)
+# Covers both repo-root output and per-helper local builds.
+/ptx-*
+ptx-*.exe
+src/helpers/ptx-*/ptx-*
+src/helpers/ptx-*/ptx-*.exe
+
+# Distribution / build outputs
+/dist/
+/bin/
 *.msi
-.tmp
-.cache
-dist
-bin
 
-# local helper scripts
-cleanup-public.ps1
-portunix
+# AUR repository (release tooling)
+/aur-repo/
 
-# GitHub sync staging directory
-.portunix-github-sync
+# Go debug binaries (delve)
+__debug_bin*
 
-# Test coverage files
+# =============================================================================
+# Test artifacts
+# =============================================================================
+
+# Go coverage + test outputs
 coverage.out
 coverage.html
-.claude/roles/current.md
-CLAUDE.local.md
-portunix.backup
-
-# Test results directory
 test/results/
 test/logs/
+test/tmp/
 
-# Python virtual environment
+# Test plugin builds
+test/test-plugin/test-plugin
+test-plugin.exe
+
+# Python venv + test artifacts
 .venv/
-
-# Python test artifacts
+test/venv/
 __pycache__/
 *.py[cod]
 *$py.class
@@ -33,81 +51,56 @@ __pycache__/
 .coverage
 htmlcov/
 *.egg-info/
-test/venv/
-.claude/settings.local.json
-test/test-plugin/test-plugin
-__debug_bin*
-.claude/settings.local.json
 
-# Portunix
-portunix.exe
-/portunix
+# =============================================================================
+# Caches / temp
+# =============================================================================
+.tmp
+.cache
+tmpclaude-*-cwd
 
-# Portunix config
+# =============================================================================
+# Local developer files (never commit)
+# =============================================================================
+
+# Claude / AI tooling
+CLAUDE.local.md
+.claude/roles/current.md
+.claude/settings.local.json
+.claude/settings.json
+
+# Local helper scripts
+cleanup-public.ps1
+
+# Local config
 portunix-config.yaml
 test/unit/.portunix/config.yaml
-
-# Portunix helpers
-/ptx-container
-ptx-container.exe
-
-/ptx-mcp
-ptx-mcp.exe
-
-/ptx-ansible
-ptx-ansible.exe
-
-/ptx-virt
-ptx-virt.exe
-src/helpers/ptx-virt/ptx-virt
-
-/ptx-prompting
-ptx-prompting.exe
-
-/ptx-python
-ptx-python.exe
-
-/ptx-vocalio
-ptx-vocalio.exe
-
-/ptx-installer
-ptx-installer.exe
-
-/ptx-aiops
-ptx-aiops.exe
-
-/ptx-make
-ptx-make.exe
-
-/ptx-pft
-ptx-pft.exe
 /.pft-config.json
 /pft-demo
 
-/ptx-credential
-ptx-credential.exe
+# =============================================================================
+# Generated content
+# =============================================================================
 
-/ptx-trace
-ptx-trace.exe
+# GitHub sync staging
+.portunix-github-sync/
 
-# Documentation site generated files
+# Generated playbooks
+generated-playbooks/
+
+# Hugo docs site
 docs-site/public/
 docs-site/resources/
 docs-site/.hugo_build.lock
-.claude/settings.local.json
-src/helpers/ptx-container/ptx-container
-src/helpers/ptx-container/ptx-container
-
-# Generated paybooks
-generated-playbooks
-
-# Hugo
 .hugo_build.lock
 
-aur-repo
-portunix-windows.zip
-.claude/settings.json
-tmpclaude-*-cwd
-
-# Translation files (temporary, generated on demand)
+# Translation files (regenerated on demand)
 .translated/
+
+# =============================================================================
+# Secrets — NEVER commit (Issue #165, ADR-042)
+# =============================================================================
+*.key
+*.pem
+private.key
+secrets/

@@ -9,7 +9,9 @@
     "homepage": "https://www.google.com/chrome/",
     "documentation": "https://support.google.com/chrome/",
     "license": "Freeware",
-    "maintainer": "Google"
+    "maintainer": "Google",
+    "installationDocsUrl": "https://www.google.com/chrome/",
+    "latestVersionUrl": "https://chromereleases.googleblog.com/"
   },
   "spec": {
     "hasVariants": true,

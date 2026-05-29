@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "relation.schema.json",
+  "title": "Relations file",
+  "description": "A relations/<type>.yaml file: an array of edges of one relation type.",
+  "type": "object",
+  "required": ["relations"],
+  "additionalProperties": false,
+  "properties": {
+    "relations": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/relation" }
+    }
+  },
+  "definitions": {
+    "relation": {
+      "type": "object",
+      "required": ["from", "type", "to", "verification"],
+      "additionalProperties": false,
+      "properties": {
+        "from": { "type": "string" },
+        "type": {
+          "enum": ["provides", "requires", "implements", "operates_on", "exposed_via", "maps_to", "constrained_by"]
+        },
+        "to": { "type": "string" },
+        "availability": { "$ref": "availability.schema.json" },
+        "note": { "type": "string" },
+        "verification": { "$ref": "verification.schema.json" }
+      }
+    }
+  }
+}

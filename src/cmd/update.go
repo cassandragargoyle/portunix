@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package cmd
 
 import (
@@ -105,6 +109,21 @@ func performUpdate(force bool) {
 			fmt.Println("  This could indicate a corrupted download or security issue")
 			fmt.Println("  Update aborted for safety")
 			os.Exit(1)
+		}
+	}
+
+	// Inform user about signature verification status. The actual signature
+	// check happens inside DownloadUpdate (VerifyArchiveChecksumSigned); here
+	// we only surface the user-visible state.
+	if update.HasPublicKey() {
+		if release.SignatureURL != "" {
+			fmt.Println("✓ Signature verified")
+		} else if update.RequireSignature {
+			fmt.Println("Error: No signature available for this release")
+			fmt.Println("  Signature is required and update was aborted for safety")
+			os.Exit(1)
+		} else {
+			fmt.Println("⚠ Warning: No signature available for this release (older release)")
 		}
 	}
 

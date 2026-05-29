@@ -47,6 +47,17 @@ func (s *SelectComponent) Render(ctx *wizard.WizardContext) error {
 		optionMap[label] = opt.Value
 	}
 
+	if ctx.NonInteractive {
+		if s.Selected == "" {
+			return fmt.Errorf("non-interactive: missing value for select '%s'", s.Prompt)
+		}
+		if !optionValueAllowed(s.Options, s.Selected) {
+			return fmt.Errorf("non-interactive: value '%s' not in allowed options for '%s'", s.Selected, s.Prompt)
+		}
+		fmt.Printf("%s %s\n", s.Prompt, s.Selected)
+		return nil
+	}
+
 	prompt := &survey.Select{
 		Message: s.Prompt,
 		Options: optionLabels,
@@ -62,6 +73,16 @@ func (s *SelectComponent) Render(ctx *wizard.WizardContext) error {
 	// Map back to value
 	s.Selected = optionMap[answer]
 	return nil
+}
+
+// optionValueAllowed reports whether v is one of the option values
+func optionValueAllowed(opts []wizard.Option, v string) bool {
+	for _, o := range opts {
+		if o.Value == v {
+			return true
+		}
+	}
+	return false
 }
 
 // GetValue returns the selected value

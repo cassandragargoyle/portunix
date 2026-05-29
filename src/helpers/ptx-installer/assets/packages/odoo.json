@@ -9,7 +9,9 @@
     "homepage": "https://www.odoo.com/",
     "documentation": "https://www.odoo.com/documentation/19.0/",
     "license": "LGPL-3.0",
-    "maintainer": "Odoo S.A."
+    "maintainer": "Odoo S.A.",
+    "installationDocsUrl": "https://www.odoo.com/documentation/19.0/administration/install.html",
+    "latestVersionUrl": "https://www.odoo.com/page/download"
   },
   "spec": {
     "hasVariants": true,

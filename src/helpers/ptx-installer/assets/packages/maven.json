@@ -9,7 +9,9 @@
     "homepage": "https://maven.apache.org/",
     "documentation": "https://maven.apache.org/guides/",
     "license": "Apache-2.0",
-    "maintainer": "Apache Software Foundation"
+    "maintainer": "Apache Software Foundation",
+    "installationDocsUrl": "https://maven.apache.org/install.html",
+    "latestVersionUrl": "https://maven.apache.org/download.cgi"
   },
   "spec": {
     "hasVariants": true,
@@ -82,6 +84,7 @@
             ]
           },
           "apt": {
+            "type": "apt",
             "version": "latest",
             "packages": [
               "maven"

@@ -8,7 +8,9 @@
     "category": "development/languages",
     "homepage": "https://adoptium.net/",
     "license": "GPL-2.0 with Classpath Exception",
-    "maintainer": "Eclipse Adoptium"
+    "maintainer": "Eclipse Adoptium",
+    "installationDocsUrl": "https://adoptium.net/installation/",
+    "latestVersionUrl": "https://adoptium.net/temurin/releases/"
   },
   "spec": {
     "hasVariants": true,

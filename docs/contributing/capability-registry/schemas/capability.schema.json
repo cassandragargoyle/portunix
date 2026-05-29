@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "capability.schema.json",
+  "title": "Capability node",
+  "description": "Vendor-neutral capability. Named by meaning, never by product.",
+  "type": "object",
+  "required": ["id", "name", "category", "verification"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^capability:[a-z][a-z0-9-]*(\\.[a-z][a-z0-9-]*){1,3}$",
+      "description": "capability:<domain>.<name> (max 4 levels)"
+    },
+    "name": { "type": "string" },
+    "category": {
+      "enum": ["business", "domain", "functional", "technical", "ai"]
+    },
+    "description": { "type": "string" },
+    "ai": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "canBeAutomated": { "type": "boolean" },
+        "riskLevel": { "enum": ["low", "medium", "high", "critical"] },
+        "humanApprovalRequired": { "type": "boolean" },
+        "typicalTasks": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "verification": { "$ref": "verification.schema.json" }
+  }
+}

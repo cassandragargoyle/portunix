@@ -62,6 +62,9 @@ type PackageSpec struct {
 	AIPrompts    *AIPrompts              `json:"aiPrompts,omitempty"`
 	Dependencies []string                `json:"dependencies,omitempty"`
 	Templates    []string                `json:"templates,omitempty"`
+	// Bundle lists package names aggregated by a Kind: "Bundle" entry. Members
+	// are installed in declaration order. Mutually exclusive with Platforms.
+	Bundle []string `json:"bundle,omitempty"`
 }
 
 // PlatformSpec represents platform-specific configuration
@@ -97,6 +100,7 @@ func (s *StringOrSlice) UnmarshalJSON(data []byte) error {
 type VariantSpec struct {
 	Version           string            `json:"version"`
 	Description       string            `json:"description,omitempty"`
+	Preferred         bool              `json:"preferred,omitempty"`
 	Type              string            `json:"type,omitempty"`
 	URL               string            `json:"url,omitempty"`
 	URLs              map[string]string `json:"urls,omitempty"`
@@ -391,13 +395,21 @@ func (r *PackageRegistry) validatePackage(pkg *Package) error {
 	if pkg.APIVersion != "v1" {
 		return fmt.Errorf("apiVersion must be 'v1', got '%s'", pkg.APIVersion)
 	}
-	if pkg.Kind != "Package" {
-		return fmt.Errorf("kind must be 'Package', got '%s'", pkg.Kind)
+	if pkg.Kind != "Package" && pkg.Kind != "Bundle" {
+		return fmt.Errorf("kind must be 'Package' or 'Bundle', got '%s'", pkg.Kind)
 	}
 
 	// Metadata validation
 	if err := r.validateMetadata(&pkg.Metadata); err != nil {
 		return fmt.Errorf("metadata validation failed: %w", err)
+	}
+
+	// Bundles aggregate other packages and have no platform specs of their own
+	if pkg.Kind == "Bundle" {
+		if len(pkg.Spec.Bundle) == 0 {
+			return fmt.Errorf("bundle must list at least one package in spec.bundle")
+		}
+		return nil
 	}
 
 	// Spec validation

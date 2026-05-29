@@ -90,6 +90,39 @@ Configuration is stored in `.pft-config.json`:
 }
 ```
 
+### Cross-Platform Path Resolution
+
+The `path` field accepts three forms (see [ADR-032](../../../docs/adr/032-pft-cross-platform-config-path-resolution.md)):
+
+| Form | Example | Resolves to |
+| ---- | ------- | ----------- |
+| Empty | `"path": ""` | Directory containing `.pft-config.json` (recommended for git-tracked configs) |
+| Relative | `"path": "docs/pft"` | Joined to the config file directory |
+| Absolute | `"path": "/home/user/project"` | Used as-is (works only on the OS it was written on) |
+
+When the `--path` flag is supplied to a command, it always overrides the stored
+`path` field — this is what makes a config committed on Linux usable on Windows
+and vice versa:
+
+```bash
+# Linux author committed an absolute Linux path; on Windows, override it:
+portunix pft list --path "E:\Dev\project\docs\pft-project"
+```
+
+### Migrating an Existing Config to Cross-Platform
+
+To convert an existing absolute `path` into an empty or relative form so the
+config travels across operating systems, run:
+
+```bash
+portunix pft configure --fix-paths --path /current/project/dir
+```
+
+The command sets `path` to empty when it equals the config directory, or to a
+relative path when the project lives elsewhere under the same root. Paths that
+cannot be expressed relatively (different drive, too far up the tree) are
+cleared to empty so callers must use `--path` explicitly.
+
 ## Architecture
 
 ```text

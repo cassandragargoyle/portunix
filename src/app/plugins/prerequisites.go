@@ -103,7 +103,7 @@ func CheckPrerequisites(manifest *PluginManifest) *PrerequisiteCheckResult {
 	}
 
 	// Check OS support
-	result.OSSupport = checkOSSupport(manifest.Dependencies.OSSupport)
+	result.OSSupport = CheckOSSupport(manifest.Dependencies.OSSupport)
 	if result.OSSupport.Status == CheckStatusError {
 		result.Overall = CheckStatusError
 	}
@@ -138,7 +138,7 @@ func CheckPrerequisitesFromRegistry(name, ver, runtimeType, runtimeVer, portunix
 		result.Overall = CheckStatusError
 	}
 
-	result.OSSupport = checkOSSupport(osSupport)
+	result.OSSupport = CheckOSSupport(osSupport)
 	if result.OSSupport.Status == CheckStatusError {
 		result.Overall = CheckStatusError
 	}
@@ -390,8 +390,8 @@ func checkPortunixVersion(minVersion string) *VersionCheckResult {
 	}
 }
 
-// checkOSSupport validates the current OS against supported OS list
-func checkOSSupport(supportedOS []string) *OSCheckResult {
+// CheckOSSupport validates the current OS against supported OS list
+func CheckOSSupport(supportedOS []string) *OSCheckResult {
 	currentOS := runtime.GOOS
 
 	if len(supportedOS) == 0 {

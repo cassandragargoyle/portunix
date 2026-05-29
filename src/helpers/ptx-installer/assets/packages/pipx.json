@@ -9,7 +9,9 @@
     "homepage": "https://pypa.github.io/pipx/",
     "documentation": "https://pypa.github.io/pipx/docs/",
     "license": "MIT",
-    "maintainer": "Python Packaging Authority"
+    "maintainer": "Python Packaging Authority",
+    "installationDocsUrl": "https://pipx.pypa.io/stable/installation/",
+    "latestVersionUrl": "https://pypi.org/project/pipx/"
   },
   "spec": {
     "hasVariants": true,

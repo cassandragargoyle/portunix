@@ -39,6 +39,22 @@ Elasticsearch
 
 ### ◉ AI Tools
 
+#### `ai-assistant-basic`
+
+AI Assistant (Basic)
+
+Maintainer: Portunix
+
+---
+
+#### `ai-assistant-full`
+
+AI Assistant (Full)
+
+Maintainer: Portunix
+
+---
+
 #### `claude-code`
 
 Claude Code
@@ -60,6 +76,14 @@ Claude Desktop
 Google Gemini CLI
 
 [Homepage](https://ai.google.dev/) | [Documentation](https://ai.google.dev/docs/) | License: Apache-2.0 | Maintainer: Google
+
+---
+
+#### `mcp-ready`
+
+MCP-Ready Environment
+
+Maintainer: Portunix
 
 ---
 
@@ -187,6 +211,16 @@ Jinja2
 
 ---
 
+### ○ Development / Runtime
+
+#### `wsl`
+
+Windows Subsystem for Linux
+
+[Homepage](https://learn.microsoft.com/windows/wsl/) | [Documentation](https://learn.microsoft.com/windows/wsl/install) | License: MIT | Maintainer: Microsoft
+
+---
+
 ### ▶ Shells
 
 #### `powershell`
@@ -273,6 +307,14 @@ Hugo Extended
 
 ---
 
+#### `mkdocs`
+
+MkDocs Static Documentation Site
+
+[Homepage](https://www.mkdocs.org/) | [Documentation](https://www.mkdocs.org/getting-started/) | License: BSD-2-Clause | Maintainer: MkDocs Authors
+
+---
+
 #### `pipx`
 
 Pipx
@@ -305,6 +347,14 @@ uv
 
 ---
 
+#### `vitepress`
+
+VitePress Static Documentation Site
+
+[Homepage](https://vitepress.dev/) | [Documentation](https://vitepress.dev/guide/getting-started) | License: MIT | Maintainer: Vue.js Team
+
+---
+
 ### ○ Development / Vcs
 
 #### `git`
@@ -330,6 +380,34 @@ Ansible
 Ansible Collections
 
 [Homepage](https://galaxy.ansible.com/) | [Documentation](https://docs.ansible.com/ansible/latest/collections/) | License: GPL-3.0 | Maintainer: Ansible Community
+
+---
+
+### ○ Infrastructure / Database
+
+#### `postgresql`
+
+PostgreSQL
+
+[Homepage](https://www.postgresql.org/) | [Documentation](https://www.postgresql.org/docs/) | License: PostgreSQL | Maintainer: PostgreSQL Global Development Group
+
+---
+
+#### `sqlite`
+
+SQLite
+
+[Homepage](https://www.sqlite.org/) | [Documentation](https://www.sqlite.org/docs.html) | License: Public Domain | Maintainer: SQLite Consortium
+
+---
+
+### ○ Infrastructure / Iac
+
+#### `terraform`
+
+Terraform
+
+[Homepage](https://www.terraform.io/) | [Documentation](https://developer.hashicorp.com/terraform/docs) | License: BUSL-1.1 | Maintainer: HashiCorp
 
 ---
 
@@ -369,6 +447,14 @@ QEMU
 
 ---
 
+#### `spice-guest-agent`
+
+SPICE Guest Agent
+
+[Homepage](https://www.spice-space.org/) | [Documentation](https://www.spice-space.org/documentation.html) | License: GPL-2.0 | Maintainer: SPICE Project
+
+---
+
 #### `spice-guest-tools`
 
 SPICE Guest Tools
@@ -377,11 +463,27 @@ SPICE Guest Tools
 
 ---
 
+#### `spice-server`
+
+SPICE Server
+
+[Homepage](https://www.spice-space.org/) | [Documentation](https://www.spice-space.org/documentation.html) | License: LGPL-2.1 | Maintainer: SPICE Project
+
+---
+
 #### `virt`
 
 Universal Virtualization
 
 [Homepage](https://github.com/cassandragargoyle/portunix) | [Documentation](https://github.com/cassandragargoyle/portunix/wiki/Virtualization) | License: GPL-2.0 | Maintainer: Portunix Project
+
+---
+
+#### `virt-viewer`
+
+Virt Viewer
+
+[Homepage](https://virt-manager.org/) | [Documentation](https://virt-manager.org/docs/) | License: GPL-2.0 | Maintainer: Virt-Manager Project
 
 ---
 
@@ -509,6 +611,16 @@ Windows Package Manager
 
 ---
 
+### ○ System / Utilities
+
+#### `double-commander`
+
+Double Commander
+
+[Homepage](https://doublecmd.sourceforge.io/) | [Documentation](https://doublecmd.sourceforge.io/index.php/en/Documentation) | License: GPL-2.0+ | Maintainer: Alexander Koblov
+
+---
+
 ### ○ Tools / Ocr
 
 #### `tesseract`
@@ -520,7 +632,7 @@ Tesseract OCR
 ---
 
 
-**Total packages available: 56**
+**Total packages available: 69**
 
 ## Getting Package Details
 

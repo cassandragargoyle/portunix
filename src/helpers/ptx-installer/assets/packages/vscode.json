@@ -9,7 +9,9 @@
     "homepage": "https://code.visualstudio.com/",
     "documentation": "https://code.visualstudio.com/docs/",
     "license": "Microsoft Software License",
-    "maintainer": "Microsoft"
+    "maintainer": "Microsoft",
+    "installationDocsUrl": "https://code.visualstudio.com/docs/setup/setup-overview",
+    "latestVersionUrl": "https://code.visualstudio.com/updates"
   },
   "spec": {
     "hasVariants": true,

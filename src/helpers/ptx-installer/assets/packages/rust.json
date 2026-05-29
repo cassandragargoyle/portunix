@@ -9,7 +9,9 @@
     "homepage": "https://www.rust-lang.org/",
     "documentation": "https://doc.rust-lang.org/",
     "license": "MIT OR Apache-2.0",
-    "maintainer": "Rust Foundation"
+    "maintainer": "Rust Foundation",
+    "installationDocsUrl": "https://www.rust-lang.org/tools/install",
+    "latestVersionUrl": "https://github.com/rust-lang/rust/releases/latest"
   },
   "spec": {
     "hasVariants": true,

@@ -7,14 +7,36 @@ package unit
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 )
 
+// projectRootAtStartup is resolved once at package init so these tests stay
+// correct even if another test in the same package changed the process cwd
+// via os.Chdir (e.g. container_runtime_test.go, config_test.go). Relative
+// cmd.Dir would otherwise intermittently resolve into a temp dir and cause
+// `./portunix` to fail to start or behave unexpectedly.
+var projectRootAtStartup = func() string {
+	wd, _ := os.Getwd()
+	root, _ := filepath.Abs(filepath.Join(wd, "..", ".."))
+	return root
+}()
+
+// portunixBinary returns the absolute path to the portunix binary built at
+// project root. Tests should use this instead of a relative "./portunix".
+func portunixBinary() string {
+	exe := "portunix"
+	if filepath.Separator == '\\' {
+		exe += ".exe"
+	}
+	return filepath.Join(projectRootAtStartup, exe)
+}
+
 func TestInstallCommandHelpFlag(t *testing.T) {
 	// Test that --help flag works correctly
-	cmd := exec.Command("./portunix", "install", "--help")
-	cmd.Dir = "../../" // Run from project root
+	cmd := exec.Command(portunixBinary(), "install", "--help")
+	cmd.Dir = projectRootAtStartup
 
 	output, err := cmd.CombinedOutput()
 
@@ -43,8 +65,8 @@ func TestInstallCommandHelpFlag(t *testing.T) {
 
 func TestInstallCommandShortHelpFlag(t *testing.T) {
 	// Test that -h flag works correctly
-	cmd := exec.Command("./portunix", "install", "-h")
-	cmd.Dir = "../../" // Run from project root
+	cmd := exec.Command(portunixBinary(), "install", "-h")
+	cmd.Dir = projectRootAtStartup
 
 	output, err := cmd.CombinedOutput()
 
@@ -68,8 +90,8 @@ func TestInstallCommandShortHelpFlag(t *testing.T) {
 
 func TestInstallCommandInvalidPackage(t *testing.T) {
 	// Test that invalid package names are handled properly
-	cmd := exec.Command("./portunix", "install", "nonexistent-package-xyz")
-	cmd.Dir = "../../" // Run from project root
+	cmd := exec.Command(portunixBinary(), "install", "nonexistent-package-xyz")
+	cmd.Dir = projectRootAtStartup
 
 	output, err := cmd.CombinedOutput()
 
@@ -95,8 +117,8 @@ func TestInstallCommandCACertificates(t *testing.T) {
 		t.Skip("Skipping integration test - set INTEGRATION_TEST=1 to run")
 	}
 
-	cmd := exec.Command("./portunix", "install", "ca-certificates", "--dry-run")
-	cmd.Dir = "../../" // Run from project root
+	cmd := exec.Command(portunixBinary(), "install", "ca-certificates", "--dry-run")
+	cmd.Dir = projectRootAtStartup
 
 	output, err := cmd.CombinedOutput()
 	outputStr := string(output)
@@ -151,9 +173,9 @@ func TestInstallCommandValidation(t *testing.T) {
 				t.Skip("Skipping integration test - set INTEGRATION_TEST=1 to run")
 			}
 
-			cmd := exec.Command("./portunix")
+			cmd := exec.Command(portunixBinary())
 			cmd.Args = append(cmd.Args, test.args...)
-			cmd.Dir = "../../"
+			cmd.Dir = projectRootAtStartup
 
 			output, err := cmd.CombinedOutput()
 			outputStr := string(output)

@@ -1,0 +1,16 @@
+# Capability node — vendor-neutral
+id: capability:plugin.lifecycle-management
+name: Plugin lifecycle management
+category: functional
+description: Install, enable, disable, start, stop, and manage gRPC-based plugins.
+ai:
+  canBeAutomated: true
+  riskLevel: medium
+  humanApprovalRequired: true
+  typicalTasks:
+    - installPlugin
+    - managePluginState
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"

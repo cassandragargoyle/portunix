@@ -35,6 +35,17 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, List, Tuple
 
+# On Windows the default console encoding (cp1250 on cs-CZ locale, cp1252
+# elsewhere) cannot encode the Unicode box-drawing / emoji glyphs used in
+# our status lines. Force UTF-8 on stdout/stderr so the script behaves the
+# same on Windows, Linux, and macOS instead of needing PYTHONIOENCODING.
+if sys.platform == "win32":
+    for _stream in (sys.stdout, sys.stderr):
+        try:
+            _stream.reconfigure(encoding="utf-8", errors="replace")
+        except (AttributeError, OSError):
+            pass
+
 # ANSI color codes
 class Colors:
     RED = '\033[0;31m'
@@ -51,7 +62,7 @@ class Colors:
 
 def print_header() -> None:
     print(f"{Colors.BLUE}╔══════════════════════════════════════════╗")
-    print(f"║        🚀 PORTUNIX RELEASE MAKER         ║")
+    print(f"║          PORTUNIX RELEASE MAKER         ║")
     print(f"║     One-command release preparation      ║")
     print(f"╚══════════════════════════════════════════╝{Colors.NC}")
     print()
@@ -120,8 +131,18 @@ def run_command(cmd: List[str], cwd: Optional[Path] = None,
 
 
 def validate_version(version: str) -> bool:
-    """Validate version format (vX.Y.Z or vX.Y.Z-SNAPSHOT)"""
-    pattern = r'^v\d+\.\d+\.\d+(-SNAPSHOT)?$'
+    """Validate version format per ADR-036.
+
+    Accepted forms:
+        vX.Y.Z              GitHub stable release
+        vX.Y.Z+dev.N        Internal/Gitea development build
+        vX.Y.Z-rc.N         Release candidate (alpha/beta also allowed)
+        vX.Y.Z-SNAPSHOT     Test snapshot build (legacy)
+    """
+    pattern = (
+        r'^v\d+\.\d+\.\d+'
+        r'(?:-(?:rc|alpha|beta)\.\d+|-SNAPSHOT|\+dev\.\d+)?$'
+    )
     return bool(re.match(pattern, version))
 
 
@@ -413,6 +434,79 @@ def inject_platform_archives() -> None:
     print()
 
 
+def load_update_pubkey() -> str:
+    """Read the Ed25519 update-signing public key from the source-of-truth
+    file. Returns empty string if missing/empty (verification disabled).
+
+    Issue #165: this hex value is embedded into the binary via ldflags so
+    that `portunix update` can verify the .sig file produced by sign_checksums().
+    """
+    pubkey_file = get_project_root() / "assets" / "update-signing-pubkey.txt"
+    if not pubkey_file.is_file():
+        return ""
+    return pubkey_file.read_text().strip()
+
+
+def sign_checksums(version: str) -> bool:
+    """Sign the checksums_VERSION.txt file with the update-signing private key.
+
+    Produces checksums_VERSION.txt.sig — a hex-encoded Ed25519 signature
+    consumed by `portunix update` to verify the integrity of the checksums
+    file before trusting any sha256 entry.
+
+    Skipped (warning only) when:
+      - assets/update-signing-pubkey.txt is empty (no key configured), or
+      - private key is missing (likely running on CI without secret), or
+      - signing tool not installed.
+    """
+    print_step("Signing checksums (issue #165)...")
+    project_root = get_project_root()
+    dist_dir = project_root / "dist"
+
+    pubkey = load_update_pubkey()
+    if not pubkey:
+        print_warning("Update-signing pubkey is empty — skipping signature generation")
+        print_info("To enable: scripts/sign-release.py generate-key --write-pubkey")
+        print()
+        return True
+
+    checksums_files = list(dist_dir.glob("checksums_*.txt"))
+    if not checksums_files:
+        print_warning("No checksums_*.txt found — skipping signing")
+        print()
+        return True
+
+    sign_script = project_root / "scripts" / "sign-release.py"
+    if not sign_script.is_file():
+        print_warning(f"sign-release.py not found at {sign_script}")
+        print()
+        return True
+
+    for checksums_file in checksums_files:
+        print_info(f"Signing {checksums_file.name}...")
+        try:
+            run_command(
+                ["uv", "run", str(sign_script), "sign", str(checksums_file)],
+                cwd=project_root,
+            )
+        except FileNotFoundError:
+            run_command(
+                [sys.executable, str(sign_script), "sign", str(checksums_file)],
+                cwd=project_root,
+            )
+        except subprocess.CalledProcessError:
+            print_warning(
+                f"Signing failed — likely no private key at "
+                f"secrets/update-signing/private.key. "
+                f"Release will ship without .sig (verification skipped at install)."
+            )
+            print()
+            return True
+
+    print()
+    return True
+
+
 def copy_quickstart_scripts() -> None:
     """Copy quickstart scripts to dist and update checksums"""
     print_step("Copying quickstart scripts...")
@@ -700,8 +794,10 @@ def show_usage() -> None:
     print("Usage: python scripts/make-release.py <version>")
     print()
     print("Examples:")
-    print("  python scripts/make-release.py v1.5.1")
-    print("  python scripts/make-release.py v1.6.0")
+    print("  python scripts/make-release.py v1.5.1            # GitHub stable")
+    print("  python scripts/make-release.py v1.5.1+dev.3      # Internal dev (ADR-036)")
+    print("  python scripts/make-release.py v1.6.0-rc.1       # Release candidate")
+    print("  python scripts/make-release.py v1.6.0-SNAPSHOT   # Test build")
     print()
     print("This script will:")
     print("  1. Validate version format")
@@ -732,9 +828,12 @@ def main() -> int:
 
     version = sys.argv[1]
 
-    # Validate version
+    # Validate version (ADR-036)
     if not validate_version(version):
-        print_error("Invalid version format. Use semantic versioning: v1.2.3")
+        print_error(
+            "Invalid version format. Accepted: vX.Y.Z, vX.Y.Z+dev.N, "
+            "vX.Y.Z-rc.N, vX.Y.Z-SNAPSHOT"
+        )
         show_usage()
         return 1
 
@@ -749,6 +848,16 @@ def main() -> int:
     # Update version files
     update_version_files(version)
 
+    # Issue #165: export update-signing pubkey so GoReleaser embeds it via ldflags.
+    # Empty value preserves backward-compatible behaviour (verification disabled).
+    pubkey = load_update_pubkey()
+    os.environ["PORTUNIX_UPDATE_PUBKEY"] = pubkey
+    if pubkey:
+        print_info(f"Update-signing pubkey loaded ({len(pubkey)} hex chars)")
+    else:
+        print_warning("No update-signing pubkey configured — release binaries will not verify updates")
+    print()
+
     # Run GoReleaser
     if not run_goreleaser(version, goreleaser_cmd):
         return 1
@@ -761,6 +870,10 @@ def main() -> int:
 
     # Copy quickstart scripts
     copy_quickstart_scripts()
+
+    # Issue #165: sign checksums file (must run after copy_quickstart_scripts
+    # because it appends quickstart hashes to checksums_*.txt)
+    sign_checksums(version)
 
     # Verify outputs
     if not verify_outputs():

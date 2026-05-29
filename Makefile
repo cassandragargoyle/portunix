@@ -1,7 +1,7 @@
 # Portunix Testing and Build Automation
 # Modern testing infrastructure with Go best practices
 
-.PHONY: help benchmark benchmark-docker build build-helpers build-main build-race build-release build-version ci-integration ci-setup ci-test clean clean-all deploy-local deps dev-setup dist docker-cleanup docker-test-env docs-serve fmt lint lint-md mocks security setup-test status test test-cli test-coverage test-coverage-ci test-docker test-docker-unit test-e2e test-fixtures test-integration test-performance test-release test-report test-unit undeploy-local vet watch-test
+.PHONY: help benchmark benchmark-docker build build-helpers build-main build-race build-release build-version ci-integration ci-setup ci-test clean clean-all deploy-local deps dev-setup dist docker-cleanup docker-test-env docs-serve fmt gen-resources install-build-tools lint lint-md mocks security setup-test status test test-cli test-coverage test-coverage-ci test-docker test-docker-unit test-e2e test-fixtures test-integration test-performance test-release test-report test-unit undeploy-local vet watch-test
 
 # Detect OS and set executable extension and commands
 ifeq ($(OS),Windows_NT)
@@ -55,11 +55,41 @@ build-helpers: ## Build all helper binaries
 	@cd src/helpers/ptx-pft && go build -o ../../../ptx-pft$(EXE_EXT) .
 	@cd src/helpers/ptx-credential && go build -o ../../../ptx-credential$(EXE_EXT) .
 	@cd src/helpers/ptx-trace && go build -o ../../../ptx-trace$(EXE_EXT) .
-	@echo "Helper binaries built: ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-prompting, ptx-python, ptx-installer, ptx-aiops, ptx-make, ptx-pft, ptx-credential, ptx-trace"
+	@cd src/helpers/ptx-ssh && go build -o ../../../ptx-ssh$(EXE_EXT) .
+	@cd src/helpers/ptx-plugin-registry && go build -o ../../../ptx-plugin-registry$(EXE_EXT) .
+	@cd src/helpers/ptx-proxmox && go build -o ../../../ptx-proxmox$(EXE_EXT) .
+	@cd src/helpers/ptx-specpm && go build -o ../../../ptx-specpm$(EXE_EXT) .
+	@cd src/helpers/ptx-database && go build -o ../../../ptx-database$(EXE_EXT) .
+	@cd src/helpers/ptx-github && go build -o ../../../ptx-github$(EXE_EXT) .
+	@cd src/helpers/ptx-wizard && go build -o ../../../ptx-wizard$(EXE_EXT) .
+	@echo "Helper binaries built: ptx-container, ptx-mcp, ptx-virt, ptx-ansible, ptx-prompting, ptx-python, ptx-installer, ptx-aiops, ptx-make, ptx-pft, ptx-credential, ptx-trace, ptx-ssh, ptx-plugin-registry, ptx-proxmox, ptx-specpm, ptx-database, ptx-github, ptx-wizard"
 
-build-main: ## Build only the main Portunix binary
+build-main: gen-resources ## Build only the main Portunix binary
 	@echo "Building Portunix..."
 	go build -o portunix$(EXE_EXT) .
+
+# Regenerate portunix.syso from versioninfo.json (embeds version + manifest + icon).
+# .syso is Windows-only — it's only embedded by Go when GOOS=windows. On
+# non-Windows hosts native builds simply ignore it; cross-compiling to Windows
+# from those hosts still picks up the latest .syso via this target.
+#
+# We resolve goversioninfo at recipe-time (inside sh) rather than via $(shell)
+# to avoid Make's host-charset issues with non-ASCII GOPATH on Windows.
+# Override by exporting GOVERSIONINFO=/path/to/goversioninfo.
+gen-resources: ## Regenerate Windows .syso (version, manifest, icon) from versioninfo.json
+	@bin="$${GOVERSIONINFO:-$$(go env GOPATH)/bin/goversioninfo$(EXE_EXT)}"; \
+	if [ ! -f "$$bin" ]; then \
+		echo "goversioninfo not found at $$bin"; \
+		echo "Run: make install-build-tools  (or:  go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest )"; \
+		exit 1; \
+	fi; \
+	echo "Generating portunix.syso (version + manifest + icon)..."; \
+	"$$bin" -o portunix.syso versioninfo.json
+
+install-build-tools: ## Install Go build tooling required for resource generation
+	@echo "Installing goversioninfo..."
+	go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest
+	@echo "Build tools installed"
 
 build-race: ## Build with race detection
 	@echo "Building with race detection..."
@@ -88,7 +118,7 @@ ci-test: lint vet test-coverage-ci ## Run CI test suite
 
 clean: ## Clean build artifacts and test files
 	@echo "Cleaning up..."
-	-$(RM) portunix$(EXE_EXT) ptx-container$(EXE_EXT) ptx-mcp$(EXE_EXT) ptx-virt$(EXE_EXT) ptx-ansible$(EXE_EXT) ptx-prompting$(EXE_EXT) ptx-python$(EXE_EXT) ptx-installer$(EXE_EXT) ptx-aiops$(EXE_EXT) ptx-make$(EXE_EXT) ptx-pft$(EXE_EXT) ptx-credential$(EXE_EXT) ptx-trace$(EXE_EXT) ptx-vocalio$(EXE_EXT)
+	-$(RM) portunix$(EXE_EXT) ptx-container$(EXE_EXT) ptx-mcp$(EXE_EXT) ptx-virt$(EXE_EXT) ptx-ansible$(EXE_EXT) ptx-prompting$(EXE_EXT) ptx-python$(EXE_EXT) ptx-installer$(EXE_EXT) ptx-aiops$(EXE_EXT) ptx-make$(EXE_EXT) ptx-pft$(EXE_EXT) ptx-credential$(EXE_EXT) ptx-trace$(EXE_EXT) ptx-ssh$(EXE_EXT) ptx-plugin-registry$(EXE_EXT) ptx-proxmox$(EXE_EXT) ptx-specpm$(EXE_EXT) ptx-database$(EXE_EXT) ptx-github$(EXE_EXT) ptx-wizard$(EXE_EXT) ptx-vocalio$(EXE_EXT)
 	-$(RM) coverage.out coverage.html
 	-$(RMDIR) test/tmp/
 	go clean -testcache
@@ -291,6 +321,13 @@ build-all-platforms: ## Build all binaries for all platforms (cross-platform dis
 		cd src/helpers/ptx-pft && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-pft$$ext . && cd ../../..; \
 		cd src/helpers/ptx-credential && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-credential$$ext . && cd ../../..; \
 		cd src/helpers/ptx-trace && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-trace$$ext . && cd ../../..; \
+		cd src/helpers/ptx-ssh && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-ssh$$ext . && cd ../../..; \
+		cd src/helpers/ptx-plugin-registry && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-plugin-registry$$ext . && cd ../../..; \
+		cd src/helpers/ptx-proxmox && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-proxmox$$ext . && cd ../../..; \
+		cd src/helpers/ptx-specpm && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-specpm$$ext . && cd ../../..; \
+		cd src/helpers/ptx-database && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-database$$ext . && cd ../../..; \
+		cd src/helpers/ptx-github && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-github$$ext . && cd ../../..; \
+		cd src/helpers/ptx-wizard && GOOS=$$os GOARCH=$$arch CGO_ENABLED=0 go build -o $$abs_dist/ptx-wizard$$ext . && cd ../../..; \
 	done
 	@echo "All platform binaries built in dist/platforms/"
 

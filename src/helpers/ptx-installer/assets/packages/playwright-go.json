@@ -9,7 +9,9 @@
     "homepage": "https://github.com/playwright-community/playwright-go",
     "documentation": "https://playwright-community.github.io/playwright-go/",
     "license": "MIT",
-    "maintainer": "CassandraGargoyle"
+    "maintainer": "CassandraGargoyle",
+    "installationDocsUrl": "https://github.com/playwright-community/playwright-go#installation",
+    "latestVersionUrl": "https://github.com/playwright-community/playwright-go/releases/latest"
   },
   "spec": {
     "hasVariants": true,

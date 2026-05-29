@@ -2,8 +2,10 @@ package main
 
 import (
 	_ "embed"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 
 	"portunix.ai/app/sandbox"
 	"portunix.ai/app/update"
@@ -36,6 +38,14 @@ func main() {
 	args := os.Args[1:]
 	if helperPath, shouldDispatch := disp.ShouldDispatch(args); shouldDispatch {
 		if err := disp.Dispatch(helperPath, args); err != nil {
+			// Propagate the helper's exit code instead of masking it as 1.
+			// os/exec returns *ExitError for non-zero child exits; unwrap
+			// and forward the status so shells observe what the helper
+			// actually returned (e.g. `portunix ssh exec … "exit 42"` ⇒ 42).
+			var ee *exec.ExitError
+			if errors.As(err, &ee) {
+				os.Exit(ee.ExitCode())
+			}
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}

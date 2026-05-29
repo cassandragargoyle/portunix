@@ -18,12 +18,28 @@ func VerifyChecksum(filepath string, checksumURL string) error {
 	return nil
 }
 
-// VerifyArchiveChecksum verifies the SHA256 checksum of an archive file
+// VerifyArchiveChecksum verifies the SHA256 checksum of an archive file.
+// Signature verification is skipped (signatureURL == "") for backward
+// compatibility; use VerifyArchiveChecksumSigned to also verify the Ed25519
+// signature over the checksums file.
 func VerifyArchiveChecksum(archivePath string, checksumURL string, archiveName string) error {
+	return VerifyArchiveChecksumSigned(archivePath, checksumURL, "", archiveName)
+}
+
+// VerifyArchiveChecksumSigned verifies the SHA256 checksum of an archive file
+// and additionally verifies an Ed25519 signature over the checksums file when
+// signatureURL is non-empty. The signature is checked BEFORE the checksum is
+// parsed, so a tampered checksums file fails fast.
+func VerifyArchiveChecksumSigned(archivePath, checksumURL, signatureURL, archiveName string) error {
 	// Download checksum file
 	checksumData, err := DownloadFile(checksumURL)
 	if err != nil {
 		return fmt.Errorf("failed to download checksum: %w", err)
+	}
+
+	// Verify Ed25519 signature over the checksums file before trusting it.
+	if err := VerifyChecksumsSignature(checksumData, signatureURL); err != nil {
+		return fmt.Errorf("signature verification failed: %w", err)
 	}
 
 	// Parse checksum file to find the right entry

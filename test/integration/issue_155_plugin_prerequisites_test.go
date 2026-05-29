@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -280,10 +281,10 @@ func TestIssue155_PluginPrerequisitesValidation(t *testing.T) {
 func findBinary(t *testing.T, tf *testframework.TestFramework) string {
 	tf.Step(t, "Locate portunix binary")
 
-	// Try relative paths from test directory
-	candidates := []string{
-		"../../portunix.exe",
-		"../../portunix",
+	// Pick OS-native binary first to avoid running stale cross-built artifacts
+	candidates := []string{"../../portunix", "../../portunix.exe"}
+	if runtime.GOOS == "windows" {
+		candidates = []string{"../../portunix.exe", "../../portunix"}
 	}
 
 	for _, candidate := range candidates {

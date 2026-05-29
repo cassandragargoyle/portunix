@@ -87,6 +87,15 @@ the core project (`portunix`) and plugins project (`portunix-plugins`).
 - **Windows Sandbox integration**: Isolated development environments
 - **VM management**: Virtual machine creation and management
 - **Development disk**: Virtual development disk support (Issue #8)
+- **Proxmox VE integration** (Issue #167): Remote Proxmox VE management
+  - Connection profiles stored in `~/.config/portunix/proxmox.json` (mode 0600)
+  - API token and password authentication (`proxmox auth login|status|logout|list`)
+  - VM/CT lifecycle: `list`, `info`, `status`, `start`, `stop`, `restart`, `shutdown`, `delete`
+  - Creation from templates with cloud-init: `create vm`, `create ct`, `template list`, `cloud-init`
+  - Snapshots: `snapshot create|list|revert|delete`
+  - SSH & SCP with automatic IP resolution via QEMU guest agent / LXC interfaces:
+    `ssh`, `exec`, `copy`, `resolve-ip`
+  - `.ptxbook` integration: `environment.type: proxmox` with `create_if_missing`
 
 ### 🔌 Plugin System
 
@@ -229,6 +238,20 @@ portunix-plugins/
 - `portunix update` - Update Portunix
 - `portunix system` - System information
 - `portunix completion` - Generate shell completion scripts
+- `portunix specpm` - Initialize project-management specifications using
+  [spec-kit-pm](https://github.com/CassandraGargoyle/spec-kit-pm) (Issue #183, ADR-040)
+- `portunix github` - GitHub repositories, releases, and authentication
+  (Issue #025): `clone`, `checkout`, `tags`, `releases`, `download`, `info`,
+  `status`, `auth login|logout|status|list|set-default`. Pure-Go clone via
+  go-git, AES-256-GCM-encrypted token store at `~/.portunix/github/auth.json`,
+  resume + SHA-256 verification for asset downloads.
+- `portunix wizard` - Interactive YAML-based CLI installation wizards
+  (Issue #014): `run`, `list`, `validate`, `create`. Components: info,
+  select, multi_select, input, password, confirm, progress, success, error.
+  Themes: default / colorful / minimal. Conditional navigation, variable
+  interpolation `{{var}}`, plugin discovery via `PORTUNIX_WIZARD_PATH`,
+  non-interactive automation via `--config <yaml>` and `--preset`. Routed
+  through the `ptx-wizard` helper binary (dispatcher pattern).
 
 ### Plugin Commands
 

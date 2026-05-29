@@ -9,7 +9,9 @@
     "homepage": "https://github.com/PowerShell/PowerShell",
     "documentation": "https://docs.microsoft.com/en-us/powershell/",
     "license": "MIT",
-    "maintainer": "Microsoft"
+    "maintainer": "Microsoft",
+    "installationDocsUrl": "https://learn.microsoft.com/en-us/powershell/scripting/install/installing-powershell",
+    "latestVersionUrl": "https://github.com/PowerShell/PowerShell/releases/latest"
   },
   "spec": {
     "hasVariants": true,
@@ -47,6 +49,7 @@
             ]
           },
           "dnf": {
+            "type": "dnf",
             "version": "7.4.6",
             "repositorySetup": [
               "sudo rpm --import https://packages.microsoft.com/keys/microsoft.asc",
@@ -57,6 +60,7 @@
             "packages": ["powershell"]
           },
           "snap": {
+            "type": "snap",
             "version": "latest",
             "packages": ["powershell"],
             "installArgs": ["--classic"]

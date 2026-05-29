@@ -66,6 +66,9 @@ jobs:
             exit 1
           fi
 
+      - name: Validate package manifest URL metadata (ADR-019)
+        run: ./scripts/check-package-manifest-urls.sh
+
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -93,8 +96,8 @@ jobs:
         run: go mod download
 
       - name: Build project first (needed for go:embed)
-        run: go build -o portunix ./
-        
+        run: make build
+
       - name: Run unit tests
         run: |
           go test -tags=unit -race -coverprofile=unit-coverage.out -covermode=atomic ./...
@@ -150,8 +153,8 @@ jobs:
           docker pull nginx:alpine
 
       - name: Build project first (needed for go:embed)
-        run: go build -o portunix ./
-        
+        run: make build
+
       - name: Run integration tests
         run: |
           go test -tags=integration -race -coverprofile=integration-coverage.out -covermode=atomic -timeout=10m ./...
@@ -194,7 +197,8 @@ jobs:
         run: go mod download
 
       - name: Build
-        run: go build -o portunix ./
+        shell: bash
+        run: make build
 
       - name: Run unit tests
         run: go test -tags=unit -race ./...
@@ -232,7 +236,7 @@ jobs:
           go list -json -deps ./... | nancy sleuth
 
       - name: Upload Gosec results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: gosec-report
           path: gosec-report.json
@@ -269,7 +273,7 @@ jobs:
           go test -bench=. -benchmem -count=3 ./... > benchmark-results.txt
 
       - name: Upload benchmark results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: benchmark-results
           path: benchmark-results.txt
@@ -313,7 +317,7 @@ jobs:
           go tool cover -func=coverage.out > coverage-summary.txt
 
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-reports
           path: |

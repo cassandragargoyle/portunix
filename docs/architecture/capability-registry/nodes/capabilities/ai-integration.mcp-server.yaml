@@ -1,0 +1,16 @@
+# Capability node — vendor-neutral
+id: capability:ai-integration.mcp-server
+name: MCP server integration
+category: ai
+description: Expose product functionality to AI assistants via a Model Context Protocol server.
+ai:
+  canBeAutomated: true
+  riskLevel: low
+  humanApprovalRequired: false
+  typicalTasks:
+    - serveMcpEndpoint
+    - configureMcpIntegration
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"

@@ -47,6 +47,17 @@ func (ms *MultiSelectComponent) Render(ctx *wizard.WizardContext) error {
 		optionMap[label] = opt.Value
 	}
 
+	if ctx.NonInteractive {
+		// Allow empty selection (multi-select can be empty by design)
+		for _, sel := range ms.Selected {
+			if !optionValueAllowed(ms.Options, sel) {
+				return fmt.Errorf("non-interactive: value '%s' not in allowed options for '%s'", sel, ms.Prompt)
+			}
+		}
+		fmt.Printf("%s %v\n", ms.Prompt, ms.Selected)
+		return nil
+	}
+
 	prompt := &survey.MultiSelect{
 		Message: ms.Prompt,
 		Options: optionLabels,
@@ -75,8 +86,15 @@ func (ms *MultiSelectComponent) GetValue() interface{} {
 
 // SetValue sets the selected values
 func (ms *MultiSelectComponent) SetValue(value interface{}) {
-	if arr, ok := value.([]string); ok {
-		ms.Selected = arr
+	switch v := value.(type) {
+	case []string:
+		ms.Selected = v
+	case []interface{}:
+		out := make([]string, 0, len(v))
+		for _, item := range v {
+			out = append(out, fmt.Sprintf("%v", item))
+		}
+		ms.Selected = out
 	}
 }
 
@@ -90,17 +108,25 @@ func (ms *MultiSelectComponent) Validate() error {
 // This is exported so it can be used by the engine
 func EvaluateCondition(condition string, variables map[string]interface{}) bool {
 	parts := strings.Fields(condition)
-	if len(parts) < 2 {
+	if len(parts) == 0 {
 		return false
 	}
 
 	varName := parts[0]
-	operator := parts[1]
-
 	value, exists := variables[varName]
 	if !exists {
 		return false
 	}
+
+	// Single-token condition: treat as a boolean truth check on the variable
+	if len(parts) == 1 {
+		if b, ok := value.(bool); ok {
+			return b
+		}
+		return fmt.Sprintf("%v", value) == "true"
+	}
+
+	operator := parts[1]
 
 	switch operator {
 	case "==":
@@ -123,14 +149,6 @@ func EvaluateCondition(condition string, variables map[string]interface{}) bool 
 			return !b
 		}
 		return fmt.Sprintf("%v", value) == "false"
-	}
-
-	// Handle simple boolean variable names
-	if len(parts) == 1 {
-		if b, ok := value.(bool); ok {
-			return b
-		}
-		return fmt.Sprintf("%v", value) == "true"
 	}
 
 	return false

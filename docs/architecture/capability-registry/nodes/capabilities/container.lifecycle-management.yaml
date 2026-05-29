@@ -1,0 +1,16 @@
+# Capability node — vendor-neutral
+id: capability:container.lifecycle-management
+name: Container lifecycle management
+category: functional
+description: Create, run, and manage containers and images across Docker and Podman backends.
+ai:
+  canBeAutomated: true
+  riskLevel: medium
+  humanApprovalRequired: true
+  typicalTasks:
+    - runContainer
+    - manageContainerLifecycle
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"

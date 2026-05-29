@@ -13,10 +13,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"sort"
 	"strings"
 	"time"
 
 	"portunix.ai/portunix/src/helpers/ptx-installer/registry"
+	"portunix.ai/portunix/src/pkg/archive"
 )
 
 // EmbeddedScriptsFS holds the embedded scripts filesystem (set from main package)
@@ -138,6 +140,21 @@ func expandEnvVars(s string) string {
 	return result
 }
 
+// installResult is what each install method reports back so the engine can
+// expand ${install_path} / ${extract_to} placeholders in PATH_APPEND
+// (Issue #187 phase 2). Methods that don't produce a structured path
+// (apt, dnf, snap, ...) leave both fields empty.
+type installResult struct {
+	// installPath is the final on-disk location of the installed package.
+	// Archives: actualRoot after FindExtractedRoot. MSI/EXE: variant.InstallPath
+	// (env-vars expanded). Download: target directory.
+	installPath string
+	// extractTo is the post-fallback pre-detection extract directory
+	// (archives only). Lets packages like maven keep
+	// `${extract_to}/apache-maven-3.9.9/bin` semantics.
+	extractTo string
+}
+
 // InstallOptions contains options for package installation
 type InstallOptions struct {
 	PackageName string
@@ -187,6 +204,49 @@ func NewInstaller(assetsPath string) (*Installer, error) {
 	}, nil
 }
 
+// ResolveVersion maps a `--version` selector to a concrete variant name for the
+// package on the current platform (issue #035 per-assistant version management).
+// A selector matches either a variant whose name equals it (e.g. "21" for Java)
+// or a variant whose Version field equals it (e.g. "17.0.16_8"). Returns an
+// error listing the available versions when no variant matches.
+func (i *Installer) ResolveVersion(packageName, version string) (string, error) {
+	pkg, err := i.registry.GetPackage(packageName)
+	if err != nil {
+		return "", fmt.Errorf("package not found: %w", err)
+	}
+
+	currentOS := GetOperatingSystem()
+	platformSpec, exists := pkg.Spec.Platforms[currentOS]
+	if !exists && currentOS == "windows_sandbox" {
+		platformSpec, exists = pkg.Spec.Platforms["windows"]
+	}
+	if !exists {
+		return "", fmt.Errorf("package %s not available for platform %s", packageName, currentOS)
+	}
+
+	// Exact variant-name match takes precedence (e.g. Java "21").
+	if _, ok := platformSpec.Variants[version]; ok {
+		return version, nil
+	}
+
+	// Otherwise match against each variant's declared Version field.
+	available := make([]string, 0, len(platformSpec.Variants))
+	for name, spec := range platformSpec.Variants {
+		if spec.Version == version {
+			return name, nil
+		}
+		label := name
+		if spec.Version != "" && spec.Version != name {
+			label = fmt.Sprintf("%s (%s)", name, spec.Version)
+		}
+		available = append(available, label)
+	}
+	sort.Strings(available)
+
+	return "", fmt.Errorf("version %q not available for %s on %s\n   Available versions: %s",
+		version, packageName, currentOS, strings.Join(available, ", "))
+}
+
 // Install installs a package with the given options
 func (i *Installer) Install(options *InstallOptions) error {
 	fmt.Printf("\n🔧 Installing package: %s\n", options.PackageName)
@@ -195,6 +255,11 @@ func (i *Installer) Install(options *InstallOptions) error {
 	pkg, err := i.registry.GetPackage(options.PackageName)
 	if err != nil {
 		return fmt.Errorf("package not found: %w", err)
+	}
+
+	// Bundles aggregate several packages — install each member in order
+	if pkg.Kind == "Bundle" {
+		return i.installBundle(pkg, options)
 	}
 
 	fmt.Printf("📦 Package: %s\n", pkg.Metadata.DisplayName)
@@ -226,7 +291,7 @@ func (i *Installer) Install(options *InstallOptions) error {
 	// Check if variant exists
 	variantSpec, exists := platformSpec.Variants[variant]
 	if !exists {
-		return fmt.Errorf("variant %s not found for package %s", variant, options.PackageName)
+		return UnknownVariantError(options.PackageName, variant, GetOperatingSystem(), platformSpec.Variants)
 	}
 
 	fmt.Printf("🎯 Variant: %s (version: %s)\n", variant, variantSpec.Version)
@@ -290,38 +355,99 @@ func (i *Installer) Install(options *InstallOptions) error {
 	// Perform installation based on effective type (variant type takes precedence)
 	fmt.Printf("\n🚀 Starting installation (type: %s)...\n", effectiveType)
 
+	var installErr error
+	var result installResult
 	switch effectiveType {
 	case "tar.gz", "zip":
-		return i.installArchive(&platformSpec, &variantSpec, options)
+		result, installErr = i.installArchive(&platformSpec, &variantSpec, options)
 	case "deb":
-		return i.installDeb(&platformSpec, &variantSpec, options)
+		installErr = i.installDeb(&platformSpec, &variantSpec, options)
 	case "apt":
-		return i.installApt(&platformSpec, &variantSpec, options)
+		installErr = i.installApt(&platformSpec, &variantSpec, options)
 	case "dnf", "yum":
-		return i.installDnf(&platformSpec, &variantSpec, options)
+		installErr = i.installDnf(&platformSpec, &variantSpec, options)
 	case "snap":
-		return i.installSnap(&platformSpec, &variantSpec, options)
+		installErr = i.installSnap(&platformSpec, &variantSpec, options)
 	case "pacman":
-		return i.installPacman(&platformSpec, &variantSpec, options)
+		installErr = i.installPacman(&platformSpec, &variantSpec, options)
 	case "msi", "exe":
-		return i.installWindowsBinary(&platformSpec, &variantSpec, options)
+		result, installErr = i.installWindowsBinary(&platformSpec, &variantSpec, options)
 	case "chocolatey":
-		return i.installChocolatey(&platformSpec, &variantSpec, options)
+		installErr = i.installChocolatey(&platformSpec, &variantSpec, options)
 	case "winget":
-		return i.installWinget(&platformSpec, &variantSpec, options)
+		installErr = i.installWinget(&platformSpec, &variantSpec, options)
 	case "download":
-		return i.installDownload(&platformSpec, &variantSpec, options)
+		result, installErr = i.installDownload(&platformSpec, &variantSpec, options)
 	case "script":
-		return i.installScript(&platformSpec, &variantSpec, options)
+		installErr = i.installScript(&platformSpec, &variantSpec, options)
 	case "container":
-		return i.installContainer(&platformSpec, &variantSpec, options)
+		installErr = i.installContainer(&platformSpec, &variantSpec, options)
 	default:
 		return fmt.Errorf("installation type %s not yet implemented in ptx-installer", effectiveType)
 	}
+	if installErr != nil {
+		return installErr
+	}
+
+	// Apply environment.PATH_APPEND after a successful install. Env-var
+	// placeholders (${LOCALAPPDATA}, $HOME, %USERPROFILE%, …) are expanded
+	// up-front; ${install_path}/${extract_to} are then resolved from the
+	// installResult returned by the install method (Issue #187 phase 2).
+	// PATH failures are non-fatal — the package is installed even if PATH
+	// wiring breaks.
+	if pathAppend := platformSpec.Environment["PATH_APPEND"]; pathAppend != "" {
+		expanded := expandEnvVars(pathAppend)
+		if result.installPath != "" {
+			expanded = strings.ReplaceAll(expanded, "${install_path}", result.installPath)
+			expanded = strings.ReplaceAll(expanded, "%install_path%", result.installPath)
+		}
+		if result.extractTo != "" {
+			expanded = strings.ReplaceAll(expanded, "${extract_to}", result.extractTo)
+			expanded = strings.ReplaceAll(expanded, "%extract_to%", result.extractTo)
+		}
+		if strings.Contains(expanded, "${install_path}") || strings.Contains(expanded, "${extract_to}") {
+			fmt.Printf("⚠️  PATH_APPEND contains unresolved placeholder, skipping: %s\n", expanded)
+		} else {
+			fmt.Printf("\n🔧 Adding to User PATH: %s\n", expanded)
+			if err := AddToUserPath(expanded); err != nil {
+				fmt.Printf("⚠️  PATH update failed (install succeeded): %v\n", err)
+			}
+		}
+	}
+	return nil
 }
 
-// installArchive installs from archive (tar.gz, zip)
-func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *registry.VariantSpec, options *InstallOptions) error {
+// installBundle installs every package listed in a Kind: "Bundle" entry, in
+// declaration order. Member options inherit DryRun and Force; installation
+// stops at the first member that fails.
+func (i *Installer) installBundle(pkg *registry.Package, options *InstallOptions) error {
+	fmt.Printf("📦 Bundle: %s\n", pkg.Metadata.DisplayName)
+	fmt.Printf("📝 Description: %s\n", pkg.Metadata.Description)
+	fmt.Printf("📋 Packages: %v\n", pkg.Spec.Bundle)
+
+	for idx, member := range pkg.Spec.Bundle {
+		fmt.Printf("\n────────────────────────────────────────\n")
+		fmt.Printf("➡️  [%d/%d] %s\n", idx+1, len(pkg.Spec.Bundle), member)
+
+		memberOptions := &InstallOptions{
+			PackageName: member,
+			DryRun:      options.DryRun,
+			Force:       options.Force,
+		}
+		if err := i.Install(memberOptions); err != nil {
+			return fmt.Errorf("bundle %s: failed to install %s: %w", pkg.Metadata.Name, member, err)
+		}
+	}
+
+	fmt.Printf("\n✅ Bundle %s complete (%d packages)\n", pkg.Metadata.Name, len(pkg.Spec.Bundle))
+	return nil
+}
+
+// installArchive installs from archive (tar.gz, zip). Returns an installResult
+// so the engine can resolve ${install_path} / ${extract_to} in PATH_APPEND:
+// installPath is the post-detection actual root, extractTo is the
+// post-fallback pre-detection target.
+func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *registry.VariantSpec, options *InstallOptions) (installResult, error) {
 	// Determine download URL (support both single URL and architecture-specific URLs)
 	downloadURL := variant.URL
 	if downloadURL == "" && len(variant.URLs) > 0 {
@@ -330,19 +456,19 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 		var ok bool
 		downloadURL, ok = variant.URLs[arch]
 		if !ok {
-			return fmt.Errorf("no download URL found for architecture %s", arch)
+			return installResult{}, fmt.Errorf("no download URL found for architecture %s", arch)
 		}
 	}
 
 	if downloadURL == "" {
-		return fmt.Errorf("no download URL specified for archive installation")
+		return installResult{}, fmt.Errorf("no download URL specified for archive installation")
 	}
 
 	// Download archive to cache
 	fmt.Printf("📥 Downloading archive from: %s\n", downloadURL)
-	archivePath, err := DownloadFileWithProperFilename(downloadURL, i.cacheDir)
+	archivePath, err := archive.DownloadFileWithProperFilename(downloadURL, i.cacheDir)
 	if err != nil {
-		return fmt.Errorf("download failed: %w", err)
+		return installResult{}, fmt.Errorf("download failed: %w", err)
 	}
 
 	// Determine extraction directory (expand environment variables)
@@ -370,31 +496,35 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 			fmt.Printf("⚠️  Cannot create %s (permission denied), using user directory\n", extractTo)
 			extractTo = fallbackDir
 			if err := os.MkdirAll(extractTo, 0755); err != nil {
-				return fmt.Errorf("failed to create extract directory: %w", err)
+				return installResult{}, fmt.Errorf("failed to create extract directory: %w", err)
 			}
 			fmt.Printf("📁 Using fallback: %s\n", extractTo)
 		} else {
-			return fmt.Errorf("failed to create extract directory: %w", err)
+			return installResult{}, fmt.Errorf("failed to create extract directory: %w", err)
 		}
 	}
 
 	// Check if target directory already exists and is not empty (after determining final path)
 	proceed, err := checkExistingDirectory(extractTo, options.Force)
 	if err != nil {
-		return fmt.Errorf("directory check failed: %w", err)
+		return installResult{}, fmt.Errorf("directory check failed: %w", err)
 	}
 	if !proceed {
-		return nil // User cancelled installation
+		return installResult{}, nil // User cancelled installation
 	}
 
 	// Extract archive
 	fmt.Printf("📦 Extracting to: %s\n", extractTo)
-	if err := ExtractArchive(archivePath, extractTo); err != nil {
-		return fmt.Errorf("extraction failed: %w", err)
+	if err := archive.ExtractArchive(archivePath, extractTo); err != nil {
+		return installResult{}, fmt.Errorf("extraction failed: %w", err)
 	}
 
+	// Remember the post-fallback pre-detection path — packages like maven
+	// reference it via ${extract_to} in PATH_APPEND.
+	preDetectionExtractTo := extractTo
+
 	// Find actual root directory (many archives have a single top-level directory)
-	actualRoot, err := FindExtractedRoot(extractTo)
+	actualRoot, err := archive.FindExtractedRoot(extractTo)
 	if err != nil {
 		fmt.Printf("⚠️  Could not determine extracted root: %v\n", err)
 	} else if actualRoot != extractTo {
@@ -405,9 +535,9 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 	// If binary name specified, find and link it
 	if variant.Binary != "" {
 		fmt.Printf("🔍 Looking for binary: %s\n", variant.Binary)
-		binaryPath, err := FindBinaryInExtracted(extractTo, variant.Binary)
+		binaryPath, err := archive.FindBinaryInExtracted(extractTo, variant.Binary)
 		if err != nil {
-			return fmt.Errorf("failed to find binary: %w", err)
+			return installResult{}, fmt.Errorf("failed to find binary: %w", err)
 		}
 
 		// Create symlink in ~/.local/bin
@@ -422,7 +552,7 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 
 		// Create symlink
 		if err := os.Symlink(binaryPath, linkPath); err != nil {
-			return fmt.Errorf("failed to create symlink: %w", err)
+			return installResult{}, fmt.Errorf("failed to create symlink: %w", err)
 		}
 
 		fmt.Printf("✅ Created symlink: %s -> %s\n", linkPath, binaryPath)
@@ -435,7 +565,7 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 		if isEmbeddedScript(firstScript) {
 			fmt.Println("📜 Running installation script...")
 			if err := i.executeEmbeddedScript(firstScript, variant.InstallScriptArgs, extractTo, options.DryRun); err != nil {
-				return fmt.Errorf("install script failed: %w", err)
+				return installResult{}, fmt.Errorf("install script failed: %w", err)
 			}
 		}
 	}
@@ -484,16 +614,18 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 		}
 
 		if len(postInstallErrors) > 0 {
-			return fmt.Errorf("❌ Installation failed: %d post-install command(s) failed:\n   - %s",
+			return installResult{}, fmt.Errorf("❌ Installation failed: %d post-install command(s) failed:\n   - %s",
 				len(postInstallErrors), strings.Join(postInstallErrors, "\n   - "))
 		}
 	}
 
-	return nil
+	return installResult{installPath: extractTo, extractTo: preDetectionExtractTo}, nil
 }
 
-// installDownload downloads files directly to a target directory (no extraction)
-func (i *Installer) installDownload(platform *registry.PlatformSpec, variant *registry.VariantSpec, options *InstallOptions) error {
+// installDownload downloads files directly to a target directory (no extraction).
+// Returns installResult so the engine can resolve PATH_APPEND placeholders;
+// both installPath and extractTo equal the target directory.
+func (i *Installer) installDownload(platform *registry.PlatformSpec, variant *registry.VariantSpec, options *InstallOptions) (installResult, error) {
 	// Determine download URL
 	downloadURL := variant.URL
 	if downloadURL == "" && len(variant.URLs) > 0 {
@@ -501,12 +633,12 @@ func (i *Installer) installDownload(platform *registry.PlatformSpec, variant *re
 		var ok bool
 		downloadURL, ok = variant.URLs[arch]
 		if !ok {
-			return fmt.Errorf("no download URL found for architecture %s", arch)
+			return installResult{}, fmt.Errorf("no download URL found for architecture %s", arch)
 		}
 	}
 
 	if downloadURL == "" && len(variant.AdditionalFiles) == 0 {
-		return fmt.Errorf("no download URL specified for download installation")
+		return installResult{}, fmt.Errorf("no download URL specified for download installation")
 	}
 
 	// Determine target directory
@@ -523,7 +655,7 @@ func (i *Installer) installDownload(platform *registry.PlatformSpec, variant *re
 
 	// Ensure target directory exists
 	if err := os.MkdirAll(targetDir, 0755); err != nil {
-		return fmt.Errorf("failed to create target directory %s: %w", targetDir, err)
+		return installResult{}, fmt.Errorf("failed to create target directory %s: %w", targetDir, err)
 	}
 
 	// Collect all URLs to download
@@ -535,13 +667,17 @@ func (i *Installer) installDownload(platform *registry.PlatformSpec, variant *re
 
 	// Main file
 	if downloadURL != "" {
-		filename := ""
-		parts := strings.Split(downloadURL, "/")
-		if len(parts) > 0 {
-			filename = parts[len(parts)-1]
-			// Strip query parameters
-			if idx := strings.Index(filename, "?"); idx != -1 {
-				filename = filename[:idx]
+		// Prefer explicit binary name from variant spec (lets packages rename a
+		// versioned upstream asset like tea-0.11.1-windows-amd64.exe to tea.exe
+		// without shelling out to move/ren in postInstall).
+		filename := variant.Binary
+		if filename == "" {
+			parts := strings.Split(downloadURL, "/")
+			if len(parts) > 0 {
+				filename = parts[len(parts)-1]
+				if idx := strings.Index(filename, "?"); idx != -1 {
+					filename = filename[:idx]
+				}
 			}
 		}
 		downloads = append(downloads, fileDownload{url: downloadURL, filename: filename})
@@ -569,8 +705,8 @@ func (i *Installer) installDownload(platform *registry.PlatformSpec, variant *re
 	for idx, dl := range downloads {
 		destPath := filepath.Join(targetDir, dl.filename)
 		fmt.Printf("\n[%d/%d] %s\n", idx+1, len(downloads), dl.filename)
-		if err := DownloadFile(destPath, dl.url); err != nil {
-			return fmt.Errorf("failed to download %s: %w", dl.filename, err)
+		if err := archive.DownloadFile(destPath, dl.url); err != nil {
+			return installResult{}, fmt.Errorf("failed to download %s: %w", dl.filename, err)
 		}
 	}
 
@@ -593,13 +729,13 @@ func (i *Installer) installDownload(platform *registry.PlatformSpec, variant *re
 			execCmd.Stdout = os.Stdout
 			execCmd.Stderr = os.Stderr
 			if err := execCmd.Run(); err != nil {
-				return fmt.Errorf("post-install command failed: %s (error: %w)", cmd, err)
+				return installResult{}, fmt.Errorf("post-install command failed: %s (error: %w)", cmd, err)
 			}
 		}
 	}
 
 	fmt.Printf("\n✅ Downloaded %d file(s) to %s\n", len(downloads), targetDir)
-	return nil
+	return installResult{installPath: targetDir, extractTo: targetDir}, nil
 }
 
 // installDeb installs a .deb package
@@ -622,7 +758,7 @@ func (i *Installer) installDeb(platform *registry.PlatformSpec, variant *registr
 
 	// Download .deb file to cache
 	fmt.Printf("📥 Downloading .deb package from: %s\n", downloadURL)
-	debPath, err := DownloadFileWithProperFilename(downloadURL, i.cacheDir)
+	debPath, err := archive.DownloadFileWithProperFilename(downloadURL, i.cacheDir)
 	if err != nil {
 		return fmt.Errorf("download failed: %w", err)
 	}
@@ -929,8 +1065,11 @@ func parseScriptArgs(args string) []string {
 	return result
 }
 
-// installWindowsBinary installs Windows binary (MSI/EXE)
-func (i *Installer) installWindowsBinary(platform *registry.PlatformSpec, variant *registry.VariantSpec, options *InstallOptions) error {
+// installWindowsBinary installs Windows binary (MSI/EXE). Returns installResult
+// with installPath set to the variant's declared install location (used for
+// ${install_path} expansion in PATH_APPEND). The MSI/EXE itself decides the
+// real on-disk path; the JSON convention is to mirror it in `installPath`.
+func (i *Installer) installWindowsBinary(platform *registry.PlatformSpec, variant *registry.VariantSpec, options *InstallOptions) (installResult, error) {
 	// Determine download URL (support both single URL and architecture-specific URLs)
 	downloadURL := variant.URL
 	if downloadURL == "" && len(variant.URLs) > 0 {
@@ -951,30 +1090,40 @@ func (i *Installer) installWindowsBinary(platform *registry.PlatformSpec, varian
 			downloadURL, ok = variant.URLs[arch]
 		}
 		if !ok {
-			return fmt.Errorf("no download URL found for architecture %s", arch)
+			return installResult{}, fmt.Errorf("no download URL found for architecture %s", arch)
 		}
 	}
 
 	if downloadURL == "" {
-		return fmt.Errorf("no download URL specified for Windows installation")
+		return installResult{}, fmt.Errorf("no download URL specified for Windows installation")
 	}
 
 	// Download installer to cache
 	fmt.Printf("📥 Downloading installer from: %s\n", downloadURL)
-	installerPath, err := DownloadFileWithProperFilename(downloadURL, i.cacheDir)
+	installerPath, err := archive.DownloadFileWithProperFilename(downloadURL, i.cacheDir)
 	if err != nil {
-		return fmt.Errorf("download failed: %w", err)
+		return installResult{}, fmt.Errorf("download failed: %w", err)
 	}
 	fmt.Printf("✅ Downloaded to: %s\n", installerPath)
 
-	// Determine installation type and run installer
+	// Run installer based on extension
+	var runErr error
 	if strings.HasSuffix(strings.ToLower(installerPath), ".msi") {
-		return i.runMsiInstaller(installerPath, platform.InstallArgs)
+		runErr = i.runMsiInstaller(installerPath, platform.InstallArgs)
 	} else if strings.HasSuffix(strings.ToLower(installerPath), ".exe") {
-		return i.runExeInstaller(installerPath, platform.InstallArgs)
+		runErr = i.runExeInstaller(installerPath, platform.InstallArgs)
+	} else {
+		return installResult{}, fmt.Errorf("unknown installer type: %s", installerPath)
+	}
+	if runErr != nil {
+		return installResult{}, runErr
 	}
 
-	return fmt.Errorf("unknown installer type: %s", installerPath)
+	// MSI/EXE installers honor their own logic for the on-disk location.
+	// Packages mirror that location in variant.installPath so PATH_APPEND can
+	// reference it via ${install_path}. Both placeholder forms resolve here.
+	resolved := expandEnvVars(variant.InstallPath)
+	return installResult{installPath: resolved, extractTo: resolved}, nil
 }
 
 // runMsiInstaller runs an MSI installer using msiexec
@@ -1075,4 +1224,21 @@ func (i *Installer) autoDetectVariant(platformSpec *registry.PlatformSpec) strin
 	}
 
 	return ""
+}
+
+// UnknownVariantError builds the error returned when a user passes a
+// --variant/--method that does not match any defined variant for the package
+// on the current platform. Lists the available alternatives so the user can
+// fix the command without re-running with --list-variants.
+func UnknownVariantError(packageName, variant, currentOS string, variants map[string]registry.VariantSpec) error {
+	available := make([]string, 0, len(variants))
+	for n := range variants {
+		available = append(available, n)
+	}
+	sort.Strings(available)
+	return fmt.Errorf(
+		"variant %q not found for package %s on %s\n  available variants: %s\n  hint: run 'portunix install %s --list-variants' for details",
+		variant, packageName, currentOS,
+		strings.Join(available, ", "), packageName,
+	)
 }

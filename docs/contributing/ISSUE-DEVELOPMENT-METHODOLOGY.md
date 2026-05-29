@@ -13,8 +13,8 @@ into the main branch.
 #### Role: Architect / Product Owner
 
 1. **Issue Creation**
-   - Create file `docs/issues/{number}-{name}.md`
-   - Update issue table in `docs/issues/README.md`
+   - Create file `docs/issues/internal/{number}-{name}.md` (active issues live in `internal/`)
+   - Add row to the **Active** table in `docs/issues/README.md`
    - Create corresponding GitHub issue with same content
    - Define acceptance criteria and requirements
    - Assign appropriate labels and priority
@@ -94,10 +94,22 @@ into the main branch.
 2. **Merge Process**
    - Create merge request/pull request with acceptance protocol reference
    - Merge feature branch to main: `git merge feature/issue-{number}-{short-name}`
-   - Update issue status to Implemented in `docs/issues/README.md`
+   - Update issue status to `✅ Implemented` in the issue file header
    - Close GitHub issue with reference to acceptance protocol
 
-3. **Post-Merge Cleanup**
+3. **Archive Completed Issue**
+   - Move the issue file to the `done/` subdirectory (preserves git history):
+
+     ```bash
+     git mv docs/issues/internal/{number}-{name}.md \
+            docs/issues/internal/done/{number}-{name}.md
+     ```
+
+   - In `docs/issues/README.md`, move the row from the **Active** table to the
+     **Done** table and update the link path to `internal/done/…`
+   - The same rule applies to `❌ Closed` issues (closed without implementation)
+
+4. **Post-Merge Cleanup**
    - Delete feature branch after successful merge
    - Update any related documentation
    - Notify team of completed feature

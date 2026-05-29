@@ -12,18 +12,47 @@ import (
 
 // WizardEngine implements the main wizard execution engine
 type WizardEngine struct {
-	themes  map[string]*wizard.Theme
-	wizards map[string]*wizard.Wizard
+	themes         map[string]*wizard.Theme
+	wizards        map[string]*wizard.Wizard
+	nonInteractive bool
+	preloadedVars  map[string]interface{}
 }
 
 // NewWizardEngine creates a new wizard engine
 func NewWizardEngine() *WizardEngine {
 	engine := &WizardEngine{
-		themes:  make(map[string]*wizard.Theme),
-		wizards: make(map[string]*wizard.Wizard),
+		themes:        make(map[string]*wizard.Theme),
+		wizards:       make(map[string]*wizard.Wizard),
+		preloadedVars: make(map[string]interface{}),
 	}
 	engine.loadDefaultThemes()
 	return engine
+}
+
+// SetNonInteractive enables non-interactive mode. Components must source
+// their values from preloaded variables instead of prompting the user.
+func (e *WizardEngine) SetNonInteractive(enabled bool) {
+	e.nonInteractive = enabled
+}
+
+// LoadVariablesFromConfig loads YAML/JSON config of variable values for
+// non-interactive execution. The file must contain a top-level mapping
+// of variable name to value.
+func (e *WizardEngine) LoadVariablesFromConfig(configPath string) error {
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	vars := make(map[string]interface{})
+	if err := yaml.Unmarshal(data, &vars); err != nil {
+		return fmt.Errorf("failed to parse config file: %w", err)
+	}
+
+	for k, v := range vars {
+		e.preloadedVars[k] = v
+	}
+	return nil
 }
 
 // LoadWizard loads a wizard from a YAML file
@@ -33,16 +62,24 @@ func (e *WizardEngine) LoadWizard(yamlPath string) (*wizard.Wizard, error) {
 		return nil, fmt.Errorf("failed to read wizard file: %w", err)
 	}
 
+	return e.RegisterWizardBytes(data)
+}
+
+// RegisterWizardBytes parses a wizard definition from raw YAML bytes and
+// registers it in the engine. Used by plugin discovery and embedded wizards.
+func (e *WizardEngine) RegisterWizardBytes(data []byte) (*wizard.Wizard, error) {
 	var wizardDef struct {
 		Wizard wizard.Wizard `yaml:"wizard"`
 	}
 
-	err = yaml.Unmarshal(data, &wizardDef)
-	if err != nil {
+	if err := yaml.Unmarshal(data, &wizardDef); err != nil {
 		return nil, fmt.Errorf("failed to parse wizard YAML: %w", err)
 	}
 
-	// Initialize variables if not set
+	if wizardDef.Wizard.ID == "" {
+		return nil, fmt.Errorf("wizard YAML missing required 'id' field")
+	}
+
 	if wizardDef.Wizard.Variables == nil {
 		wizardDef.Wizard.Variables = make(map[string]interface{})
 	}
@@ -51,19 +88,32 @@ func (e *WizardEngine) LoadWizard(yamlPath string) (*wizard.Wizard, error) {
 	return &wizardDef.Wizard, nil
 }
 
+// ListLoadedWizards returns all wizards currently registered with the engine
+func (e *WizardEngine) ListLoadedWizards() map[string]*wizard.Wizard {
+	out := make(map[string]*wizard.Wizard, len(e.wizards))
+	for k, v := range e.wizards {
+		out[k] = v
+	}
+	return out
+}
+
 // ExecuteWizard executes a wizard
 func (e *WizardEngine) ExecuteWizard(wiz *wizard.Wizard) (*wizard.WizardResult, error) {
 	ctx := &wizard.WizardContext{
-		Wizard:      wiz,
-		Variables:   make(map[string]interface{}),
-		CurrentPage: "",
-		History:     []string{},
-		StartTime:   time.Now(),
-		Theme:       e.themes["default"],
+		Wizard:         wiz,
+		Variables:      make(map[string]interface{}),
+		CurrentPage:    "",
+		History:        []string{},
+		StartTime:      time.Now(),
+		Theme:          e.themes["default"],
+		NonInteractive: e.nonInteractive,
 	}
 
-	// Copy initial variables
+	// Copy initial variables, then overlay preloaded values from --config
 	for k, v := range wiz.Variables {
+		ctx.Variables[k] = v
+	}
+	for k, v := range e.preloadedVars {
 		ctx.Variables[k] = v
 	}
 
@@ -98,6 +148,14 @@ func (e *WizardEngine) ExecuteWizard(wiz *wizard.Wizard) (*wizard.WizardResult, 
 		if err != nil {
 			result.Error = err
 			return result, err
+		}
+
+		// In non-interactive mode, pre-fill the component from preloaded vars
+		// so its Render() can validate & print instead of prompting.
+		if ctx.NonInteractive && page.Variable != "" {
+			if v, ok := ctx.Variables[page.Variable]; ok {
+				component.SetValue(v)
+			}
 		}
 
 		err = component.Render(ctx)

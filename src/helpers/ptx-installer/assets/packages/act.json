@@ -9,7 +9,9 @@
     "homepage": "https://github.com/nektos/act",
     "documentation": "https://github.com/nektos/act#readme",
     "license": "MIT",
-    "maintainer": "nektos"
+    "maintainer": "nektos",
+    "installationDocsUrl": "https://github.com/nektos/act#installation",
+    "latestVersionUrl": "https://github.com/nektos/act/releases/latest"
   },
   "spec": {
     "hasVariants": true,

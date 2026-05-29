@@ -9,7 +9,9 @@
     "homepage": "https://developers.google.com/protocol-buffers",
     "documentation": "https://developers.google.com/protocol-buffers/docs",
     "license": "BSD-3-Clause",
-    "maintainer": "Google"
+    "maintainer": "Google",
+    "installationDocsUrl": "https://grpc.io/docs/protoc-installation/",
+    "latestVersionUrl": "https://github.com/protocolbuffers/protobuf/releases/latest"
   },
   "spec": {
     "hasVariants": true,
@@ -49,6 +51,7 @@
             ]
           },
           "apt": {
+            "type": "apt",
             "version": "latest",
             "packages": ["protobuf-compiler"]
           }

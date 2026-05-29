@@ -9,7 +9,9 @@
     "homepage": "https://www.spice-space.org/",
     "documentation": "https://www.spice-space.org/documentation.html",
     "license": "GPL-2.0",
-    "maintainer": "SPICE Project"
+    "maintainer": "SPICE Project",
+    "installationDocsUrl": "https://www.spice-space.org/download.html",
+    "latestVersionUrl": "https://www.spice-space.org/download.html"
   },
   "spec": {
     "hasVariants": true,
@@ -35,6 +37,7 @@
             "packages": ["spice-vdagent"]
           },
           "dnf": {
+            "type": "dnf",
             "version": "latest",
             "packages": ["spice-vdagent"]
           }

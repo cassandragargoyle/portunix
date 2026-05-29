@@ -9,7 +9,9 @@
     "homepage": "https://github.com/cassandragargoyle/portunix",
     "documentation": "https://github.com/cassandragargoyle/portunix/wiki/Virtualization",
     "license": "GPL-2.0",
-    "maintainer": "Portunix Project"
+    "maintainer": "Portunix Project",
+    "installationDocsUrl": "https://github.com/cassandragargoyle/portunix/wiki/Virtualization",
+    "latestVersionUrl": "https://github.com/cassandragargoyle/portunix/releases/latest"
   },
   "spec": {
     "hasVariants": true,
@@ -37,6 +39,7 @@
             ]
           },
           "dnf": {
+            "type": "dnf",
             "version": "latest",
             "packages": ["qemu-system-x86", "qemu-img", "libvirt-daemon", "libvirt-client"],
             "postInstall": [

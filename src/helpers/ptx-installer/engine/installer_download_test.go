@@ -42,9 +42,12 @@ func TestInstallDownload_SingleFile(t *testing.T) {
 	platform := &registry.PlatformSpec{Type: "download"}
 	options := &InstallOptions{PackageName: "test-model"}
 
-	err := installer.installDownload(platform, variant, options)
+	result, err := installer.installDownload(platform, variant, options)
 	if err != nil {
 		t.Fatalf("installDownload failed: %v", err)
+	}
+	if result.installPath != targetDir {
+		t.Errorf("installPath: got %q, want %q", result.installPath, targetDir)
 	}
 
 	// Verify file was downloaded
@@ -85,7 +88,7 @@ func TestInstallDownload_WithAdditionalFiles(t *testing.T) {
 	platform := &registry.PlatformSpec{Type: "download"}
 	options := &InstallOptions{PackageName: "test-model"}
 
-	err := installer.installDownload(platform, variant, options)
+	_, err := installer.installDownload(platform, variant, options)
 	if err != nil {
 		t.Fatalf("installDownload failed: %v", err)
 	}
@@ -126,7 +129,7 @@ func TestInstallDownload_AdditionalFilesCustomFilename(t *testing.T) {
 	platform := &registry.PlatformSpec{Type: "download"}
 	options := &InstallOptions{PackageName: "test"}
 
-	err := installer.installDownload(platform, variant, options)
+	_, err := installer.installDownload(platform, variant, options)
 	if err != nil {
 		t.Fatalf("installDownload failed: %v", err)
 	}
@@ -155,7 +158,7 @@ func TestInstallDownload_NoURLError(t *testing.T) {
 	platform := &registry.PlatformSpec{Type: "download"}
 	options := &InstallOptions{PackageName: "test"}
 
-	err := installer.installDownload(platform, variant, options)
+	_, err := installer.installDownload(platform, variant, options)
 	if err == nil {
 		t.Error("expected error for variant with no URL and no additional files")
 	}

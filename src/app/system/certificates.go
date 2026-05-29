@@ -13,6 +13,7 @@ type CertificateInfo struct {
 	Path         string    `json:"path,omitempty"`
 	Size         int64     `json:"size,omitempty"`
 	ModTime      time.Time `json:"mod_time,omitempty"`
+	HTTPSChecked bool      `json:"https_checked"`
 	HTTPSWorking bool      `json:"https_working"`
 }
 
@@ -28,10 +29,9 @@ func (c CertificateInfo) MarshalJSON() ([]byte, error) {
 	})
 }
 
-// DetectCertificateBundle detects the system CA certificate bundle
-func DetectCertificateBundle() (CertificateInfo, error) {
-	// Default certificate paths for different systems
-	certPaths := []string{
+// defaultCertPaths returns standard CA bundle locations across distributions.
+func defaultCertPaths() []string {
+	return []string{
 		"/etc/ssl/certs/ca-certificates.crt",                // Ubuntu/Debian
 		"/etc/pki/tls/certs/ca-bundle.crt",                  // RHEL/CentOS
 		"/etc/ssl/ca-bundle.pem",                            // openSUSE
@@ -39,15 +39,30 @@ func DetectCertificateBundle() (CertificateInfo, error) {
 		"/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem", // Modern RHEL/CentOS
 		"/system/etc/security/cacerts",                      // Android (if applicable)
 	}
-
-	return DetectCertificateBundleWithPaths(certPaths)
 }
 
-// DetectCertificateBundleWithPaths detects certificate bundle with custom paths (for testing)
+// DetectCertificateBundle detects the system CA certificate bundle.
+// HTTPS connectivity is NOT tested by default (network probes are slow);
+// use DetectCertificateBundleWithHTTPSCheck(true) to opt in.
+func DetectCertificateBundle() (CertificateInfo, error) {
+	return detectCertificateBundleImpl(defaultCertPaths(), false)
+}
+
+// DetectCertificateBundleWithHTTPSCheck detects the system CA bundle and
+// optionally tests live HTTPS connectivity to well-known endpoints.
+func DetectCertificateBundleWithHTTPSCheck(checkHTTPS bool) (CertificateInfo, error) {
+	return detectCertificateBundleImpl(defaultCertPaths(), checkHTTPS)
+}
+
+// DetectCertificateBundleWithPaths detects certificate bundle with custom paths (for testing).
+// HTTPS connectivity is not tested.
 func DetectCertificateBundleWithPaths(certPaths []string) (CertificateInfo, error) {
+	return detectCertificateBundleImpl(certPaths, false)
+}
+
+func detectCertificateBundleImpl(certPaths []string, checkHTTPS bool) (CertificateInfo, error) {
 	var certInfo CertificateInfo
 
-	// Check each certificate path
 	for _, path := range certPaths {
 		if fileExists(path) {
 			stat, err := os.Stat(path)
@@ -56,24 +71,23 @@ func DetectCertificateBundleWithPaths(certPaths []string) (CertificateInfo, erro
 				certInfo.Path = path
 				certInfo.Size = stat.Size()
 				certInfo.ModTime = stat.ModTime()
-
-				// Test HTTPS connectivity
-				certInfo.HTTPSWorking = testHTTPSConnectivity()
-
 				break
 			}
 		}
 	}
 
+	if checkHTTPS {
+		certInfo.HTTPSChecked = true
+		certInfo.HTTPSWorking = testHTTPSConnectivity()
+	}
+
 	return certInfo, nil
 }
 
-// testHTTPSConnectivity tests if HTTPS connections work
+// testHTTPSConnectivity tests if HTTPS connections work by racing several
+// well-known endpoints. Returns true on the first successful response.
 func testHTTPSConnectivity() bool {
-	// Test with a reliable HTTPS endpoint
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
+	client := &http.Client{Timeout: 2 * time.Second}
 
 	testURLs := []string{
 		"https://go.dev/dl/",
@@ -81,14 +95,24 @@ func testHTTPSConnectivity() bool {
 		"https://github.com",
 	}
 
+	results := make(chan bool, len(testURLs))
 	for _, url := range testURLs {
-		resp, err := client.Get(url)
-		if err == nil {
-			resp.Body.Close()
+		go func(u string) {
+			resp, err := client.Get(u)
+			if err == nil {
+				resp.Body.Close()
+				results <- true
+				return
+			}
+			results <- false
+		}(url)
+	}
+
+	for range testURLs {
+		if ok := <-results; ok {
 			return true
 		}
 	}
-
 	return false
 }
 

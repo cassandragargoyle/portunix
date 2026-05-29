@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package cmd
 
 import (
@@ -168,6 +172,21 @@ var CommandRegistry = []CommandInfo{
 		},
 	},
 	{
+		Name:        "specpm",
+		Brief:       "Initialize project-management specifications (spec-kit-pm)",
+		Description: "Bootstrap the spec-kit-pm scaffold (.specpm/ + specs/project/<id>/) so AI agents can drive Charter, plan, risks, decisions, KPIs, and reports through /specpm.* slash-commands or skills. Phase 1 ships the Claude Code integration end-to-end; Phase 2 adds upgrade and the air-gapped workflow. See ADR-040 / ADR-041.",
+		Category:    "integration",
+		Examples: []string{
+			"portunix specpm init my-project",
+			"portunix specpm init --here --integration claude",
+			"portunix specpm upgrade",
+			"portunix specpm upgrade --to-default",
+			"portunix specpm upgrade --source /opt/spec-kit-pm",
+			"portunix specpm check",
+			"portunix specpm integration list",
+		},
+	},
+	{
 		Name:        "playbook",
 		Brief:       "Infrastructure as Code management",
 		Description: "Manage Ansible Infrastructure as Code using .ptxbook files. Supports multi-environment deployments with enterprise features including secrets management, audit logging, RBAC, and CI/CD integration.",
@@ -317,7 +336,7 @@ var CommandRegistry = []CommandInfo{
 
 // GetBasicCommands returns only the essential commands for basic help
 func GetBasicCommands() []CommandInfo {
-	essentials := []string{"install", "update", "plugin", "mcp", "container", "virt", "playbook", "python", "aiops", "system", "make", "package", "pft", "credential"}
+	essentials := []string{"install", "update", "plugin", "mcp", "container", "virt", "playbook", "python", "aiops", "system", "make", "package", "pft", "credential", "specpm"}
 	var basic []CommandInfo
 	for _, cmd := range CommandRegistry {
 		for _, name := range essentials {

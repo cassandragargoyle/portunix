@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package cmd
 
 import (
@@ -6,8 +10,8 @@ import (
 	"os"
 	"strings"
 
-	"portunix.ai/app/install"
 	"portunix.ai/app/podman"
+	"portunix.ai/portunix/src/pkg/installconfig"
 
 	"github.com/spf13/cobra"
 )
@@ -111,7 +115,7 @@ Flags:
 		}
 
 		// Load install config to get valid package names and presets
-		installConfig, err := install.LoadInstallConfig()
+		installConfig, err := installconfig.LoadInstallConfig()
 		if err != nil {
 			fmt.Printf("Error: Failed to load install config: %v\n", err)
 			return

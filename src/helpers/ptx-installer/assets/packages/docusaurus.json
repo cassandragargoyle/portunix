@@ -9,7 +9,9 @@
     "homepage": "https://docusaurus.io/",
     "documentation": "https://docusaurus.io/docs",
     "license": "MIT",
-    "maintainer": "Meta Platforms, Inc."
+    "maintainer": "Meta Platforms, Inc.",
+    "installationDocsUrl": "https://docusaurus.io/docs/installation",
+    "latestVersionUrl": "https://www.npmjs.com/package/@docusaurus/core"
   },
   "spec": {
     "hasVariants": true,

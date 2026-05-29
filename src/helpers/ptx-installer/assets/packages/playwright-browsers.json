@@ -9,7 +9,9 @@
     "homepage": "https://playwright.dev/",
     "documentation": "https://playwright.dev/docs/browsers",
     "license": "Apache-2.0",
-    "maintainer": "CassandraGargoyle"
+    "maintainer": "CassandraGargoyle",
+    "installationDocsUrl": "https://playwright.dev/docs/browsers",
+    "latestVersionUrl": "https://playwright.dev/docs/release-notes"
   },
   "spec": {
     "hasVariants": true,

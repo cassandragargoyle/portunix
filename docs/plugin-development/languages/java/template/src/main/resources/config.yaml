@@ -1,0 +1,9 @@
+plugin:
+  name: my-java-plugin
+  version: 1.0.0
+  description: Example Java plugin for Portunix
+  log_level: info
+
+server:
+  port: 50051
+  health_port: 50052

@@ -1,6 +1,8 @@
 # Contributing Documentation
 
-This directory contains guidelines and documentation for contributing to the CassandraGargoyle bootstrap-scripts project.
+> 🌐 **Language / Jazyk**: **English** | [Čeština](README.cs.md)
+
+This directory contains guidelines and documentation for contributing to the Portunix project.
 
 ## Multilingual Team Communication
 
@@ -32,58 +34,70 @@ resolution is applied by adding additional characters from the surname (e.g., Jo
 
 ## Available Guidelines
 
-### [AI Assistants](AI-ASSISTANTS.md)
+### General
 
-Guidelines and best practices for using AI assistants in development workflow.
+- [AI Assistants](AI-ASSISTANTS.md) — Guidelines and best practices for using AI assistants in development workflow
+- [Terminology](TERMINOLOGY.md) — Common terminology, abbreviations, and technical terms used across the project
+- [TODO Guidelines](TODO-GUIDELINES.md) — Standards for writing and managing TODO comments
+- [Tools Recommendations](TOOLS-RECOMMENDATIONS.md) — Recommended development tools
+- [Translation Workflow](TRANSLATION-WORKFLOW.md) — Translating documentation into team members' native languages
+- [Markdown Style](MARKDOWN-STYLE.md) — Markdown style guide for documentation
 
-### [TODO Guidelines](TODO-GUIDELINES.md)
+### Issue & Project Management
 
-Standards for writing and managing TODO comments throughout the project.
+- [Issue Management](ISSUE-MANAGEMENT.md) — How issues are tracked and synchronized between Gitea and GitHub
+- [Issue Development Methodology](ISSUE-DEVELOPMENT-METHODOLOGY.md) — Mandatory development workflow with quality gates
+- [Bug Reporting](BUG-REPORTING.md) — How to report and document bugs
+- [Versioning](VERSIONING.md) — Semantic versioning and release strategy
 
-### [Translation Workflow](TRANSLATION-WORKFLOW.md)
+### Git & Publishing Workflows
 
-Instructions for translating documentation into team members' native languages.
+- [Git Workflow](GIT-WORKFLOW.md) — Branch naming, commit messages, and PR process
+- [Gitea Internal Methodology](GITEA-INTERNAL-METHODOLOGY.md) — Internal development on self-hosted Gitea
+- [GitHub Workflow](GITHUB-WORKFLOW.md) — Publishing from local Gitea to public GitHub mirror
+- [AUR Workflow](AUR-WORKFLOW.md) — Workflow for Arch User Repository releases
 
-### [CLAUDE.md Template](CLAUDE-MD-TEMPLATE.md)
-
-Template for creating CLAUDE.md files in new CassandraGargoyle projects.
-
-### [.gitignore Template](GITIGNORE-TEMPLATE.md)
-
-Standardized .gitignore templates for different types of CassandraGargoyle projects.
-
-### [Naming Conventions](NAMING-CONVENTIONS.md)
-
-File naming standards and conventions for CassandraGargoyle projects.
-
-### [Git Workflow](GIT-WORKFLOW.md)
-
-Git workflow guidelines including branch naming, commit messages, and PR process.
-
-### [Gitea Internal Methodology](GITEA-INTERNAL-METHODOLOGY.md)
-
-Internal development methodology for self-hosted Gitea instance, including branch conventions and publishing workflows.
-
-### Code Style Guidelines
+### Code Style
 
 Language-specific coding standards and conventions:
 
-- [Go Code Style](CODE-STYLE-GO.md) - Guidelines for Go development
-- [Java Code Style](CODE-STYLE-JAVA.md) - Guidelines for Java development  
-- [C++ Code Style](CODE-STYLE-CPP.md) - Guidelines for C++ development
-- [Python Code Style](CODE-STYLE-PYTHON.md) - Guidelines for Python development
+- [Go Code Style](CODE-STYLE-GO.md)
+- [Java Code Style](CODE-STYLE-JAVA.md)
+- [C++ Code Style](CODE-STYLE-CPP.md)
+- [Python Code Style](CODE-STYLE-PYTHON.md)
 
-## Future Documentation
+### Testing
 
-TODO:004 Add additional contributing guidelines:
+- [Testing Methodology](TESTING_METHODOLOGY.md) — Verbose test framework and container-based testing policy
+- [Testing — Go](TESTING-GO.md) — Unit testing patterns for Go
+- [Testing — Go Project](TESTING-GO-PROJECT.md) — Project-wide testing standards for Go
+- [Testing — Java](TESTING-JAVA.md)
+- [Testing — C++](TESTING-CPP.md)
+- [Testing — Python](TESTING-PYTHON.md)
 
-- AI Assistants (done)
-- Code style guidelines (done - Go, Java, C++, Python)
-- Pull request templates
-- Issue templates
-- Code review process
-- Testing requirements
+### Containers & Virtualization
+
+- [Podman Guide](PODMAN-GUIDE.md) — Working with Podman in Portunix
+- [VM/SSH Deployment](VM-SSH-DEPLOYMENT.md) — Deploying Portunix into virtual machines via SSH
+
+### Documentation & Release Tooling
+
+- [Manual Creation Methodology](MANUAL-CREATION-METHODOLOGY.md) — How project manuals are authored
+- [PDF Generation Workflow](PDF-GENERATION-WORKFLOW.md) — Generating PDF documentation
+- [README Dual System](README-DUAL-SYSTEM.md) — Maintaining the dual README system
+- [Helper Binary Development](HELPER-BINARY-DEVELOPMENT.md) — Building auxiliary binaries
+
+### Tutorials
+
+- [Maven Basics for Juniors](tutorials/MAVEN-BASICS-FOR-JUNIORS.md)
+
+## Translations
+
+Czech translations are kept next to their English originals using the `.cs.md`
+suffix (for example `README.cs.md`, `TERMINOLOGY.cs.md`). Translations are
+optional — the English version is always authoritative.
 
 ---
 
-**Note**: This project is proprietary to the CassandraGargoyle team. Contributing guidelines are for internal team members only.
+**Note**: Portunix is published under the MIT license. Contributing guidelines apply to all
+contributors of the public repository.

@@ -1,0 +1,14 @@
+{
+  "apiVersion": "v1",
+  "kind": "Bundle",
+  "metadata": {
+    "name": "ai-assistant-basic",
+    "displayName": "AI Assistant (Basic)",
+    "description": "Basic AI assistant setup for CLI development: Claude Code and Gemini CLI",
+    "category": "development/ai-tools",
+    "maintainer": "Portunix"
+  },
+  "spec": {
+    "bundle": ["claude-code", "gemini-cli"]
+  }
+}

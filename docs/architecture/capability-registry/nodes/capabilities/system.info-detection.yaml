@@ -1,0 +1,16 @@
+# Capability node — vendor-neutral
+id: capability:system.info-detection
+name: System information detection
+category: technical
+description: Detect operating system, platform, and host system information.
+ai:
+  canBeAutomated: true
+  riskLevel: low
+  humanApprovalRequired: false
+  typicalTasks:
+    - detectOperatingSystem
+    - reportSystemInfo
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"

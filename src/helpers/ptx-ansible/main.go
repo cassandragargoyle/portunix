@@ -250,10 +250,10 @@ func handlePlaybookRun(args []string) {
 		case "--env":
 			if i+2 < len(args) {
 				env := args[i+2]
-				if env == "local" || env == "container" || env == "virt" {
+				if env == "local" || env == "container" || env == "virt" || env == "proxmox" {
 					options.Environment = env
 				} else {
-					fmt.Printf("Error: Invalid environment '%s'. Valid values: local, container, virt\n", env)
+					fmt.Printf("Error: Invalid environment '%s'. Valid values: local, container, virt, proxmox\n", env)
 					return
 				}
 			} else {

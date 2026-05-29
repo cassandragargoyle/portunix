@@ -9,7 +9,9 @@
     "homepage": "https://www.docker.com/",
     "documentation": "https://docs.docker.com/",
     "license": "Apache-2.0",
-    "maintainer": "Docker Inc."
+    "maintainer": "Docker Inc.",
+    "installationDocsUrl": "https://docs.docker.com/engine/install/",
+    "latestVersionUrl": "https://docs.docker.com/engine/release-notes/"
   },
   "spec": {
     "hasVariants": false,

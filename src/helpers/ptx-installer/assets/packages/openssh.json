@@ -9,7 +9,9 @@
     "homepage": "https://www.openssh.com/",
     "documentation": "https://www.openssh.com/manual.html",
     "license": "BSD",
-    "maintainer": "OpenBSD Project"
+    "maintainer": "OpenBSD Project",
+    "installationDocsUrl": "https://www.openssh.com/portable.html",
+    "latestVersionUrl": "https://www.openssh.com/releasenotes.html"
   },
   "spec": {
     "hasVariants": true,

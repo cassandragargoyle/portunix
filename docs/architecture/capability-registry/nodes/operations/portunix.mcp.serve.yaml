@@ -1,0 +1,10 @@
+# Operation node — product-specific
+id: operation:portunix.mcp.serve
+name: Serve MCP server
+product: product:portunix
+description: Start the Model Context Protocol server for AI assistant integration.
+command: portunix mcp serve
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"

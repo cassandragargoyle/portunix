@@ -9,7 +9,9 @@
     "homepage": "https://www.qemu.org/",
     "documentation": "https://www.qemu.org/docs/",
     "license": "GPL-2.0",
-    "maintainer": "QEMU Project"
+    "maintainer": "QEMU Project",
+    "installationDocsUrl": "https://www.qemu.org/download/",
+    "latestVersionUrl": "https://www.qemu.org/download/"
   },
   "spec": {
     "hasVariants": true,
@@ -22,6 +24,7 @@
             "packages": ["qemu-system-x86", "qemu-utils"]
           },
           "dnf": {
+            "type": "dnf",
             "version": "latest",
             "packages": ["qemu-system-x86", "qemu-img"]
           }

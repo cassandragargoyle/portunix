@@ -1,0 +1,10 @@
+# Operation node — product-specific
+id: operation:portunix.sandbox.create
+name: Create sandbox
+product: product:portunix
+description: Create an isolated sandbox development environment.
+command: portunix sandbox create
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"

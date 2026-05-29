@@ -9,7 +9,9 @@
     "homepage": "https://git-scm.com",
     "documentation": "https://git-scm.com/doc",
     "license": "GPL-2.0",
-    "maintainer": "Git Project"
+    "maintainer": "Git Project",
+    "installationDocsUrl": "https://git-scm.com/downloads",
+    "latestVersionUrl": "https://git-scm.com/downloads"
   },
   "spec": {
     "hasVariants": false,
@@ -22,6 +24,7 @@
             "packages": ["git"]
           },
           "dnf": {
+            "type": "dnf",
             "version": "latest",
             "packages": ["git"]
           }
@@ -39,6 +42,7 @@
             "packages": ["git"]
           },
           "winget": {
+            "type": "winget",
             "version": "latest",
             "packages": ["Git.Git"]
           }

@@ -85,7 +85,7 @@ Notifications:
   notify <id> --all-vos --type <type>
                            - Notify all VoS users
 
-Available providers: eververse, fider, clearflask, email
+Available providers: clearflask, email, eververse, fider
 
 ```
 

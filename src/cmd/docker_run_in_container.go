@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package cmd
 
 import (
@@ -5,7 +9,7 @@ import (
 	"strings"
 
 	"portunix.ai/app/docker"
-	"portunix.ai/app/install"
+	"portunix.ai/portunix/src/pkg/installconfig"
 
 	"github.com/spf13/cobra"
 )
@@ -117,7 +121,7 @@ Portunix-specific flags:
 		installationType := args[0]
 
 		// Load install config to get valid package names and presets
-		installConfig, err := install.LoadInstallConfig()
+		installConfig, err := installconfig.LoadInstallConfig()
 		if err != nil {
 			fmt.Printf("Error: Failed to load install config: %v\n", err)
 			return

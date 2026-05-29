@@ -1,0 +1,42 @@
+# Relations file — docs/architecture/capability-registry/relations/<type>.yaml
+# The <type> (provides | requires | implements | operates-on | exposed-via | maps-to)
+# determines the target file. APPEND an item to the existing `relations:` array —
+# do NOT overwrite the whole file.
+relations:
+  # provides — product (or module) provides a capability, with inline availability
+  - from: product:portunix
+    type: provides
+    to: capability:provisioning.package-install
+    availability:
+      status: active
+      license: { required: false, plans: [] }
+      version: { min: "1.0", max: null }
+      deployment: [windows, linux]
+    verification:
+      status: documented
+      source: docs/FEATURES_OVERVIEW.md
+      lastChecked: "2026-05-26"
+
+  # exposed_via — capability reachable through an interface
+  - from: capability:provisioning.package-install
+    type: exposed_via
+    to: interface:portunix.cli
+    verification:
+      status: documented
+      lastChecked: "2026-05-26"
+
+  # implements — capability realized by a product-specific operation
+  - from: capability:provisioning.package-install
+    type: implements
+    to: operation:portunix.package.install
+    verification:
+      status: documented
+      lastChecked: "2026-05-26"
+
+  # operates_on — capability works with an entity
+  - from: capability:provisioning.package-install
+    type: operates_on
+    to: entity:provisioning.package
+    verification:
+      status: documented
+      lastChecked: "2026-05-26"

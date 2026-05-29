@@ -118,8 +118,7 @@ verbose: true`
 func TestSetConfigValue(t *testing.T) {
 	// Use temporary directory for config
 	tmpDir := t.TempDir()
-	os.Setenv("HOME", tmpDir)
-	defer os.Unsetenv("HOME")
+	t.Setenv("HOME", tmpDir)
 
 	// Test setting container runtime
 	err := config.SetConfigValue("container_runtime", "docker")

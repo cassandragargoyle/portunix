@@ -60,7 +60,7 @@ project-root/
 ### 3. Bug Report Template
 
 ```markdown
-# 🐛 **Bug Report - Issue #[XXX] [Feature Name]**
+# **Bug Report - Issue #[XXX] [Feature Name]**
 
 ---
 
@@ -323,7 +323,7 @@ test/bug-reports/BUG-012-001-powershell-help-parsing.md
 
 **Key Elements Used:**
 
-- **Structured Header**: `# 🐛 **Bug Report - Issue #012 PowerShell Linux Installation**`
+- **Structured Header**: `# **Bug Report - Issue #012 PowerShell Linux Installation**`
 - **Tabular Bug Details**: Organized metadata in table format
 - **Clear Reproduction Steps**: `./portunix install powershell --help`
 - **Expected vs Actual**: Detailed comparison with code examples

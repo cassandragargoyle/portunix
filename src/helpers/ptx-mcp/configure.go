@@ -54,6 +54,14 @@ Examples:
 }
 
 func configureMCPIntegration(mode string, scope string, port int, permissions string, force bool) error {
+	return configureMCPIntegrationExt(mode, scope, port, permissions, force, nil, "")
+}
+
+// configureMCPIntegrationExt is the extended variant that supports passing
+// environment variables and a startup timeout through to `claude mcp add`.
+// The original configureMCPIntegration signature is preserved as a thin
+// wrapper for backward compatibility with the rest of the package.
+func configureMCPIntegrationExt(mode string, scope string, port int, permissions string, force bool, env map[string]string, timeout string) error {
 	fmt.Printf("🔧 Configuring Portunix MCP integration with Claude Code (mode: %s, scope: %s)...\n", mode, scope)
 
 	// Step 1: Check if Claude Code is installed
@@ -103,7 +111,7 @@ func configureMCPIntegration(mode string, scope string, port int, permissions st
 
 	// Step 4: Add MCP server to Claude Code
 	fmt.Print("4. Adding Portunix MCP server to Claude Code... ")
-	if err := addMCPServerToClaudeCode(portunixPath, mode, scope, port, permissions); err != nil {
+	if err := addMCPServerToClaudeCodeExt(portunixPath, mode, scope, port, permissions, env, timeout); err != nil {
 		fmt.Println("❌ FAILED")
 		return fmt.Errorf("failed to add MCP server: %w", err)
 	}
@@ -146,21 +154,33 @@ func configureMCPIntegration(mode string, scope string, port int, permissions st
 }
 
 func addMCPServerToClaudeCode(portunixPath string, mode string, scope string, port int, permissions string) error {
+	return addMCPServerToClaudeCodeExt(portunixPath, mode, scope, port, permissions, nil, "")
+}
+
+// addMCPServerToClaudeCodeExt is the extended variant that forwards env
+// variables (via repeated -e flags) and a startup timeout to `claude mcp add`.
+func addMCPServerToClaudeCodeExt(portunixPath string, mode string, scope string, port int, permissions string, env map[string]string, timeout string) error {
+	_ = permissions // reserved for future per-call permission overrides
+
 	// First, find the claude executable
 	claudePath, err := getClaudePath()
 	if err != nil {
 		return fmt.Errorf("claude executable not found: %w", err)
 	}
 
-	// Use claude mcp add command with correct syntax: claude mcp add [options] <name> <command>
-	// Build command arguments based on mode and scope
-	args := []string{
-		"mcp", "add",
-		"--scope", scope,
-		"portunix",
-		portunixPath,
-		"mcp", "serve",
+	// claude mcp add [options] <name> <command> [args...]
+	// The `-e KEY=VALUE` flag is variadic in the Claude CLI; the `--`
+	// separator is required to delimit options from the positional name and
+	// command so that subsequent tokens are not consumed as env values.
+	args := []string{"mcp", "add", "--scope", scope}
+
+	for k, v := range env {
+		args = append(args, "-e", fmt.Sprintf("%s=%s", k, v))
 	}
+
+	// The `--` separator goes before the name so variadic `-e` stops consuming
+	// tokens; everything after it (name, command, args) is treated as positional.
+	args = append(args, "--", "portunix", portunixPath, "mcp", "serve")
 
 	// Add mode-specific arguments for the portunix command
 	switch mode {
@@ -175,6 +195,12 @@ func addMCPServerToClaudeCode(portunixPath string, mode string, scope string, po
 	}
 
 	cmd := exec.Command(claudePath, args...)
+	// `claude mcp add` reads MCP_TIMEOUT from the environment to override the
+	// default startup timeout for the spawned MCP server.
+	if timeout != "" {
+		cmd.Env = append(os.Environ(), fmt.Sprintf("MCP_TIMEOUT=%s", timeout))
+	}
+
 	if output, err := cmd.CombinedOutput(); err != nil {
 		// If Claude Code has module issues, provide manual instructions
 		if strings.Contains(string(output), "Cannot find module") {

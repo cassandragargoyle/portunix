@@ -1,0 +1,175 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "terraform",
+    "displayName": "Terraform",
+    "description": "Infrastructure as Code tool for multi-cloud provisioning by HashiCorp",
+    "category": "infrastructure/iac",
+    "homepage": "https://www.terraform.io/",
+    "documentation": "https://developer.hashicorp.com/terraform/docs",
+    "license": "BUSL-1.1",
+    "maintainer": "HashiCorp",
+    "installationDocsUrl": "https://developer.hashicorp.com/terraform/install",
+    "latestVersionUrl": "https://releases.hashicorp.com/terraform/"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "zip",
+        "variants": {
+          "latest": {
+            "version": "1.15.2",
+            "description": "Latest stable release",
+            "urls": {
+              "x64": "https://releases.hashicorp.com/terraform/1.15.2/terraform_1.15.2_windows_amd64.zip",
+              "x86": "https://releases.hashicorp.com/terraform/1.15.2/terraform_1.15.2_windows_386.zip"
+            },
+            "extractTo": "C:/Program Files/Terraform"
+          },
+          "1.15": {
+            "version": "1.15.2",
+            "description": "1.15.x series (current stable)",
+            "urls": {
+              "x64": "https://releases.hashicorp.com/terraform/1.15.2/terraform_1.15.2_windows_amd64.zip",
+              "x86": "https://releases.hashicorp.com/terraform/1.15.2/terraform_1.15.2_windows_386.zip"
+            },
+            "extractTo": "C:/Program Files/Terraform"
+          },
+          "1.14": {
+            "version": "1.14.9",
+            "description": "1.14.x series (previous stable)",
+            "urls": {
+              "x64": "https://releases.hashicorp.com/terraform/1.14.9/terraform_1.14.9_windows_amd64.zip",
+              "x86": "https://releases.hashicorp.com/terraform/1.14.9/terraform_1.14.9_windows_386.zip"
+            },
+            "extractTo": "C:/Program Files/Terraform"
+          }
+        },
+        "verification": {
+          "command": "terraform version",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "C:/Program Files/Terraform"
+        }
+      },
+      "linux": {
+        "type": "zip",
+        "variants": {
+          "latest": {
+            "version": "1.15.2",
+            "description": "Latest stable release",
+            "urls": {
+              "x64": "https://releases.hashicorp.com/terraform/1.15.2/terraform_1.15.2_linux_amd64.zip",
+              "arm64": "https://releases.hashicorp.com/terraform/1.15.2/terraform_1.15.2_linux_arm64.zip"
+            },
+            "extractTo": "/usr/local/bin",
+            "postInstall": [
+              "sudo chmod +x /usr/local/bin/terraform"
+            ]
+          },
+          "1.15": {
+            "version": "1.15.2",
+            "description": "1.15.x series (current stable)",
+            "urls": {
+              "x64": "https://releases.hashicorp.com/terraform/1.15.2/terraform_1.15.2_linux_amd64.zip",
+              "arm64": "https://releases.hashicorp.com/terraform/1.15.2/terraform_1.15.2_linux_arm64.zip"
+            },
+            "extractTo": "/usr/local/bin",
+            "postInstall": [
+              "sudo chmod +x /usr/local/bin/terraform"
+            ]
+          },
+          "1.14": {
+            "version": "1.14.9",
+            "description": "1.14.x series (previous stable)",
+            "urls": {
+              "x64": "https://releases.hashicorp.com/terraform/1.14.9/terraform_1.14.9_linux_amd64.zip",
+              "arm64": "https://releases.hashicorp.com/terraform/1.14.9/terraform_1.14.9_linux_arm64.zip"
+            },
+            "extractTo": "/usr/local/bin",
+            "postInstall": [
+              "sudo chmod +x /usr/local/bin/terraform"
+            ]
+          }
+        },
+        "verification": {
+          "command": "terraform version",
+          "expectedExitCode": 0
+        }
+      },
+      "darwin": {
+        "type": "zip",
+        "variants": {
+          "latest": {
+            "version": "1.15.2",
+            "description": "Latest stable release",
+            "urls": {
+              "x64": "https://releases.hashicorp.com/terraform/1.15.2/terraform_1.15.2_darwin_amd64.zip",
+              "arm64": "https://releases.hashicorp.com/terraform/1.15.2/terraform_1.15.2_darwin_arm64.zip"
+            },
+            "extractTo": "/usr/local/bin",
+            "postInstall": [
+              "sudo chmod +x /usr/local/bin/terraform"
+            ]
+          },
+          "1.15": {
+            "version": "1.15.2",
+            "description": "1.15.x series (current stable)",
+            "urls": {
+              "x64": "https://releases.hashicorp.com/terraform/1.15.2/terraform_1.15.2_darwin_amd64.zip",
+              "arm64": "https://releases.hashicorp.com/terraform/1.15.2/terraform_1.15.2_darwin_arm64.zip"
+            },
+            "extractTo": "/usr/local/bin",
+            "postInstall": [
+              "sudo chmod +x /usr/local/bin/terraform"
+            ]
+          },
+          "1.14": {
+            "version": "1.14.9",
+            "description": "1.14.x series (previous stable)",
+            "urls": {
+              "x64": "https://releases.hashicorp.com/terraform/1.14.9/terraform_1.14.9_darwin_amd64.zip",
+              "arm64": "https://releases.hashicorp.com/terraform/1.14.9/terraform_1.14.9_darwin_arm64.zip"
+            },
+            "extractTo": "/usr/local/bin",
+            "postInstall": [
+              "sudo chmod +x /usr/local/bin/terraform"
+            ]
+          }
+        },
+        "verification": {
+          "command": "terraform version",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "official": {
+        "type": "direct",
+        "url": "https://releases.hashicorp.com/terraform/",
+        "apiEndpoint": "https://api.releases.hashicorp.com/v1/releases/terraform",
+        "pattern": "terraform_{version}_{os}_{arch}.zip"
+      },
+      "github": {
+        "type": "github",
+        "url": "https://github.com/hashicorp/terraform",
+        "apiEndpoint": "https://api.github.com/repos/hashicorp/terraform/releases/latest",
+        "pattern": "v{version}"
+      }
+    },
+    "verification": {
+      "checksumType": "sha256",
+      "checksumUrl": "https://releases.hashicorp.com/terraform/{version}/terraform_{version}_SHA256SUMS"
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check HashiCorp Releases API at https://api.releases.hashicorp.com/v1/releases/terraform for the latest stable Terraform versions. Filter out alpha/beta/rc pre-releases. Extract version (format: X.Y.Z) and identify the latest patch for each minor series.",
+      "urlResolution": "URL pattern: https://releases.hashicorp.com/terraform/{version}/terraform_{version}_{os}_{arch}.zip where os=windows/linux/darwin and arch=amd64/arm64/386. The zip contains a single binary 'terraform' (or 'terraform.exe' on Windows) at the archive root.",
+      "updateGuidance": "Monitor HashiCorp's release feed for new Terraform versions. Terraform follows semantic versioning. Keep two recent minor series available (current + previous) plus a 'latest' alias. Note: Terraform's license changed from MPL-2.0 to BUSL-1.1 starting v1.6.0 (August 2023)."
+    },
+    "dependencies": [],
+    "templates": ["zip-archive"]
+  }
+}

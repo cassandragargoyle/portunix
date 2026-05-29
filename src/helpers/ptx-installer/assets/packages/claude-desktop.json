@@ -9,7 +9,9 @@
     "homepage": "https://claude.ai/",
     "documentation": "https://docs.claude.com/en/docs/claude-desktop/",
     "license": "Proprietary",
-    "maintainer": "Anthropic"
+    "maintainer": "Anthropic",
+    "installationDocsUrl": "https://claude.ai/download",
+    "latestVersionUrl": "https://claude.ai/download"
   },
   "spec": {
     "hasVariants": true,
@@ -47,6 +49,22 @@
         },
         "environment": {
           "PATH_APPEND": "$HOME/.local/bin"
+        }
+      },
+      "darwin": {
+        "type": "script",
+        "variants": {
+          "latest": {
+            "version": "latest",
+            "installScript": "TMP=$(mktemp -t claude-desktop).dmg && curl -fL -o \"$TMP\" 'https://claude.ai/download/mac' && MNT=$(hdiutil attach \"$TMP\" -nobrowse -plist | sed -n 's:.*<string>\\(/Volumes/[^<]*\\).*:\\1:p' | tail -1) && APP=$(find \"$MNT\" -maxdepth 1 -name '*.app' | head -1) && sudo rm -rf '/Applications/Claude.app' && sudo cp -R \"$APP\" /Applications/ && hdiutil detach -quiet \"$MNT\" && rm \"$TMP\"",
+            "postInstall": [
+              "test -d '/Applications/Claude.app'"
+            ]
+          }
+        },
+        "verification": {
+          "command": "test -d '/Applications/Claude.app'",
+          "expectedExitCode": 0
         }
       }
     },

@@ -1,3 +1,7 @@
+/*
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package cmd
 
 import (
@@ -400,6 +404,55 @@ The command finds and starts the container regardless of which runtime created i
 			fmt.Printf("❌ Error starting container: %v\n", err)
 		} else {
 			fmt.Printf("✅ Container '%s' started successfully\n", containerName)
+		}
+	},
+}
+
+// containerRestartCmd represents the universal restart command
+var containerRestartCmd = &cobra.Command{
+	Use:   "restart <container-name>",
+	Short: "Restart container (universal runtime)",
+	Long: `🔄 RESTART CONTAINER
+
+Stop and start a container using the automatically selected runtime.
+
+🌟 UNIVERSAL OPERATION:
+  ✅ Works with both Docker and Podman containers
+  ✅ Automatic runtime detection
+  ✅ Preserves container state and data
+
+Examples:
+  portunix container restart test-container
+  portunix container restart web-server
+  portunix container restart python-dev
+
+The command finds and restarts the container regardless of which runtime is hosting it.`,
+	Args: cobra.ExactArgs(1),
+	Run: func(cmd *cobra.Command, args []string) {
+		containerName := args[0]
+
+		// Get configured runtime and delegate
+		runtime, err := container.GetSelectedRuntime()
+		if err != nil {
+			fmt.Printf("❌ Error: %v\n", err)
+			fmt.Println("\n💡 Hint: Check available runtimes with 'portunix container info'")
+			return
+		}
+
+		switch runtime {
+		case "docker":
+			err = docker.RestartContainer(containerName)
+		case "podman":
+			err = podman.RestartContainer(containerName)
+		default:
+			fmt.Printf("❌ Error: Unsupported runtime: %s\n", runtime)
+			return
+		}
+
+		if err != nil {
+			fmt.Printf("❌ Error restarting container: %v\n", err)
+		} else {
+			fmt.Printf("✅ Container '%s' restarted successfully\n", containerName)
 		}
 	},
 }
@@ -852,6 +905,7 @@ func init() {
 	containerCmd.AddCommand(containerCheckCmd)
 	containerCmd.AddCommand(containerStopCmd)
 	containerCmd.AddCommand(containerStartCmd)
+	containerCmd.AddCommand(containerRestartCmd)
 	containerCmd.AddCommand(containerRemoveCmd)
 	containerCmd.AddCommand(containerLogsCmd)
 	containerCmd.AddCommand(containerListCmd)

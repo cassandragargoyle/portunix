@@ -1,0 +1,10 @@
+# Operation node — product-specific
+id: operation:portunix.container.run
+name: Run container
+product: product:portunix
+description: Run a container, auto-detecting Docker or Podman as the backend.
+command: portunix container run <image>
+verification:
+  status: documented
+  source: docs/FEATURES_OVERVIEW.md
+  lastChecked: "2026-05-27"

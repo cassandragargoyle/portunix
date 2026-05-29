@@ -9,7 +9,9 @@
     "homepage": "https://cli.github.com/",
     "documentation": "https://cli.github.com/manual/",
     "license": "MIT",
-    "maintainer": "GitHub"
+    "maintainer": "GitHub",
+    "installationDocsUrl": "https://github.com/cli/cli#installation",
+    "latestVersionUrl": "https://github.com/cli/cli/releases/latest"
   },
   "spec": {
     "hasVariants": false,

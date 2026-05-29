@@ -9,7 +9,9 @@
     "homepage": "https://launchpad.net/ufw",
     "documentation": "https://help.ubuntu.com/community/UFW",
     "license": "GPL-3.0",
-    "maintainer": "Ubuntu Security Team"
+    "maintainer": "Ubuntu Security Team",
+    "installationDocsUrl": "https://help.ubuntu.com/community/UFW",
+    "latestVersionUrl": "https://launchpad.net/ufw"
   },
   "spec": {
     "hasVariants": true,
@@ -22,6 +24,7 @@
             "packages": ["ufw"]
           },
           "dnf": {
+            "type": "dnf",
             "version": "latest",
             "packages": ["ufw"]
           }

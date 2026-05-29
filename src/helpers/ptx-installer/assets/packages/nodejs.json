@@ -9,7 +9,9 @@
     "homepage": "https://nodejs.org/",
     "documentation": "https://nodejs.org/docs/",
     "license": "MIT",
-    "maintainer": "Node.js Foundation"
+    "maintainer": "Node.js Foundation",
+    "installationDocsUrl": "https://nodejs.org/en/download/package-manager",
+    "latestVersionUrl": "https://nodejs.org/dist/latest/"
   },
   "spec": {
     "hasVariants": true,

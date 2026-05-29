@@ -1,0 +1,124 @@
+{
+  "apiVersion": "v1",
+  "kind": "Package",
+  "metadata": {
+    "name": "double-commander",
+    "displayName": "Double Commander",
+    "description": "Cross-platform open-source dual-panel file manager",
+    "category": "system/utilities",
+    "homepage": "https://doublecmd.sourceforge.io/",
+    "documentation": "https://doublecmd.sourceforge.io/index.php/en/Documentation",
+    "license": "GPL-2.0+",
+    "maintainer": "Alexander Koblov",
+    "installationDocsUrl": "https://doublecmd.sourceforge.io/index.php/en/Documentation/Installation",
+    "latestVersionUrl": "https://sourceforge.net/projects/doublecmd/files/"
+  },
+  "spec": {
+    "hasVariants": true,
+    "platforms": {
+      "windows": {
+        "type": "exe",
+        "variants": {
+          "default": {
+            "version": "1.1.32",
+            "description": "Latest stable EXE installer (recommended)",
+            "urls": {
+              "x64": "https://sourceforge.net/projects/doublecmd/files/DC%20for%20Windows%2064%20bit/Double%20Commander%201.1.32/doublecmd-1.1.32.x86_64-win64.exe/download"
+            },
+            "installArgs": ["/SILENT", "/NORESTART"]
+          },
+          "msi": {
+            "type": "msi",
+            "version": "1.1.32",
+            "description": "MSI installer (for enterprise deployment)",
+            "urls": {
+              "x64": "https://sourceforge.net/projects/doublecmd/files/DC%20for%20Windows%2064%20bit/Double%20Commander%201.1.32/doublecmd-1.1.32.x86_64-win64.msi/download"
+            },
+            "installArgs": ["/quiet", "/norestart"]
+          },
+          "portable": {
+            "type": "zip",
+            "version": "1.1.32",
+            "description": "Portable ZIP version (no installation, extract only)",
+            "urls": {
+              "x64": "https://sourceforge.net/projects/doublecmd/files/DC%20for%20Windows%2064%20bit/Double%20Commander%201.1.32/doublecmd-1.1.32.x86_64-win64.zip/download"
+            },
+            "extractTo": "C:/Program Files/DoubleCommander"
+          }
+        },
+        "verification": {
+          "command": "doublecmd --help",
+          "expectedExitCode": 0
+        }
+      },
+      "linux": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "1.1.32",
+            "description": "Latest stable (Qt6 build, recommended)",
+            "installScript": "TMP=$(mktemp --suffix=.tar.xz) && curl -fL -o \"$TMP\" 'https://sourceforge.net/projects/doublecmd/files/DC%20for%20Linux%2064%20bit/Double%20Commander%201.1.32/doublecmd-1.1.32.qt6.x86_64.tar.xz/download' && sudo rm -rf /opt/doublecmd && sudo mkdir -p /opt/doublecmd && sudo tar -xJf \"$TMP\" -C /opt/doublecmd && rm \"$TMP\" && DC_BIN=$(find /opt/doublecmd -maxdepth 3 -name doublecmd -type f -executable | head -1) && sudo ln -sf \"$DC_BIN\" /usr/local/bin/doublecmd"
+          },
+          "qt6": {
+            "version": "1.1.32",
+            "description": "Qt6 build (modern UI toolkit)",
+            "installScript": "TMP=$(mktemp --suffix=.tar.xz) && curl -fL -o \"$TMP\" 'https://sourceforge.net/projects/doublecmd/files/DC%20for%20Linux%2064%20bit/Double%20Commander%201.1.32/doublecmd-1.1.32.qt6.x86_64.tar.xz/download' && sudo rm -rf /opt/doublecmd && sudo mkdir -p /opt/doublecmd && sudo tar -xJf \"$TMP\" -C /opt/doublecmd && rm \"$TMP\" && DC_BIN=$(find /opt/doublecmd -maxdepth 3 -name doublecmd -type f -executable | head -1) && sudo ln -sf \"$DC_BIN\" /usr/local/bin/doublecmd"
+          },
+          "qt": {
+            "version": "1.1.32",
+            "description": "Qt5 build (legacy)",
+            "installScript": "TMP=$(mktemp --suffix=.tar.xz) && curl -fL -o \"$TMP\" 'https://sourceforge.net/projects/doublecmd/files/DC%20for%20Linux%2064%20bit/Double%20Commander%201.1.32/doublecmd-1.1.32.qt.x86_64.tar.xz/download' && sudo rm -rf /opt/doublecmd && sudo mkdir -p /opt/doublecmd && sudo tar -xJf \"$TMP\" -C /opt/doublecmd && rm \"$TMP\" && DC_BIN=$(find /opt/doublecmd -maxdepth 3 -name doublecmd -type f -executable | head -1) && sudo ln -sf \"$DC_BIN\" /usr/local/bin/doublecmd"
+          },
+          "gtk": {
+            "version": "1.1.32",
+            "description": "GTK2 build (legacy)",
+            "installScript": "TMP=$(mktemp --suffix=.tar.xz) && curl -fL -o \"$TMP\" 'https://sourceforge.net/projects/doublecmd/files/DC%20for%20Linux%2064%20bit/Double%20Commander%201.1.32/doublecmd-1.1.32.gtk2.x86_64.tar.xz/download' && sudo rm -rf /opt/doublecmd && sudo mkdir -p /opt/doublecmd && sudo tar -xJf \"$TMP\" -C /opt/doublecmd && rm \"$TMP\" && DC_BIN=$(find /opt/doublecmd -maxdepth 3 -name doublecmd -type f -executable | head -1) && sudo ln -sf \"$DC_BIN\" /usr/local/bin/doublecmd"
+          }
+        },
+        "verification": {
+          "command": "doublecmd --help",
+          "expectedExitCode": 0
+        }
+      },
+      "darwin": {
+        "type": "script",
+        "variants": {
+          "default": {
+            "version": "1.1.32",
+            "description": "Latest stable (Cocoa, Intel x86_64)",
+            "installScript": "TMP=$(mktemp -t doublecmd).dmg && curl -fL -o \"$TMP\" 'https://sourceforge.net/projects/doublecmd/files/macOS/Double%20Commander%201.1.32/doublecmd-1.1.32.cocoa.x86_64.dmg/download' && MNT=$(hdiutil attach \"$TMP\" -nobrowse -plist | sed -n 's:.*<string>\\(/Volumes/[^<]*\\).*:\\1:p' | tail -1) && sudo rm -rf '/Applications/Double Commander.app' && sudo cp -R \"$MNT/Double Commander.app\" /Applications/ && hdiutil detach -quiet \"$MNT\" && rm \"$TMP\""
+          },
+          "arm64": {
+            "version": "1.1.32",
+            "description": "Latest stable (Cocoa, Apple Silicon aarch64)",
+            "installScript": "TMP=$(mktemp -t doublecmd).dmg && curl -fL -o \"$TMP\" 'https://sourceforge.net/projects/doublecmd/files/macOS/Double%20Commander%201.1.32/doublecmd-1.1.32.cocoa.aarch64.dmg/download' && MNT=$(hdiutil attach \"$TMP\" -nobrowse -plist | sed -n 's:.*<string>\\(/Volumes/[^<]*\\).*:\\1:p' | tail -1) && sudo rm -rf '/Applications/Double Commander.app' && sudo cp -R \"$MNT/Double Commander.app\" /Applications/ && hdiutil detach -quiet \"$MNT\" && rm \"$TMP\""
+          }
+        },
+        "verification": {
+          "command": "/Applications/Double\\ Commander.app/Contents/MacOS/doublecmd --help",
+          "expectedExitCode": 0
+        }
+      }
+    },
+    "sources": {
+      "sourceforge": {
+        "type": "sourceforge",
+        "url": "https://sourceforge.net/projects/doublecmd/files/",
+        "pattern": "doublecmd-{version}.{toolkit}.{arch}.{ext}"
+      },
+      "github": {
+        "type": "github",
+        "url": "https://github.com/doublecmd/doublecmd",
+        "apiEndpoint": "https://api.github.com/repos/doublecmd/doublecmd/releases/latest",
+        "pattern": "v{version}"
+      }
+    },
+    "aiPrompts": {
+      "versionDiscovery": "Check Double Commander on SourceForge at https://sourceforge.net/projects/doublecmd/files/ for the latest stable version. Releases are organized in platform-specific folders ('DC for Windows 64 bit', 'DC for Linux 64 bit', 'macOS'), each containing a 'Double Commander {version}' subfolder. Cross-reference with GitHub mirror at https://github.com/doublecmd/doublecmd/releases.",
+      "urlResolution": "URL pattern: https://sourceforge.net/projects/doublecmd/files/{platform-folder}/Double%20Commander%20{version}/doublecmd-{version}.{toolkit}.{arch}.{ext}/download. Toolkits: qt6 (modern), qt (Qt5 legacy), gtk2 (Linux only); cocoa (macOS only). Architectures: x86_64, aarch64. Extensions: exe/msi/zip (Windows), tar.xz (Linux), dmg (macOS). Note the trailing /download suffix to bypass the SourceForge file page.",
+      "updateGuidance": "Double Commander follows a 1.1.x scheme with frequent patch releases. When bumping the version, update all platform URLs and verify file naming on SourceForge — naming conventions occasionally change (e.g. older 1.1.x releases shipped .deb/.rpm for Linux which were dropped in favor of tar.xz only). The Linux script type is required because the engine's tar.xz extraction is not yet implemented natively; it relies on system tar with xz-utils. The macOS script uses hdiutil because DMG mounting is not implemented in the engine."
+    },
+    "dependencies": [],
+    "templates": ["script-installer", "windows-binary"]
+  }
+}

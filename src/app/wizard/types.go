@@ -82,12 +82,13 @@ type ValidationRule struct {
 
 // WizardContext maintains the current state of wizard execution
 type WizardContext struct {
-	Wizard      *Wizard
-	Variables   map[string]interface{}
-	CurrentPage string
-	History     []string
-	StartTime   time.Time
-	Theme       *Theme
+	Wizard         *Wizard
+	Variables      map[string]interface{}
+	CurrentPage    string
+	History        []string
+	StartTime      time.Time
+	Theme          *Theme
+	NonInteractive bool
 }
 
 // Theme defines visual styling for the wizard

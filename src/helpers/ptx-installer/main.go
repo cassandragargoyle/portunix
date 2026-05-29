@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -87,6 +88,16 @@ func handleInstall(args []string) {
 		}
 	}
 
+	// Issue #035: `portunix install --recommend-ai` lists the recommended AI
+	// assistants for this system and offers to install the missing ones. The
+	// flag is detected before args[0] is treated as a package name.
+	for _, arg := range args {
+		if arg == "--recommend-ai" {
+			handleRecommendAI(args)
+			return
+		}
+	}
+
 	// Install command implementation
 	if len(args) == 0 {
 		showInstallHelp()
@@ -96,19 +107,54 @@ func handleInstall(args []string) {
 	// Parse arguments
 	packageName := args[0]
 	dryRun := false
+	dataRoot := ""
+	nonInteractive := false
+	versionSel := "" // issue #035: --version selector resolved to a variant below
+
+	// Issue #186d: admin subcommands previously living in
+	// src/cmd/install_{apt,iso,chocolatey}.go were migrated into the helper.
+	// They use their own argument-parsing routines in cmd_admin.go and must
+	// be dispatched BEFORE the generic package-install logic below.
+	switch strings.ToLower(packageName) {
+	case "apt":
+		handleInstallApt(args[1:])
+		return
+	case "iso":
+		handleInstallIso(args[1:])
+		return
+	case "chocolatey", "choco":
+		handleInstallChocolatey(args[1:])
+		return
+	}
+
+	// Short-circuit: list-variants / list-methods don't need the full installer
+	for _, arg := range args[1:] {
+		if arg == "--list-variants" || arg == "--list-methods" {
+			handleListVariants(packageName)
+			return
+		}
+	}
 
 	// Parse flags
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
-		if arg == "--dry-run" {
+		switch {
+		case arg == "--dry-run":
 			dryRun = true
+		case arg == "--yes", arg == "-y":
+			nonInteractive = true
+		case strings.HasPrefix(arg, "--data-root="):
+			dataRoot = strings.TrimPrefix(arg, "--data-root=")
+		case arg == "--data-root" && i+1 < len(args):
+			dataRoot = args[i+1]
+			i++
 		}
 	}
 
 	// Handle special container runtime packages
 	switch strings.ToLower(packageName) {
 	case "docker":
-		dockerInstaller := engine.NewDockerInstaller(dryRun)
+		dockerInstaller := engine.NewDockerInstaller(dryRun, dataRoot, nonInteractive)
 		if err := dockerInstaller.Install(); err != nil {
 			fmt.Printf("\n❌ Docker installation failed: %v\n", err)
 			os.Exit(1)
@@ -118,6 +164,13 @@ func handleInstall(args []string) {
 		podmanInstaller := engine.NewPodmanInstaller(dryRun)
 		if err := podmanInstaller.Install(); err != nil {
 			fmt.Printf("\n❌ Podman installation failed: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	case "wsl":
+		wslInstaller := engine.NewWSLInstaller(dryRun)
+		if err := wslInstaller.Install(); err != nil {
+			fmt.Printf("\n❌ WSL installation failed: %v\n", err)
 			os.Exit(1)
 		}
 		return
@@ -134,11 +187,9 @@ func handleInstall(args []string) {
 	for i := 1; i < len(args); i++ {
 		arg := args[i]
 
-		if strings.HasPrefix(arg, "--variant=") {
-			options.Variant = strings.TrimPrefix(arg, "--variant=")
-		} else if arg == "--variant" && i+1 < len(args) {
-			options.Variant = args[i+1]
-			i++ // Skip next argument as it's the variant value
+		if v, consumed, ok := parseVariantArg(args, i); ok {
+			options.Variant = v
+			i += consumed
 		} else if strings.HasPrefix(arg, "--path=") {
 			options.InstallPath = strings.TrimPrefix(arg, "--path=")
 		} else if arg == "--path" && i+1 < len(args) {
@@ -146,6 +197,11 @@ func handleInstall(args []string) {
 			i++ // Skip next argument as it's the path value
 		} else if arg == "--force" {
 			options.Force = true
+		} else if strings.HasPrefix(arg, "--version=") {
+			versionSel = strings.TrimPrefix(arg, "--version=")
+		} else if arg == "--version" && i+1 < len(args) {
+			versionSel = args[i+1]
+			i++
 		} else if strings.HasPrefix(arg, "--db-host=") {
 			options.DBHost = strings.TrimPrefix(arg, "--db-host=")
 		} else if arg == "--db-host" && i+1 < len(args) {
@@ -176,6 +232,18 @@ func handleInstall(args []string) {
 		return
 	}
 
+	// Issue #035: resolve --version to a concrete variant. An explicit
+	// --variant/--method always wins; --version is only consulted when no
+	// variant was selected.
+	if versionSel != "" && options.Variant == "" {
+		variant, err := installer.ResolveVersion(packageName, versionSel)
+		if err != nil {
+			fmt.Printf("❌ %v\n", err)
+			os.Exit(1)
+		}
+		options.Variant = variant
+	}
+
 	// Perform installation
 	if err := installer.Install(options); err != nil {
 		fmt.Printf("\n❌ Installation failed: %v\n", err)
@@ -183,6 +251,96 @@ func handleInstall(args []string) {
 	}
 
 	fmt.Println("\n✅ Installation completed successfully!")
+}
+
+// handleRecommendAI implements `portunix install --recommend-ai` (issue #035).
+// It detects the installable AI assistants for the current platform, reports
+// their install state, and offers to install the missing ones. Recommendations
+// are limited to assistants supported on this OS (those with a platform
+// verification command). Honours --dry-run and -y/--yes.
+func handleRecommendAI(args []string) {
+	dryRun := false
+	nonInteractive := false
+	for _, arg := range args {
+		switch arg {
+		case "--dry-run":
+			dryRun = true
+		case "--yes", "-y":
+			nonInteractive = true
+		}
+	}
+
+	reg, err := registry.LoadPackageRegistry("./assets")
+	if err != nil {
+		fmt.Printf("❌ Error loading package registry: %v\n", err)
+		os.Exit(1)
+	}
+
+	statuses := engine.DetectAIAssistants(reg, engine.GetOperatingSystem())
+
+	fmt.Println("\n🤖 Recommended AI assistants for your system:")
+	fmt.Println("═══════════════════════════════════════════════════════════")
+
+	var missing []string
+	for _, s := range statuses {
+		// Assistants without a platform verification command are not
+		// installable/detectable on this OS — skip them in recommendations.
+		if s.VerifyCommand == "" {
+			continue
+		}
+		marker := "⬜ available"
+		if s.Installed {
+			marker = "✅ installed"
+			if s.Version != "" {
+				marker += " (" + s.Version + ")"
+			}
+		} else {
+			missing = append(missing, s.Name)
+		}
+		fmt.Printf("  %-16s %-24s %s\n", s.Name, s.DisplayName, marker)
+	}
+
+	if len(missing) == 0 {
+		fmt.Println("\n✅ All recommended AI assistants are already installed.")
+		return
+	}
+
+	if dryRun {
+		fmt.Printf("\n🔍 DRY RUN: would install %s\n", strings.Join(missing, ", "))
+		return
+	}
+
+	install := nonInteractive
+	if !nonInteractive {
+		fmt.Printf("\nInstall missing assistant(s) [%s]? [Y/n]: ", strings.Join(missing, ", "))
+		reader := bufio.NewReader(os.Stdin)
+		ans, _ := reader.ReadString('\n')
+		ans = strings.ToLower(strings.TrimSpace(ans))
+		install = ans == "" || ans == "y" || ans == "yes"
+	}
+	if !install {
+		fmt.Println("Skipping installation.")
+		return
+	}
+
+	installer, err := engine.NewInstaller("./assets")
+	if err != nil {
+		fmt.Printf("❌ Error creating installer: %v\n", err)
+		os.Exit(1)
+	}
+
+	failed := 0
+	for _, name := range missing {
+		if err := installer.Install(&engine.InstallOptions{PackageName: name}); err != nil {
+			fmt.Printf("\n❌ %s installation failed: %v\n", name, err)
+			failed++
+		}
+	}
+	if failed > 0 {
+		fmt.Printf("\n⚠️  %d of %d assistant(s) failed to install.\n", failed, len(missing))
+		os.Exit(1)
+	}
+	fmt.Println("\n✅ All recommended AI assistants are ready.")
 }
 
 func handlePackage(args []string) {
@@ -210,9 +368,68 @@ func handlePackage(args []string) {
 		handlePackageSearch(subArgs)
 	case "info":
 		handlePackageInfo(subArgs)
+	case "detect":
+		handlePackageDetect(subArgs)
+	case "update":
+		handlePackageUpdate(subArgs)
 	default:
 		fmt.Printf("Unknown package subcommand: %s\n", subcommand)
 		fmt.Println("Use 'portunix package --help' for available subcommands")
+	}
+}
+
+// handlePackageUpdate implements `portunix package update <package>` (issue
+// #035). It reinstalls the package's auto-detected (preferred) variant with
+// Force=true, which pulls the latest available version for packages whose
+// install method tracks upstream (npm, official "latest" download URLs). This
+// is intentionally distinct from `portunix update`, which self-updates the
+// portunix binary. Honours --dry-run.
+func handlePackageUpdate(args []string) {
+	for _, arg := range args {
+		if arg == "--help" || arg == "-h" {
+			fmt.Println("Usage: portunix package update <package> [--dry-run]")
+			fmt.Println("\nReinstalls a package's latest available version (Force).")
+			fmt.Println("Useful for AI assistants (claude-code, claude-desktop, gemini-cli)")
+			fmt.Println("and other packages that track upstream releases.")
+			fmt.Println("\nExamples:")
+			fmt.Println("  portunix package update claude-desktop")
+			fmt.Println("  portunix package update gemini-cli --dry-run")
+			return
+		}
+	}
+
+	if len(args) == 0 {
+		fmt.Println("❌ No package specified")
+		fmt.Println("Usage: portunix package update <package> [--dry-run]")
+		os.Exit(1)
+	}
+
+	packageName := args[0]
+	dryRun := false
+	for _, arg := range args[1:] {
+		if arg == "--dry-run" {
+			dryRun = true
+		}
+	}
+
+	installer, err := engine.NewInstaller("./assets")
+	if err != nil {
+		fmt.Printf("❌ Error creating installer: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("🔄 Updating %s to the latest available version...\n", packageName)
+	if err := installer.Install(&engine.InstallOptions{
+		PackageName: packageName,
+		Force:       true,
+		DryRun:      dryRun,
+	}); err != nil {
+		fmt.Printf("\n❌ Update failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	if !dryRun {
+		fmt.Printf("\n✅ %s updated successfully!\n", packageName)
 	}
 }
 
@@ -225,6 +442,8 @@ func showPackageHelp() {
 	fmt.Println("  list     List all available packages")
 	fmt.Println("  search   Search for packages by name or description")
 	fmt.Println("  info     Show detailed information about a package")
+	fmt.Println("  detect   Detect installed AI assistants")
+	fmt.Println("  update   Reinstall a package's latest available version")
 	fmt.Println()
 	fmt.Println("Options:")
 	fmt.Println("  -h, --help   Show this help message")
@@ -234,6 +453,8 @@ func showPackageHelp() {
 	fmt.Println("  portunix package list --category development/languages")
 	fmt.Println("  portunix package search python")
 	fmt.Println("  portunix package info nodejs")
+	fmt.Println("  portunix package detect")
+	fmt.Println("  portunix package detect --json")
 }
 
 func handlePackageList(args []string) {
@@ -534,14 +755,237 @@ func handlePackageInfo(args []string) {
 	fmt.Println()
 }
 
+// handlePackageDetect implements `portunix package detect`: it reports which
+// installable AI assistants (claude-code, claude-desktop, gemini-cli, ...) are
+// present on the current system. Detection runs each package's platform
+// verification command via the engine. The --json output is the machine-
+// readable basis for the remaining issue #035 features (--recommend-ai, the
+// MCP serve init dependency hook).
+func handlePackageDetect(args []string) {
+	formatJSON := false
+	for _, arg := range args {
+		switch arg {
+		case "--json", "--format=json":
+			formatJSON = true
+		case "--help", "-h":
+			fmt.Println("Usage: portunix package detect [options]")
+			fmt.Println("\nDetects which AI assistants are installed on this system")
+			fmt.Println("(claude-code, claude-desktop, gemini-cli, ...).")
+			fmt.Println("\nOptions:")
+			fmt.Println("  --json        Output in JSON format")
+			fmt.Println("  --help, -h    Show this help")
+			fmt.Println("\nExamples:")
+			fmt.Println("  portunix package detect")
+			fmt.Println("  portunix package detect --json")
+			return
+		}
+	}
+
+	// Load package registry
+	reg, err := registry.LoadPackageRegistry("./assets")
+	if err != nil {
+		fmt.Printf("Error loading package registry: %v\n", err)
+		return
+	}
+
+	statuses := engine.DetectAIAssistants(reg, engine.GetOperatingSystem())
+
+	// Output in JSON format
+	if formatJSON {
+		data, err := json.MarshalIndent(statuses, "", "  ")
+		if err != nil {
+			fmt.Printf("Error generating JSON: %v\n", err)
+			return
+		}
+		fmt.Println(string(data))
+		return
+	}
+
+	// Standard output format
+	fmt.Println("\n🤖 AI Assistant Detection:")
+	fmt.Println("═══════════════════════════════════════════════════════════")
+
+	if len(statuses) == 0 {
+		fmt.Println("No AI assistant packages found in registry")
+		return
+	}
+
+	installed := 0
+	for _, s := range statuses {
+		marker := "⬜ not found"
+		if s.Installed {
+			installed++
+			marker = "✅ installed"
+			if s.Version != "" {
+				marker += " (" + s.Version + ")"
+			}
+		}
+		fmt.Printf("\n%-18s %s\n", s.Name, s.DisplayName)
+		fmt.Printf("%-18s %s\n", "", marker)
+	}
+
+	fmt.Printf("\nDetected %d of %d AI assistant(s) installed.\n", installed, len(statuses))
+}
+
+// handleListVariants lists all installation variants (a.k.a. methods) available
+// for a package on the current platform. Implements the discovery side of
+// issue #079. Output marks the auto-detected variant with `*` and any variant
+// that opts in via `"preferred": true` with `(preferred)`.
+func handleListVariants(packageName string) {
+	reg, err := registry.LoadPackageRegistry("./assets")
+	if err != nil {
+		fmt.Printf("❌ Error loading package registry: %v\n", err)
+		os.Exit(1)
+	}
+
+	pkg, err := reg.GetPackage(packageName)
+	if err != nil {
+		fmt.Printf("❌ Package '%s' not found\n", packageName)
+		fmt.Println("\nTry: portunix package search <query>")
+		os.Exit(1)
+	}
+
+	currentOS := engine.GetOperatingSystem()
+	platformSpec, exists := pkg.Spec.Platforms[currentOS]
+	if !exists && currentOS == "windows_sandbox" {
+		platformSpec, exists = pkg.Spec.Platforms["windows"]
+	}
+	if !exists {
+		fmt.Printf("❌ Package '%s' is not available for platform '%s'\n", packageName, currentOS)
+		// Show which platforms ARE supported, so the user has a path forward
+		platforms := make([]string, 0, len(pkg.Spec.Platforms))
+		for p := range pkg.Spec.Platforms {
+			platforms = append(platforms, p)
+		}
+		sort.Strings(platforms)
+		fmt.Printf("Supported platforms: %s\n", strings.Join(platforms, ", "))
+		os.Exit(1)
+	}
+
+	if len(platformSpec.Variants) == 0 {
+		fmt.Printf("Package '%s' has no variants defined for %s\n", packageName, currentOS)
+		return
+	}
+
+	autoDetected := detectAutoVariant(&platformSpec)
+	fmt.Print(formatVariantList(packageName, currentOS, autoDetected, &platformSpec))
+}
+
+// formatVariantList renders the human-readable variant list for a package.
+// Pure function (no I/O) so the formatting can be unit-tested without spinning
+// up the full installer.
+func formatVariantList(packageName, currentOS, autoDetected string, platformSpec *registry.PlatformSpec) string {
+	var b strings.Builder
+
+	// Sort variant names for stable output
+	names := make([]string, 0, len(platformSpec.Variants))
+	for n := range platformSpec.Variants {
+		names = append(names, n)
+	}
+	sort.Strings(names)
+
+	fmt.Fprintf(&b, "\n📦 Available variants for '%s' on %s:\n", packageName, currentOS)
+	b.WriteString("═══════════════════════════════════════════════════════════\n")
+	b.WriteString("Legend:  *  = auto-detected default   (preferred) = marked preferred\n\n")
+
+	for _, name := range names {
+		variant := platformSpec.Variants[name]
+
+		marker := " "
+		if name == autoDetected {
+			marker = "*"
+		}
+
+		// Effective installation type: variant override wins over platform default
+		effectiveType := platformSpec.Type
+		if variant.Type != "" {
+			effectiveType = variant.Type
+		}
+
+		preferredTag := ""
+		if variant.Preferred {
+			preferredTag = " (preferred)"
+		}
+
+		fmt.Fprintf(&b, "  %s %-20s version: %s   type: %s%s\n", marker, name, variant.Version, effectiveType, preferredTag)
+		if variant.Description != "" {
+			fmt.Fprintf(&b, "    %s\n", variant.Description)
+		}
+	}
+
+	b.WriteString("\nInstall with:\n")
+	fmt.Fprintf(&b, "  portunix install %s --method=<variant>\n", packageName)
+	fmt.Fprintf(&b, "  portunix install %s --variant=<variant>   (equivalent)\n", packageName)
+	return b.String()
+}
+
+// parseVariantArg recognises the variant-selection flags --variant and its
+// alias --method (issue #079). Returns the value, how many extra positional
+// args were consumed (1 for the "--flag value" form, 0 for "--flag=value"),
+// and whether the arg matched. ok=false means the caller should try other
+// flag patterns.
+func parseVariantArg(args []string, i int) (value string, consumed int, ok bool) {
+	arg := args[i]
+	switch {
+	case strings.HasPrefix(arg, "--variant="):
+		return strings.TrimPrefix(arg, "--variant="), 0, true
+	case arg == "--variant" && i+1 < len(args):
+		return args[i+1], 1, true
+	case strings.HasPrefix(arg, "--method="):
+		return strings.TrimPrefix(arg, "--method="), 0, true
+	case arg == "--method" && i+1 < len(args):
+		return args[i+1], 1, true
+	}
+	return "", 0, false
+}
+
+// detectAutoVariant mirrors engine.Installer.autoDetectVariant for display
+// purposes only. Kept lightweight here to avoid plumbing a full Installer just
+// to render the variant list — engine logic remains the source of truth at
+// install time.
+func detectAutoVariant(platformSpec *registry.PlatformSpec) string {
+	pmToVariant := map[string]string{
+		"apt-get": "apt",
+		"apt":     "apt",
+		"dnf":     "dnf",
+		"yum":     "dnf",
+		"pacman":  "pacman",
+		"zypper":  "zypper",
+	}
+	if pm := engine.DetectPackageManager(); pm != "" {
+		if v, ok := pmToVariant[pm]; ok {
+			if _, exists := platformSpec.Variants[v]; exists {
+				return v
+			}
+		}
+	}
+	if _, exists := platformSpec.Variants["default"]; exists {
+		return "default"
+	}
+	if _, exists := platformSpec.Variants["standard"]; exists {
+		return "standard"
+	}
+	for n := range platformSpec.Variants {
+		return n
+	}
+	return ""
+}
+
 func showInstallHelp() {
 	fmt.Println("Install software packages")
 	fmt.Println("\nUsage: portunix install <package> [options]")
 	fmt.Println("\nOptions:")
 	fmt.Println("  --variant=<variant>  Select package variant (e.g., --variant=21 for Java 21)")
+	fmt.Println("  --method=<variant>   Alias for --variant (issue #079)")
+	fmt.Println("  --version=<version>  Select a specific version; resolved to a variant by name or version")
+	fmt.Println("  --recommend-ai       List recommended AI assistants and offer to install missing ones")
+	fmt.Println("  --list-variants      List available variants for the package and exit")
+	fmt.Println("  --list-methods       Alias for --list-variants")
 	fmt.Println("  --path=<path>        Target installation path (for project generators like docusaurus)")
 	fmt.Println("  --dry-run            Preview installation without executing")
 	fmt.Println("  --force              Force reinstallation even if already installed")
+	fmt.Println("  --data-root=<path>   Docker data-root directory (docker only; skips the prompt)")
+	fmt.Println("  -y, --yes            Non-interactive mode: accept recommended defaults (docker only)")
 	fmt.Println("  --db-host=<host>     Override container DB HOST env (container variants that read it)")
 	fmt.Println("  --db-port=<port>     Override container DB PORT env")
 	fmt.Println("  --db-user=<user>     Override container DB USER env")
@@ -550,8 +994,14 @@ func showInstallHelp() {
 	fmt.Println("\nExamples:")
 	fmt.Println("  portunix install python")
 	fmt.Println("  portunix install java --variant=21")
+	fmt.Println("  portunix install hugo --list-variants")
+	fmt.Println("  portunix install hugo --method=snap")
 	fmt.Println("  portunix install docusaurus --path ./my-docs")
 	fmt.Println("  portunix install nodejs --dry-run")
+	fmt.Println("  portunix install java --version 21")
+	fmt.Println("  portunix install --recommend-ai")
+	fmt.Println("  portunix install docker --data-root D:\\docker-data --yes")
+	fmt.Println("  portunix install wsl                        (Windows only — prerequisite for Docker)")
 	fmt.Println("  portunix install odoo --variant=container-external-db --db-host=my-pg")
 	fmt.Println("\nUse 'portunix package list' to see available packages")
 	fmt.Println("Use 'portunix package info <package>' for detailed package information")

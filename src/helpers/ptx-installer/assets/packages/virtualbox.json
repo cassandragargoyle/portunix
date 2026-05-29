@@ -9,7 +9,9 @@
     "homepage": "https://www.virtualbox.org/",
     "documentation": "https://www.virtualbox.org/wiki/Documentation",
     "license": "GPL-2.0",
-    "maintainer": "Oracle"
+    "maintainer": "Oracle",
+    "installationDocsUrl": "https://www.virtualbox.org/wiki/Downloads",
+    "latestVersionUrl": "https://www.virtualbox.org/wiki/Downloads"
   },
   "spec": {
     "hasVariants": true,
@@ -31,6 +33,7 @@
         "type": "deb",
         "variants": {
           "apt": {
+            "type": "apt",
             "version": "latest",
             "repositorySetup": [
               "wget -q https://www.virtualbox.org/download/oracle_vbox_2016.asc -O- | sudo apt-key add -",

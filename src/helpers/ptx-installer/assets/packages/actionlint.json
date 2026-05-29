@@ -9,7 +9,9 @@
     "homepage": "https://github.com/rhysd/actionlint",
     "documentation": "https://github.com/rhysd/actionlint#readme",
     "license": "MIT",
-    "maintainer": "rhysd"
+    "maintainer": "rhysd",
+    "installationDocsUrl": "https://github.com/rhysd/actionlint/blob/main/docs/install.md",
+    "latestVersionUrl": "https://github.com/rhysd/actionlint/releases/latest"
   },
   "spec": {
     "hasVariants": false,

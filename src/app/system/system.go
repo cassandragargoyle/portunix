@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 // Native implementation function pointers (set by platform-specific init())
@@ -88,8 +89,24 @@ type VirtualizationInfo struct {
 	LibvirtVersion         string   `json:"libvirt_version,omitempty"`
 }
 
-// GetSystemInfo returns comprehensive system information
+// SystemInfoOptions controls optional, slower probes during system info
+// collection. Defaults are tuned for fast diagnostic output (sub-100ms).
+type SystemInfoOptions struct {
+	// CheckHTTPS performs a network round-trip to well-known HTTPS endpoints
+	// to verify the CA bundle actually works. Off by default — enable only
+	// when the connectivity result is needed.
+	CheckHTTPS bool
+}
+
+// GetSystemInfo returns comprehensive system information using fast defaults
+// (no network probes). For opt-in checks use GetSystemInfoWithOptions.
 func GetSystemInfo() (*SystemInfo, error) {
+	return GetSystemInfoWithOptions(SystemInfoOptions{})
+}
+
+// GetSystemInfoWithOptions is the explicit form of GetSystemInfo accepting
+// optional toggles for slower probes (e.g. live HTTPS connectivity).
+func GetSystemInfoWithOptions(opts SystemInfoOptions) (*SystemInfo, error) {
 	info := &SystemInfo{
 		Architecture: runtime.GOARCH,
 		Capabilities: &Capabilities{},
@@ -125,7 +142,7 @@ func GetSystemInfo() (*SystemInfo, error) {
 	detectEnvironment(info)
 
 	// Check capabilities
-	checkCapabilities(info)
+	checkCapabilities(info, opts)
 
 	return info, nil
 }
@@ -370,122 +387,192 @@ func detectEnvironment(info *SystemInfo) {
 	}
 }
 
-// checkCapabilities checks system capabilities
-func checkCapabilities(info *SystemInfo) {
-	// Check PowerShell availability
-	if _, err := exec.LookPath("powershell"); err == nil {
-		info.Capabilities.PowerShell = true
-	} else if _, err := exec.LookPath("pwsh"); err == nil {
-		info.Capabilities.PowerShell = true
-	}
+// checkCapabilities checks system capabilities.
+// Independent probes (PowerShell / Docker / Podman / certificates / admin /
+// virtualization backends) run concurrently; compose detection runs after
+// because it depends on the resolved Docker/Podman state.
+func checkCapabilities(info *SystemInfo, opts SystemInfoOptions) {
+	caps := info.Capabilities
 
-	// Check Docker availability
-	if _, err := exec.LookPath("docker"); err == nil {
-		info.Capabilities.Docker = true
-		// Get Docker version
-		if version := GetDockerVersion(); version != "" {
-			info.Capabilities.DockerVersion = version
+	var wg sync.WaitGroup
+
+	// PowerShell
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if _, err := exec.LookPath("powershell"); err == nil {
+			caps.PowerShell = true
+			return
 		}
-		// Check if daemon is running
-		info.Capabilities.DockerDaemonRunning = IsDockerDaemonRunning()
-	}
-
-	// Check Podman availability
-	if _, err := exec.LookPath("podman"); err == nil {
-		info.Capabilities.Podman = true
-		// Get Podman version
-		if version := GetPodmanVersion(); version != "" {
-			info.Capabilities.PodmanVersion = version
+		if _, err := exec.LookPath("pwsh"); err == nil {
+			caps.PowerShell = true
 		}
-		// Check if socket is running
-		info.Capabilities.PodmanSocketRunning = IsPodmanSocketRunning()
-	}
+	}()
 
-	// Set Container Available flag
-	info.Capabilities.ContainerAvailable = info.Capabilities.Docker || info.Capabilities.Podman
-
-	// Detect compose tool availability
-	info.Capabilities.ComposeInfo = DetectComposeInfo(
-		info.Capabilities.Docker,
-		info.Capabilities.DockerDaemonRunning,
-		info.Capabilities.Podman,
-		info.Capabilities.PodmanSocketRunning,
-	)
-
-	// Check admin privileges (platform-specific)
-	if info.OS == "Windows" {
-		// Try native API first
-		if nativeIsAdmin != nil {
-			info.Capabilities.Admin = nativeIsAdmin()
-		} else {
-			// Fallback: Check if running as administrator
-			if output, err := exec.Command("net", "session").Output(); err == nil {
-				if len(output) > 0 {
-					info.Capabilities.Admin = true
-				}
+	// Docker
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if _, err := exec.LookPath("docker"); err != nil {
+			return
+		}
+		caps.Docker = true
+		var subWg sync.WaitGroup
+		subWg.Add(2)
+		go func() {
+			defer subWg.Done()
+			if v := GetDockerVersion(); v != "" {
+				caps.DockerVersion = v
 			}
+		}()
+		go func() {
+			defer subWg.Done()
+			caps.DockerDaemonRunning = IsDockerDaemonRunning()
+		}()
+		subWg.Wait()
+	}()
+
+	// Podman
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if _, err := exec.LookPath("podman"); err != nil {
+			return
 		}
-	} else {
-		// Unix-like systems - check if running as root
+		caps.Podman = true
+		var subWg sync.WaitGroup
+		subWg.Add(2)
+		go func() {
+			defer subWg.Done()
+			if v := GetPodmanVersion(); v != "" {
+				caps.PodmanVersion = v
+			}
+		}()
+		go func() {
+			defer subWg.Done()
+			caps.PodmanSocketRunning = IsPodmanSocketRunning()
+		}()
+		subWg.Wait()
+	}()
+
+	// Admin
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if info.OS == "Windows" {
+			if nativeIsAdmin != nil {
+				caps.Admin = nativeIsAdmin()
+				return
+			}
+			if output, err := exec.Command("net", "session").Output(); err == nil && len(output) > 0 {
+				caps.Admin = true
+			}
+			return
+		}
 		if os.Geteuid() == 0 {
-			info.Capabilities.Admin = true
+			caps.Admin = true
 		}
-	}
+	}()
 
-	// Check certificate bundle availability
-	if certInfo, err := DetectCertificateBundle(); err == nil {
-		info.Capabilities.CertificateInfo = &certInfo
-	}
+	// Certificate bundle (HTTPS check is opt-in)
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if certInfo, err := DetectCertificateBundleWithHTTPSCheck(opts.CheckHTTPS); err == nil {
+			caps.CertificateInfo = &certInfo
+		}
+	}()
 
-	// Check virtualization capabilities
-	checkVirtualizationCapabilities(info)
+	// Virtualization
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		checkVirtualizationCapabilities(info)
+	}()
+
+	wg.Wait()
+
+	// Aggregate flags that depend on the parallel probes above.
+	caps.ContainerAvailable = caps.Docker || caps.Podman
+	caps.ComposeInfo = DetectComposeInfo(
+		caps.Docker,
+		caps.DockerDaemonRunning,
+		caps.Podman,
+		caps.PodmanSocketRunning,
+	)
 }
 
-// checkVirtualizationCapabilities checks virtualization support
+// checkVirtualizationCapabilities checks virtualization support.
+// Each backend probe runs in its own goroutine; the AvailableBackends slice
+// is composed afterward in deterministic order.
 func checkVirtualizationCapabilities(info *SystemInfo) {
 	virtInfo := &VirtualizationInfo{}
 
-	// Check for QEMU
-	if _, err := exec.LookPath("qemu-system-x86_64"); err == nil {
+	var wg sync.WaitGroup
+
+	// QEMU
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		if _, err := exec.LookPath("qemu-system-x86_64"); err != nil {
+			return
+		}
 		virtInfo.QEMU = true
-		virtInfo.AvailableBackends = append(virtInfo.AvailableBackends, "qemu")
-		// Get QEMU version
-		if version := GetQEMUVersion(); version != "" {
-			virtInfo.QEMUVersion = version
+		if v := GetQEMUVersion(); v != "" {
+			virtInfo.QEMUVersion = v
 		}
-	}
+	}()
 
-	// Check for VirtualBox using enhanced detection
-	virtInfo.VirtualBox = isVirtualBoxAvailable()
-	if virtInfo.VirtualBox {
-		virtInfo.AvailableBackends = append(virtInfo.AvailableBackends, "virtualbox")
-		// Get VirtualBox version
-		if version := GetVirtualBoxVersion(); version != "" {
-			virtInfo.VirtualBoxVersion = version
-		}
-	}
-
-	// Check for libvirt (Linux only)
-	if info.OS == "Linux" {
-		if _, err := exec.LookPath("virsh"); err == nil {
-			virtInfo.LibvirtInstalled = true
-			// Get Libvirt version
-			if version := GetLibvirtVersion(); version != "" {
-				virtInfo.LibvirtVersion = version
+	// VirtualBox
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		virtInfo.VirtualBox = isVirtualBoxAvailable()
+		if virtInfo.VirtualBox {
+			if v := GetVirtualBoxVersion(); v != "" {
+				virtInfo.VirtualBoxVersion = v
 			}
 		}
+	}()
 
-		// Check for KVM support
-		virtInfo.KVMSupport = checkKVMSupport()
+	// libvirt + KVM (Linux only)
+	if info.OS == "Linux" {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if _, err := exec.LookPath("virsh"); err == nil {
+				virtInfo.LibvirtInstalled = true
+				if v := GetLibvirtVersion(); v != "" {
+					virtInfo.LibvirtVersion = v
+				}
+			}
+		}()
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			virtInfo.KVMSupport = checkKVMSupport()
+		}()
 	}
 
-	// Check hardware virtualization
-	virtInfo.HardwareVirtualization = checkHardwareVirtualization()
+	// Hardware virtualization
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		virtInfo.HardwareVirtualization = checkHardwareVirtualization()
+	}()
 
-	// Set recommended backend
+	wg.Wait()
+
+	// Compose AvailableBackends deterministically.
+	if virtInfo.QEMU {
+		virtInfo.AvailableBackends = append(virtInfo.AvailableBackends, "qemu")
+	}
+	if virtInfo.VirtualBox {
+		virtInfo.AvailableBackends = append(virtInfo.AvailableBackends, "virtualbox")
+	}
+
 	virtInfo.RecommendedBackend = getRecommendedBackend(info.OS, virtInfo)
 
-	// Set current backend (first available)
 	if len(virtInfo.AvailableBackends) > 0 {
 		virtInfo.Backend = virtInfo.RecommendedBackend
 		if virtInfo.Backend == "" {
