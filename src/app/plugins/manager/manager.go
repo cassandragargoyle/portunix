@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"portunix.ai/app/plugins"
+	"portunix.ai/portunix/src/pkg/platform"
 )
 
 // Manager handles plugin lifecycle and registry
@@ -260,7 +261,7 @@ func (m *Manager) EnablePlugin(name string) error {
 	config := plugins.PluginConfig{
 		Name:           registryData.Name,
 		Version:        registryData.Version,
-		BinaryPath:     filepath.Join(registryData.InstallPath, registryData.BinaryName),
+		BinaryPath:     registryData.BinaryPath(),
 		Runtime:        registryData.Runtime,
 		RuntimeVersion: registryData.RuntimeVersion,
 		JVMArgs:        registryData.JVMArgs,
@@ -472,13 +473,7 @@ func (m *Manager) GetPluginHealth(name string) (plugins.PluginHealth, error) {
 
 // checkHelperPluginHealth performs health check for helper-type plugins
 func (m *Manager) checkHelperPluginHealth(plugin *RegistryPlugin) plugins.PluginHealth {
-	// For Python wheel plugins, binary is in .venv/bin/
-	var binaryPath string
-	if plugin.Runtime == "python" && plugin.Wheel != "" {
-		binaryPath = venvExecPath(filepath.Join(plugin.InstallPath, ".venv"), plugin.BinaryName)
-	} else {
-		binaryPath = filepath.Join(plugin.InstallPath, plugin.BinaryName)
-	}
+	binaryPath := plugin.BinaryPath()
 
 	// Check binary exists
 	info, err := os.Stat(binaryPath)
@@ -603,10 +598,68 @@ func (m *Manager) setupPythonWheelPlugin(manifest *plugins.PluginManifest, plugi
 		return fmt.Errorf("wheel file not found: %s (expected at %s)", manifest.Plugin.Wheel, wheelPath)
 	}
 
+	venvPath := filepath.Join(pluginDir, ".venv")
+	pyVersion := manifest.Plugin.PythonVersion // exact minor for bytecode wheels, e.g. "3.13"
+
+	// Preferred path: uv provisions the exact interpreter (downloads a managed
+	// CPython when the host lacks it), guaranteeing build/runtime bytecode match
+	if uv := findUV(); uv != "" && pyVersion != "" {
+		return m.setupPythonWheelPluginUV(manifest, pluginDir, wheelPath, venvPath, uv, pyVersion)
+	}
+
+	// Fallback: system python3
+	return m.setupPythonWheelPluginSystem(manifest, pluginDir, wheelPath, venvPath, pyVersion)
+}
+
+// setupPythonWheelPluginUV creates the venv with the pinned interpreter via uv
+func (m *Manager) setupPythonWheelPluginUV(manifest *plugins.PluginManifest, pluginDir, wheelPath, venvPath, uv, pyVersion string) error {
+	fmt.Printf("  Creating Python virtual environment with uv (Python %s)...\n", pyVersion)
+	cmd := exec.Command(uv, "venv", "--python", pyVersion, venvPath)
+	if output, err := cmd.CombinedOutput(); err != nil {
+		return fmt.Errorf("failed to create virtual environment with uv: %s\n%s", err, string(output))
+	}
+
+	install := func(whl string) error {
+		cmd := exec.Command(uv, "pip", "install", "--python", venvPath, whl)
+		if output, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("uv pip install of %s failed: %s\n%s", filepath.Base(whl), err, string(output))
+		}
+		return nil
+	}
+
+	// Install extra wheels before the main wheel (dependency resolution)
+	if err := installExtraWheels(manifest, pluginDir, install); err != nil {
+		return err
+	}
+
+	// Install main wheel
+	fmt.Printf("  Installing wheel: %s\n", manifest.Plugin.Wheel)
+	if err := install(wheelPath); err != nil {
+		return err
+	}
+
+	fmt.Printf("  Python wheel plugin setup complete\n")
+	return nil
+}
+
+// setupPythonWheelPluginSystem creates the venv with the host's python3 (fallback)
+func (m *Manager) setupPythonWheelPluginSystem(manifest *plugins.PluginManifest, pluginDir, wheelPath, venvPath, pyVersion string) error {
 	// Find python3 binary
 	pythonCmd := findPython()
 	if pythonCmd == "" {
 		return fmt.Errorf("Python not found. Install with: portunix install python")
+	}
+
+	// A bytecode-only wheel needs the exact minor; refuse to build a venv that
+	// would only fail later at runtime with "bad magic number"
+	if pyVersion != "" {
+		hostMinor := pythonMinor(pythonCmd)
+		if hostMinor != pyVersion {
+			return fmt.Errorf(
+				"plugin %s needs Python %s but host python is %s; install uv "+
+					"(portunix install uv) so the exact interpreter can be provisioned",
+				manifest.Name, pyVersion, hostMinor)
+		}
 	}
 
 	// Check venv module is available
@@ -616,45 +669,58 @@ func (m *Manager) setupPythonWheelPlugin(manifest *plugins.PluginManifest, plugi
 	}
 
 	// Create virtual environment
-	venvPath := filepath.Join(pluginDir, ".venv")
 	fmt.Printf("  Creating Python virtual environment...\n")
 	cmd := exec.Command(pythonCmd, "-m", "venv", venvPath)
 	if output, err := cmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("failed to create virtual environment: %s\n%s", err, string(output))
 	}
 
-	// Install extra wheels before the main wheel (dependency resolution)
 	pipPath := venvExecPath(venvPath, "pip")
-	if len(manifest.Plugin.ExtraWheels) > 0 {
-		fmt.Printf("  Installing extra wheels...\n")
-		for _, pattern := range manifest.Plugin.ExtraWheels {
-			matches, err := filepath.Glob(filepath.Join(pluginDir, pattern))
-			if err != nil {
-				return fmt.Errorf("invalid extra_wheels glob pattern %q: %w", pattern, err)
-			}
-			if len(matches) == 0 {
-				return fmt.Errorf("extra_wheels pattern %q matched no files in %s", pattern, pluginDir)
-			}
-			for _, whl := range matches {
-				fmt.Printf("    Installing: %s\n", filepath.Base(whl))
-				cmd = exec.Command(pipPath, "install", whl)
-				output, err := cmd.CombinedOutput()
-				if err != nil {
-					return fmt.Errorf("pip install of %s failed: %s\n%s", filepath.Base(whl), err, string(output))
-				}
-			}
+	install := func(whl string) error {
+		cmd := exec.Command(pipPath, "install", whl)
+		if output, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("pip install of %s failed: %s\n%s", filepath.Base(whl), err, string(output))
 		}
+		return nil
+	}
+
+	// Install extra wheels before the main wheel (dependency resolution)
+	if err := installExtraWheels(manifest, pluginDir, install); err != nil {
+		return err
 	}
 
 	// Install main wheel via pip
 	fmt.Printf("  Installing wheel: %s\n", manifest.Plugin.Wheel)
-	cmd = exec.Command(pipPath, "install", wheelPath)
-	output, err := cmd.CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("pip install failed: %s\n%s", err, string(output))
+	if err := install(wheelPath); err != nil {
+		return err
 	}
 
 	fmt.Printf("  Python wheel plugin setup complete\n")
+	return nil
+}
+
+// installExtraWheels resolves the extra_wheels glob patterns and installs each
+// match via the provided installer (uv or pip)
+func installExtraWheels(manifest *plugins.PluginManifest, pluginDir string, install func(whl string) error) error {
+	if len(manifest.Plugin.ExtraWheels) == 0 {
+		return nil
+	}
+	fmt.Printf("  Installing extra wheels...\n")
+	for _, pattern := range manifest.Plugin.ExtraWheels {
+		matches, err := filepath.Glob(filepath.Join(pluginDir, pattern))
+		if err != nil {
+			return fmt.Errorf("invalid extra_wheels glob pattern %q: %w", pattern, err)
+		}
+		if len(matches) == 0 {
+			return fmt.Errorf("extra_wheels pattern %q matched no files in %s", pattern, pluginDir)
+		}
+		for _, whl := range matches {
+			fmt.Printf("    Installing: %s\n", filepath.Base(whl))
+			if err := install(whl); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
@@ -669,6 +735,24 @@ func findPython() string {
 	return ""
 }
 
+// findUV returns the uv binary path or empty string
+func findUV() string {
+	if _, err := exec.LookPath("uv"); err == nil {
+		return "uv"
+	}
+	return ""
+}
+
+// pythonMinor returns the "major.minor" version of the given python binary
+// (e.g. "3.13"), or "unknown" if it cannot be determined
+func pythonMinor(pythonCmd string) string {
+	out, err := exec.Command(pythonCmd, "-c", "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')").Output()
+	if err != nil {
+		return "unknown"
+	}
+	return strings.TrimSpace(string(out))
+}
+
 // venvBinDir returns the venv binary directory name (platform-dependent)
 func venvBinDir() string {
 	if goruntime.GOOS == "windows" {
@@ -680,10 +764,7 @@ func venvBinDir() string {
 // venvExecPath returns the absolute path to a venv executable, appending
 // the .exe suffix on Windows when missing
 func venvExecPath(venvDir, name string) string {
-	if goruntime.GOOS == "windows" && !strings.HasSuffix(strings.ToLower(name), ".exe") {
-		name += ".exe"
-	}
-	return filepath.Join(venvDir, venvBinDir(), name)
+	return filepath.Join(venvDir, venvBinDir(), platform.ExecutableName(name))
 }
 
 // copyPluginFiles copies plugin files from source to destination

@@ -1281,7 +1281,8 @@ func runPortunixInstallInPodmanContainer(containerName string, installationType 
 }
 
 // execInPodmanContainer executes a command in a Podman container
-func execInPodmanContainer(containerName string, command []string) error {
+// (var so tests can substitute a mock implementation)
+var execInPodmanContainer = func(containerName string, command []string) error {
 	args := append([]string{"exec", containerName}, command...)
 	cmd := exec.Command("podman", args...)
 	cmd.Stdout = os.Stdout

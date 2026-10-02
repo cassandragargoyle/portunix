@@ -105,25 +105,26 @@ func (ai *AIPackageManager) discoverVersionsFromSources(context *PackageUpdateCo
 	}
 
 	// Try each source until we find version information
+sourceLoop:
 	for _, source := range context.Sources {
 		switch source.Type {
 		case "github":
 			if latestVersion, err := ai.discoverGitHubLatestVersion(source); err == nil {
 				result.LatestVersion = latestVersion
 				result.UpdateAvailable = ai.isUpdateAvailable(result.CurrentVersion, latestVersion)
-				break
+				break sourceLoop
 			}
 		case "direct":
 			if latestVersion, err := ai.discoverDirectLatestVersion(source, context.AIPrompts); err == nil {
 				result.LatestVersion = latestVersion
 				result.UpdateAvailable = ai.isUpdateAvailable(result.CurrentVersion, latestVersion)
-				break
+				break sourceLoop
 			}
 		}
 	}
 
 	if result.LatestVersion == "" {
-		result.Error = fmt.Sprintf("could not discover latest version from any source")
+		result.Error = "could not discover latest version from any source"
 	}
 
 	return result, nil
@@ -257,26 +258,27 @@ func (ai *AIPackageManager) GenerateUpdateReport() (string, error) {
 	errorsEncountered := 0
 
 	for _, result := range results {
-		if result.Error != "" {
+		switch {
+		case result.Error != "":
 			errorsEncountered++
 			report.WriteString(fmt.Sprintf("❌ %s: %s\n", result.PackageName, result.Error))
-		} else if result.UpdateAvailable {
+		case result.UpdateAvailable:
 			updatesAvailable++
 			report.WriteString(fmt.Sprintf("🔄 %s: %s → %s\n",
 				result.PackageName, result.CurrentVersion, result.LatestVersion))
-		} else {
+		default:
 			report.WriteString(fmt.Sprintf("✅ %s: %s (up to date)\n",
 				result.PackageName, result.CurrentVersion))
 		}
 	}
 
-	report.WriteString(fmt.Sprintf("\n📊 SUMMARY:\n"))
+	report.WriteString("\n📊 SUMMARY:\n")
 	report.WriteString(fmt.Sprintf("   Packages checked: %d\n", len(results)))
 	report.WriteString(fmt.Sprintf("   Updates available: %d\n", updatesAvailable))
 	report.WriteString(fmt.Sprintf("   Errors: %d\n", errorsEncountered))
 
 	if updatesAvailable > 0 {
-		report.WriteString(fmt.Sprintf("\n💡 Run 'portunix registry update' to apply available updates\n"))
+		report.WriteString("\n💡 Run 'portunix registry update' to apply available updates\n")
 	}
 
 	return report.String(), nil

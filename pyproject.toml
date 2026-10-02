@@ -2,7 +2,13 @@
 name = "portunix-tooling"
 version = "0.0.0"
 description = "Python tooling for the Portunix repository (scripts and integration tests). Not a published package."
-requires-python = ">=3.11"
+requires-python = ">=3.14"
+
+[tool.uv]
+# Use only uv-managed Python interpreters; never probe the system PATH.
+# On Windows this avoids the Microsoft Store "app execution alias"
+# (WindowsApps\python3.exe) stub, which hangs uv's interpreter probe.
+python-preference = "only-managed"
 
 [dependency-groups]
 test = [

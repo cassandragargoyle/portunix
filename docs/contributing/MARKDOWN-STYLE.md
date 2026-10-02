@@ -91,6 +91,8 @@ Follow the standard ADR format: `# Context`, `# Decision`, `# Consequences`.
 - Use `**bold**` for key terms on first mention, field names in prose, and status labels
 - Use `` `backticks` `` for code identifiers, file paths, CLI commands, field values
 - Use `*italic*` sparingly for emphasis in prose
+- No icons or emoji — not in headings (`## Priority`, not `## 🎯 Priority`), status fields (`Open`, not `📋 Open`),
+  table cells or lists; quoted literal program output is the only exception
 
 ## Lists
 

@@ -28,13 +28,16 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#073](internal/073-ptx-prompting-helper-implementation.md) | - | PTX-Prompting Helper Implementation | 📋 Open | High | Feature | enhancement, helper-system, ai-integration, template-system |
 | [#098](internal/098-ptx-vocalio-helper-implementation.md) | - | PTX-Vocalio Helper Implementation | 📋 Open | High | Feature | enhancement, helper-binary, speech-recognition, text-to-speech, ai-integration, accessibility |
 | [#105](internal/105-ptx-make-gobuild-cross-platform-compilation.md) | - | PTX-Make GoBuild Cross-Platform Compilation | 📋 Open | High | Enhancement | enhancement, helper-binary, ptx-make, cross-platform, go-compilation |
-| [#111](internal/111-ptx-pft-mcp-integration.md) | - | PTX-PFT MCP Integration | 📋 Open | High | Enhancement | enhancement, helper-binary, ptx-pft, ptx-mcp, ai-integration, mcp |
 | [#116](internal/116-ptx-pft-iso16355-qfd-project-structure.md) | - | PTX-PFT ISO 16355 QFD Project Structure | 📋 Open | High | Enhancement | enhancement, helper-binary, ptx-pft, iso-16355, qfd, requirements-management |
 | [#125](internal/125-cross-platform-binary-distribution.md) | - | Cross-Platform Binary Distribution | 📋 Open | High | Enhancement | enhancement, architecture, distribution, cross-platform, container, vm |
 | [#132](internal/132-text-extractor-plugin-integration.md) | - | Text Extractor Plugin Integration | 📋 Open | High | Feature / Plugin | plugin, text-extraction, java, tika, mcp, ai-integration |
 | [#150](internal/150-distributed-mcp-server-ecosystem.md) | - | Distributed MCP Server Ecosystem for Plugins | 📋 Open | High | Architecture / Feature | mcp, plugin-system, ai-integration, architecture, distributed |
 | [#153](internal/153-deliver-docker-documentation-environment-for-knife.md) | - | Deliver Docker Documentation Environment for KNIFE Project | 📋 Open | High | Feature | feature, documentation, docker, customer-delivery, knife-project |
 | [#185](internal/185-plugin-security-hardening.md) | - | Plugin Security Hardening | 📋 Open | Medium | Enhancement / Security | enhancement, plugin-system, security, grpc, tls, signing, audit |
+| [#189](internal/189-on-demand-elevation-not-manifest-admin.md) | - | On-demand privilege elevation per command (no requireAdministrator in EXE manifest) | 📋 Open | Medium | Enhancement | enhancement, installer, ptx-installer, windows, uac, elevation, security |
+| [#190](internal/190-skill-installation-support.md) | - | Skill Installation Support — `portunix skills` | 📋 Open | High | Feature | enhancement, helper-binary, ptx-installer, ai-integration, skills, multi-agent, dispatcher |
+| [#193](internal/193-aiops-ollama-detect-existing-container.md) | - | `aiops ollama container status` — Detect Pre-existing `ollama` Container | 📋 Open | Medium | Enhancement | enhancement, aiops, ollama, ptx-aiops, container, ux |
+| [#195](internal/195-fix-stale-src-cmd-container-tests.md) | - | Fix Stale Container Command Tests in `src/cmd` (Surfaced by #194) | 📋 Open | Medium | Bug / Test Debt | testing, src-cmd, container, dispatcher, test-debt |
 
 ## Internal Issues — Done
 
@@ -136,6 +139,7 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#108](internal/done/108-ptx-pft-email-notifications.md) | - | PTX-PFT E-mail Notifications for User Actions | ✅ Implemented | High | Enhancement | enhancement, helper-binary, ptx-pft, email, notifications |
 | [#109](internal/done/109-ptx-pft-clearflask-provider.md) | - | PTX-PFT ClearFlask Provider Implementation | ✅ Implemented | Medium | Enhancement | enhancement, helper-binary, product-feedback, clearflask, provider |
 | [#110](internal/done/110-ptx-pft-eververse-provider.md) | - | PTX-PFT Eververse Provider Implementation | ✅ Implemented | Medium | Enhancement | enhancement, helper-binary, product-feedback, eververse, provider, high-complexity |
+| [#111](internal/done/111-ptx-pft-mcp-integration.md) | - | PTX-PFT MCP Integration | ✅ Implemented | High | Enhancement | enhancement, helper-binary, ptx-pft, ptx-mcp, ai-integration, mcp |
 | [#112](internal/done/112-ptx-pft-category-management.md) | - | PTX-PFT Category Management for UC and Requirements | ✅ Implemented | High | Enhancement | enhancement, helper-binary, ptx-pft, categorization, organization |
 | [#113](internal/done/113-mcp-help-missing-subcommands-v180.md) | - | MCP Help Missing Subcommands in v1.8.0 Release | ✅ Implemented | High | Bug Fix | bug, mcp, release, help-system, regression |
 | [#114](internal/done/114-mcp-configure-default-stdio-mode.md) | - | MCP Configure Should Default to stdio Mode | ✅ Implemented | Medium | Enhancement | mcp, configuration, ux |
@@ -207,6 +211,13 @@ We use a dual numbering system to separate internal development tracking from pu
 | [#188](internal/done/188-plugin-list-description-truncation.md) | - | `portunix plugin list` — Description Truncation with `...` and `--verbose` Full Output | ✅ Implemented | Medium | Enhancement | enhancement, plugin-system, cli, user-experience, output-formatting |
 | [#141](internal/done/141-ptx-trace-helper-implementation.md) | - | PTX-TRACE Universal Tracing Helper (First: Data Transformation) | ✅ Implemented | High | Feature / Helper Binary | helper-binary, data-transformation, tracing, etl, debugging, ai-integration, mcp |
 | [#032](internal/done/032-universal-container-management-commands.md) | - | Universal Container Management Commands | ✅ Implemented | High | Enhancement | container, docker, podman, universal-interface, cli, management |
+| [#191](internal/done/191-ptx-pft-graph-visualization.md) | - | PTX-PFT Graph Build & Visualization (via graphlens plugin) | ✅ Implemented | Medium | Enhancement | enhancement, helper-binary, ptx-pft, qfd, iso-16355, visualization, graph, graphlens, plugin-integration |
+| [#192](internal/done/192-plugin-venv-pinned-python-via-uv.md) | - | Create Python plugin venv with uv using a pinned interpreter version | ✅ Implemented | High | Enhancement / Architecture | plugin-system, python, distribution, uv, bytecode, cross-platform |
+| [#194](internal/done/194-make-test-multi-module-coverage.md) | - | `make test` Does Not Cover Non-root Go Modules (Helpers, src/app, src/cmd) | ✅ Implemented | High | Bug / Tooling | testing, makefile, helper-binary, multi-module, ci |
+| [#196](internal/done/196-ptx-pft-ideas-opportunity-management.md) | - | PTX-PFT `pft ideas` — Opportunity Management (Discovery / Backlog / Opportunity) — Superseded by #198 | ❌ Closed (Superseded) | Medium | Feature | enhancement, helper-binary, ptx-pft, iso-16355, qfd, opportunity-management, ai-funnel, json, graph |
+| [#197](internal/done/197-install-self-path-directory-normalization.md) | - | `install-self --path` Corrupts Install When Given a Directory | ✅ Implemented | High | Bug Fix | bug, install-self, selfinstall, windows, install.ps1, deploy-local, path-normalization |
+| [#198](internal/done/198-ptx-pft-ideas-venture-model-v2.md) | - | PTX-PFT `pft ideas` v2 — Venture model (Initiative / Idea / Use-Case / Epic / Team / Product) | ✅ Implemented | Medium | Feature | enhancement, helper-binary, ptx-pft, opportunity-management, venture, use-case, initiative, epic, team, product, iso-16355, json, graph |
+| [#199](internal/done/199-plugin-binary-exe-suffix-windows.md) | - | Plugin Binary Path Missing `.exe` Suffix on Windows | Implemented | Medium | Bug | bug, plugin-system, windows, cross-platform, platform |
 
 ## Directory Structure
 

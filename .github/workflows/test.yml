@@ -69,6 +69,10 @@ jobs:
       - name: Validate package manifest URL metadata (ADR-019)
         run: ./scripts/check-package-manifest-urls.sh
 
+      - name: ShellCheck debug helper scripts
+        # shellcheck is preinstalled on ubuntu-latest runners
+        run: shellcheck scripts/ensure-delve.sh
+
   unit-tests:
     name: Unit Tests
     runs-on: ubuntu-latest
@@ -225,8 +229,8 @@ jobs:
 
       - name: Install security tools
         run: |
-          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-          go install github.com/sonatypecommunity/nancy@latest
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          go install github.com/sonatype-nexus-community/nancy@latest
 
       - name: Run Gosec Security Scanner
         run: gosec -fmt json -out gosec-report.json ./...

@@ -27,12 +27,18 @@ const (
 type OllamaContainerStatus struct {
 	Exists     bool
 	Running    bool
+	Managed    bool // true for the Portunix-managed container, false for an external one
 	Name       string
 	Image      string
 	GPUEnabled bool
 	Port       string
 	Created    string
 }
+
+// ollamaContainerCandidates lists container names checked in precedence order:
+// the managed container first, then the conventional external name used by
+// ollama/ollama tutorials
+var ollamaContainerCandidates = []string{OllamaContainerName, "ollama"}
 
 // getOllamaDataDir returns the directory for Ollama model storage
 func getOllamaDataDir() string {
@@ -60,19 +66,13 @@ func detectContainerRuntime() string {
 	return ""
 }
 
-// getOllamaContainerStatus checks the status of Ollama container
-func getOllamaContainerStatus() OllamaContainerStatus {
-	status := OllamaContainerStatus{
-		Name: OllamaContainerName,
-	}
-
-	runtime := detectContainerRuntime()
-	if runtime == "" {
-		return status
-	}
+// inspectOllamaContainer inspects a single container by name. If the container
+// does not exist, the returned status has Exists=false.
+func inspectOllamaContainer(runtime, name string) OllamaContainerStatus {
+	status := OllamaContainerStatus{Name: name}
 
 	// Check if container exists
-	cmd := exec.Command(runtime, "inspect", OllamaContainerName, "--format", "{{.State.Running}}")
+	cmd := exec.Command(runtime, "inspect", name, "--format", "{{.State.Running}}")
 	output, err := cmd.Output()
 	if err != nil {
 		// Container doesn't exist
@@ -83,7 +83,7 @@ func getOllamaContainerStatus() OllamaContainerStatus {
 	status.Running = strings.TrimSpace(string(output)) == "true"
 
 	// Get more details
-	cmd = exec.Command(runtime, "inspect", OllamaContainerName,
+	cmd = exec.Command(runtime, "inspect", name,
 		"--format", "{{.Config.Image}}|{{.Created}}")
 	output, err = cmd.Output()
 	if err == nil {
@@ -95,7 +95,7 @@ func getOllamaContainerStatus() OllamaContainerStatus {
 	}
 
 	// Check if GPU is enabled (look for GPU device in config)
-	cmd = exec.Command(runtime, "inspect", OllamaContainerName,
+	cmd = exec.Command(runtime, "inspect", name,
 		"--format", "{{.HostConfig.DeviceRequests}}")
 	output, err = cmd.Output()
 	if err == nil {
@@ -103,6 +103,42 @@ func getOllamaContainerStatus() OllamaContainerStatus {
 	}
 
 	status.Port = OllamaPort
+	return status
+}
+
+// getOllamaContainerStatus checks the status of the Ollama container, resolving
+// the effective container name in precedence order: the managed container
+// first, then the conventional external "ollama" name. The external container
+// is reported only when no managed container exists.
+func getOllamaContainerStatus() OllamaContainerStatus {
+	runtime := detectContainerRuntime()
+	if runtime == "" {
+		return OllamaContainerStatus{Name: OllamaContainerName, Managed: true}
+	}
+
+	for _, name := range ollamaContainerCandidates {
+		status := inspectOllamaContainer(runtime, name)
+		if status.Exists {
+			status.Managed = name == OllamaContainerName
+			return status
+		}
+	}
+
+	return OllamaContainerStatus{Name: OllamaContainerName, Managed: true}
+}
+
+// getManagedOllamaContainerStatus checks the status of the Portunix-managed
+// Ollama container only (ignoring any external "ollama" container). Used by the
+// lifecycle handlers (create/start/stop/remove) which operate strictly on the
+// managed container.
+func getManagedOllamaContainerStatus() OllamaContainerStatus {
+	runtime := detectContainerRuntime()
+	if runtime == "" {
+		return OllamaContainerStatus{Name: OllamaContainerName, Managed: true}
+	}
+
+	status := inspectOllamaContainer(runtime, OllamaContainerName)
+	status.Managed = true
 	return status
 }
 
@@ -126,7 +162,7 @@ func handleOllamaContainerCreate(args []string) {
 	}
 
 	// Check if container already exists
-	status := getOllamaContainerStatus()
+	status := getManagedOllamaContainerStatus()
 	if status.Exists {
 		fmt.Printf("❌ Container '%s' already exists\n", OllamaContainerName)
 		fmt.Println()
@@ -265,7 +301,11 @@ func handleOllamaContainerStatus() {
 		stateText = "Running"
 	}
 
-	fmt.Printf("Container:   %s\n", status.Name)
+	if status.Managed {
+		fmt.Printf("Container:   %s\n", status.Name)
+	} else {
+		fmt.Printf("Container:   %s  (external, not managed by Portunix)\n", status.Name)
+	}
 	fmt.Printf("Status:      %s %s\n", stateEmoji, stateText)
 	fmt.Printf("Image:       %s\n", status.Image)
 
@@ -296,18 +336,34 @@ func handleOllamaContainerStatus() {
 	fmt.Println()
 	fmt.Println(strings.Repeat("━", 50))
 
-	if status.Running {
-		fmt.Println("Commands:")
-		fmt.Println("  portunix aiops model list           - List installed models")
-		fmt.Println("  portunix aiops model install <name> - Install a model")
-		fmt.Println("  portunix aiops ollama container stop - Stop container")
+	if status.Managed {
+		if status.Running {
+			fmt.Println("Commands:")
+			fmt.Println("  portunix aiops model list           - List installed models")
+			fmt.Println("  portunix aiops model install <name> - Install a model")
+			fmt.Println("  portunix aiops ollama container stop - Stop container")
+		} else {
+			fmt.Println("Start container with:")
+			fmt.Println("  portunix aiops ollama container start")
+		}
 	} else {
-		fmt.Println("Start container with:")
-		fmt.Println("  portunix aiops ollama container start")
+		// External container: lifecycle commands (start/stop/remove) operate on
+		// it via fallback, so they are valid here. Model commands still default
+		// to the managed name, so point them at the --container flag.
+		fmt.Printf("This container is not managed by Portunix (managed name: %s).\n", OllamaContainerName)
+		if status.Running {
+			fmt.Println("Commands:")
+			fmt.Printf("  portunix aiops model list --container %s - List installed models\n", status.Name)
+			fmt.Println("  portunix aiops ollama container stop     - Stop container")
+		} else {
+			fmt.Println("Start container with:")
+			fmt.Println("  portunix aiops ollama container start")
+		}
 	}
 }
 
-// handleOllamaContainerStart starts the Ollama container
+// handleOllamaContainerStart starts the Ollama container. It operates on the
+// managed container when present, otherwise falls back to an external "ollama".
 func handleOllamaContainerStart() {
 	status := getOllamaContainerStatus()
 
@@ -317,13 +373,17 @@ func handleOllamaContainerStart() {
 		return
 	}
 
+	if !status.Managed {
+		fmt.Printf("Note: operating on external container '%s' (not managed by Portunix)\n", status.Name)
+	}
+
 	if status.Running {
-		fmt.Printf("Container '%s' is already running\n", OllamaContainerName)
+		fmt.Printf("Container '%s' is already running\n", status.Name)
 		return
 	}
 
 	runtime := detectContainerRuntime()
-	cmd := exec.Command(runtime, "start", OllamaContainerName)
+	cmd := exec.Command(runtime, "start", status.Name)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Printf("❌ Failed to start container: %v\n", err)
@@ -331,7 +391,7 @@ func handleOllamaContainerStart() {
 		return
 	}
 
-	fmt.Printf("✓ Container '%s' started\n", OllamaContainerName)
+	fmt.Printf("✓ Container '%s' started\n", status.Name)
 
 	// Wait for API to be ready
 	fmt.Print("Waiting for Ollama API...")
@@ -348,7 +408,8 @@ func handleOllamaContainerStart() {
 	fmt.Println(" ⚠ API not responding yet")
 }
 
-// handleOllamaContainerStop stops the Ollama container
+// handleOllamaContainerStop stops the Ollama container. It operates on the
+// managed container when present, otherwise falls back to an external "ollama".
 func handleOllamaContainerStop() {
 	status := getOllamaContainerStatus()
 
@@ -357,13 +418,17 @@ func handleOllamaContainerStop() {
 		return
 	}
 
+	if !status.Managed {
+		fmt.Printf("Note: operating on external container '%s' (not managed by Portunix)\n", status.Name)
+	}
+
 	if !status.Running {
-		fmt.Printf("Container '%s' is already stopped\n", OllamaContainerName)
+		fmt.Printf("Container '%s' is already stopped\n", status.Name)
 		return
 	}
 
 	runtime := detectContainerRuntime()
-	cmd := exec.Command(runtime, "stop", OllamaContainerName)
+	cmd := exec.Command(runtime, "stop", status.Name)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Printf("❌ Failed to stop container: %v\n", err)
@@ -371,10 +436,13 @@ func handleOllamaContainerStop() {
 		return
 	}
 
-	fmt.Printf("✓ Container '%s' stopped\n", OllamaContainerName)
+	fmt.Printf("✓ Container '%s' stopped\n", status.Name)
 }
 
-// handleOllamaContainerRemove removes the Ollama container
+// handleOllamaContainerRemove removes the Ollama container. It operates on the
+// managed container when present, otherwise falls back to an external "ollama";
+// removing an external container (which Portunix did not create) requires
+// explicit confirmation.
 func handleOllamaContainerRemove() {
 	status := getOllamaContainerStatus()
 
@@ -385,16 +453,28 @@ func handleOllamaContainerRemove() {
 
 	runtime := detectContainerRuntime()
 
+	// Confirm before removing an external container Portunix did not create.
+	if !status.Managed {
+		fmt.Printf("⚠ Container '%s' is external (not created by Portunix).\n", status.Name)
+		fmt.Printf("Remove it anyway? [y/N]: ")
+		var response string
+		fmt.Scanln(&response)
+		if response != "y" && response != "Y" && response != "yes" && response != "Yes" {
+			fmt.Println("Cancelled.")
+			return
+		}
+	}
+
 	// Stop first if running
 	if status.Running {
-		fmt.Printf("Stopping container '%s'...\n", OllamaContainerName)
-		cmd := exec.Command(runtime, "stop", OllamaContainerName)
+		fmt.Printf("Stopping container '%s'...\n", status.Name)
+		cmd := exec.Command(runtime, "stop", status.Name)
 		cmd.Run()
 	}
 
 	// Remove container
-	fmt.Printf("Removing container '%s'...\n", OllamaContainerName)
-	cmd := exec.Command(runtime, "rm", OllamaContainerName)
+	fmt.Printf("Removing container '%s'...\n", status.Name)
+	cmd := exec.Command(runtime, "rm", status.Name)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		fmt.Printf("❌ Failed to remove container: %v\n", err)
@@ -402,10 +482,14 @@ func handleOllamaContainerRemove() {
 		return
 	}
 
-	fmt.Printf("✓ Container '%s' removed\n", OllamaContainerName)
-	fmt.Println()
-	fmt.Printf("Note: Model data preserved in %s\n", getOllamaDataDir())
-	fmt.Println("To remove model data, delete this directory manually.")
+	fmt.Printf("✓ Container '%s' removed\n", status.Name)
+
+	// The Portunix-managed data directory only applies to the managed container.
+	if status.Managed {
+		fmt.Println()
+		fmt.Printf("Note: Model data preserved in %s\n", getOllamaDataDir())
+		fmt.Println("To remove model data, delete this directory manually.")
+	}
 }
 
 // OllamaModel represents model info from Ollama API

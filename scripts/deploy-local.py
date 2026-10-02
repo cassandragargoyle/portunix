@@ -1,65 +1,79 @@
 #!/usr/bin/env python3
 # /// script
-# requires-python = ">=3.11"
+# requires-python = ">=3.14"
 # dependencies = []
 # ///
 """
 Deploy locally built Portunix binaries to system installation directory.
 Automatically detects existing installation path and copies all binaries.
+
+Use --verbose for step-by-step diagnostics (useful when the deploy appears to
+hang: every step is printed and flushed, so the last line pinpoints the stall).
 """
 
+import argparse
 import os
 import sys
 import shutil
 import subprocess
-import platform
+import time
 from pathlib import Path
+
+# True on Windows. Uses os.name instead of the platform module: platform.system()
+# / platform.uname() can hang on some Windows machines (WMI query / gethostname),
+# while os.name is an instant, side-effect-free constant.
+IS_WINDOWS = os.name == "nt"
+
+# Set from --verbose in main()
+VERBOSE = False
+
+
+def vlog(msg):
+    """Print a diagnostic line only in verbose mode (flushed immediately)."""
+    if VERBOSE:
+        print(f"[verbose] {msg}", flush=True)
 
 
 def find_install_dir(source_dir: Path):
     """Find existing Portunix installation directory (excluding source directory)."""
-    system = platform.system()
+    vlog(f"find_install_dir: is_windows={IS_WINDOWS}, source_dir={source_dir}")
 
-    if system == "Windows":
-        # Use 'where' command on Windows
-        try:
-            result = subprocess.run(
-                ["where", "portunix"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            # Find first path that is NOT in source directory
-            for path_str in result.stdout.strip().split('\n'):
-                path = Path(path_str.strip())
-                install_dir = path.parent
-                # Skip if it's the source/build directory
-                if install_dir.resolve() != source_dir.resolve():
-                    return install_dir
-            return None
-        except subprocess.CalledProcessError:
-            return None
-    else:
-        # Use 'which' command on Unix
-        try:
-            result = subprocess.run(
-                ["which", "portunix"],
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            install_dir = Path(result.stdout.strip()).parent
-            # Skip if it's the source/build directory
-            if install_dir.resolve() != source_dir.resolve():
-                return install_dir
-            return None
-        except subprocess.CalledProcessError:
-            return None
+    probe = ["where", "portunix"] if IS_WINDOWS else ["which", "portunix"]
+    try:
+        vlog(f"find_install_dir: running {' '.join(probe)} ...")
+        result = subprocess.run(
+            probe,
+            capture_output=True,
+            text=True,
+            check=True,
+            timeout=15,
+        )
+        vlog(f"find_install_dir: output:\n{result.stdout.strip()}")
+    except subprocess.CalledProcessError:
+        vlog("find_install_dir: probe returned non-zero (portunix not found)")
+        return None
+    except subprocess.TimeoutExpired:
+        vlog("find_install_dir: probe timed out")
+        return None
+
+    # Find first path that is NOT in the source/build directory
+    for path_str in result.stdout.strip().split("\n"):
+        path_str = path_str.strip()
+        if not path_str:
+            continue
+        install_dir = Path(path_str).parent
+        vlog(f"find_install_dir: candidate={install_dir}")
+        if install_dir.resolve() != source_dir.resolve():
+            vlog(f"find_install_dir: selected={install_dir}")
+            return install_dir
+
+    vlog("find_install_dir: no candidate outside source dir")
+    return None
 
 
 def get_binary_extension():
     """Get platform-specific binary extension."""
-    return ".exe" if platform.system() == "Windows" else ""
+    return ".exe" if IS_WINDOWS else ""
 
 
 def get_binaries(source_dir: Path):
@@ -82,9 +96,7 @@ def get_binaries(source_dir: Path):
 
 def copy_with_sudo(src: Path, dest: Path):
     """Copy file, using sudo if needed on Unix."""
-    system = platform.system()
-
-    if system == "Windows":
+    if IS_WINDOWS:
         shutil.copy2(src, dest)
     else:
         # Check if we have write permission
@@ -103,25 +115,29 @@ def deploy(source_dir: Path, install_dir: Path):
         print(f"Expected binaries in: {source_dir}")
         return False
 
-    print(f"Deploying {len(binaries)} binaries to {install_dir}")
+    print(f"Deploying {len(binaries)} binaries to {install_dir}", flush=True)
 
     for binary in binaries:
         dest = install_dir / binary.name
-        print(f"  {binary.name} -> {dest}")
+        print(f"  {binary.name} -> {dest}", flush=True)
+        if VERBOSE:
+            src_size = binary.stat().st_size if binary.exists() else -1
+            dst_exists = dest.exists()
+            vlog(f"copy start: {binary.name} ({src_size} bytes), dest exists={dst_exists}")
+        started = time.monotonic()
         try:
             copy_with_sudo(binary, dest)
         except Exception as e:
-            print(f"  Error copying {binary.name}: {e}")
+            print(f"  Error copying {binary.name}: {e}", flush=True)
             return False
+        vlog(f"copy done: {binary.name} in {time.monotonic() - started:.2f}s")
 
     return True
 
 
 def run_install_script(source_dir: Path):
     """Run installation script for first-time install."""
-    system = platform.system()
-
-    if system == "Windows":
+    if IS_WINDOWS:
         script = source_dir / "scripts" / "install.ps1"
         if script.exists():
             print(f"Running install script: {script}")
@@ -141,15 +157,38 @@ def run_install_script(source_dir: Path):
     return True
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description="Deploy locally built Portunix binaries to the system installation directory."
+    )
+    parser.add_argument(
+        "source_dir",
+        nargs="?",
+        default=None,
+        help="Source directory holding the built binaries (default: current directory)",
+    )
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Print detailed step-by-step diagnostics",
+    )
+    return parser.parse_args()
+
+
 def main():
-    # Determine source directory (where this script is run from)
-    source_dir = Path.cwd()
+    global VERBOSE
+    args = parse_args()
+    VERBOSE = args.verbose
 
-    # Allow override via command line argument
-    if len(sys.argv) > 1:
-        source_dir = Path(sys.argv[1])
+    print("=== deploy-local: deploying pre-built Portunix binaries ===", flush=True)
 
-    print(f"Source directory: {source_dir}")
+    # Determine source directory (where this script is run from, or explicit arg)
+    source_dir = Path(args.source_dir) if args.source_dir else Path.cwd()
+    vlog(f"main: source_dir={source_dir}")
+    vlog(f"main: sys.platform={sys.platform}, python={sys.version.split()[0]}")
+
+    print(f"Source directory: {source_dir}", flush=True)
 
     # Find existing installation (excluding source directory)
     install_dir = find_install_dir(source_dir)
@@ -159,31 +198,33 @@ def main():
         print("Running first-time installation...")
         if run_install_script(source_dir):
             # After install, find the new install directory
-            install_dir = find_install_dir()
+            install_dir = find_install_dir(source_dir)
             if install_dir:
                 print(f"Installed to: {install_dir}")
             else:
                 print("Installation completed but could not verify install path.")
         return
 
-    print(f"Found existing installation: {install_dir}")
+    print(f"Found existing installation: {install_dir}", flush=True)
 
     # Deploy binaries
     if deploy(source_dir, install_dir):
-        print("Deployment successful!")
+        print("Deployment successful!", flush=True)
 
         # Show version
         ext = get_binary_extension()
         portunix_path = install_dir / f"portunix{ext}"
+        vlog(f"main: verifying version via {portunix_path} version")
         try:
             result = subprocess.run(
                 [str(portunix_path), "version"],
                 capture_output=True,
-                text=True
+                text=True,
+                timeout=15,
             )
-            print(f"\nInstalled version:\n{result.stdout.strip()}")
-        except Exception:
-            pass
+            print(f"\nInstalled version:\n{result.stdout.strip()}", flush=True)
+        except Exception as e:
+            print(f"(version check skipped: {e})", flush=True)
     else:
         print("Deployment failed!")
         sys.exit(1)

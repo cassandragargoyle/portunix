@@ -7,6 +7,7 @@ package engine
 import (
 	"bufio"
 	"embed"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -247,6 +248,38 @@ func (i *Installer) ResolveVersion(packageName, version string) (string, error) 
 		version, packageName, currentOS, strings.Join(available, ", "))
 }
 
+// elevateInstall re-launches the current `portunix install …` command with
+// elevated privileges to satisfy a requiresAdmin variant, then returns. The
+// elevated child detects IsAdmin()==true (see decideElevation) and installs
+// directly — no second prompt, no loop. On Windows it raises a single UAC
+// prompt; on Linux/macOS it re-execs under sudo. When the user declines UAC
+// (or sudo is unavailable) it surfaces an actionable fallback message.
+func (i *Installer) elevateInstall(options *InstallOptions) error {
+	if runtime.GOOS == "windows" {
+		fmt.Println("🔐 This installation requires Administrator privileges.")
+		fmt.Println("   A UAC prompt will appear — please click Yes to continue.")
+		fmt.Println("   Note: installation output appears in the elevated window.")
+	} else {
+		fmt.Println("🔐 This installation requires root privileges — elevating via sudo...")
+	}
+
+	err := reExecElevated(os.Args[1:])
+	if err == nil {
+		return nil
+	}
+	if errors.Is(err, errUACDeclined) {
+		return fmt.Errorf("❌ UAC elevation was declined.\n"+
+			"   Installing '%s' requires Administrator privileges.\n"+
+			"   Please re-run the command and approve the UAC prompt,\n"+
+			"   or run Portunix from an elevated PowerShell or cmd.", options.PackageName)
+	}
+	if errors.Is(err, errSudoMissing) {
+		return fmt.Errorf("❌ This installation requires root privileges, but sudo was not found.\n"+
+			"   Please re-run as root:  sudo %s", strings.Join(os.Args, " "))
+	}
+	return fmt.Errorf("elevation failed: %w", err)
+}
+
 // Install installs a package with the given options
 func (i *Installer) Install(options *InstallOptions) error {
 	fmt.Printf("\n🔧 Installing package: %s\n", options.PackageName)
@@ -296,12 +329,15 @@ func (i *Installer) Install(options *InstallOptions) error {
 
 	fmt.Printf("🎯 Variant: %s (version: %s)\n", variant, variantSpec.Version)
 
-	// Check if admin/root privileges are required
-	if variantSpec.RequiresAdmin && !IsAdmin() {
-		if runtime.GOOS == "windows" {
-			return fmt.Errorf("❌ This installation requires Administrator privileges.\n   Please run PowerShell as Administrator and try again")
+	// Check if admin/root privileges are required. Rather than failing when the
+	// current process is not elevated, request elevation on-demand for this
+	// exact command (issue #189): re-launch the same `portunix install …`
+	// invocation under UAC (Windows) / sudo (Linux/macOS). dry-run always
+	// proceeds in-process below so the plan can be previewed without a prompt.
+	if variantSpec.RequiresAdmin {
+		if decideElevation(options.DryRun, IsAdmin()) == elevationUAC {
+			return i.elevateInstall(options)
 		}
-		return fmt.Errorf("❌ This installation requires root privileges.\n   Please run with sudo and try again")
 	}
 
 	// Determine effective installation type:

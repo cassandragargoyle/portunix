@@ -255,6 +255,12 @@ go mod init portunix.ai/portunix/src/helpers/ptx-newfeature
 
 ## Testing
 
+> **Note**: `make test` discovers all Go modules in the repository dynamically
+> (every `go.mod` outside `docs/` and `docs-site/`), so unit tests of a new
+> helper module run automatically — no Makefile changes needed. The same
+> applies to `make test-unit`, `test-coverage`, `test-coverage-ci`, and
+> `test-report` (Issue #194).
+
 ### Unit Testing
 
 Create tests in the same directory as your helper:

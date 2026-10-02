@@ -1117,6 +1117,48 @@ def log_and_monitor(method_name: str):
 
 ```
 
+## Distributing Bytecode-Only Wheels (Pinned Python Version)
+
+When a plugin is distributed as a **bytecode-only wheel** (source `.py` stripped,
+only `.pyc` shipped), the CPython bytecode is tied to a specific **minor** version:
+a `.pyc` compiled with 3.13 loads only on 3.13.x. The `py3-none-any` wheel tag
+claims "any Python 3", which is not true for such a wheel.
+
+To make activation resilient on every host, declare the exact interpreter version
+the wheel was built with in `plugin.json`:
+
+```json
+{
+  "plugin": {
+    "runtime": "python",
+    "wheel": "my_plugin-1.0.0-py3-none-any.whl",
+    "python_version": "3.13"
+  }
+}
+```
+
+Behavior of the field:
+
+- **`python_version`** — the *exact* interpreter minor the bytecode requires
+  (e.g. `"3.13"`). Distinct from `python_min_version`, which is only a
+  compatibility floor.
+- When [uv](https://docs.astral.sh/uv/) is available, Portunix creates the plugin
+  venv with `uv venv --python <python_version>`, which **auto-provisions** the
+  matching CPython (downloads a managed build if the host lacks it) — so the venv
+  always matches the wheel's bytecode.
+- Without uv, Portunix falls back to the host `python3`, but verifies its minor
+  matches `python_version`. On mismatch the install **fails with a clear message**
+  (offering `portunix install uv`) instead of crashing later at runtime with
+  `ImportError: bad magic number`.
+- Plugins that do **not** set `python_version` keep the previous behavior (venv
+  created with whatever `python3` is on PATH).
+
+Pin the same version on the build side (e.g. a `.python-version` file) so the
+wheel's bytecode is compiled with that interpreter and build/runtime always match.
+The canonical field definition lives in the
+[`plugin-manifest.schema.json`](https://cassandragargoyle.org/schemas/plugin-manifest.schema.json)
+contract.
+
 ## Next Steps
 
 - Study the [template code](template/) for a complete example

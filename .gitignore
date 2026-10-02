@@ -15,6 +15,12 @@ ptx-*.exe
 src/helpers/ptx-*/ptx-*
 src/helpers/ptx-*/ptx-*.exe
 
+# ...but DO track ptx-installer's Windows resource files (committed safety net):
+# the binary name contains "installer", so it needs an embedded asInvoker
+# manifest or Windows auto-elevates it via installer-detection.
+!src/helpers/ptx-installer/ptx-installer.exe.manifest
+!src/helpers/ptx-installer/ptx-installer.syso
+
 # Distribution / build outputs
 /dist/
 /bin/
@@ -33,6 +39,8 @@ __debug_bin*
 # Go coverage + test outputs
 coverage.out
 coverage.html
+coverage.mod.out
+coverage/
 test/results/
 test/logs/
 test/tmp/
@@ -97,6 +105,9 @@ docs-site/.hugo_build.lock
 # Translation files (regenerated on demand)
 .translated/
 
+# Visual prospectus scratch output (regenerated on demand)
+.visual-prospectus/
+
 # =============================================================================
 # Secrets — NEVER commit (Issue #165, ADR-042)
 # =============================================================================
@@ -104,3 +115,5 @@ docs-site/.hugo_build.lock
 *.pem
 private.key
 secrets/
+.claude/skills/capability-registry/Thumbs.db
+portunix.exe~

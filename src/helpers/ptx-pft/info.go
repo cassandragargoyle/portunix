@@ -123,6 +123,7 @@ Flow: Verbatim -> Reworded Need -> Customer Requirement -> Quality Characteristi
 			{Command: "pull", Description: "Pull from external system"},
 			{Command: "push", Description: "Push to external system"},
 			{Command: "list", Description: "List feedback items"},
+			{Command: "graph", Description: "Build node-graph JSON (graphlens contract); --view to render"},
 			{Command: "category", Description: "Manage categories"},
 			{Command: "user", Description: "Manage user registry"},
 			{Command: "notify", Description: "Send notifications"},

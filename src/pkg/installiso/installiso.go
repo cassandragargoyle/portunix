@@ -275,7 +275,10 @@ func (i *ISOInstaller) downloadFile(filepath string, url string) error {
 		for {
 			select {
 			case <-ticker.C:
-				fi, _ := out.Stat()
+				fi, statErr := out.Stat()
+				if statErr != nil {
+					continue
+				}
 				if fileSize > 0 {
 					percent := float64(fi.Size()) / float64(fileSize) * 100
 					fmt.Printf("\rDownloading... %.1f%% (%.2f MB / %.2f MB)",
@@ -352,49 +355,6 @@ func (i *ISOInstaller) handleManualDownload(pkg *ISOPackage, variant *ISOVariant
 	return "", fmt.Errorf("manual download required")
 }
 
-// followMicrosoftRedirect follows Microsoft fwlink redirects to get actual download URLs
-func (i *ISOInstaller) followMicrosoftRedirect(fwlinkURL string) (string, error) {
-	client := &http.Client{
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			// Don't follow redirects automatically, we want to capture them
-			return http.ErrUseLastResponse
-		},
-		Timeout: 30 * time.Second,
-	}
-
-	// Create request with proper headers to avoid detection
-	req, err := http.NewRequest("HEAD", fwlinkURL, nil)
-	if err != nil {
-		return "", err
-	}
-
-	// Add headers to mimic a real browser
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-	req.Header.Set("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8")
-	req.Header.Set("Accept-Language", "en-US,en;q=0.9")
-	req.Header.Set("Accept-Encoding", "gzip, deflate, br")
-	req.Header.Set("DNT", "1")
-	req.Header.Set("Connection", "keep-alive")
-	req.Header.Set("Upgrade-Insecure-Requests", "1")
-
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	// Check if we got a redirect
-	if resp.StatusCode >= 300 && resp.StatusCode < 400 {
-		location := resp.Header.Get("Location")
-		if location != "" {
-			fmt.Printf("🔗 Following Microsoft redirect to: %s\n", location)
-			return location, nil
-		}
-	}
-
-	return "", fmt.Errorf("no redirect found for %s", fwlinkURL)
-}
-
 // downloadWindowsISO handles Windows ISO downloads with proper user-agent and methodology
 func (i *ISOInstaller) downloadWindowsISO(pkg *ISOPackage, variant *ISOVariant, baseURL string) (string, error) {
 	// Use cache dir
@@ -424,9 +384,9 @@ func (i *ISOInstaller) downloadWindowsISO(pkg *ISOPackage, variant *ISOVariant, 
 	var err error
 
 	if i.OSType == "windows11" {
-		downloadURL, err = i.getWindows11DirectURL(baseURL)
+		downloadURL, err = i.getWindows11DirectURL()
 	} else if i.OSType == "windows10" {
-		downloadURL, err = i.getWindows10DirectURL(baseURL)
+		downloadURL, err = i.getWindows10DirectURL()
 	}
 
 	if err != nil || downloadURL == "" {
@@ -451,7 +411,7 @@ func (i *ISOInstaller) downloadWindowsISO(pkg *ISOPackage, variant *ISOVariant, 
 }
 
 // getWindows11DirectURL gets Windows 11 ISO URL using browser simulation
-func (i *ISOInstaller) getWindows11DirectURL(baseURL string) (string, error) {
+func (i *ISOInstaller) getWindows11DirectURL() (string, error) {
 	// For Windows 11, try to get the ISO download page with mobile user-agent
 	client := &http.Client{Timeout: 30 * time.Second}
 
@@ -497,7 +457,7 @@ func (i *ISOInstaller) getWindows11DirectURL(baseURL string) (string, error) {
 }
 
 // getWindows10DirectURL gets Windows 10 ISO using proven user-agent method
-func (i *ISOInstaller) getWindows10DirectURL(baseURL string) (string, error) {
+func (i *ISOInstaller) getWindows10DirectURL() (string, error) {
 	client := &http.Client{Timeout: 30 * time.Second}
 
 	// This method is proven to work for Windows 10
@@ -601,7 +561,10 @@ func (i *ISOInstaller) downloadFileWithHeaders(filepath, url string) error {
 		for {
 			select {
 			case <-ticker.C:
-				fi, _ := out.Stat()
+				fi, statErr := out.Stat()
+				if statErr != nil {
+					continue
+				}
 				percent := float64(fi.Size()) / float64(fileSize) * 100
 				fmt.Printf("\rDownloading... %.1f%% (%.2f MB / %.2f MB)",
 					percent,
@@ -631,6 +594,9 @@ func GetAssetsPath() string {
 	}
 
 	// Fallback to current directory
-	assetsPath, _ := filepath.Abs("assets")
+	assetsPath, err := filepath.Abs("assets")
+	if err != nil {
+		return "assets"
+	}
 	return assetsPath
 }

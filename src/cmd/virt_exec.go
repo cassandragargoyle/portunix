@@ -180,7 +180,8 @@ func handleConflictResolution(cmd *cobra.Command, unloadKVM, blacklistKVM, useKV
 	}
 
 	fmt.Println("\n💡 Recommendation:", conflict.Recommendation)
-	fmt.Println("════════════════════════════════════════════════════════════\n")
+	fmt.Println("════════════════════════════════════════════════════════════")
+	fmt.Println()
 
 	// If specific action flags are set, execute them
 	if unloadKVM {

@@ -27,7 +27,8 @@ func (s *Server) handleInitialize(params json.RawMessage) (interface{}, error) {
 	return map[string]interface{}{
 		"protocolVersion": "2024-11-05",
 		"capabilities": map[string]interface{}{
-			"tools": map[string]interface{}{},
+			"tools":     map[string]interface{}{},
+			"resources": map[string]interface{}{},
 		},
 		"serverInfo": map[string]interface{}{
 			"name":    version.ProductName,
@@ -703,6 +704,9 @@ func (s *Server) handleToolsList(params json.RawMessage) (interface{}, error) {
 		},
 	}
 
+	// PTX-PFT Feedback Tools (Issue #111)
+	tools = append(tools, pftToolDefinitions()...)
+
 	return map[string]interface{}{
 		"tools": tools,
 	}, nil
@@ -811,7 +815,12 @@ func (s *Server) handleToolsCall(params json.RawMessage) (interface{}, error) {
 	case "trace_query":
 		result, err = s.handleTraceQuery(request.Arguments)
 	default:
-		err = fmt.Errorf("unknown tool: %s", request.Name)
+		// PTX-PFT Feedback Tools (Issue #111)
+		if strings.HasPrefix(request.Name, "pft_") {
+			result, err = s.handlePftToolCall(request.Name, request.Arguments)
+		} else {
+			err = fmt.Errorf("unknown tool: %s", request.Name)
+		}
 	}
 
 	if err != nil {

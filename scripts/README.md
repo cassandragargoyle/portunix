@@ -39,7 +39,7 @@ review on GitHub.
 | `github-01-preflight-check.sh` | Pre-flight: private files, sensitive patterns, binaries, size checks. Run before every sync to catch leaks. |
 | `github-02-sync-publish.py` | Main publish script. Clones GitHub by URL into `../portunix-github-sync/`, syncs files from the Gitea working tree, applies dual-README rename, creates a feature branch, and pushes it. PR is then opened on GitHub. |
 
-**When to use:** the `/cs:deploy-github` workflow, scheduled releases,
+**When to use:** the `/deploy-github` workflow, scheduled releases,
 any normal change publication.
 
 **Important:** this path must never register the `github` remote on

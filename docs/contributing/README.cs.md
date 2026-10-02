@@ -100,5 +100,4 @@ závazná je vždy anglická verze.
 
 ---
 
-**Poznámka**: Portunix je vydáván pod licencí MIT. Pravidla pro přispěvatele se vztahují
-na všechny přispěvatele veřejného repozitáře.
+**Poznámka**: Portunix je vydáván pod licencí MIT. Pravidla pro přispěvatele se vztahují na všechny přispěvatele veřejného repozitáře.

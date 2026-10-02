@@ -75,6 +75,110 @@ This will:
 | `pft destroy` | Remove feedback tool instance |
 | `pft sync` | Bidirectional sync (Phase 4) |
 | `pft list` | List feedback items (Phase 3) |
+| `pft graph` | Build a node-graph (graphlens JSON) from the project |
+| `pft graph --view` | Build and open the graph via the graphlens plugin |
+| `pft ideas` | Opportunity Management v2 — author a `.venture` workspace |
+
+## Graph Visualization
+
+`pft graph` turns a PFT project into a node-graph following the graphlens JSON
+contract (`meta` + `nodes` + `links`). Voices become `voice` nodes; hub nodes
+(tags, author, or domains) group them; `[[wikilink]]` / `related` frontmatter
+cross-references become `rel: "related"` links.
+
+```bash
+# Build only — write the graph JSON
+portunix pft graph --path <project-dir> --out graph.json
+
+# Choose what the central hub nodes represent (default: tags)
+portunix pft graph --path <project-dir> --hub tags
+portunix pft graph --path <project-dir> --hub author
+portunix pft graph --path <project-dir> --hub domains
+
+# Build and view in the browser via the graphlens plugin
+portunix pft graph --path <project-dir> --view
+portunix pft graph --path <project-dir> --view --port 8080 --no-open
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `--path <dir>` | PFT project root (overrides config) |
+| `--out <file>` | Output JSON path (default `graph.json` in the project dir) |
+| `--hub <tags\|author\|domains>` | What the hub nodes represent (default `tags`) |
+| `--view` | After building, open the graph via `portunix graphlens view` |
+| `--port <n>` / `--no-open` | Forwarded to `graphlens view` when `--view` is used |
+
+The graph JSON is always written first, so it remains usable even when the
+graphlens plugin is not installed — the command then prints an install hint
+(`portunix plugin install graphlens`) instead of failing. See
+[portunix-plugins #086 / ADR-022](../../../docs/adr/) for the viewer and the
+JSON contract.
+
+## Opportunity Management v2 — `pft ideas` (Venture model)
+
+`pft ideas` authors a self-contained, git-tracked **`.venture`** workspace and
+computes derived views (graphs, story-point / complexity rollups). It is
+functionally separate from the feedback-tool sync above and validates every
+write against the api #015 contract schemas. Extends #196; implemented directly
+at v2 per [#198](../../../docs/issues/internal/done/198-ptx-pft-ideas-venture-model-v2.md).
+
+The model has two spines:
+
+- **Discovery / strategy** — Venture → Initiative → **Idea**. An idea is
+  product-agnostic and carries a coarse t-shirt **`complexity`** (`xs|s|m|l|xl`),
+  never story points.
+- **Delivery** — Team/Project → Epic → **Use-Case**. A use-case is bound to one
+  **product**, `implements` one or more ideas, and is where real **`storyPoints`**
+  live (planning-poker `estimate`).
+
+Entities are referenced by **slug** (the slug is stored verbatim as the id).
+
+### Storage layout (`<name>.venture/`, v2.1)
+
+```text
+<name>.venture/
+├── venture.json
+├── products/<slug>.product.json
+├── teams/<slug>.team.json
+├── initiatives/<slug>.initiative.json   # ideaRefs[]
+├── records/                             # ideas + use-cases pool
+│   ├── <slug>.opportunity.json          # Idea: complexity (no story points)
+│   ├── <slug>.usecase.json              # storyPoints, productRef, implementsIdeaRefs[]
+│   └── <slug>.estimation.json           # planning-poker history
+└── backlogs/                            # sibling of teams/, first-class
+    ├── <slug>.backlog.json              # kind (discovery|delivery), teamRef?, members
+    ├── <slug>.epic.json                 # backlogRef, initiativeRefs[], useCaseRefs[]
+    └── <slug>.glens.json                # derived GraphView projection
+```
+
+### Example
+
+```bash
+# Discovery spine
+portunix pft ideas new-venture ai-in-HR
+portunix pft ideas add-idea ocr-cv --title "OCR of CVs" --path ai-in-HR.venture
+portunix pft ideas complexity ocr-cv --set m --path ai-in-HR.venture
+portunix pft ideas add-initiative ai-in-hr --title "AI in HR" --path ai-in-HR.venture
+portunix pft ideas initiative-link ai-in-hr --idea ocr-cv --path ai-in-HR.venture
+
+# Delivery spine
+portunix pft ideas add-product pilot --name "Pilot" --path ai-in-HR.venture
+portunix pft ideas add-usecase reco-ocr --product pilot --implements ocr-cv --path ai-in-HR.venture
+portunix pft ideas estimate reco-ocr --by Zdenek --sp 8 --why "…" --path ai-in-HR.venture
+portunix pft ideas add-team platform --path ai-in-HR.venture
+portunix pft ideas new-backlog hr-delivery --kind delivery --team platform --path ai-in-HR.venture
+portunix pft ideas add-epic hr-ai --backlog hr-delivery --initiative ai-in-hr --path ai-in-HR.venture
+portunix pft ideas epic-link hr-ai --usecase reco-ocr --path ai-in-HR.venture
+
+# Derived views
+portunix pft ideas graph --scope discovery --path ai-in-HR.venture      # ideas + implements edges
+portunix pft ideas graph --backlog hr-delivery --view --path ai-in-HR.venture
+portunix pft ideas rollup --initiative ai-in-hr --path ai-in-HR.venture  # Σ SP + Σ complexity
+portunix pft ideas list --path ai-in-HR.venture
+```
+
+Run `portunix pft ideas --help` for the full command reference. Migrate a v1
+`.discovery` directory with `portunix pft ideas migrate <name>.discovery`.
 
 ## Configuration
 
