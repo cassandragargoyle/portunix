@@ -175,7 +175,7 @@ func extractTarReader(r io.Reader, destDir string) error {
 			}
 
 			// Extract file (mask Mode to permission+special bits so it fits in uint32 / FileMode)
-			outFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode&0o7777))
+			outFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode&0o7777)) //nolint:gosec // G115: masked to 0o7777, always fits in uint32
 			if err != nil {
 				return err
 			}
