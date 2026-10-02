@@ -27,6 +27,11 @@ for f in "$PKG_DIR"/*.json; do
     fail=$((fail + 1))
     continue
   fi
+  # Bundles only aggregate other packages and have no upstream of their own
+  kind=$(jq -r '.kind // empty' "$f")
+  if [[ "$kind" == "Bundle" ]]; then
+    continue
+  fi
   install_url=$(jq -r '.metadata.installationDocsUrl // empty' "$f")
   version_url=$(jq -r '.metadata.latestVersionUrl // empty' "$f")
   if [[ -z "$install_url" ]]; then
