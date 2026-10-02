@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"portunix.ai/app/update"
 )
@@ -19,8 +20,40 @@ type Options struct {
 	Silent       bool
 }
 
+// mainBinaryName returns the installed main-binary filename for the current OS.
+func mainBinaryName() string {
+	if runtime.GOOS == "windows" {
+		return "portunix.exe"
+	}
+	return "portunix"
+}
+
+// NormalizeTargetPath resolves an install --path to a full binary file path.
+// Callers may pass either an install directory (e.g. "C:\Portunix",
+// "/usr/local/bin") or a full file path (e.g. "C:\Portunix\portunix.exe"). A
+// value whose base name is the main binary is used verbatim; anything else is
+// treated as the install directory and gets the binary name appended, so
+// os.Create writes a file instead of failing on / clobbering a directory.
+func NormalizeTargetPath(path string) string {
+	if path == "" {
+		return path
+	}
+	name := mainBinaryName()
+	base := filepath.Base(path)
+	// Windows filenames are case-insensitive; Unix are not.
+	isBinaryFile := base == name
+	if runtime.GOOS == "windows" {
+		isBinaryFile = strings.EqualFold(base, name)
+	}
+	if isBinaryFile {
+		return path
+	}
+	return filepath.Join(path, name)
+}
+
 // InstallSilent performs silent installation with provided options
 func InstallSilent(options Options) error {
+	options.TargetPath = NormalizeTargetPath(options.TargetPath)
 	fmt.Printf("Installing Portunix to %s...\n", options.TargetPath)
 
 	// Create target directory if it doesn't exist
@@ -79,6 +112,8 @@ func InstallInteractive(sourcePath string) error {
 		fmt.Println("Installation cancelled.")
 		return nil
 	}
+
+	targetPath = NormalizeTargetPath(targetPath)
 
 	// Check if target exists
 	if _, err := os.Stat(targetPath); err == nil {

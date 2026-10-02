@@ -1,3 +1,13 @@
+---
+title: Terminology Guide
+status: Active
+created: 2025-09-26
+updated: 2026-09-20
+author: CassandraGargoyle Team
+related:
+  - MARKDOWN-STYLE.md
+---
+
 # Python Code Style Guidelines
 
 ## Purpose

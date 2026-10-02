@@ -114,6 +114,12 @@ func ValidateManifest(manifest *PluginManifest) error {
 		}
 	}
 
+	if manifest.Plugin.PythonVersion != "" {
+		if manifest.Plugin.Runtime != "python" {
+			return fmt.Errorf("python_version can only be used with runtime: python")
+		}
+	}
+
 	// Validate port range (only required for gRPC service plugins)
 	if manifest.Plugin.Type == "grpc" {
 		if manifest.Plugin.Port < 9000 || manifest.Plugin.Port > 9999 {

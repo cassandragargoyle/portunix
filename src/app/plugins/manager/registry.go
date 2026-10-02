@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"portunix.ai/app/plugins"
+	"portunix.ai/portunix/src/pkg/platform"
 )
 
 // Registry manages the plugin registry file
@@ -547,12 +548,20 @@ func (r *Registry) GetPluginRegistryData(name string) (*RegistryPlugin, error) {
 	return plugin, nil
 }
 
-// BinaryPath returns the full path to the plugin binary
+// BinaryPath returns the full path to the plugin binary, resolving the
+// OS-specific executable suffix for native and Python wheel plugins
 func (rp *RegistryPlugin) BinaryPath() string {
-	if rp.Runtime == "python" && rp.Wheel != "" {
-		return venvExecPath(filepath.Join(rp.InstallPath, ".venv"), rp.BinaryName)
+	switch rp.Runtime {
+	case "java":
+		return filepath.Join(rp.InstallPath, rp.BinaryName)
+	case "python":
+		if rp.Wheel != "" {
+			return venvExecPath(filepath.Join(rp.InstallPath, ".venv"), rp.BinaryName)
+		}
+		return filepath.Join(rp.InstallPath, rp.BinaryName)
+	default: // native
+		return filepath.Join(rp.InstallPath, platform.ExecutableName(rp.BinaryName))
 	}
-	return filepath.Join(rp.InstallPath, rp.BinaryName)
 }
 
 // MatchedPlugin is a registry entry that matched a platform query, together

@@ -14,10 +14,7 @@ import (
 )
 
 func TestLoadDefaultConfig(t *testing.T) {
-	cfg, err := loadDefaultConfig()
-	if err != nil {
-		t.Fatalf("loadDefaultConfig() unexpected error: %v", err)
-	}
+	cfg := loadDefaultConfig()
 	if cfg == nil {
 		t.Fatal("loadDefaultConfig() returned nil config")
 	}

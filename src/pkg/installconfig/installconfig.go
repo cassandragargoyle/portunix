@@ -146,10 +146,7 @@ func (v *VariantConfig) GetDistributionsList() []string {
 // LoadInstallConfig loads the installation configuration from embedded assets and user config
 func LoadInstallConfig() (*InstallConfig, error) {
 	// Load default config from embedded assets
-	defaultConfig, err := loadDefaultConfig()
-	if err != nil {
-		return nil, fmt.Errorf("failed to load default config: %w", err)
-	}
+	defaultConfig := loadDefaultConfig()
 
 	// Try to load user config overlay
 	userConfig, err := loadUserConfig()
@@ -164,16 +161,14 @@ func LoadInstallConfig() (*InstallConfig, error) {
 }
 
 // loadDefaultConfig loads the default configuration from embedded assets
-func loadDefaultConfig() (*InstallConfig, error) {
+func loadDefaultConfig() *InstallConfig {
 	// Since the embedded install-packages.json was removed, create a minimal config.
 	// The registry-based system (LoadPackageRegistry) handles individual package files.
-	config := &InstallConfig{
+	return &InstallConfig{
 		Version:  "1.0",
 		Packages: make(map[string]PackageConfig),
 		Presets:  make(map[string]PresetConfig),
 	}
-
-	return config, nil
 }
 
 // loadUserConfig loads user configuration from ~/.portunix/install-config.json

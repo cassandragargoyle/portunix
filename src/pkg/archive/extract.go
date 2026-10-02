@@ -57,7 +57,7 @@ func ExtractZip(zipFile, destDir string) error {
 
 	// Extract files
 	for _, f := range r.File {
-		fpath := filepath.Join(destDir, f.Name)
+		fpath := filepath.Join(destDir, f.Name) //nolint:gosec // G305: ZipSlip check on the next line
 
 		// Check for ZipSlip vulnerability
 		if !strings.HasPrefix(fpath, filepath.Clean(destDir)+string(os.PathSeparator)) {
@@ -66,7 +66,9 @@ func ExtractZip(zipFile, destDir string) error {
 
 		if f.FileInfo().IsDir() {
 			// Create directory
-			os.MkdirAll(fpath, f.Mode())
+			if err := os.MkdirAll(fpath, f.Mode()); err != nil {
+				return err
+			}
 			continue
 		}
 
@@ -87,7 +89,7 @@ func ExtractZip(zipFile, destDir string) error {
 			return err
 		}
 
-		_, err = io.Copy(outFile, rc)
+		_, err = io.Copy(outFile, rc) //nolint:gosec // G110: archives are checksummed package distributions from the trusted registry
 		outFile.Close()
 		rc.Close()
 
@@ -153,7 +155,7 @@ func extractTarReader(r io.Reader, destDir string) error {
 			return fmt.Errorf("failed to read tar: %w", err)
 		}
 
-		target := filepath.Join(destDir, header.Name)
+		target := filepath.Join(destDir, header.Name) //nolint:gosec // G305: ZipSlip check on the next line
 
 		// Check for ZipSlip vulnerability
 		if !strings.HasPrefix(target, filepath.Clean(destDir)+string(os.PathSeparator)) {
@@ -172,13 +174,13 @@ func extractTarReader(r io.Reader, destDir string) error {
 				return err
 			}
 
-			// Extract file
-			outFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode))
+			// Extract file (mask Mode to permission+special bits so it fits in uint32 / FileMode)
+			outFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode&0o7777))
 			if err != nil {
 				return err
 			}
 
-			if _, err := io.Copy(outFile, tr); err != nil {
+			if _, err := io.Copy(outFile, tr); err != nil { //nolint:gosec // G110: archives are checksummed package distributions from the trusted registry
 				outFile.Close()
 				return err
 			}
@@ -234,7 +236,7 @@ func ExtractGzip(gzipFile, destDir string) error {
 	}
 	defer outFile.Close()
 
-	_, err = io.Copy(outFile, gzr)
+	_, err = io.Copy(outFile, gzr) //nolint:gosec // G110: archives are checksummed package distributions from the trusted registry
 	if err != nil {
 		return err
 	}

@@ -8,6 +8,7 @@ package platform
 import (
 	"os"
 	"runtime"
+	"strings"
 )
 
 // GetOS returns the normalized operating system identifier
@@ -75,6 +76,15 @@ func IsLinux() bool {
 // IsDarwin returns true if running on macOS
 func IsDarwin() bool {
 	return runtime.GOOS == "darwin"
+}
+
+// ExecutableName appends the OS-specific executable suffix (".exe" on
+// Windows) when the name does not end with it yet
+func ExecutableName(name string) string {
+	if name != "" && IsWindows() && !strings.HasSuffix(strings.ToLower(name), ".exe") {
+		return name + ".exe"
+	}
+	return name
 }
 
 // IsWindowsSandbox returns true if running in Windows Sandbox

@@ -203,43 +203,6 @@ func LoadPackageRegistry(assetsPath string) (*PackageRegistry, error) {
 	return registry, nil
 }
 
-// loadIndex loads the registry index
-func (r *PackageRegistry) loadIndex(indexPath string) error {
-	if _, err := os.Stat(indexPath); os.IsNotExist(err) {
-		// Index doesn't exist yet, create empty one
-		r.index = &RegistryIndex{
-			APIVersion: "v1",
-			Kind:       "PackageIndex",
-			Metadata: IndexMetadata{
-				Name:        "portunix-registry",
-				Version:     "1.0.0",
-				Description: "Portunix Package Registry Index",
-				Created:     time.Now(),
-			},
-			Spec: RegistryIndexSpec{
-				Packages:               []string{},
-				Categories:             []string{},
-				SupportedPlatforms:     []string{"windows", "linux", "darwin"},
-				SupportedArchitectures: []string{"amd64", "arm64", "386"},
-			},
-		}
-		return nil
-	}
-
-	data, err := os.ReadFile(indexPath)
-	if err != nil {
-		return err
-	}
-
-	var index RegistryIndex
-	if err := json.Unmarshal(data, &index); err != nil {
-		return fmt.Errorf("failed to parse registry index: %w", err)
-	}
-
-	r.index = &index
-	return nil
-}
-
 // loadCategories loads the categories
 func (r *PackageRegistry) loadCategories(categoriesPath string) error {
 	if _, err := os.Stat(categoriesPath); os.IsNotExist(err) {
@@ -426,7 +389,7 @@ func (r *PackageRegistry) validatePlatform(platformName string, platform *Platfo
 	}
 
 	for variantName, variant := range platform.Variants {
-		if err := r.validateVariant(variantName, &variant); err != nil {
+		if err := r.validateVariant(&variant); err != nil {
 			return fmt.Errorf("variant %s validation failed: %w", variantName, err)
 		}
 	}
@@ -435,7 +398,7 @@ func (r *PackageRegistry) validatePlatform(platformName string, platform *Platfo
 }
 
 // validateVariant validates a variant configuration
-func (r *PackageRegistry) validateVariant(variantName string, variant *VariantSpec) error {
+func (r *PackageRegistry) validateVariant(variant *VariantSpec) error {
 	if variant.Version == "" {
 		return fmt.Errorf("version is required")
 	}
@@ -613,10 +576,7 @@ func (r *PackageRegistry) ConvertToLegacyConfig() (*installconfig.InstallConfig,
 	}
 
 	for name, pkg := range r.packages {
-		legacyPkg, err := r.convertPackageToLegacy(pkg)
-		if err != nil {
-			return nil, fmt.Errorf("failed to convert package %s: %w", name, err)
-		}
+		legacyPkg := r.convertPackageToLegacy(pkg)
 		config.Packages[name] = *legacyPkg
 	}
 
@@ -624,7 +584,7 @@ func (r *PackageRegistry) ConvertToLegacyConfig() (*installconfig.InstallConfig,
 }
 
 // convertPackageToLegacy converts a new Package to legacy PackageConfig
-func (r *PackageRegistry) convertPackageToLegacy(pkg *Package) (*installconfig.PackageConfig, error) {
+func (r *PackageRegistry) convertPackageToLegacy(pkg *Package) *installconfig.PackageConfig {
 	legacyPkg := &installconfig.PackageConfig{
 		Name:        pkg.Metadata.Name,
 		Description: pkg.Metadata.Description,
@@ -691,7 +651,7 @@ func (r *PackageRegistry) convertPackageToLegacy(pkg *Package) (*installconfig.P
 		legacyPkg.Platforms[platformName] = legacyPlatform
 	}
 
-	return legacyPkg, nil
+	return legacyPkg
 }
 
 // SavePackage saves a package to the registry

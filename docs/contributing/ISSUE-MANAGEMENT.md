@@ -6,7 +6,7 @@ applies_to:
   - docs/issues/README.md
 type: contributing-guide
 status: active
-last_updated: 2026-05-08
+last_updated: 2026-09-28
 ---
 
 # Issue Management Guidelines
@@ -122,6 +122,13 @@ workflows for issue creation and ensures proper synchronization between internal
 ## Public Summary
 [What can be shared publicly - use for GitHub issue creation]
 ```
+
+#### Formatting Rules
+
+- **No icons or emoji** in issue files: not in headings (`## Priority`, not `## 🎯 Priority`), not in the
+  `Status` field (`Open`, not `📋 Open`), and not in the issue row in `docs/issues/README.md`
+- Older issues using emoji headings are legacy style — do not copy it into new issues
+- Exception: quoted literal program output stays verbatim (e.g. `Status: ❌ Unhealthy` from a CLI command)
 
 **Benefits of Dual-Track Model**:
 

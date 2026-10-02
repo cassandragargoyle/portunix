@@ -203,6 +203,7 @@ type PluginBinaryConfig struct {
 	Wheel               string        `json:"wheel,omitempty"`              // Python wheel filename (.whl)
 	ExtraWheels         []string      `json:"extra_wheels,omitempty"`       // Additional wheel files (glob patterns)
 	PythonMinVersion    string        `json:"python_min_version,omitempty"` // Minimum required Python version
+	PythonVersion       string        `json:"python_version,omitempty"`     // Exact interpreter minor for bytecode wheels, e.g. "3.13"
 	Interfaces          []string      `json:"interfaces,omitempty"`         // e.g. ["cli", "grpc"]
 	Port                int           `json:"port"`
 	HealthCheckInterval time.Duration `json:"health_check_interval"`

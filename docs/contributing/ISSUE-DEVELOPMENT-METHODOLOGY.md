@@ -1,3 +1,18 @@
+---
+title: Issue Development Methodology
+description: Mandatory issue development workflow — roles, phases, feature-branch rules, acceptance protocols, and container-based installation testing. Apply when planning, implementing, testing, or merging an issue.
+category: methodology
+ai_load: scoped
+status: active
+language: en
+created: 2025-09-11
+last_updated: 2026-07-04
+related:
+  - ISSUE-MANAGEMENT.md
+  - TESTING_METHODOLOGY.md
+  - GIT-WORKFLOW.md
+---
+
 # Issue Development Methodology
 
 ## Overview
@@ -359,9 +374,3 @@ portunix docker run ubuntu
 3. **Risk Reduction**: No untested code reaches main branch
 4. **Team Coordination**: Clear roles and responsibilities
 5. **Documentation**: Comprehensive testing records for future reference
-
----
-
-**Last Updated**: 2025-09-11
-**Version**: 1.0
-**Status**: Active

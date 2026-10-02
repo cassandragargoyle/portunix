@@ -590,7 +590,8 @@ func displayVenvsGrouped(venvs []*VenvInfo) {
 		grouped[venv.PythonVersion] = append(grouped[venv.PythonVersion], venv)
 	}
 
-	fmt.Println("Virtual Environments grouped by Python version:\n")
+	fmt.Println("Virtual Environments grouped by Python version:")
+	fmt.Println()
 	for version, venvList := range grouped {
 		fmt.Printf("Python %s (%d environment(s)):\n", version, len(venvList))
 		for _, venv := range venvList {

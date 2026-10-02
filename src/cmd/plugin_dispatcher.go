@@ -123,8 +123,8 @@ func executePlugin(plugin *manager.RegistryPlugin, args []string) error {
 		return fmt.Errorf("plugin '%s' is not enabled. Enable it with: portunix plugin enable %s", plugin.Name, plugin.Name)
 	}
 
-	// Build binary path
-	binaryPath := filepath.Join(freshPlugin.InstallPath, freshPlugin.BinaryName)
+	// Resolve binary path (OS-specific suffix, venv location for wheels)
+	binaryPath := freshPlugin.BinaryPath()
 
 	// Determine runtime and build command
 	pluginRuntime := freshPlugin.Runtime
@@ -139,9 +139,8 @@ func executePlugin(plugin *manager.RegistryPlugin, args []string) error {
 		cmd = buildJavaCommand(binaryPath, freshPlugin.JVMArgs, args)
 	case "python":
 		if freshPlugin.Wheel != "" {
-			// Wheel plugin: entry point script is in .venv/bin/
-			venvBinary := filepath.Join(freshPlugin.InstallPath, ".venv", venvBinDir(), freshPlugin.BinaryName)
-			cmd = buildNativeCommand(venvBinary, args)
+			// Wheel plugin: entry point script is in the venv
+			cmd = buildNativeCommand(binaryPath, args)
 		} else {
 			cmd = buildPythonCommand(binaryPath, args)
 		}
@@ -237,14 +236,6 @@ func buildPythonCommand(scriptPath string, pluginArgs []string) *exec.Cmd {
 // buildNativeCommand builds command for native plugin
 func buildNativeCommand(binaryPath string, pluginArgs []string) *exec.Cmd {
 	return exec.Command(binaryPath, pluginArgs...)
-}
-
-// venvBinDir returns the venv binary directory name (platform-dependent)
-func venvBinDir() string {
-	if runtime.GOOS == "windows" {
-		return "Scripts"
-	}
-	return "bin"
 }
 
 // GetPluginNames returns list of registered plugin names (for help/completion)

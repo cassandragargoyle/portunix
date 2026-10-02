@@ -5,6 +5,85 @@ Všechny významné změny v Portunixu jsou dokumentovány v tomto souboru.
 Formát vychází z [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 a projekt dodržuje [Sémantické verzování](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2026-10-02
+
+### Přidáno ve 2.5.1
+
+- **PTX-PFT `pft ideas` v2 — model Venture** (Issue #198) — nová skupina příkazů `pft ideas` postavená na
+  dvoupáteřním modelu `.venture` (Initiative / Idea / Use-Case / Epic / Team / Product) s agregací odhadů,
+  discovery a delivery backlogy, pohledy graphlens a pomocníkem pro migraci v1 → v2.
+- **Detekce externího kontejneru `ollama` v aiops** (Issue #193) — `aiops ollama container status` rozpozná
+  a spravuje již existující kontejner `ollama` místo hlášení, že chybí.
+- **`make test` pro všechny moduly** (Issue #194) — `make test` nyní spouští testy všech Go modulů
+  (helpery, `src/app`, `src/cmd`), nejen kořenového modulu.
+
+### Opraveno ve 2.5.1
+
+- **Cesta k binárce pluginu na Windows** (Issue #199) — manifest pluginu deklaruje binárku bez přípony, takže
+  `portunix plugin health` na Windows hlásil všechny nativní helper pluginy jako nezdravé (`os.Stat` na
+  `ptx-name` místo `ptx-name.exe`). Řešení cesty je nyní centralizováno v `RegistryPlugin.BinaryPath()`
+  s využitím nové funkce `platform.ExecutableName()` (ADR-026) a sdílí ho health check, gRPC konfigurace pluginu
+  i dispatcher pluginů; explicitní názvy s `.exe` se nezdvojují.
+- **`install-self --path` s adresářem** (Issue #197) — předání adresáře již nepoškodí instalaci; cesta se
+  normalizuje a přijímá adresář i soubor.
+- **`build-version` / `build-release` na Windows** — make recepty již neselhávají pod `cmd.exe`; kontrola verze
+  používá syntaxi cmd a `build-with-version.sh` se spouští přes bash přibalený ke Gitu.
+
+### Změněno ve 2.5.1
+
+- **Generování Windows resources** — podpora v Makefile pro generování Windows resource souborů
+  (`portunix.syso`) na Windows hostech.
+
+## [2.5.0] - 2026-07-04
+
+### Přidáno ve 2.5.0
+
+- **Pevně daný Python interpret pro plugin wheely obsahující jen bytecode** (Issue #192) — pluginy mohou deklarovat
+  `plugin.python_version` (přesná minor verze, např. `"3.13"`); venv pluginu se pak vytvoří s tímto interpretem
+  přes uv, které spravovaný CPython automaticky stáhne, pokud ho hostitel nemá. Wheely obsahující jen bytecode
+  již za běhu neselhávají s `ImportError: bad magic number` na hostech, kde se minor verze `python3` liší.
+  Bez uv se instalace vrací k systémovému `python3` a při neshodě minor verze selže se srozumitelnou zprávou
+  místo pozdějšího pádu; pluginy bez tohoto pole se chovají jako dříve.
+- **PTX-PFT build a vizualizace grafu** (Issues #111, #191) — příkaz `portunix pft graph` pro vizualizaci
+  v graphlens a integrace MCP nástrojů a resources pro PTX-PFT.
+- **Zvýšení oprávnění na vyžádání pro jednotlivé instalační příkazy** (Issue #189) — elevace se vyžaduje
+  pro konkrétní příkaz místo vložení `requireAdministrator` do manifestu EXE.
+
+### Opraveno ve 2.5.0
+
+- **Elevace při spuštění ptx-installer** (Issue #189) — do `ptx-installer.exe` je vložen manifest `asInvoker`,
+  takže při startu již nevynucuje UAC elevaci.
+- **`deploy-local` / `help` na Windows** — opraveno multiplatformní chování a zjednodušeny skripty
+  `deploy-local` / `undeploy-local`.
+
+## [2.4.1] - 2026-05-29
+
+### Přidáno ve 2.4.1
+
+- **Instalace a detekce AI asistentů** (Issue #035) — typ balíčku `Bundle` s bundly `ai-assistant-basic` /
+  `ai-assistant-full` / `mcp-ready`; `portunix package detect` (tabulka + `--json`) hlásící stav instalace a verzi;
+  `portunix install --recommend-ai` pro výpis a instalaci chybějících asistentů; hook automatických závislostí
+  v `mcp init` s `--install-missing`; volba verze přes `portunix install <pkg> --version <v>`; podpora instalace
+  `claude-desktop` a `gemini-cli` na macOS.
+- **Capability Registry** — metodika, zavedení infrastruktury registru a záznamy produktu, capabilities
+  a operací Portunixu (s českým překladem).
+- **Šablony pro vývoj MCP pluginů** (Issue #033) — šablony pluginů a návody pro AI agenty v Javě, JavaScriptu a Rustu.
+- **Expanze placeholderů v `PATH_APPEND`** (Issue #187, fáze 2) — v položkách `PATH_APPEND` se expandují
+  `${install_path}` a `${extract_to}`.
+- **Vylepšení výpisu pluginů** (Issue #188) — zkracování popisu bezpečné vůči runům a výstup celého popisu s `--verbose`.
+- **Konvence Markdown frontmatter** — zdokumentovaná konvence (s českým překladem).
+
+### Opraveno ve 2.4.1
+
+- **Release build `ptx-container`** — sestavuje se z adresáře balíčku (více souborů) místo jediného `main.go`,
+  což opravuje release pipeline.
+- **Průvodce Tools Recommendations** — opraveno datum „poslední aktualizace“ a drobné formátování.
+
+### Změněno ve 2.4.1
+
+- **Go toolchain a závislosti** — aktualizovány `go.mod` / `go.sum` (Go 1.25.0) a sjednocena direktiva go
+  v `ptx-prompting` s kořenovým modulem.
+
 ## [2.4.0] - 2026-05-20
 
 ### Přidáno ve 2.4.0

@@ -360,6 +360,8 @@ func (s *Server) registerHandlers() {
 	s.handlers["ping"] = s.handlePing
 	s.handlers["tools/list"] = s.handleToolsList
 	s.handlers["tools/call"] = s.handleToolsCall
+	s.handlers["resources/list"] = s.handleResourcesList
+	s.handlers["resources/read"] = s.handleResourcesRead
 
 	// System information tools
 	s.handlers["mcp_get_system_info"] = s.handleGetSystemInfo

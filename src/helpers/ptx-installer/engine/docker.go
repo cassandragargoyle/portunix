@@ -104,27 +104,8 @@ func checkWindowsAdminRequired(dryRun, isAdmin bool) error {
 		"   Tip: --dry-run works from a non-elevated shell.")
 }
 
-// elevationAction tells the Docker installer how to launch the Docker Desktop
-// installer EXE based on the current process's privilege state.
-type elevationAction int
-
-const (
-	// elevationDirect: run the installer in-process. Either we already have
-	// admin, or we're in dry-run and skip the launch entirely.
-	elevationDirect elevationAction = iota
-	// elevationUAC: spawn the installer through a UAC consent prompt because
-	// the current process is not elevated.
-	elevationUAC
-)
-
-// decideElevation picks how to launch Docker Desktop's installer. Pure
-// function so the policy is unit-testable without touching the OS.
-func decideElevation(dryRun, isAdmin bool) elevationAction {
-	if dryRun || isAdmin {
-		return elevationDirect
-	}
-	return elevationUAC
-}
+// Elevation policy (elevationAction / decideElevation) is shared with the
+// generic package installer — see engine/elevation.go (issue #189).
 
 // runDockerInstaller launches Docker Desktop's installer, escalating via UAC
 // when the current process is not elevated. On UAC decline it surfaces a
@@ -905,11 +886,13 @@ func (d *DockerInstaller) promptLinuxDataRoot(partitions []PartitionInfo, recomm
 // drive has at least the minimum required free space. Uses the pre-fetched
 // drives list to avoid re-running the PowerShell query.
 func (d *DockerInstaller) validateWindowsPath(path string, drives []DriveInfo) error {
-	vol := filepath.VolumeName(path)
-	if len(vol) < 2 || vol[1] != ':' {
+	// parse drive letter manually — filepath.VolumeName is a no-op on
+	// non-Windows hosts, where this validation also runs in unit tests
+	if len(path) < 2 || path[1] != ':' ||
+		!(('a' <= path[0] && path[0] <= 'z') || ('A' <= path[0] && path[0] <= 'Z')) {
 		return fmt.Errorf("invalid Windows path: %q (must include drive letter, e.g. D:\\docker-data)", path)
 	}
-	letter := strings.TrimSuffix(vol, ":")
+	letter := string(path[0])
 	for _, dr := range drives {
 		if strings.EqualFold(dr.Letter, letter) {
 			if parseSpaceString(dr.FreeSpace) < d.storage.minSpace {

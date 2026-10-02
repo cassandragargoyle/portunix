@@ -1,7 +1,6 @@
 # Portunix
 
-[![Go Version](https://img.shields.io/badge/Go-1.21%2B-blue.svg)](https://golang.org)
-[![Coverage](https://img.shields.io/badge/Coverage-0%25-red.svg)](https://codecov.io/gh/cassandragargoyle/portunix)
+[![Go Version](https://img.shields.io/badge/Go-1.25%2B-blue.svg)](https://golang.org)
 [![Build Status](https://github.com/cassandragargoyle/portunix/workflows/Test%20Suite/badge.svg)](https://github.com/cassandragargoyle/portunix/actions)
 [![Go Report Card](https://goreportcard.com/badge/github.com/cassandragargoyle/portunix)](https://goreportcard.com/report/github.com/cassandragargoyle/portunix)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)

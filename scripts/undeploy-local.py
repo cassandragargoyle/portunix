@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # /// script
-# requires-python = ">=3.11"
+# requires-python = ">=3.14"
 # dependencies = []
 # ///
 """
@@ -11,16 +11,19 @@ Automatically detects existing installation path.
 import os
 import sys
 import subprocess
-import platform
 from pathlib import Path
+
+# True on Windows. Uses os.name instead of the platform module: platform.system()
+# / platform.uname() can hang on some Windows machines (WMI query / gethostname),
+# while os.name is an instant, side-effect-free constant.
+IS_WINDOWS = os.name == "nt"
 
 
 def find_install_dir():
     """Find existing Portunix installation directory (excluding current directory)."""
-    system = platform.system()
     current_dir = Path.cwd()
 
-    if system == "Windows":
+    if IS_WINDOWS:
         try:
             result = subprocess.run(
                 ["where", "portunix"],
@@ -55,17 +58,15 @@ def find_install_dir():
 
 def get_binary_extension():
     """Get platform-specific binary extension."""
-    return ".exe" if platform.system() == "Windows" else ""
+    return ".exe" if IS_WINDOWS else ""
 
 
 def remove_with_sudo(path: Path):
     """Remove file, using sudo if needed on Unix."""
-    system = platform.system()
-
     if not path.exists():
         return True
 
-    if system == "Windows":
+    if IS_WINDOWS:
         path.unlink()
     else:
         if os.access(path.parent, os.W_OK):
@@ -105,6 +106,8 @@ def undeploy(install_dir: Path):
 
 
 def main():
+    print("=== undeploy-local: removing Portunix binaries ===", flush=True)
+
     install_dir = find_install_dir()
 
     if install_dir is None:

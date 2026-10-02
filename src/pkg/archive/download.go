@@ -95,7 +95,7 @@ func formatDuration(seconds float64) string {
 		return fmt.Sprintf("%dm %ds", minutes, secs)
 	}
 	hours := minutes / 60
-	minutes = minutes % 60
+	minutes %= 60
 	return fmt.Sprintf("%dh %dm", hours, minutes)
 }
 
@@ -125,7 +125,7 @@ func DownloadFile(destPath string, url string) error {
 	defer out.Close()
 
 	// Get the data
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) //nolint:gosec // G107: URL comes from the trusted package registry
 	if err != nil {
 		return fmt.Errorf("failed to download: %w", err)
 	}
@@ -167,7 +167,7 @@ func DownloadFileWithProperFilename(url string, cacheDir string) (string, error)
 	}
 
 	// Get the response to check headers
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) //nolint:gosec // G107: URL comes from the trusted package registry
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch URL: %w", err)
 	}

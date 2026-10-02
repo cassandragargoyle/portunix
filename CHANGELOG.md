@@ -5,6 +5,57 @@ All notable changes to Portunix will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2026-10-02
+
+### Added in 2.5.1
+
+- **PTX-PFT `pft ideas` v2 — Venture model** (Issue #198) — new `pft ideas` command group built on the
+  `.venture` two-spine model (Initiative / Idea / Use-Case / Epic / Team / Product), with estimation rollup,
+  discovery and delivery backlogs, graphlens views and a v1 → v2 migration helper.
+- **External `ollama` container detection in aiops** (Issue #193) — `aiops ollama container status` detects
+  and manages a pre-existing `ollama` container instead of reporting it as missing.
+- **`make test` multi-module coverage** (Issue #194) — `make test` now runs tests for all Go modules
+  (helpers, `src/app`, `src/cmd`), not only the root module.
+
+### Fixed in 2.5.1
+
+- **Plugin binary path on Windows** (Issue #199) — the plugin manifest declares the binary without an
+  extension, so `portunix plugin health` reported every native helper plugin as unhealthy on Windows
+  (`os.Stat` of `ptx-name` instead of `ptx-name.exe`). Path resolution is now centralized in
+  `RegistryPlugin.BinaryPath()` using the new `platform.ExecutableName()` (ADR-026) and shared by the health
+  check, gRPC plugin config and plugin dispatcher; explicit `.exe` names are not doubled.
+- **`install-self --path` with a directory** (Issue #197) — passing a directory no longer corrupts the
+  install; the path is normalized to accept either a directory or a file.
+- **`build-version` / `build-release` on Windows** — make recipes no longer fail under `cmd.exe`; the
+  version guard uses cmd syntax and `build-with-version.sh` is invoked through Git's bundled bash.
+
+### Changed in 2.5.1
+
+- **Windows resource generation** — Makefile support for generating Windows resource files
+  (`portunix.syso`) on Windows hosts.
+
+## [2.5.0] - 2026-07-04
+
+### Added in 2.5.0
+
+- **Pinned Python interpreter for bytecode-only plugin wheels** (Issue #192) — plugins may declare
+  `plugin.python_version` (exact minor, e.g. `"3.13"`); the plugin venv is then created with that exact
+  interpreter via uv, which auto-provisions the managed CPython when the host lacks it. Bytecode-only wheels
+  no longer fail at runtime with `ImportError: bad magic number` on hosts whose `python3` minor differs.
+  Without uv the install falls back to system `python3` and fails with a clear, actionable message on a minor
+  mismatch instead of crashing later; plugins without the field keep the previous behavior.
+- **PTX-PFT graph build & visualization** (Issues #111, #191) — `portunix pft graph` command for graphlens
+  visualization, plus PTX-PFT MCP tools and resources integration.
+- **On-demand privilege elevation per install command** (Issue #189) — elevation is requested per command
+  instead of embedding `requireAdministrator` in the EXE manifest.
+
+### Fixed in 2.5.0
+
+- **ptx-installer launch elevation** (Issue #189) — embed an `asInvoker` manifest in `ptx-installer.exe` so it
+  no longer forces UAC elevation at startup.
+- **`deploy-local` / `help` on Windows** — fixed cross-platform behavior and streamlined the
+  `deploy-local` / `undeploy-local` scripts.
+
 ## [2.4.1] - 2026-05-29
 
 ### Added in 2.4.1

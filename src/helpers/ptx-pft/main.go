@@ -117,6 +117,19 @@ func showPFTHelp() {
 	fmt.Println("                           - Create project with specific template (qfd, basic)")
 	fmt.Println("  info                     - Show methodology documentation")
 	fmt.Println("  info --json              - Output as JSON (for MCP integration)")
+	fmt.Println("  graph --path <dir>       - Build node-graph JSON (graphlens contract)")
+	fmt.Println("  graph --path <dir> --view")
+	fmt.Println("                           - Build and open graph via graphlens plugin")
+	fmt.Println()
+	fmt.Println("Opportunity Management v2 (Venture model):")
+	fmt.Println("  ideas new-venture <name> - Create a .venture workspace")
+	fmt.Println("  ideas add-idea <slug> --title \"...\"")
+	fmt.Println("                           - Author an idea (discovery spine)")
+	fmt.Println("  ideas add-usecase <slug> --product <p> --implements <idea>")
+	fmt.Println("                           - Author a use-case (delivery spine)")
+	fmt.Println("  ideas graph --scope discovery")
+	fmt.Println("                           - Build a GraphView projection")
+	fmt.Println("  ideas --help             - Full 'pft ideas' command reference")
 	fmt.Println()
 	fmt.Println("Configuration:")
 	fmt.Println("  configure                              - Interactive configuration wizard")
@@ -196,6 +209,10 @@ func handlePFTCommand(args []string) {
 		handleProjectCommand(subArgs)
 	case "info":
 		handleInfoCommand(subArgs)
+	case "graph":
+		handleGraphCommand(subArgs)
+	case "ideas":
+		handleIdeasCommand(subArgs)
 	case "example":
 		handleExampleCommand(subArgs)
 	case "configure":
@@ -246,6 +263,115 @@ func handlePFTCommand(args []string) {
 		fmt.Printf("Unknown pft subcommand: %s\n", subcommand)
 		fmt.Println("Run 'portunix pft --help' for available commands")
 	}
+}
+
+// handleGraphCommand builds a graphlens-contract JSON graph from a PFT project
+// and, with --view, hands it to the graphlens plugin for rendering.
+func handleGraphCommand(args []string) {
+	var configPath, outPath string
+	hub := "tags"
+	var view, noOpen bool
+	var port int
+
+	for i := 0; i < len(args); i++ {
+		switch args[i] {
+		case "--path":
+			if i+1 < len(args) {
+				configPath = args[i+1]
+				i++
+			}
+		case "--out", "-o":
+			if i+1 < len(args) {
+				outPath = args[i+1]
+				i++
+			}
+		case "--hub":
+			if i+1 < len(args) {
+				hub = args[i+1]
+				i++
+			}
+		case "--view":
+			view = true
+		case "--port":
+			if i+1 < len(args) {
+				fmt.Sscanf(args[i+1], "%d", &port)
+				i++
+			}
+		case "--no-open":
+			noOpen = true
+		case "--help", "-h":
+			showGraphHelp()
+			return
+		default:
+			fmt.Printf("Unknown option: %s\n", args[i])
+			showGraphHelp()
+			return
+		}
+	}
+
+	// Resolve project directory (same as other pft commands: --path overrides config)
+	config, configFilePath, err := loadOrCreateConfig(configPath)
+	if err != nil {
+		fmt.Printf("Error loading configuration: %v\n", err)
+		return
+	}
+	projectDir := ResolveProjectPath(config, configFilePath, configPath)
+
+	// Default output: graph.json in the project directory
+	if outPath == "" {
+		outPath = filepath.Join(projectDir, "graph.json")
+	}
+
+	doc, err := BuildPFTGraph(projectDir, hub)
+	if err != nil {
+		fmt.Printf("Error building graph: %v\n", err)
+		return
+	}
+
+	if err := WriteGraphJSON(doc, outPath); err != nil {
+		fmt.Printf("Error writing graph JSON: %v\n", err)
+		return
+	}
+
+	fmt.Printf("✓ Graph written to %s\n", outPath)
+	fmt.Printf("  Voices: %v, Hubs: %v (%s), Related links: %v\n",
+		doc.Meta["voices"], doc.Meta["hubs"], hub, doc.Meta["related"])
+
+	if !view {
+		return
+	}
+
+	// --view: hand off to the graphlens plugin if present, else print guidance
+	if !graphlensAvailable() {
+		fmt.Println()
+		fmt.Printf("graphlens plugin not installed — run 'portunix plugin install graphlens', "+
+			"then 'portunix graphlens view %s'\n", outPath)
+		return
+	}
+	if err := runGraphlensView(outPath, port, noOpen); err != nil {
+		fmt.Printf("Error launching graphlens view: %v\n", err)
+	}
+}
+
+func showGraphHelp() {
+	fmt.Println("Usage: portunix pft graph [options]")
+	fmt.Println()
+	fmt.Println("Build a node-graph (graphlens JSON contract) from a PFT project and,")
+	fmt.Println("with --view, display it via the graphlens plugin.")
+	fmt.Println()
+	fmt.Println("Options:")
+	fmt.Println("  --path <dir>              PFT project root (overrides config)")
+	fmt.Println("  --out <file>, -o <file>   Output JSON path (default: graph.json in project dir)")
+	fmt.Println("  --hub <tags|author|domains>")
+	fmt.Println("                            What the hub nodes represent (default: tags)")
+	fmt.Println("  --view                    Open the graph in the browser via graphlens plugin")
+	fmt.Println("  --port <n>                Port forwarded to 'graphlens view' (with --view)")
+	fmt.Println("  --no-open                 Do not auto-open the browser (with --view)")
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  portunix pft graph --path ./docs/pft --out graph.json")
+	fmt.Println("  portunix pft graph --path ./docs/pft --hub author")
+	fmt.Println("  portunix pft graph --path ./docs/pft --view --port 8080 --no-open")
 }
 
 // Configure command handlers

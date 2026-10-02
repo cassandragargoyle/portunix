@@ -13,7 +13,17 @@
 #   - Internal dev:    vX.Y.Z+dev.N        (e.g. v1.9.2+dev.3)
 #   - Pre-release:     vX.Y.Z-rc.N         (e.g. v1.10.0-rc.1)
 #   - Snapshot (test): vX.Y.Z-SNAPSHOT     (legacy test builds)
-VERSION=${1:-v2.4.0+dev.1}
+# Default (no VERSION arg): reuse the version currently embedded in portunix.rc
+# so a parameterless build rebuilds at the CURRENT version. A hardcoded default
+# would silently downgrade the version files whenever it fell behind the repo.
+if [ -n "$1" ]; then
+    VERSION="$1"
+elif [ -f "portunix.rc" ]; then
+    VERSION="v$(grep -m1 'VALUE "FileVersion"' portunix.rc | sed -E 's/.*"FileVersion", "([^"]+)".*/\1/')"
+else
+    echo "ERROR: no VERSION argument and portunix.rc not found to infer current version"
+    exit 1
+fi
 CONTEXT=${2:-${PORTUNIX_RELEASE_CONTEXT:-auto}}
 
 # Version validation (ADR-036)
@@ -251,8 +261,36 @@ TRACE_BUILD=$?
 cd ../../..
 
 # Build ptx-installer
+# ptx-installer.exe needs its OWN embedded asInvoker manifest: its filename
+# contains "installer", which triggers Windows' installer-detection heuristic
+# and auto-elevates the binary unless a requestedExecutionLevel is embedded.
+# Regenerate ptx-installer.syso (version + manifest) so go build picks it up.
 echo "Building ptx-installer..."
 cd src/helpers/ptx-installer
+if [ -f "versioninfo.json" ]; then
+    python3 - <<PYEOF
+import json, pathlib
+p = pathlib.Path("versioninfo.json")
+data = json.loads(p.read_text())
+for k in ("FileVersion", "ProductVersion"):
+    block = data["FixedFileInfo"].get(k, {})
+    block["Major"] = $V_MAJOR
+    block["Minor"] = $V_MINOR
+    block["Patch"] = $V_PATCH
+    block.setdefault("Build", 0)
+    data["FixedFileInfo"][k] = block
+data["StringFileInfo"]["FileVersion"] = "$VERSION_NUM"
+data["StringFileInfo"]["ProductVersion"] = "$VERSION_NUM"
+p.write_text(json.dumps(data, indent=4) + "\n")
+PYEOF
+    if [ -x "$GOVERSIONINFO_BIN" ]; then
+        echo "Regenerating ptx-installer.syso (asInvoker manifest + version)..."
+        "$GOVERSIONINFO_BIN" -o ptx-installer.syso versioninfo.json || {
+            echo "ptx-installer.syso generation failed!"; exit 1; }
+    else
+        echo "WARNING: goversioninfo not found; ptx-installer.exe will use the existing (committed) ptx-installer.syso."
+    fi
+fi
 go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-installer${EXT} .
 INSTALLER_BUILD=$?
 cd ../../..

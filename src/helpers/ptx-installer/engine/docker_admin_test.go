@@ -87,30 +87,6 @@ func TestDecidePrereqChoice(t *testing.T) {
 	}
 }
 
-func TestDecideElevation(t *testing.T) {
-	tests := []struct {
-		name    string
-		dryRun  bool
-		isAdmin bool
-		want    elevationAction
-	}{
-		{"admin + normal: direct (no UAC)", false, true, elevationDirect},
-		{"admin + dry-run: direct", true, true, elevationDirect},
-		{"non-admin + dry-run: direct (skip launch)", true, false, elevationDirect},
-		{"non-admin + normal: UAC", false, false, elevationUAC},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got := decideElevation(tc.dryRun, tc.isAdmin)
-			if got != tc.want {
-				t.Errorf("decideElevation(dryRun=%v, isAdmin=%v) = %v, want %v",
-					tc.dryRun, tc.isAdmin, got, tc.want)
-			}
-		})
-	}
-}
-
 func TestCheckWSLAdminRequired(t *testing.T) {
 	tests := []struct {
 		name    string

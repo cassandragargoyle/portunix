@@ -405,21 +405,24 @@ func GenerateBasicHelp() string {
 
 	// Get basic commands and format them
 	commands := GetBasicCommands()
+	// list installed plugins to append below the core commands
 	plugins := GetInstalledPlugins()
 
-	// Calculate max length for alignment (include plugins)
+	// calculate max name length across commands and plugins for column alignment
 	maxLen := 0
 	for _, cmd := range commands {
 		if len(cmd.Name) > maxLen {
 			maxLen = len(cmd.Name)
 		}
 	}
+	// also account for plugin names so columns stay aligned
 	for _, p := range plugins {
 		if len(p.Name) > maxLen {
 			maxLen = len(p.Name)
 		}
 	}
 
+	// render each command as an aligned name/brief row
 	for _, cmd := range commands {
 		sb.WriteString(fmt.Sprintf("  %-*s  %s\n", maxLen+2, cmd.Name, cmd.Brief))
 	}

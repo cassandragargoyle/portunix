@@ -179,3 +179,29 @@ func containsMiddle(s, substr string) bool {
 	}
 	return false
 }
+
+func TestExecutableName(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		wantWindows string
+		wantOther   string
+	}{
+		{"no extension", "ptx-modeler", "ptx-modeler.exe", "ptx-modeler"},
+		{"lowercase exe", "ptx-foo.exe", "ptx-foo.exe", "ptx-foo.exe"},
+		{"uppercase exe", "ptx-foo.EXE", "ptx-foo.EXE", "ptx-foo.EXE"},
+		{"empty", "", "", ""},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			want := tt.wantOther
+			if IsWindows() {
+				want = tt.wantWindows
+			}
+			if got := ExecutableName(tt.input); got != want {
+				t.Errorf("ExecutableName(%q) = %q, want %q", tt.input, got, want)
+			}
+		})
+	}
+}
