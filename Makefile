@@ -113,9 +113,9 @@ ifeq ($(OS),Windows_NT)
 else
 	@bin="$${GOVERSIONINFO:-$$(go env GOPATH)/bin/goversioninfo$(EXE_EXT)}"; \
 	if [ ! -f "$$bin" ]; then \
-		echo "goversioninfo not found at $$bin"; \
+		echo "WARNING: goversioninfo not found at $$bin - keeping existing portunix.syso"; \
 		echo "Run: make install-build-tools  (or:  go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest )"; \
-		exit 1; \
+		exit 0; \
 	fi; \
 	echo "Generating portunix.syso (version + manifest + icon)..."; \
 	"$$bin" -o portunix.syso versioninfo.json

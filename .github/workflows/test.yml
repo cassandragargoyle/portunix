@@ -229,8 +229,8 @@ jobs:
 
       - name: Install security tools
         run: |
-          go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
-          go install github.com/sonatypecommunity/nancy@latest
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          go install github.com/sonatype-nexus-community/nancy@latest
 
       - name: Run Gosec Security Scanner
         run: gosec -fmt json -out gosec-report.json ./...
