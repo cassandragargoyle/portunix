@@ -5,6 +5,8 @@
 package registry
 
 import (
+	"encoding/json"
+	"strings"
 	"testing"
 )
 
@@ -154,5 +156,44 @@ func TestAdditionalFileStruct(t *testing.T) {
 	}
 	if af2.Filename != "" {
 		t.Errorf("expected empty filename, got: %s", af2.Filename)
+	}
+}
+
+// TestPlatformSpec_VariantOrder verifies that decoding keeps the manifest
+// declaration order of variants, which a map loses
+func TestPlatformSpec_VariantOrder(t *testing.T) {
+	data := `{"type": "exe", "variants": {
+		"stable": {"version": "1"},
+		"beta": {"version": "2", "urls": {"x64": "u"}},
+		"dev": {"version": "3"}
+	}}`
+	var spec PlatformSpec
+	if err := json.Unmarshal([]byte(data), &spec); err != nil {
+		t.Fatalf("unmarshal failed: %v", err)
+	}
+	if got := strings.Join(spec.VariantOrder, ","); got != "stable,beta,dev" {
+		t.Errorf("VariantOrder = %s, want stable,beta,dev", got)
+	}
+	if spec.Type != "exe" || len(spec.Variants) != 3 || spec.Variants["beta"].URLs["x64"] != "u" {
+		t.Errorf("regular fields not decoded: %+v", spec)
+	}
+}
+
+func TestPlatformSpec_NoVariants(t *testing.T) {
+	for _, data := range []string{`{"type": "apt"}`, `{"type": "apt", "variants": null}`} {
+		var spec PlatformSpec
+		if err := json.Unmarshal([]byte(data), &spec); err != nil {
+			t.Fatalf("unmarshal %s failed: %v", data, err)
+		}
+		if len(spec.VariantOrder) != 0 {
+			t.Errorf("%s: VariantOrder = %v, want empty", data, spec.VariantOrder)
+		}
+	}
+}
+
+func TestPlatformSpec_InvalidVariants(t *testing.T) {
+	var spec PlatformSpec
+	if err := json.Unmarshal([]byte(`{"variants": ["a"]}`), &spec); err == nil {
+		t.Error("expected error for variants given as an array, got nil")
 	}
 }

@@ -684,7 +684,7 @@ func PromptToCloseSandbox() (bool, error) {
 func EnsurePythonEmbeddable(args []string, tempDir string) error {
 	// Check if --embeddable flag is present
 	var hasEmbeddable bool
-	var pythonVersion string = "3.13.6" // Default version
+	var pythonVersion string = "3.14.8" // Default version
 
 	for i, arg := range args {
 		if arg == "python" {

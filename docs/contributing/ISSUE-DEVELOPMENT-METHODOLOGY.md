@@ -28,9 +28,9 @@ into the main branch.
 #### Role: Architect / Product Owner
 
 1. **Issue Creation**
-   - Create file `docs/issues/internal/{number}-{name}.md` (active issues live in `internal/`)
-   - Add row to the **Active** table in `docs/issues/README.md`
-   - Create corresponding GitHub issue with same content
+   - Create the GitHub issue first — GitHub assigns the number (see
+     [ISSUE-MANAGEMENT.md](ISSUE-MANAGEMENT.md); `create-issue` skill)
+   - Create detail file `docs/issues/{NNN}-{name}.md` and link it from the GitHub issue
    - Define acceptance criteria and requirements
    - Assign appropriate labels and priority
 
@@ -116,12 +116,9 @@ into the main branch.
    - Move the issue file to the `done/` subdirectory (preserves git history):
 
      ```bash
-     git mv docs/issues/internal/{number}-{name}.md \
-            docs/issues/internal/done/{number}-{name}.md
+     git mv docs/issues/{NNN}-{name}.md docs/issues/done/{NNN}-{name}.md
      ```
 
-   - In `docs/issues/README.md`, move the row from the **Active** table to the
-     **Done** table and update the link path to `internal/done/…`
    - The same rule applies to `❌ Closed` issues (closed without implementation)
 
 4. **Post-Merge Cleanup**

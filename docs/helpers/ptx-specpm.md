@@ -2,8 +2,8 @@
 
 Initialize project-management specifications using the
 [`spec-kit-pm`](https://github.com/CassandraGargoyle/spec-kit-pm) framework.
-Phase 1 of [Issue #183](../issues/internal/183-ptx-specpm-helper-implementation.md);
-Phase 2 of [Issue #184](../issues/internal/184-ptx-specpm-phase2-upgrade.md);
+Phase 1 of [Issue #183](../issues/done/183-ptx-specpm-helper-implementation.md);
+Phase 2 of [Issue #184](../issues/done/184-ptx-specpm-phase2-upgrade.md);
 architecture locked in
 [ADR-040](../adr/040-ptx-specpm-helper-architecture.md) and
 [ADR-041](../adr/041-ptx-specpm-phase2-upgrade-and-airgapped.md).
@@ -200,6 +200,6 @@ helper exits non-zero with a remediation hint pointing at this section.
 
 - Architecture (Phase 1): [ADR-040 — PTX-SpecPM Helper Architecture](../adr/040-ptx-specpm-helper-architecture.md)
 - Architecture (Phase 2): [ADR-041 — PTX-SpecPM Phase 2 — `upgrade` UX, Drift Policy, and Air-Gapped Workflow](../adr/041-ptx-specpm-phase2-upgrade-and-airgapped.md)
-- Tracking issues: [#183 (Phase 1)](../issues/internal/183-ptx-specpm-helper-implementation.md), [#184 (Phase 2)](../issues/internal/184-ptx-specpm-phase2-upgrade.md)
+- Tracking issues: [#183 (Phase 1)](../issues/done/183-ptx-specpm-helper-implementation.md), [#184 (Phase 2)](../issues/done/184-ptx-specpm-phase2-upgrade.md)
 - Upstream content: [`CassandraGargoyle/spec-kit-pm`](https://github.com/CassandraGargoyle/spec-kit-pm)
 - UX inspiration: [`github/spec-kit`](https://github.com/github/spec-kit)

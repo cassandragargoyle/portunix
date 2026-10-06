@@ -5,6 +5,75 @@ All notable changes to Portunix will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.1] - 2026-10-07
+
+### Added in 2.6.1
+
+- **Git on Windows without winget** (Issue #222) — `portunix install git` now works on machines without a
+  package manager (Windows Sandbox, LTSC / Server, fresh VMs). New variant `installer` downloads the official
+  Git for Windows installer (x64 / arm64) of the newest release, resolved from the GitHub releases of
+  `git-for-windows/git`, and installs it silently; when GitHub cannot be reached it falls back to the pinned
+  `installer-pinned` variant (2.56.0.2).
+- **Windows variant selection follows available tooling** (Issue #222) — packages installed primarily through
+  a Windows package manager pick `winget`, then `chocolatey`, then their direct installer, instead of always the
+  first declared variant. A package manager variant whose binary is missing (also with explicit `--variant`)
+  falls back to the direct installer. Packages with a direct default (clang, rust, make, ...) are unchanged.
+- **Checksum verification for MSI / EXE installers** (Issue #222) — a variant's per-architecture `checksum`
+  (`sha256:<hex>`) is verified after download; the downloaded installer is removed after the run, and
+  `--dry-run` shows the checksum next to the download URL.
+
+### Fixed in 2.6.1
+
+- **`--list-variants` default marker** — the auto-detected variant was computed by a separate copy of the
+  selection logic that picked a random variant from a map; it now uses the same selection as the installer.
+
+### Changed in 2.6.1
+
+- **GitHub-first issue tracking** — GitHub issues are now the list of record and assign issue numbers; each
+  issue links to its long-form write-up in `docs/issues/NNN-*.md` (archived in `docs/issues/done/`), which
+  is now published. Historical issues were imported to GitHub with matching numbers; internal numbers that
+  collided with existing GitHub issues or pull requests were renumbered to #204–#221.
+
+## [2.6.0] - 2026-10-07
+
+### Added in 2.6.0
+
+- **Python 3.14.8 and dynamic `latest` variant on Windows** (Issue #202) — `embeddable` and `full` move
+  from 3.13.6 to 3.14.8 and gain arm64 URLs. The new default variant `latest` installs the full Python of
+  the newest stable release, resolved from python.org at install time (release directories whose installers
+  are not published yet are skipped); when python.org cannot be reached it falls back to the pinned `full`
+  variant. `portunix install python` without `--variant` now installs `latest` and requests elevation (UAC).
+- **`versionResolver` and `fallbackVariant` manifest fields** (Issue #202) — a variant can resolve its
+  version at install time (first resolver: `python.org`), with `{version}` substituted in `url` / `urls`,
+  and name a pinned variant to install instead when resolving fails.
+
+### Fixed in 2.6.0
+
+- **Windows inline install scripts not executed** (Issue #201) — Go escaped inner double quotes to `\"`,
+  which `cmd.exe` does not understand, so `portunix install uv` only printed the PowerShell command and
+  still reported success. Inline scripts, `postInstall` and verification commands now reach `cmd.exe`
+  verbatim (`cmd /d /s /c "…"`).
+- **False success of `type: script` installs** (Issue #201) — the package verification now runs after the
+  install script, with `PATH` refreshed from the registry (Windows) or `~/.local/bin` / `~/.cargo/bin`
+  (Linux); `portunix install` exits non-zero when it fails.
+- **Variant `installArgs` ignored for `exe` / `msi` installers** (Issue #202) — only platform-level switches
+  were passed, so the Python installer ran with generic `/S /silent /quiet` and lost `PrependPath=1`.
+  Variant-level `installArgs` now take precedence; this also applies the intended switches of rust, vscode,
+  double-commander and clang.
+- **Random default variant** (Issue #202) — packages without a package-manager, `default` or `standard`
+  variant got a random variant when `--variant` was omitted (Go map order). The default is now the variant
+  marked `preferred`, otherwise the first variant declared in the manifest.
+- **`spice-guest-agent` / `spice-guest-tools` verification** — the PowerShell `Get-Service` check, which
+  always failed under `cmd.exe`, is replaced by `sc query spice-agent`.
+- **CI and scripts** — resource generation is non-fatal without `goversioninfo`, security tool paths fixed,
+  the manifest URL check skips Bundle manifests, shell scripts keep their executable bit in git and on
+  GitHub sync, and a gosec G115 false positive on masked tar file modes is suppressed.
+
+### Changed in 2.6.0
+
+- **`mcp-ready` bundle** (Issue #202) — installs the full Python (`latest`) instead of the embeddable one,
+  following the new default Python variant.
+
 ## [2.5.1] - 2026-10-02
 
 ### Added in 2.5.1

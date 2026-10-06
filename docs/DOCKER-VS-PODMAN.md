@@ -497,4 +497,4 @@ podman compose up -d
 ## See Also
 
 - [PTX-Container Helper](../src/helpers/ptx-container/README.md)
-- [Issue #107 - PTX-PFT](issues/internal/107-ptx-pft-product-feedback-tool-helper.md)
+- [Issue #107 - PTX-PFT](issues/done/107-ptx-pft-product-feedback-tool-helper.md)

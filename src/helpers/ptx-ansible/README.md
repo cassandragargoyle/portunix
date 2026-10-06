@@ -8,7 +8,7 @@ Portunix Ansible Infrastructure as Code Helper - dedicated helper binary for Ans
 parsing, validation, and execution for unified infrastructure management across multiple environments.
 
 **Architecture Decision Record:** [ADR-016](../../../docs/adr/016-ansible-infrastructure-as-code-integration.md)
-**Issue:** [#056](../../../docs/issues/internal/056-ansible-infrastructure-as-code-integration.md)
+**Issue:** [#056](../../../docs/issues/done/056-ansible-infrastructure-as-code-integration.md)
 
 ## Features
 
@@ -271,7 +271,7 @@ The main `portunix` binary delegates playbook commands to `ptx-ansible`:
 
 - [ADR-016: Ansible IaC Integration](../../../docs/adr/016-ansible-infrastructure-as-code-integration.md)
 - [ADR-014: Git-like Dispatcher Architecture](../../../docs/adr/014-git-dispatcher-python-distribution-architecture.md)
-- [Issue #056: Ansible Integration](../../../docs/issues/internal/056-ansible-infrastructure-as-code-integration.md)
+- [Issue #056: Ansible Integration](../../../docs/issues/done/056-ansible-infrastructure-as-code-integration.md)
 - [Features Overview](../../../docs/FEATURES_OVERVIEW.md)
 
 ## License

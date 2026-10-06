@@ -1,4 +1,4 @@
-# GitHub Issue #22: Implementácia podpory pre Docusaurus na multiplatformnom prostredí
+# Issue #22: Implementácia podpory pre Docusaurus na multiplatformnom prostredí
 
 **Source**: <https://github.com/cassandragargoyle/portunix/issues/22>
 **Author**: Roman-Kazicka

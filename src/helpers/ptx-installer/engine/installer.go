@@ -6,9 +6,12 @@ package engine
 
 import (
 	"bufio"
+	"crypto/sha256"
 	"embed"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -322,9 +325,22 @@ func (i *Installer) Install(options *InstallOptions) error {
 	}
 
 	// Check if variant exists
-	variantSpec, exists := platformSpec.Variants[variant]
-	if !exists {
+	if _, exists := platformSpec.Variants[variant]; !exists {
 		return UnknownVariantError(options.PackageName, variant, GetOperatingSystem(), platformSpec.Variants)
+	}
+
+	// A package manager variant without its package manager falls back to
+	// the package's direct installer (issue #222)
+	if fallback, binary := packageManagerFallback(&platformSpec, variant, isCommandAvailable); fallback != "" {
+		fmt.Printf("⚠️  %s not found, falling back to official installer (variant: %s)\n", binary, fallback)
+		variant = fallback
+	}
+	variantSpec := platformSpec.Variants[variant]
+
+	// Variants tracking the newest release resolve their version and URLs now
+	variant, variantSpec, err = resolveOrFallback(&platformSpec, variant, variantSpec)
+	if err != nil {
+		return err
 	}
 
 	fmt.Printf("🎯 Variant: %s (version: %s)\n", variant, variantSpec.Version)
@@ -356,8 +372,11 @@ func (i *Installer) Install(options *InstallOptions) error {
 		fmt.Printf("   Version: %s\n", variantSpec.Version)
 		fmt.Printf("   Type: %s\n", effectiveType)
 
-		if variantSpec.URL != "" {
-			fmt.Printf("   Download URL: %s\n", variantSpec.URL)
+		if downloadURL := selectArchURL(variantSpec); downloadURL != "" {
+			fmt.Printf("   Download URL: %s\n", downloadURL)
+		}
+		if checksum := selectArchChecksum(variantSpec); checksum != "" {
+			fmt.Printf("   Checksum: %s\n", checksum)
 		}
 		if len(variantSpec.AdditionalFiles) > 0 {
 			fmt.Printf("   Additional files: %d\n", len(variantSpec.AdditionalFiles))
@@ -634,12 +653,7 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 			fmt.Printf("   Running: %s\n", cmd)
 
 			// Execute the command
-			var execCmd *exec.Cmd
-			if runtime.GOOS == "windows" {
-				execCmd = exec.Command("cmd", "/C", cmd)
-			} else {
-				execCmd = exec.Command("sh", "-c", cmd)
-			}
+			execCmd := shellCommand(cmd)
 			execCmd.Stdout = os.Stdout
 			execCmd.Stderr = os.Stderr
 			if err := execCmd.Run(); err != nil {
@@ -756,12 +770,7 @@ func (i *Installer) installDownload(platform *registry.PlatformSpec, variant *re
 
 			fmt.Printf("   Running: %s\n", cmd)
 
-			var execCmd *exec.Cmd
-			if runtime.GOOS == "windows" {
-				execCmd = exec.Command("cmd", "/C", cmd)
-			} else {
-				execCmd = exec.Command("sh", "-c", cmd)
-			}
+			execCmd := shellCommand(cmd)
 			execCmd.Stdout = os.Stdout
 			execCmd.Stderr = os.Stderr
 			if err := execCmd.Run(); err != nil {
@@ -944,8 +953,13 @@ func (i *Installer) installScript(platform *registry.PlatformSpec, variant *regi
 		return i.executeEmbeddedScript(firstScript, variant.InstallScriptArgs, installPath, options.DryRun)
 	}
 
-	// Fallback to inline command execution
-	fmt.Printf("📝 Running install script (target: %s)...\n", installPath)
+	// Fallback to inline command execution; the target only means something
+	// for scripts that use ${INSTALL_PATH}
+	if usesInstallPath(variant.InstallScript) {
+		fmt.Printf("📝 Running install script (target: %s)...\n", installPath)
+	} else {
+		fmt.Println("📝 Running install script...")
+	}
 
 	// Execute each script line
 	for _, script := range variant.InstallScript {
@@ -960,19 +974,48 @@ func (i *Installer) installScript(platform *registry.PlatformSpec, variant *regi
 		// Build a short label for the spinner
 		spinnerLabel := fmt.Sprintf("Running: %s", truncateCommand(expandedScript, 80))
 
-		var cmd *exec.Cmd
-		if runtime.GOOS == "windows" {
-			cmd = exec.Command("cmd", "/c", expandedScript)
-		} else {
-			cmd = exec.Command("sh", "-c", expandedScript)
-		}
-
-		if err := runCommandWithSpinner(cmd, spinnerLabel); err != nil {
+		if err := runCommandWithSpinner(shellCommand(expandedScript), spinnerLabel); err != nil {
 			return fmt.Errorf("script failed: %w", err)
 		}
 	}
 
+	if options.DryRun {
+		return nil
+	}
+
+	// A script can exit 0 without installing anything — confirm the result
+	// with the package's verification command (issue #201)
+	if platform.Verification != nil && strings.TrimSpace(platform.Verification.Command) != "" {
+		if err := verifyInstallation(platform.Verification.Command, installPath); err != nil {
+			return err
+		}
+	}
+
 	fmt.Printf("✅ Script installation completed\n")
+	return nil
+}
+
+// usesInstallPath reports whether any script line references ${INSTALL_PATH}
+func usesInstallPath(scripts []string) bool {
+	for _, s := range scripts {
+		if strings.Contains(s, "${INSTALL_PATH}") {
+			return true
+		}
+	}
+	return false
+}
+
+// verifyInstallation runs the package's verification command after PATH has
+// been refreshed, and fails when the command does not succeed
+func verifyInstallation(command, installPath string) error {
+	command = strings.ReplaceAll(command, "${INSTALL_PATH}", installPath)
+	refreshPath()
+
+	fmt.Printf("🔍 Verifying installation: %s\n", command)
+	if installed, _ := runVerification(command); !installed {
+		return fmt.Errorf("verification failed: '%s' did not succeed after the install script ran", command)
+	}
+	fmt.Println("✅ Verification passed")
 	return nil
 }
 
@@ -1142,12 +1185,27 @@ func (i *Installer) installWindowsBinary(platform *registry.PlatformSpec, varian
 	}
 	fmt.Printf("✅ Downloaded to: %s\n", installerPath)
 
+	// The installer is only needed for this run (issue #222)
+	defer func() {
+		if err := os.Remove(installerPath); err != nil && !os.IsNotExist(err) {
+			fmt.Printf("⚠️  Failed to remove installer %s: %v\n", installerPath, err)
+		}
+	}()
+
+	if checksum := selectArchChecksum(*variant); checksum != "" {
+		if err := verifyFileChecksum(installerPath, checksum); err != nil {
+			return installResult{}, err
+		}
+		fmt.Println("✅ Checksum verified")
+	}
+
 	// Run installer based on extension
+	installArgs := effectiveInstallArgs(platform, variant)
 	var runErr error
 	if strings.HasSuffix(strings.ToLower(installerPath), ".msi") {
-		runErr = i.runMsiInstaller(installerPath, platform.InstallArgs)
+		runErr = i.runMsiInstaller(installerPath, installArgs)
 	} else if strings.HasSuffix(strings.ToLower(installerPath), ".exe") {
-		runErr = i.runExeInstaller(installerPath, platform.InstallArgs)
+		runErr = i.runExeInstaller(installerPath, installArgs)
 	} else {
 		return installResult{}, fmt.Errorf("unknown installer type: %s", installerPath)
 	}
@@ -1159,7 +1217,47 @@ func (i *Installer) installWindowsBinary(platform *registry.PlatformSpec, varian
 	// Packages mirror that location in variant.installPath so PATH_APPEND can
 	// reference it via ${install_path}. Both placeholder forms resolve here.
 	resolved := expandEnvVars(variant.InstallPath)
+	if resolved != "" {
+		fmt.Printf("ℹ️  Open a new shell to pick up PATH changes (%s)\n", filepath.Clean(resolved))
+	}
 	return installResult{installPath: resolved, extractTo: resolved}, nil
+}
+
+// verifyFileChecksum compares the SHA-256 digest of a file with the expected
+// value, given as hex with an optional "sha256:" prefix
+func verifyFileChecksum(path, expected string) error {
+	algorithm, digest, found := strings.Cut(expected, ":")
+	if !found {
+		algorithm, digest = "sha256", expected
+	}
+	if !strings.EqualFold(algorithm, "sha256") {
+		return fmt.Errorf("unsupported checksum algorithm: %s", algorithm)
+	}
+
+	file, err := os.Open(path)
+	if err != nil {
+		return fmt.Errorf("failed to open %s for checksum: %w", path, err)
+	}
+	defer file.Close()
+
+	hash := sha256.New()
+	if _, err := io.Copy(hash, file); err != nil {
+		return fmt.Errorf("failed to read %s for checksum: %w", path, err)
+	}
+	actual := hex.EncodeToString(hash.Sum(nil))
+	if !strings.EqualFold(actual, strings.TrimSpace(digest)) {
+		return fmt.Errorf("checksum mismatch for %s: expected %s, got %s", filepath.Base(path), digest, actual)
+	}
+	return nil
+}
+
+// effectiveInstallArgs returns the variant's installArgs when set and falls
+// back to the platform's, so a variant can define its own installer switches
+func effectiveInstallArgs(platform *registry.PlatformSpec, variant *registry.VariantSpec) []string {
+	if len(variant.InstallArgs) > 0 {
+		return variant.InstallArgs
+	}
+	return platform.InstallArgs
 }
 
 // runMsiInstaller runs an MSI installer using msiexec
@@ -1225,6 +1323,22 @@ func (i *Installer) GetCacheDir() string {
 
 // autoDetectVariant automatically detects the best variant based on system package manager
 func (i *Installer) autoDetectVariant(platformSpec *registry.PlatformSpec) string {
+	return SelectDefaultVariant(platformSpec)
+}
+
+// SelectDefaultVariant picks the variant installed on this system when none
+// is given, based on the package managers available
+func SelectDefaultVariant(platformSpec *registry.PlatformSpec) string {
+	return selectDefaultVariant(platformSpec, DetectPackageManager(), DetectWindowsPackageManagers())
+}
+
+// selectDefaultVariant picks the variant installed when none is given:
+// the variant of the detected package manager, then (for packages installed
+// primarily through a Windows package manager) the variant of the first
+// available Windows package manager or a direct installer, then a variant
+// marked preferred, then "default" / "standard", otherwise the first variant
+// declared in the manifest
+func selectDefaultVariant(platformSpec *registry.PlatformSpec, detectedPM string, windowsPMs []string) string {
 	// Map system package managers to variant names
 	pmToVariant := map[string]string{
 		"apt-get": "apt",
@@ -1235,8 +1349,6 @@ func (i *Installer) autoDetectVariant(platformSpec *registry.PlatformSpec) strin
 		"zypper":  "zypper",
 	}
 
-	// Detect system package manager
-	detectedPM := DetectPackageManager()
 	if detectedPM != "" {
 		if variantName, ok := pmToVariant[detectedPM]; ok {
 			// Check if this variant exists for the package
@@ -1246,7 +1358,31 @@ func (i *Installer) autoDetectVariant(platformSpec *registry.PlatformSpec) strin
 		}
 	}
 
-	// Fallback: prefer "default" or "standard", otherwise first available
+	names := orderedVariantNames(platformSpec)
+
+	// Packages whose primary install method is a Windows package manager
+	// follow the tooling present on the machine (issue #222); packages with a
+	// direct default (exe/zip, ...) keep their manifest default
+	if windowsPackageManagerBinary(platformSpec.Type) != "" {
+		for _, pm := range windowsPMs {
+			for _, variantName := range names {
+				if variantType(platformSpec, variantName) == pm {
+					return variantName
+				}
+			}
+		}
+		if direct := firstDirectVariant(platformSpec); direct != "" {
+			return direct
+		}
+	}
+
+	// A variant marked preferred in the manifest wins over the name heuristics
+	for _, variantName := range names {
+		if platformSpec.Variants[variantName].Preferred {
+			return variantName
+		}
+	}
+
 	if _, exists := platformSpec.Variants["default"]; exists {
 		return "default"
 	}
@@ -1254,12 +1390,75 @@ func (i *Installer) autoDetectVariant(platformSpec *registry.PlatformSpec) strin
 		return "standard"
 	}
 
-	// Last resort: first available variant
-	for variantName := range platformSpec.Variants {
-		return variantName
+	// Last resort: the first variant the manifest declares
+	if len(names) > 0 {
+		return names[0]
 	}
 
 	return ""
+}
+
+// directInstallTypes are installation types that need no package manager
+var directInstallTypes = map[string]bool{
+	"exe":      true,
+	"msi":      true,
+	"zip":      true,
+	"tar.gz":   true,
+	"download": true,
+}
+
+// variantType returns the effective installation type of a variant
+func variantType(platformSpec *registry.PlatformSpec, variantName string) string {
+	if t := platformSpec.Variants[variantName].Type; t != "" {
+		return t
+	}
+	return platformSpec.Type
+}
+
+// firstDirectVariant returns the first declared variant installed without a
+// package manager, or "" when there is none
+func firstDirectVariant(platformSpec *registry.PlatformSpec) string {
+	for _, variantName := range orderedVariantNames(platformSpec) {
+		if directInstallTypes[variantType(platformSpec, variantName)] {
+			return variantName
+		}
+	}
+	return ""
+}
+
+// packageManagerFallback returns the direct variant to install instead of
+// variantName when that variant needs a Windows package manager whose binary
+// is not available, together with the missing binary; it returns "" when no
+// fallback is needed or none exists
+func packageManagerFallback(platformSpec *registry.PlatformSpec, variantName string, available func(string) bool) (string, string) {
+	binary := windowsPackageManagerBinary(variantType(platformSpec, variantName))
+	if binary == "" || available(binary) {
+		return "", ""
+	}
+	return firstDirectVariant(platformSpec), binary
+}
+
+// orderedVariantNames returns the variant names in manifest declaration
+// order; specs built in code without that order fall back to sorted names
+func orderedVariantNames(platformSpec *registry.PlatformSpec) []string {
+	names := make([]string, 0, len(platformSpec.Variants))
+	seen := make(map[string]bool, len(platformSpec.Variants))
+	for _, variantName := range platformSpec.VariantOrder {
+		if _, exists := platformSpec.Variants[variantName]; exists && !seen[variantName] {
+			names = append(names, variantName)
+			seen[variantName] = true
+		}
+	}
+
+	// Variants missing from VariantOrder, in stable order
+	var rest []string
+	for variantName := range platformSpec.Variants {
+		if !seen[variantName] {
+			rest = append(rest, variantName)
+		}
+	}
+	sort.Strings(rest)
+	return append(names, rest...)
 }
 
 // UnknownVariantError builds the error returned when a user passes a

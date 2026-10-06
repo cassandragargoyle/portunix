@@ -35,16 +35,43 @@
         }
       },
       "windows": {
-        "type": "chocolatey",
+        "type": "winget",
         "variants": {
-          "chocolatey": {
-            "version": "latest",
-            "packages": ["git"]
-          },
           "winget": {
             "type": "winget",
             "version": "latest",
             "packages": ["Git.Git"]
+          },
+          "chocolatey": {
+            "type": "chocolatey",
+            "version": "latest",
+            "packages": ["git"]
+          },
+          "installer": {
+            "type": "exe",
+            "description": "Official Git for Windows installer, newest release resolved at install time",
+            "version": "latest",
+            "versionResolver": "git-for-windows",
+            "fallbackVariant": "installer-pinned",
+            "requiresAdmin": true,
+            "installPath": "${ProgramFiles}/Git/cmd",
+            "installArgs": ["/VERYSILENT", "/NORESTART", "/NOCANCEL", "/SP-", "/SUPPRESSMSGBOXES", "/o:PathOption=Cmd"]
+          },
+          "installer-pinned": {
+            "type": "exe",
+            "description": "Official Git for Windows installer, pinned release",
+            "version": "2.56.0.2",
+            "urls": {
+              "x64": "https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.2/Git-2.56.0.2-64-bit.exe",
+              "arm64": "https://github.com/git-for-windows/git/releases/download/v2.56.0.windows.2/Git-2.56.0.2-arm64.exe"
+            },
+            "checksum": {
+              "x64": "sha256:52188f917b378f00c70ec136bcf090005f30d44fbc4eba0bce759cc6592d60f6",
+              "arm64": "sha256:b9ced78ce371577dc966f50ae571909d6731e36d31065d35c8efa21544c58bf0"
+            },
+            "requiresAdmin": true,
+            "installPath": "${ProgramFiles}/Git/cmd",
+            "installArgs": ["/VERYSILENT", "/NORESTART", "/NOCANCEL", "/SP-", "/SUPPRESSMSGBOXES", "/o:PathOption=Cmd"]
           }
         },
         "verification": {
@@ -54,9 +81,9 @@
       }
     },
     "aiPrompts": {
-      "versionDiscovery": "Check https://git-scm.com for latest Git version",
-      "urlResolution": "Install via package managers",
-      "updateGuidance": "Git updates regularly with security fixes"
+      "versionDiscovery": "Check https://git-scm.com for latest Git version. The Windows 'installer' variant resolves the newest Git for Windows release at install time from the GitHub releases of git-for-windows/git (versionResolver: git-for-windows).",
+      "urlResolution": "Linux uses package managers. Windows: winget (Git.Git), chocolatey (git) or the official installer from https://git-scm.com/install/windows — release assets Git-{version}-64-bit.exe (x64) and Git-{version}-arm64.exe (arm64) under https://github.com/git-for-windows/git/releases/download/v{tag-version}.windows.{n}/ (asset version is e.g. 2.56.0.2 for tag v2.56.0.windows.2).",
+      "updateGuidance": "Git updates regularly with security fixes. On Windows the default variant follows available tooling: winget, then chocolatey, then the official installer. 'installer' tracks the newest release automatically and falls back to 'installer-pinned' when GitHub cannot be reached, so keep 'installer-pinned' current: bump version, both urls (x64, arm64) and both sha256 checksums (digest of each release asset)."
     },
     "dependencies": [],
     "templates": ["apt-package"]

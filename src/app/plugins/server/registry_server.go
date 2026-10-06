@@ -5,7 +5,7 @@
 
 // Package server implements the ptx-side gRPC services that expose the plugin
 // registry to hosting platforms (Synapse, Pack, Agent, ...). See issue #175
-// and DEC-1 / DEC-2 in docs/issues/internal/175-plugin-platform-capability-query.md
+// and DEC-1 / DEC-2 in docs/issues/done/175-plugin-platform-capability-query.md
 // for the architectural rationale.
 package server
 

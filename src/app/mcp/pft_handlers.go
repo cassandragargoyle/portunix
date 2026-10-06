@@ -475,7 +475,7 @@ func pftToolDefinitions() []map[string]interface{} {
 					},
 					"issue_id": map[string]interface{}{
 						"type":        "string",
-						"description": "Local issue reference (e.g., #107, ISSUE-42, docs/issues/internal/042-feature.md)",
+						"description": "Local issue reference (e.g., #107, ISSUE-42, docs/issues/042-feature.md)",
 					},
 				},
 				"required": []string{"feedback_id", "issue_id"},
