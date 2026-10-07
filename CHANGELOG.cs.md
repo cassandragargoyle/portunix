@@ -5,6 +5,74 @@ Všechny významné změny v Portunixu jsou dokumentovány v tomto souboru.
 Formát vychází z [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 a projekt dodržuje [Sémantické verzování](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.1] - 2026-10-07
+
+### Přidáno ve 2.6.1
+
+- **Git na Windows bez winget** (Issue #222) — `portunix install git` nyní funguje i na strojích bez správce
+  balíčků (Windows Sandbox, LTSC / Server, čerstvé VM). Nová varianta `installer` stáhne oficiální instalátor
+  Git for Windows (x64 / arm64) nejnovější verze, zjištěné z GitHub releases `git-for-windows/git`, a nainstaluje
+  ho na pozadí; když GitHub není dostupný, použije pevnou variantu `installer-pinned` (2.56.0.2).
+- **Výběr varianty na Windows podle dostupných nástrojů** (Issue #222) — balíčky instalované primárně přes
+  správce balíčků Windows volí `winget`, pak `chocolatey`, pak přímý instalátor, místo vždy první deklarované
+  varianty. Varianta správce balíčků, jehož binárka chybí (i při explicitním `--variant`), přejde na přímý
+  instalátor. Balíčky s přímou výchozí variantou (clang, rust, make, ...) se nemění.
+- **Ověření kontrolního součtu u instalátorů MSI / EXE** (Issue #222) — `checksum` varianty podle architektury
+  (`sha256:<hex>`) se ověří po stažení; stažený instalátor se po instalaci smaže a `--dry-run` zobrazí kontrolní
+  součet vedle URL ke stažení.
+
+### Opraveno ve 2.6.1
+
+- **Označení výchozí varianty v `--list-variants`** — automaticky zjištěná varianta se počítala samostatnou kopií
+  logiky výběru, která brala náhodnou variantu z mapy; nyní používá stejný výběr jako instalátor.
+
+### Změněno ve 2.6.1
+
+- **Issues primárně na GitHubu** — seznam issues a jejich čísla nově spravuje GitHub; každé issue odkazuje
+  na podrobný popis v `docs/issues/NNN-*.md` (hotová v `docs/issues/done/`), který se nově publikuje.
+  Historická issues byla převedena na GitHub se stejnými čísly; interní čísla kolidující s existujícími
+  GitHub issues nebo pull requesty byla přečíslována na #204–#221.
+
+## [2.6.0] - 2026-10-07
+
+### Přidáno ve 2.6.0
+
+- **Python 3.14.8 a dynamická varianta `latest` na Windows** (Issue #202) — `embeddable` a `full` přecházejí
+  z 3.13.6 na 3.14.8 a získávají URL pro arm64. Nová výchozí varianta `latest` instaluje plný Python nejnovější
+  stabilní verze, kterou zjistí z python.org při instalaci (adresáře verzí, jejichž instalátory ještě nejsou
+  zveřejněné, přeskočí); když python.org není dostupný, použije pevnou variantu `full`. `portunix install python`
+  bez `--variant` nyní instaluje `latest` a vyžádá si zvýšená oprávnění (UAC).
+- **Pole manifestu `versionResolver` a `fallbackVariant`** (Issue #202) — varianta může zjistit svou verzi při
+  instalaci (první resolver: `python.org`) s dosazením `{version}` do `url` / `urls` a určit pevnou variantu,
+  která se nainstaluje, když zjištění verze selže.
+
+### Opraveno ve 2.6.0
+
+- **Inline instalační skripty na Windows se nespouštěly** (Issue #201) — Go převádělo vnitřní uvozovky na `\"`,
+  kterým `cmd.exe` nerozumí, takže `portunix install uv` jen vypsal příkaz PowerShellu a přesto hlásil úspěch.
+  Inline skripty, `postInstall` i ověřovací příkazy nyní dorazí do `cmd.exe` beze změny (`cmd /d /s /c "…"`).
+- **Falešný úspěch instalací typu `script`** (Issue #201) — po instalačním skriptu se nyní spouští ověření
+  balíčku s `PATH` obnoveným z registru (Windows) nebo doplněným o `~/.local/bin` / `~/.cargo/bin` (Linux);
+  `portunix install` při selhání skončí nenulovým kódem.
+- **Ignorované `installArgs` varianty u instalátorů `exe` / `msi`** (Issue #202) — předávaly se jen přepínače
+  platformy, takže instalátor Pythonu běžel s obecnými `/S /silent /quiet` a ztratil `PrependPath=1`. `installArgs`
+  na úrovni varianty mají nyní přednost; zamýšlené přepínače se tím uplatní i u rust, vscode, double-commander
+  a clang.
+- **Náhodná výchozí varianta** (Issue #202) — balíčky bez varianty pro správce balíčků, `default` nebo `standard`
+  dostaly při vynechání `--variant` náhodnou variantu (pořadí Go mapy). Výchozí je nyní varianta označená
+  `preferred`, jinak první varianta deklarovaná v manifestu.
+- **Ověření `spice-guest-agent` / `spice-guest-tools`** — kontrola `Get-Service` z PowerShellu, která pod
+  `cmd.exe` vždy selhala, je nahrazena `sc query spice-agent`.
+- **CI a skripty** — generování prostředků bez `goversioninfo` není fatální, opraveny cesty k bezpečnostním
+  nástrojům, kontrola URL manifestů přeskakuje Bundle manifesty, shellové skripty si v gitu i při synchronizaci
+  na GitHub zachovávají příznak spustitelnosti a potlačen falešně pozitivní nález gosec G115 u maskovaného
+  režimu souborů v taru.
+
+### Změněno ve 2.6.0
+
+- **Bundle `mcp-ready`** (Issue #202) — instaluje plný Python (`latest`) místo embeddable, v souladu s novou
+  výchozí variantou Pythonu.
+
 ## [2.5.1] - 2026-10-02
 
 ### Přidáno ve 2.5.1

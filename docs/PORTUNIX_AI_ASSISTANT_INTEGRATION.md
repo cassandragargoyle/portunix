@@ -20,7 +20,7 @@ containerization, virtualization, and AI-assisted workflow automation through a 
 
 **Key packages available:**
 
-- Programming languages: Java (LTS versions), Python 3.13.6, Go 1.23.4, PowerShell
+- Programming languages: Java (LTS versions), Python 3.14.8, Go 1.23.4, PowerShell
 - Development tools: Visual Studio Code, Apache Maven, Claude Code
 - Package managers: Chocolatey, WinGet
 - Web browsers: Google Chrome
@@ -206,7 +206,7 @@ portunix vm snapshot revert win11-trial fresh-install
 
 ### `default` Profile
 
-- **Contents**: Python 3.13.6 + Java 17 + Visual Studio Code
+- **Contents**: Python 3.14.8 + Java 17 + Visual Studio Code
 - **Use case**: General development, recommended for most developers
 - **Command**: `portunix install default`
 
@@ -369,7 +369,7 @@ portunix docker run-in-container default --port 3000:3000 --port 8080:8080
 ## Documentation References
 
 - **Main documentation**: Project README and docs directory
-- **Issue tracking**: `docs/issues/README.md`
+- **Issue tracking**: GitHub issues + detail files in `docs/issues/`
 - **Architecture decisions**: `docs/adr/`
 - **Plugin documentation**: Separate `portunix-plugins` project
 

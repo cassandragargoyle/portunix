@@ -26,6 +26,19 @@ Project Management:
                            - Create project with specific template (qfd, basic)
   info                     - Show methodology documentation
   info --json              - Output as JSON (for MCP integration)
+  graph --path <dir>       - Build node-graph JSON (graphlens contract)
+  graph --path <dir> --view
+                           - Build and open graph via graphlens plugin
+
+Opportunity Management v2 (Venture model):
+  ideas new-venture <name> - Create a .venture workspace
+  ideas add-idea <slug> --title "..."
+                           - Author an idea (discovery spine)
+  ideas add-usecase <slug> --product <p> --implements <idea>
+                           - Author a use-case (delivery spine)
+  ideas graph --scope discovery
+                           - Build a GraphView projection
+  ideas --help             - Full 'pft ideas' command reference
 
 Configuration:
   configure                              - Interactive configuration wizard

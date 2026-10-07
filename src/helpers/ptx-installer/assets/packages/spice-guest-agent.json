@@ -70,7 +70,7 @@
           }
         },
         "verification": {
-          "command": "Get-Service spice-agent",
+          "command": "sc query spice-agent",
           "expectedExitCode": 0
         }
       }

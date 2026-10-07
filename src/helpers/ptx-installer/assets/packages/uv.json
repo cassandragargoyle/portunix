@@ -21,10 +21,7 @@
         "variants": {
           "latest": {
             "version": "latest",
-            "installScript": "powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\"",
-            "postInstall": [
-              "uv --version"
-            ]
+            "installScript": "powershell -ExecutionPolicy ByPass -c \"irm https://astral.sh/uv/install.ps1 | iex\""
           }
         },
         "verification": {
@@ -38,10 +35,7 @@
           "latest": {
             "version": "latest",
             "packages": ["curl"],
-            "installScript": "curl -LsSf https://astral.sh/uv/install.sh | sh",
-            "postInstall": [
-              "uv --version"
-            ]
+            "installScript": "curl -LsSf https://astral.sh/uv/install.sh | sh"
           }
         },
         "verification": {

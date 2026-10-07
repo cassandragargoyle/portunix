@@ -20,27 +20,45 @@
         "type": "zip",
         "variants": {
           "embeddable": {
-            "version": "3.13.6",
+            "version": "3.14.8",
             "urls": {
-              "x64": "https://www.python.org/ftp/python/3.13.6/python-3.13.6-embed-amd64.zip",
-              "x86": "https://www.python.org/ftp/python/3.13.6/python-3.13.6-embed-win32.zip"
+              "x64": "https://www.python.org/ftp/python/3.14.8/python-3.14.8-embed-amd64.zip",
+              "x86": "https://www.python.org/ftp/python/3.14.8/python-3.14.8-embed-win32.zip",
+              "arm64": "https://www.python.org/ftp/python/3.14.8/python-3.14.8-embed-arm64.zip"
             },
             "extractTo": "C:/PortablePython",
             "extract": true,
             "postInstall": [
               "echo Configuring Python embeddable installation...",
-              "echo import site >> C:/PortablePython/python313._pth",
+              "echo import site >> C:/PortablePython/python314._pth",
               "curl -o C:/PortablePython/get-pip.py https://bootstrap.pypa.io/get-pip.py",
               "C:/PortablePython/python.exe C:/PortablePython/get-pip.py --force-reinstall"
             ]
           },
           "full": {
-            "version": "3.13.6",
+            "version": "3.14.8",
             "urls": {
-              "x64": "https://www.python.org/ftp/python/3.13.6/python-3.13.6-amd64.exe",
-              "x86": "https://www.python.org/ftp/python/3.13.6/python-3.13.6.exe"
+              "x64": "https://www.python.org/ftp/python/3.14.8/python-3.14.8-amd64.exe",
+              "x86": "https://www.python.org/ftp/python/3.14.8/python-3.14.8.exe",
+              "arm64": "https://www.python.org/ftp/python/3.14.8/python-3.14.8-arm64.exe"
             },
             "type": "exe",
+            "requiresAdmin": true,
+            "installArgs": ["/quiet", "InstallAllUsers=1", "PrependPath=1", "Include_test=0"]
+          },
+          "latest": {
+            "version": "latest",
+            "preferred": true,
+            "description": "Full installer of the newest stable Python, resolved from python.org at install time",
+            "versionResolver": "python.org",
+            "fallbackVariant": "full",
+            "urls": {
+              "x64": "https://www.python.org/ftp/python/{version}/python-{version}-amd64.exe",
+              "x86": "https://www.python.org/ftp/python/{version}/python-{version}.exe",
+              "arm64": "https://www.python.org/ftp/python/{version}/python-{version}-arm64.exe"
+            },
+            "type": "exe",
+            "requiresAdmin": true,
             "installArgs": ["/quiet", "InstallAllUsers=1", "PrependPath=1", "Include_test=0"]
           }
         },
@@ -96,9 +114,9 @@
       }
     },
     "aiPrompts": {
-      "versionDiscovery": "Check https://www.python.org/downloads/source/ for latest stable releases. Parse version numbers (format: X.Y.Z). For Windows, verify both x64 and x86 installers are available. Download URLs follow pattern: https://www.python.org/ftp/python/{version}/python-{version}-{arch}.exe for installers, python-{version}-embed-{arch}.zip for embeddable.",
-      "urlResolution": "For Windows installers: https://www.python.org/ftp/python/{version}/python-{version}-amd64.exe. For embeddable: https://www.python.org/ftp/python/{version}/python-{version}-embed-amd64.zip",
-      "updateGuidance": "Research Python installation variants: 'full' for system-wide installation with PATH updates, 'embeddable' for portable installations. Check availability of development packages on Linux (python3-dev, build-essential). Verify pip and venv package inclusion."
+      "versionDiscovery": "Check https://www.python.org/ftp/python/ for the newest X.Y.Z release directory whose Windows installers are published (a directory of an upcoming release exists before its installers do, e.g. 3.15.0 without .exe). Verify x64, x86 and arm64 installers and embeddable zips are available. The Windows 'latest' variant resolves this automatically at install time (versionResolver: python.org).",
+      "urlResolution": "Windows installers: https://www.python.org/ftp/python/{version}/python-{version}-amd64.exe (x64), python-{version}.exe (x86), python-{version}-arm64.exe (arm64). Embeddable: python-{version}-embed-amd64.zip, -embed-win32.zip, -embed-arm64.zip.",
+      "updateGuidance": "Windows variants: 'latest' (default, preferred) installs the newest stable full installer resolved from python.org at install time and needs no manual update (when python.org cannot be reached it falls back to 'full', so keep 'full' current); 'full' and 'embeddable' are pinned and must be bumped together: version, all urls (x64, x86, arm64) and, for 'embeddable', the python3XY._pth file name in postInstall (e.g. python314._pth for 3.14). 'full' and 'latest' keep their own installArgs (/quiet InstallAllUsers=1 PrependPath=1 Include_test=0) and requiresAdmin. Check availability of development packages on Linux (python3-dev, build-essential). Verify pip and venv package inclusion."
     }
   }
 }

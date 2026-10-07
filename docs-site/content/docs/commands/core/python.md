@@ -57,6 +57,31 @@ Build & Distribution:
   build wheel                  - Build wheel distribution package
   build sdist                  - Build source distribution package
 
+Code Quality:
+  check syntax [paths...]      - Validate Python syntax via AST
+  lint [paths...]              - Run linter (default: ruff)
+  lint --linter pylint|flake8|ruff   - Choose linter
+  lint --format json|html|github     - Output format
+  format [paths...]            - Format code (default: black)
+  format --formatter autopep8|black  - Choose formatter
+  format --check               - Do not modify; CI mode
+  typecheck [paths...]         - Run mypy
+  test [paths...]              - Run pytest
+  test --coverage              - Run with coverage report
+  test --watch                 - Re-run on file changes
+
+Version Management:
+  version list                 - List installed Python versions
+  version use <ver>            - Pin project version (.python-version)
+  version detect               - Detect project Python requirement
+
+Environment & Project:
+  env show                     - Show Python env configuration
+  env set <VAR> <value>        - Print shell snippet to set env var
+  init project <name>          - Scaffold new Python project
+  init project <n> --template console|library|web|package
+  audit                        - Security scan (pip-audit/safety)
+
 Options:
   --local                      - Use project-local venv (./.venv)
   --path <path>                - Use venv at custom location

@@ -120,7 +120,7 @@ JSON contract.
 computes derived views (graphs, story-point / complexity rollups). It is
 functionally separate from the feedback-tool sync above and validates every
 write against the api #015 contract schemas. Extends #196; implemented directly
-at v2 per [#198](../../../docs/issues/internal/done/198-ptx-pft-ideas-venture-model-v2.md).
+at v2 per [#198](../../../docs/issues/done/198-ptx-pft-ideas-venture-model-v2.md).
 
 The model has two spines:
 

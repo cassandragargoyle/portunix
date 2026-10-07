@@ -9,7 +9,7 @@ debugging and AI-assisted analysis.
 when running `portunix trace ...` commands. It is also embedded as a Go
 package and exposed through external SDKs (Python, Java, TypeScript, Bash).
 
-- Issue: [#141](../../../docs/issues/internal/141-ptx-trace-helper-implementation.md)
+- Issue: [#141](../../../docs/issues/done/141-ptx-trace-helper-implementation.md)
 - ADR: [037 — PTX-TRACE Architecture](../../../docs/adr/)
 - Implementation guide: [`HELPER-BINARY-DEVELOPMENT.md`](../../../docs/contributing/HELPER-BINARY-DEVELOPMENT.md)
 
@@ -171,7 +171,7 @@ Integration tests for tracing flows live in `test/integration/`.
 
 ## See also
 
-- [Issue #141](../../../docs/issues/internal/141-ptx-trace-helper-implementation.md) — full specification
+- [Issue #141](../../../docs/issues/done/141-ptx-trace-helper-implementation.md) — full specification
 - [SDK README](sdk/README.md) — multi-language SDK overview
 - [Bash SDK README](sdk/bash/README.md) — shell helper reference
 - [Helper binary checklist](../../../docs/contributing/HELPER-BINARY-DEVELOPMENT.md)

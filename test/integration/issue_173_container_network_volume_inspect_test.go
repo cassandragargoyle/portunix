@@ -12,7 +12,7 @@ import (
 
 // TestIssue173_ContainerNetworkVolumeInspect verifies the new
 // `portunix container {network,volume,inspect}` subcommand trees.
-// It exercises AC-1 through AC-6 from docs/issues/internal/173-*.md.
+// It exercises AC-1 through AC-6 from docs/issues/done/173-*.md.
 // AC-7 (engine refactor) is covered by existing Odoo acceptance re-run.
 func TestIssue173_ContainerNetworkVolumeInspect(t *testing.T) {
 	tf := testframework.NewTestFramework("Issue173_Container_Network_Volume_Inspect")

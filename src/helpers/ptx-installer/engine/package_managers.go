@@ -341,6 +341,43 @@ func DetectPackageManager() string {
 	return ""
 }
 
+// windowsPackageManagers maps Windows installation types to the binary of
+// their package manager, in order of preference
+var windowsPackageManagers = []struct {
+	installType string
+	binary      string
+}{
+	{"winget", "winget"},
+	{"chocolatey", "choco"},
+}
+
+// DetectWindowsPackageManagers returns the installation types of the Windows
+// package managers available on the system, in order of preference
+func DetectWindowsPackageManagers() []string {
+	if runtime.GOOS != "windows" {
+		return nil
+	}
+
+	var available []string
+	for _, pm := range windowsPackageManagers {
+		if isCommandAvailable(pm.binary) {
+			available = append(available, pm.installType)
+		}
+	}
+	return available
+}
+
+// windowsPackageManagerBinary returns the package manager binary behind a
+// Windows installation type, or "" when the type is not a package manager
+func windowsPackageManagerBinary(installType string) string {
+	for _, pm := range windowsPackageManagers {
+		if pm.installType == installType {
+			return pm.binary
+		}
+	}
+	return ""
+}
+
 // InstallViaChocolatey installs packages using Chocolatey package manager (Windows)
 func InstallViaChocolatey(packages []string) error {
 	if runtime.GOOS != "windows" {

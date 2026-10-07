@@ -867,7 +867,8 @@ func handleListVariants(packageName string) {
 		return
 	}
 
-	autoDetected := detectAutoVariant(&platformSpec)
+	// Same selection the engine applies at install time
+	autoDetected := engine.SelectDefaultVariant(&platformSpec)
 	fmt.Print(formatVariantList(packageName, currentOS, autoDetected, &platformSpec))
 }
 
@@ -937,38 +938,6 @@ func parseVariantArg(args []string, i int) (value string, consumed int, ok bool)
 		return args[i+1], 1, true
 	}
 	return "", 0, false
-}
-
-// detectAutoVariant mirrors engine.Installer.autoDetectVariant for display
-// purposes only. Kept lightweight here to avoid plumbing a full Installer just
-// to render the variant list — engine logic remains the source of truth at
-// install time.
-func detectAutoVariant(platformSpec *registry.PlatformSpec) string {
-	pmToVariant := map[string]string{
-		"apt-get": "apt",
-		"apt":     "apt",
-		"dnf":     "dnf",
-		"yum":     "dnf",
-		"pacman":  "pacman",
-		"zypper":  "zypper",
-	}
-	if pm := engine.DetectPackageManager(); pm != "" {
-		if v, ok := pmToVariant[pm]; ok {
-			if _, exists := platformSpec.Variants[v]; exists {
-				return v
-			}
-		}
-	}
-	if _, exists := platformSpec.Variants["default"]; exists {
-		return "default"
-	}
-	if _, exists := platformSpec.Variants["standard"]; exists {
-		return "standard"
-	}
-	for n := range platformSpec.Variants {
-		return n
-	}
-	return ""
 }
 
 func showInstallHelp() {

@@ -40,7 +40,7 @@ the core project (`portunix`) and plugins project (`portunix-plugins`).
 
 - **Java (OpenJDK)**: Multiple LTS versions (8, 11, 17, 21) from Eclipse Adoptium
 - **GraalVM**: High-performance JDK with native image compilation (17, 21, 23)
-- **Python**: Version 3.13.6 (embeddable and full installations)
+- **Python**: Version 3.14.8 (embeddable and full installations)
 - **Go**: Latest version (1.23.4) from Google
 - **PowerShell**: Cross-platform PowerShell for Linux systems
 
@@ -241,7 +241,7 @@ portunix-plugins/
 - `portunix specpm` - Initialize project-management specifications using
   [spec-kit-pm](https://github.com/CassandraGargoyle/spec-kit-pm) (Issue #183, ADR-040)
 - `portunix github` - GitHub repositories, releases, and authentication
-  (Issue #025): `clone`, `checkout`, `tags`, `releases`, `download`, `info`,
+  (Issue #211): `clone`, `checkout`, `tags`, `releases`, `download`, `info`,
   `status`, `auth login|logout|status|list|set-default`. Pure-Go clone via
   go-git, AES-256-GCM-encrypted token store at `~/.portunix/github/auth.json`,
   resume + SHA-256 verification for asset downloads.

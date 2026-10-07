@@ -5,6 +5,7 @@
 package registry
 
 import (
+	"bytes"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -74,6 +75,64 @@ type PlatformSpec struct {
 	InstallArgs  []string               `json:"installArgs,omitempty"`
 	Environment  map[string]string      `json:"environment,omitempty"`
 	Verification *VerificationSpec      `json:"verification,omitempty"`
+	// VariantOrder lists the variant names in manifest declaration order;
+	// filled when decoding JSON (a map does not keep the order)
+	VariantOrder []string `json:"-"`
+}
+
+// UnmarshalJSON decodes a PlatformSpec and records the declaration order
+// of its variants
+func (p *PlatformSpec) UnmarshalJSON(data []byte) error {
+	type plain PlatformSpec
+	var decoded plain
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	var raw struct {
+		Variants json.RawMessage `json:"variants"`
+	}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return err
+	}
+	order, err := objectKeyOrder(raw.Variants)
+	if err != nil {
+		return fmt.Errorf("variants: %w", err)
+	}
+	*p = PlatformSpec(decoded)
+	p.VariantOrder = order
+	return nil
+}
+
+// objectKeyOrder returns the keys of a JSON object in document order
+func objectKeyOrder(data json.RawMessage) ([]string, error) {
+	if len(bytes.TrimSpace(data)) == 0 || string(bytes.TrimSpace(data)) == "null" {
+		return nil, nil
+	}
+	dec := json.NewDecoder(bytes.NewReader(data))
+	tok, err := dec.Token()
+	if err != nil {
+		return nil, err
+	}
+	if delim, ok := tok.(json.Delim); !ok || delim != '{' {
+		return nil, fmt.Errorf("expected an object")
+	}
+	var keys []string
+	for dec.More() {
+		tok, err := dec.Token()
+		if err != nil {
+			return nil, err
+		}
+		key, ok := tok.(string)
+		if !ok {
+			return nil, fmt.Errorf("expected an object key")
+		}
+		keys = append(keys, key)
+		var skip json.RawMessage
+		if err := dec.Decode(&skip); err != nil {
+			return nil, err
+		}
+	}
+	return keys, nil
 }
 
 // StringOrSlice is a type that can unmarshal either a string or []string from JSON
@@ -118,9 +177,15 @@ type VariantSpec struct {
 	PostInstall       []string          `json:"postInstall,omitempty"`
 	InstallArgs       []string          `json:"installArgs,omitempty"`
 	Distributions     interface{}       `json:"distributions,omitempty"`
-	Checksum          map[string]string `json:"checksum,omitempty"`
-	Container         *ContainerSpec    `json:"container,omitempty"`
-	AdditionalFiles   []AdditionalFile  `json:"additionalFiles,omitempty"`
+	// VersionResolver names a source that resolves the newest version at
+	// install time; the result replaces {version} in url/urls (e.g. "python.org")
+	VersionResolver string `json:"versionResolver,omitempty"`
+	// FallbackVariant is installed instead when VersionResolver fails
+	// (e.g. the release listing is unreachable)
+	FallbackVariant string            `json:"fallbackVariant,omitempty"`
+	Checksum        map[string]string `json:"checksum,omitempty"`
+	Container       *ContainerSpec    `json:"container,omitempty"`
+	AdditionalFiles []AdditionalFile  `json:"additionalFiles,omitempty"`
 }
 
 // AdditionalFile represents an extra file to download alongside the main package
@@ -519,9 +584,13 @@ func (r *PackageRegistry) validateVariant(variantName string, variant *VariantSp
 	if variant.URL != "" || len(variant.URLs) > 0 || len(variant.Packages) > 0 || len(variant.InstallScript) > 0 || variant.Container != nil || len(variant.AdditionalFiles) > 0 {
 		hasInstallMethod = true
 	}
+	// A version resolver supplies the download URLs at install time
+	if variant.VersionResolver != "" {
+		hasInstallMethod = true
+	}
 
 	if !hasInstallMethod {
-		return fmt.Errorf("variant must specify at least one installation method (url, urls, packages, installScript, container, or additionalFiles)")
+		return fmt.Errorf("variant must specify at least one installation method (url, urls, packages, installScript, container, additionalFiles, or versionResolver)")
 	}
 
 	return nil

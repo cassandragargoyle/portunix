@@ -5,9 +5,7 @@
 package engine
 
 import (
-	"os/exec"
 	"regexp"
-	"runtime"
 	"sort"
 	"strings"
 
@@ -92,14 +90,7 @@ func runVerification(command string) (installed bool, version string) {
 		return false, ""
 	}
 
-	var cmd *exec.Cmd
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("cmd", "/c", command)
-	} else {
-		cmd = exec.Command("sh", "-c", command)
-	}
-
-	out, err := cmd.CombinedOutput()
+	out, err := shellCommand(command).CombinedOutput()
 	if err != nil {
 		return false, ""
 	}

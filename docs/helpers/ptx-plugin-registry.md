@@ -10,7 +10,7 @@ platform-specific registration payload declared under
 `supported_platforms[]` in the plugin manifest (schema v1.1.0+).
 
 See Issue #175 and the design decisions captured in
-`docs/issues/internal/done/175-plugin-platform-capability-query.md` for the
+`docs/issues/done/175-plugin-platform-capability-query.md` for the
 full rationale. Key points:
 
 - The daemon serves `PluginRegistryService` defined in
@@ -81,4 +81,4 @@ For the CLI-only path (which does not require starting the daemon), see
 - Synapse extension manifest example:
   [Synapse Extension Plugin Manifest](../plugin-development/examples/synapse-extension-manifest.md)
 - Proto contract: `src/app/plugins/proto/plugin_registry.proto`
-- Issue: `docs/issues/internal/done/175-plugin-platform-capability-query.md`
+- Issue: `docs/issues/done/175-plugin-platform-capability-query.md`

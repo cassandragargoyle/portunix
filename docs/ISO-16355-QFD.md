@@ -142,4 +142,4 @@ The `ptx-pft` helper implements QFD principles:
 ## See Also
 
 - [PTX-PFT Helper](../src/helpers/ptx-pft/README.md) - Implementation of QFD principles in Portunix
-- [Issue #107](issues/internal/107-ptx-pft-product-feedback-tool-helper.md) - PTX-PFT implementation details
+- [Issue #107](issues/done/107-ptx-pft-product-feedback-tool-helper.md) - PTX-PFT implementation details

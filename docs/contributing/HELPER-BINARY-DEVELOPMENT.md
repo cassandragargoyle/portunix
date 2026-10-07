@@ -455,8 +455,8 @@ This is the **definitive checklist** for creating a new helper binary. Follow ea
 
 ### Phase 9: Documentation
 
-- [ ] **9.1** Create/update issue in `docs/issues/internal/{number}-ptx-{name}-*.md`
-- [ ] **9.2** Update `docs/issues/README.md` table
+- [ ] **9.1** Create/update issue in `docs/issues/{NNN}-ptx-{name}-*.md` (GitHub-first, see `ISSUE-MANAGEMENT.md`)
+- [ ] **9.2** Create GitHub label `ptx-{name}` for the new helper
 - [ ] **9.3** Create ADR if architecturally significant: `docs/adr/{number}-ptx-{name}-*.md`
 - [ ] **9.4** Update `docs/FEATURES_OVERVIEW.md` if user-facing feature
 
@@ -492,7 +492,7 @@ This is the **definitive checklist** for creating a new helper binary. Follow ea
 | `scripts/deploy-local.py` | Add to HELPER_BINARIES |
 | `scripts/undeploy-local.py` | Add to binaries list |
 | `scripts/create-platform-archives.py` | Add to BINARIES |
-| `docs/issues/README.md` | Add issue entry |
+| GitHub label `ptx-{name}` | Create component label |
 | `docs/FEATURES_OVERVIEW.md` | Add feature description |
 
 ---

@@ -293,7 +293,7 @@ make undeploy-local
 - **[Windows Setup Guide](docs/WINDOWS-SETUP.md)**: Windows-specific setup and UTF-8 configuration
 - **[TEST_GUIDE.md](TEST_GUIDE.md)**: Complete testing guide for developers
 - **[TESTING.md](TESTING.md)**: Testing architecture and standards
-- **[Issues Documentation](docs/issues/README.md)**: GitHub issues mirror and tracking
+- **[Issues](https://github.com/cassandragargoyle/portunix/issues)**: GitHub issues, detail write-ups in `docs/issues/`
 
 ## Configuration
 
