@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -60,6 +61,14 @@ type ToolCheckResult struct {
 	Fix     string      `json:"fix,omitempty"`
 }
 
+// InstallCheckResult holds the result of the installed-files check
+type InstallCheckResult struct {
+	Status  CheckStatus `json:"status"`
+	State   string      `json:"state"`
+	Message string      `json:"message,omitempty"`
+	Fix     string      `json:"fix,omitempty"`
+}
+
 // PrerequisiteCheckResult holds the complete result of all prerequisite checks
 type PrerequisiteCheckResult struct {
 	PluginName      string              `json:"plugin"`
@@ -68,6 +77,7 @@ type PrerequisiteCheckResult struct {
 	PortunixVersion *VersionCheckResult `json:"portunix_version,omitempty"`
 	OSSupport       *OSCheckResult      `json:"os_support,omitempty"`
 	OptionalTools   []ToolCheckResult   `json:"optional_tools,omitempty"`
+	Installation    *InstallCheckResult `json:"installation,omitempty"`
 	Overall         CheckStatus         `json:"overall"`
 }
 
@@ -92,31 +102,19 @@ func CheckPrerequisites(manifest *PluginManifest) *PrerequisiteCheckResult {
 
 	// Check runtime
 	result.Runtime = checkRuntime(manifest.Plugin.Runtime, manifest.Plugin.RuntimeVersion)
-	if result.Runtime.Status == CheckStatusError {
-		result.Overall = CheckStatusError
-	}
 
 	// Check Portunix version
 	result.PortunixVersion = checkPortunixVersion(manifest.Dependencies.PortunixMinVersion)
-	if result.PortunixVersion.Status == CheckStatusError {
-		result.Overall = CheckStatusError
-	}
 
 	// Check OS support
 	result.OSSupport = CheckOSSupport(manifest.Dependencies.OSSupport)
-	if result.OSSupport.Status == CheckStatusError {
-		result.Overall = CheckStatusError
-	}
 
 	// Check optional tools
 	for _, tool := range manifest.Dependencies.OptionalTools {
-		toolResult := checkOptionalTool(tool)
-		result.OptionalTools = append(result.OptionalTools, toolResult)
-		if toolResult.Status == CheckStatusWarning && result.Overall == CheckStatusOK {
-			result.Overall = CheckStatusWarning
-		}
+		result.OptionalTools = append(result.OptionalTools, checkOptionalTool(tool))
 	}
 
+	result.recomputeOverall()
 	return result
 }
 
@@ -129,29 +127,59 @@ func CheckPrerequisitesFromRegistry(name, ver, runtimeType, runtimeVer, portunix
 	}
 
 	result.Runtime = checkRuntime(runtimeType, runtimeVer)
-	if result.Runtime.Status == CheckStatusError {
-		result.Overall = CheckStatusError
-	}
-
 	result.PortunixVersion = checkPortunixVersion(portunixMinVer)
-	if result.PortunixVersion.Status == CheckStatusError {
-		result.Overall = CheckStatusError
-	}
-
 	result.OSSupport = CheckOSSupport(osSupport)
-	if result.OSSupport.Status == CheckStatusError {
-		result.Overall = CheckStatusError
+	for _, tool := range optionalTools {
+		result.OptionalTools = append(result.OptionalTools, checkOptionalTool(tool))
 	}
 
-	for _, tool := range optionalTools {
-		toolResult := checkOptionalTool(tool)
-		result.OptionalTools = append(result.OptionalTools, toolResult)
-		if toolResult.Status == CheckStatusWarning && result.Overall == CheckStatusOK {
-			result.Overall = CheckStatusWarning
+	result.recomputeOverall()
+	return result
+}
+
+// SetInstallCheck attaches the installed-files check and recomputes Overall
+func (r *PrerequisiteCheckResult) SetInstallCheck(check *InstallCheckResult) {
+	r.Installation = check
+	r.recomputeOverall()
+}
+
+// SetRuntimeCheck replaces the runtime check (e.g. the venv or uv interpreter
+// of a wheel plugin instead of the host runtime) and recomputes Overall
+func (r *PrerequisiteCheckResult) SetRuntimeCheck(check *RuntimeCheckResult) {
+	r.Runtime = check
+	r.recomputeOverall()
+}
+
+// recomputeOverall derives Overall from all individual checks: any error
+// makes it an error, otherwise any warning makes it a warning
+func (r *PrerequisiteCheckResult) recomputeOverall() {
+	statuses := []CheckStatus{}
+	if r.Runtime != nil {
+		statuses = append(statuses, r.Runtime.Status)
+	}
+	if r.PortunixVersion != nil {
+		statuses = append(statuses, r.PortunixVersion.Status)
+	}
+	if r.OSSupport != nil {
+		statuses = append(statuses, r.OSSupport.Status)
+	}
+	if r.Installation != nil {
+		statuses = append(statuses, r.Installation.Status)
+	}
+	for _, tool := range r.OptionalTools {
+		statuses = append(statuses, tool.Status)
+	}
+
+	r.Overall = CheckStatusOK
+	for _, status := range statuses {
+		switch status {
+		case CheckStatusError:
+			r.Overall = CheckStatusError
+			return
+		case CheckStatusWarning:
+			r.Overall = CheckStatusWarning
 		}
 	}
-
-	return result
 }
 
 // HasErrors returns true if the check result contains any errors
@@ -193,6 +221,18 @@ func (r *PrerequisiteCheckResult) FormatHuman() string {
 	if r.OSSupport != nil {
 		icon := statusIcon(r.OSSupport.Status)
 		sb.WriteString(fmt.Sprintf("  OS support:         %-20s %s Current: %s\n", strings.Join(r.OSSupport.Required, ","), icon, r.OSSupport.Current))
+	}
+
+	if r.Installation != nil {
+		icon := statusIcon(r.Installation.Status)
+		sb.WriteString(fmt.Sprintf("  Installation:       %-20s %s", r.Installation.State, icon))
+		if r.Installation.Message != "" {
+			sb.WriteString(fmt.Sprintf(" %s", r.Installation.Message))
+		}
+		sb.WriteString("\n")
+		if r.Installation.Fix != "" {
+			sb.WriteString(fmt.Sprintf("                      Fix: %s\n", r.Installation.Fix))
+		}
 	}
 
 	if len(r.OptionalTools) > 0 {
@@ -299,13 +339,60 @@ func checkJavaRuntime(required, versionConstraint string) *RuntimeCheckResult {
 // CheckPythonRuntime checks if Python is installed and meets version requirements
 func CheckPythonRuntime(required, versionConstraint string) *RuntimeCheckResult {
 	// Try python3 first, then python
-	var cmd *exec.Cmd
+	return checkPythonInterpreters(required, versionConstraint, []string{"python3", "python"}, "Python runtime not found", "portunix install python")
+}
+
+// CheckVenvPythonRuntime checks the interpreter of an installed plugin venv;
+// for wheel plugins this is the runtime that matters, not the host python3
+func CheckVenvPythonRuntime(required, versionConstraint, interpreter, repairFix string) *RuntimeCheckResult {
+	result := checkPythonInterpreters(required, versionConstraint, []string{interpreter}, "venv interpreter not usable", repairFix)
+	if result.Status == CheckStatusOK {
+		result.Message = "(plugin venv)"
+	}
+	return result
+}
+
+// CheckUVPythonRuntime reports the interpreter uv will use for a new plugin
+// venv: OK when uv already has a matching managed Python, a warning when uv
+// will download one during setup; never an error, because uv provides it
+func CheckUVPythonRuntime(required, uv, pythonRequest string) *RuntimeCheckResult {
+	request := pythonRequest
+	if request == "" {
+		request = "latest"
+	}
+
+	args := []string{"python", "find", "--managed-python"}
+	if pythonRequest != "" {
+		args = append(args, pythonRequest)
+	}
+	output, err := exec.Command(uv, args...).Output() // #nosec G204 -- uv binary from PATH, request from plugin manifest
+	interpreter := strings.TrimSpace(string(output))
+	if err != nil || interpreter == "" {
+		return &RuntimeCheckResult{
+			Status:   CheckStatusWarning,
+			Required: required,
+			Message:  fmt.Sprintf("uv will download Python %s during setup", request),
+		}
+	}
+
+	result := checkPythonInterpreters(required, "", []string{interpreter}, "", "")
+	if result.Status != CheckStatusOK {
+		// uv found an interpreter it can use; its version is only informational
+		result.Status = CheckStatusOK
+		result.Found = "uv"
+	}
+	result.Message = "(uv-managed)"
+	return result
+}
+
+// checkPythonInterpreters runs the first candidate that answers "--version"
+// and checks it against the version constraint
+func checkPythonInterpreters(required, versionConstraint string, candidates []string, notFoundMessage, fix string) *RuntimeCheckResult {
 	var output []byte
 	var err error
 
-	for _, pythonCmd := range []string{"python3", "python"} {
-		cmd = exec.Command(pythonCmd, "--version")
-		output, err = cmd.CombinedOutput()
+	for _, pythonCmd := range candidates {
+		output, err = exec.Command(pythonCmd, "--version").CombinedOutput() // #nosec G204 -- interpreter candidates chosen by portunix
 		if err == nil {
 			break
 		}
@@ -315,8 +402,8 @@ func CheckPythonRuntime(required, versionConstraint string) *RuntimeCheckResult 
 		return &RuntimeCheckResult{
 			Status:   CheckStatusError,
 			Required: required,
-			Message:  "Python runtime not found",
-			Fix:      "portunix install python",
+			Message:  notFoundMessage,
+			Fix:      fix,
 		}
 	}
 
@@ -339,7 +426,7 @@ func CheckPythonRuntime(required, versionConstraint string) *RuntimeCheckResult 
 				Required: required,
 				Found:    pythonVersion,
 				Message:  fmt.Sprintf("Python version %s does not satisfy %s", pythonVersion, versionConstraint),
-				Fix:      "portunix install python",
+				Fix:      fix,
 			}
 		}
 	}
@@ -473,6 +560,12 @@ func parsePythonVersion(output string) string {
 		return ""
 	}
 	return matches[1]
+}
+
+// SatisfiesVersionConstraint reports whether version satisfies a constraint
+// like ">=3.10"; a constraint without operator is treated as ">="
+func SatisfiesVersionConstraint(version, constraint string) bool {
+	return satisfiesConstraint(version, constraint)
 }
 
 // satisfiesConstraint checks if a version satisfies a constraint like ">=21", ">=3.10", ">=1.5.0"

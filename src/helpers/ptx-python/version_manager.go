@@ -165,7 +165,7 @@ func (vm *VersionManager) WriteProjectVersion(version string) error {
 		return err
 	}
 	target := filepath.Join(cwd, ".python-version")
-	if err := os.WriteFile(target, []byte(version+"\n"), 0644); err != nil {
+	if err := os.WriteFile(target, []byte(version+"\n"), 0644); err != nil { // #nosec G306 -- Python environments are shared with other tools and users
 		return fmt.Errorf("failed to write .python-version: %v", err)
 	}
 	return nil

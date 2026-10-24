@@ -22,7 +22,7 @@ type Index struct {
 // NewIndex creates a new SQLite index
 func NewIndex(baseDir string) (*Index, error) {
 	indexDir := filepath.Join(baseDir, "index")
-	if err := os.MkdirAll(indexDir, 0755); err != nil {
+	if err := os.MkdirAll(indexDir, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create index directory: %w", err)
 	}
 
@@ -38,7 +38,7 @@ func NewIndex(baseDir string) (*Index, error) {
 	}
 
 	if err := idx.initSchema(); err != nil {
-		db.Close()
+		_ = db.Close()
 		return nil, fmt.Errorf("failed to initialize schema: %w", err)
 	}
 

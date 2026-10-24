@@ -6,6 +6,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"portunix.ai/app"
 
@@ -27,19 +28,19 @@ Example:
 		path, _ := cmd.Flags().GetString("path")
 		destinationPath, _ := cmd.Flags().GetString("destinationpath")
 
-		if path == "" {
-			fmt.Println("Please specify the path to the ZIP file.")
-			return
+		if err := runUnzip(path, destinationPath); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
 		}
-
-		var arguments []string
-		arguments = append(arguments, fmt.Sprintf("--path=%s", path))
-		if destinationPath != "" {
-			arguments = append(arguments, fmt.Sprintf("--destinationpath=%s", destinationPath))
-		}
-
-		app.Unzip(arguments)
 	},
+}
+
+// runUnzip extracts the archive at path, next to the archive when destinationPath is empty
+func runUnzip(path, destinationPath string) error {
+	if path == "" {
+		return fmt.Errorf("please specify the path to the ZIP file with --path")
+	}
+	return app.UnzipFile(path, destinationPath)
 }
 
 func init() {

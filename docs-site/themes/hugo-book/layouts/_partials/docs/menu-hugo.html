@@ -1,7 +1,7 @@
-<!--
+{{/*
   This is template for hugo menus, accepts Page and Menu as context
   https://gohugo.io/variables/menus/
--->
+*/}}
 {{- if .Menu -}}
   {{- template "book-menu-hugo" . -}}
 {{- end -}}
@@ -17,7 +17,7 @@
     {{- $class = $class | append "active" -}}
   {{- end -}}
   <li>
-    {{- $isRemote := (urls.Parse .URL).IsAbs -}}
+    {{- $isRemote := default (urls.Parse .URL).IsAbs .Params.bookNewTab -}}
     <a href="{{ .URL }}"
       {{- with $class }} class="{{ delimit . " " }}"{{- end -}}
       {{- with .Title }} title="{{ . }}"{{- end -}}

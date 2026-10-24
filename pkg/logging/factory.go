@@ -189,13 +189,13 @@ func (f *Factory) createFileWriter() io.Writer {
 
 	// Ensure directory exists
 	dir := filepath.Dir(f.config.FilePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to create log directory %s: %v\n", dir, err)
 		return nil
 	}
 
 	// Open or create file
-	file, err := os.OpenFile(f.config.FilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(f.config.FilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed to open log file %s: %v\n", f.config.FilePath, err)
 		return nil

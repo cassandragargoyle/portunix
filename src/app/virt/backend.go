@@ -46,7 +46,7 @@ func selectBackend(config *Config) (Backend, error) {
 
 		// Generate enhanced error message with diagnostic information
 		errorMsg := generateVirtualBoxErrorMessage(backend)
-		return nil, fmt.Errorf(errorMsg)
+		return nil, fmt.Errorf("%s", errorMsg)
 
 	default:
 		return nil, fmt.Errorf("unsupported virtualization backend: %s", preferred)

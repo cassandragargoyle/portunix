@@ -214,10 +214,10 @@ func BuildImage(baseImage string) error {
 
 	// Write Dockerfile to temp location
 	tempDir := ".tmp"
-	os.MkdirAll(tempDir, 0755)
+	_ = os.MkdirAll(tempDir, 0750)
 
 	dockerfilePath := filepath.Join(tempDir, "Dockerfile")
-	if err := os.WriteFile(dockerfilePath, []byte(dockerfile), 0644); err != nil {
+	if err := os.WriteFile(dockerfilePath, []byte(dockerfile), 0600); err != nil {
 		return fmt.Errorf("failed to write Dockerfile: %w", err)
 	}
 
@@ -520,7 +520,7 @@ func setupCacheDirectory(cachePath string) error {
 		cachePath = ".cache"
 	}
 
-	return os.MkdirAll(cachePath, 0755)
+	return os.MkdirAll(cachePath, 0755) // #nosec G301 -- mounted into containers, the container user must be able to traverse it
 }
 
 func buildDockerRunArgs(config DockerConfig) []string {
@@ -717,7 +717,7 @@ func testSSHConnectivity(containerName string) error {
 	for time.Since(start) < timeout {
 		conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "22"), 1*time.Second)
 		if err == nil {
-			conn.Close()
+			_ = conn.Close()
 			return nil
 		}
 		time.Sleep(1 * time.Second)
@@ -740,7 +740,7 @@ func cleanSSHHostKeys() {
 
 	// Clean host key for port 2222
 	cmd := exec.Command("ssh-keygen", "-f", knownHostsPath, "-R", "[localhost]:2222")
-	cmd.Run() // Ignore errors - the key might not exist
+	_ = cmd.Run() // Ignore errors - the key might not exist
 }
 
 func displaySSHInfo(containerName, username, password string) {
@@ -1118,13 +1118,13 @@ func installDockerCentOSFedora(dataRoot string) error {
 
 	// Create Docker configuration directory and daemon.json
 	dockerConfigDir := "/etc/docker"
-	if err := os.MkdirAll(dockerConfigDir, 0755); err != nil {
+	if err := os.MkdirAll(dockerConfigDir, 0755); err != nil { // #nosec G301 -- Docker daemon configuration is world-readable by convention
 		fmt.Printf("⚠️  Could not create Docker config directory: %v\n", err)
 	}
 
 	// Create data-root directory
 	if dataRoot != "" {
-		if err := os.MkdirAll(dataRoot, 0755); err != nil {
+		if err := os.MkdirAll(dataRoot, 0750); err != nil {
 			fmt.Printf("⚠️  Could not create data-root directory: %v\n", err)
 		}
 	}
@@ -1895,19 +1895,19 @@ func CheckRequirements() error {
 
 	// Test if we can create a test file (needed for volume mounting)
 	testFile := filepath.Join(currentDir, ".portunix-test")
-	err = os.WriteFile(testFile, []byte("test"), 0644)
+	err = os.WriteFile(testFile, []byte("test"), 0600)
 	if err != nil {
 		fmt.Println("❌ FAILED")
 		fmt.Printf("   Cannot write to current directory: %s\n", currentDir)
 		return fmt.Errorf("insufficient permissions in current directory")
 	}
-	os.Remove(testFile) // cleanup
+	_ = os.Remove(testFile) // cleanup
 	fmt.Printf("✅ OK (%s)\n", currentDir)
 
 	// Check cache directory
 	fmt.Print("🗂️  Cache directory: ")
 	cacheDir := ".cache"
-	err = os.MkdirAll(cacheDir, 0755)
+	err = os.MkdirAll(cacheDir, 0755) // #nosec G301 -- mounted into containers, the container user must be able to traverse it
 	if err != nil {
 		fmt.Println("❌ FAILED")
 		fmt.Printf("   Cannot create cache directory: %s\n", cacheDir)

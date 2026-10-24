@@ -125,7 +125,7 @@ func DownloadFile(destPath string, url string) error {
 	defer out.Close()
 
 	// Get the data
-	resp, err := http.Get(url) //nolint:gosec // G107: URL comes from the trusted package registry
+	resp, err := http.Get(url) // #nosec G107 -- URL comes from the trusted package registry
 	if err != nil {
 		return fmt.Errorf("failed to download: %w", err)
 	}
@@ -162,12 +162,12 @@ func DownloadFile(destPath string, url string) error {
 // DownloadFileWithProperFilename downloads a file and determines the proper filename
 func DownloadFileWithProperFilename(url string, cacheDir string) (string, error) {
 	// Ensure cache directory exists
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0755); err != nil { // #nosec G301 -- download cache holds public distribution archives
 		return "", fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
 	// Get the response to check headers
-	resp, err := http.Get(url) //nolint:gosec // G107: URL comes from the trusted package registry
+	resp, err := http.Get(url) // #nosec G107 -- URL comes from the trusted package registry
 	if err != nil {
 		return "", fmt.Errorf("failed to fetch URL: %w", err)
 	}

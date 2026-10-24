@@ -273,7 +273,7 @@ var virtDeleteCmd = &cobra.Command{
 		if !force {
 			fmt.Printf("Are you sure you want to delete VM '%s'? [y/N]: ", vmName)
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if response != "y" && response != "Y" {
 				fmt.Println("Deletion cancelled.")
 				return

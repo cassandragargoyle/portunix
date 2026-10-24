@@ -5,6 +5,58 @@ Všechny významné změny v Portunixu jsou dokumentovány v tomto souboru.
 Formát vychází z [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 a projekt dodržuje [Sémantické verzování](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.3] - 2026-10-24
+
+### Opraveno ve 2.6.3
+
+- **`portunix unzip` znovu rozbaluje** (Issue #231) — příkaz skládal své flagy do tvaru `--path=<file>`, který
+  starý parser argumentů neuměl přečíst, takže se nic nerozbalilo a mohl vzniknout adresář pojmenovaný podle
+  flagu. Příkaz nyní volá přímo zabezpečený extraktor; chybějící archiv, chybějící `--path` a položka mimo
+  cílový adresář se hlásí s návratovým kódem 1.
+- **Python pluginy po upgradu Pythonu** (Issue #233) — `plugin list` a `plugin check` rozpoznají venv pluginu,
+  jehož interpreter už neexistuje, a označí ho jako rozbitý; `portunix plugin repair <name>` ho obnoví.
+  `plugin install --force` je atomický: neúspěšná reinstalace ponechá funkční instalaci.
+- **Kontrola runtime pluginů s uv** (Issues #234, #239) — instalace, reinstalace a oprava wheel pluginu už
+  nehlásí chybějící Python, když interpreter dodá uv; plugin bez `plugin.python_version` dostane konzervativní
+  výchozí Python s doporučením verzi zafixovat; za chybami pluginů se už nevypisuje celý text nápovědy.
+- **Oddělovač `--` v `container run` a `container exec`** (Issues #235, #238) — oddělovač se už nepředává
+  podman/docker jako příkaz kontejneru a `-h`/`--help` za ním patří příkazu kontejneru, místo aby zobrazil
+  nápovědu Portunixu.
+- **Přerušený `service start`** (Issue #236) — proces pluginu spuštěný CLI, které bylo během startu ukončeno,
+  se zastaví, místo aby běžel mimo evidenci; důvod „plugin not found“ se vypíše jen jednou (Issue #237).
+- **Pluginy dostávají pracovní adresář volajícího** (Issue #229) — dispatcher exportuje `PORTUNIX_CWD`, takže
+  pluginy umí vyhodnotit relativní cesty z příkazové řádky.
+- **Zástupné symboly v `postInstall` u ptx-installer** (Issue #227) — `${sudo_prefix}` a `${actual_extract_to}`
+  se opět nahrazují; shell je dříve rozvinul na prázdné řetězce.
+- **Nálezy gosec** (Issues #224, #228) — kořenový modul i každý modul s vlastním `go.mod` projde skenem gosec;
+  moduly pod Go 1.24 mají direktivu `go` zvýšenou na 1.24.
+
+### Změněno ve 2.6.3
+
+- **Security Scan pokrývá vnořené moduly** (Issue #228) — preflight kontrola i CI Security Scan spouští gosec
+  v každém Go modulu, nejen v kořenovém.
+
+## [2.6.2] - 2026-10-07
+
+### Opraveno ve 2.6.2
+
+- **Reinstalace už nemaže sdílené adresáře** (Issue #226) — reinstalace balíčku, jehož archiv se rozbaluje do
+  sdíleného umístění (`/usr/local/bin`, `/usr/local`, `C:/Program Files` a další známé adresáře), mohla smazat
+  celý adresář. Sdílené adresáře se nyní nemažou nikdy, ani s `--force`; soubory z archivu nahradí existující
+  na místě a smazání se nabízí jen pro adresář nejvyšší úrovně vytvořený samotným archivem
+  (např. `/usr/local/go`).
+- **Rozbalení taru přes existující soubor** (Issue #226) — existující soubory a symlinky se nahrazují, místo aby
+  se přepisovaly; kratší nová binárka si dříve ponechala konec té staré.
+- **Hugo extended na Windows arm64** — odstraněna URL ke stažení, která u výrobce neexistuje.
+
+### Změněno ve 2.6.2
+
+- **Hugo 0.167.0** — aktualizovány balíčky `hugo` a `hugo-extended`; téma hugo-book vyžaduje
+  Hugo >= 0.158.0 extended.
+- **Preflight kontrola spouští gosec** — `scripts/github-01-preflight-check.sh` spouští stejný gosec sken jako
+  job Security Scan na GitHubu (lokální binárka, nebo kontejner `golang` přes `portunix container`) a selže
+  při jakémkoli nálezu.
+
 ## [2.6.1] - 2026-10-07
 
 ### Přidáno ve 2.6.1

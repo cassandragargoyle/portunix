@@ -152,7 +152,7 @@ func (em *EnvManager) InitProject(opts InitProjectOptions) error {
 		filepath.Join(root, "tests"),
 	}
 	for _, d := range dirs {
-		if err := os.MkdirAll(d, 0755); err != nil {
+		if err := os.MkdirAll(d, 0755); err != nil { // #nosec G301 -- Python environments are shared with other tools and users
 			return fmt.Errorf("failed to create %s: %v", d, err)
 		}
 	}
@@ -172,7 +172,7 @@ func (em *EnvManager) InitProject(opts InitProjectOptions) error {
 	}
 
 	for path, content := range files {
-		if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		if err := os.WriteFile(path, []byte(content), 0644); err != nil { // #nosec G306 -- Python environments are shared with other tools and users
 			return fmt.Errorf("failed to write %s: %v", path, err)
 		}
 	}

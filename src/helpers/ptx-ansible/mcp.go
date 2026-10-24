@@ -46,7 +46,7 @@ func (mcp *MCPTools) GeneratePlaybookFromPrompt(prompt string, metadata map[stri
 	}
 
 	// Create output directory if it doesn't exist
-	os.MkdirAll(mcp.OutputDir, 0755)
+	_ = os.MkdirAll(mcp.OutputDir, 0750)
 
 	// Parse metadata
 	name := "generated-playbook"
@@ -303,7 +303,7 @@ func (mcp *MCPTools) savePlaybookToFile(ptxbook *PtxbookFile, filepath string) e
 		return err
 	}
 
-	return os.WriteFile(filepath, []byte(yamlContent), 0644)
+	return os.WriteFile(filepath, []byte(yamlContent), 0600)
 }
 
 // convertToYAML converts a PtxbookFile to YAML format
@@ -571,9 +571,9 @@ func (mcp *MCPTools) ExportMCPToolsManifest() (*MCPToolResult, error) {
 
 	// Save manifest file
 	manifestPath := filepath.Join(mcp.OutputDir, "mcp-tools-manifest.json")
-	os.MkdirAll(mcp.OutputDir, 0755)
+	_ = os.MkdirAll(mcp.OutputDir, 0750)
 
-	if err := os.WriteFile(manifestPath, manifestJSON, 0644); err != nil {
+	if err := os.WriteFile(manifestPath, manifestJSON, 0600); err != nil {
 		return &MCPToolResult{
 			Success: false,
 			Error:   fmt.Sprintf("Failed to save manifest: %v", err),

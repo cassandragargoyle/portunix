@@ -461,7 +461,7 @@ func (r *Registry) load() error {
 // save saves the registry to file
 func (r *Registry) save() error {
 	// Ensure directory exists
-	if err := os.MkdirAll(filepath.Dir(r.filePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(r.filePath), 0750); err != nil {
 		return fmt.Errorf("failed to create registry directory: %w", err)
 	}
 

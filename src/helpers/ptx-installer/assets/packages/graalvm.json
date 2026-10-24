@@ -61,9 +61,9 @@
             },
             "extractTo": "/opt/graalvm/graalvm-jdk-17.0.9",
             "postInstall": [
-              "sudo update-alternatives --install /usr/bin/java java ${install_path}/bin/java 2",
-              "sudo update-alternatives --install /usr/bin/javac javac ${install_path}/bin/javac 2",
-              "sudo update-alternatives --install /usr/bin/native-image native-image ${install_path}/bin/native-image 2"
+              "${sudo_prefix}update-alternatives --install /usr/bin/java java ${install_path}/bin/java 2",
+              "${sudo_prefix}update-alternatives --install /usr/bin/javac javac ${install_path}/bin/javac 2",
+              "${sudo_prefix}update-alternatives --install /usr/bin/native-image native-image ${install_path}/bin/native-image 2"
             ]
           },
           "21": {
@@ -74,9 +74,9 @@
             },
             "extractTo": "/opt/graalvm/graalvm-jdk-21.0.2",
             "postInstall": [
-              "sudo update-alternatives --install /usr/bin/java java ${install_path}/bin/java 2",
-              "sudo update-alternatives --install /usr/bin/javac javac ${install_path}/bin/javac 2",
-              "sudo update-alternatives --install /usr/bin/native-image native-image ${install_path}/bin/native-image 2"
+              "${sudo_prefix}update-alternatives --install /usr/bin/java java ${install_path}/bin/java 2",
+              "${sudo_prefix}update-alternatives --install /usr/bin/javac javac ${install_path}/bin/javac 2",
+              "${sudo_prefix}update-alternatives --install /usr/bin/native-image native-image ${install_path}/bin/native-image 2"
             ]
           },
           "23": {
@@ -87,9 +87,9 @@
             },
             "extractTo": "/opt/graalvm/graalvm-jdk-23.0.2",
             "postInstall": [
-              "sudo update-alternatives --install /usr/bin/java java ${install_path}/bin/java 2",
-              "sudo update-alternatives --install /usr/bin/javac javac ${install_path}/bin/javac 2",
-              "sudo update-alternatives --install /usr/bin/native-image native-image ${install_path}/bin/native-image 2"
+              "${sudo_prefix}update-alternatives --install /usr/bin/java java ${install_path}/bin/java 2",
+              "${sudo_prefix}update-alternatives --install /usr/bin/javac javac ${install_path}/bin/javac 2",
+              "${sudo_prefix}update-alternatives --install /usr/bin/native-image native-image ${install_path}/bin/native-image 2"
             ]
           }
         },

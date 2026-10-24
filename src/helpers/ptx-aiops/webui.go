@@ -46,7 +46,7 @@ func getWebUIDataDir() string {
 // ensureWebUIDataDir creates WebUI data directory if it doesn't exist
 func ensureWebUIDataDir() error {
 	dataDir := getWebUIDataDir()
-	return os.MkdirAll(dataDir, 0755)
+	return os.MkdirAll(dataDir, 0755) // #nosec G301 -- mounted as a volume, the container user must be able to traverse it
 }
 
 // getWebUIContainerStatus checks the status of WebUI container
@@ -166,7 +166,7 @@ func handleWebUIContainerCreate(args []string) {
 
 		resp, err := http.Get(WebUIEndpoint)
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			ready = true
 			break
 		}
@@ -226,7 +226,7 @@ func handleWebUIContainerStatus() {
 		fmt.Print("Web Status:  ")
 		resp, err := http.Get(WebUIEndpoint)
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			fmt.Println("✓ Available at", WebUIEndpoint)
 		} else {
 			fmt.Println("⚠ Not responding")
@@ -315,7 +315,7 @@ func handleWebUIContainerRemove() {
 	if status.Running {
 		fmt.Printf("Stopping container '%s'...\n", WebUIContainerName)
 		cmd := exec.Command(runtimeCmd, "stop", WebUIContainerName)
-		cmd.Run()
+		_ = cmd.Run()
 	}
 
 	// Remove container
@@ -352,7 +352,7 @@ func handleWebUIOpen() {
 		fmt.Println("Check logs with: portunix container logs", WebUIContainerName)
 		return
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	fmt.Printf("Opening %s in browser...\n", url)
 

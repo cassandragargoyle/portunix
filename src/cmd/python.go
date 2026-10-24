@@ -46,7 +46,7 @@ Examples:
 		}
 
 		// Fallback: show help
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 

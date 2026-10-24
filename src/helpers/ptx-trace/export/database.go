@@ -240,7 +240,7 @@ func (e *DatabaseExporter) createTables(db *sql.DB, opts *DatabaseExportOptions)
 	}
 
 	for _, idx := range indexes {
-		db.Exec(idx) // Ignore errors for index creation
+		_, _ = db.Exec(idx) // Ignore errors for index creation
 	}
 
 	return nil

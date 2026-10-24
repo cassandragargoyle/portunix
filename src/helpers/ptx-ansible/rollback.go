@@ -64,7 +64,7 @@ func NewRollbackManager(ptxbook *PtxbookFile) *RollbackManager {
 // setupLogging creates a log file for rollback operations
 func (rm *RollbackManager) setupLogging() {
 	logDir := "/tmp/ptx-ansible-logs"
-	os.MkdirAll(logDir, 0755)
+	_ = os.MkdirAll(logDir, 0750)
 
 	timestamp := time.Now().Format("20060102-150405")
 	rm.logFile = filepath.Join(logDir, fmt.Sprintf("rollback-%s.log", timestamp))
@@ -82,9 +82,9 @@ func (rm *RollbackManager) log(message string) {
 	timestamp := time.Now().Format("2006-01-02 15:04:05")
 	logEntry := fmt.Sprintf("[%s] %s\n", timestamp, message)
 
-	if file, err := os.OpenFile(rm.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644); err == nil {
+	if file, err := os.OpenFile(rm.logFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600); err == nil {
 		defer file.Close()
-		file.WriteString(logEntry)
+		_, _ = file.WriteString(logEntry)
 	}
 }
 
@@ -283,7 +283,7 @@ func (rm *RollbackManager) executeFileRestore(action RollbackAction) error {
 	rm.log(fmt.Sprintf("File restored: %s from %s", filePath, backupPath))
 
 	// Remove backup
-	os.Remove(backupPath)
+	_ = os.Remove(backupPath)
 
 	return nil
 }
@@ -328,7 +328,7 @@ func copyFile(source, destination string) error {
 		return err
 	}
 
-	return os.WriteFile(destination, input, 0644)
+	return os.WriteFile(destination, input, 0600)
 }
 
 // GetLogFile returns the path to the rollback log file

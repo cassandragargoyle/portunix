@@ -45,7 +45,7 @@ func (g *GitProvider) Fetch() (string, bool, error) {
 	if err := requireGit(); err != nil {
 		return "", false, err
 	}
-	if err := os.MkdirAll(filepath.Dir(dir), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(dir), 0o755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 		return "", false, fmt.Errorf("create cache parent: %w", err)
 	}
 	// Clone into a sibling .tmp directory and rename on success so a partial

@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -114,7 +115,8 @@ const (
 	PluginStatusRunning
 	PluginStatusStopping
 	PluginStatusFailed
-	PluginStatusReady // for helper plugins that don't run as daemon
+	PluginStatusReady  // for helper plugins that don't run as daemon
+	PluginStatusBroken // installed files present but unusable (e.g. venv interpreter removed)
 )
 
 func (s PluginStatus) String() string {
@@ -131,6 +133,8 @@ func (s PluginStatus) String() string {
 		return "failed"
 	case PluginStatusReady:
 		return "ready"
+	case PluginStatusBroken:
+		return "broken"
 	default:
 		return "unknown"
 	}

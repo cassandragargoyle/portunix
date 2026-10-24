@@ -72,7 +72,7 @@ func loadConfigFromFile(config *Config, path string) error {
 // SaveConfig saves configuration to the user config file
 func SaveConfig(config *Config) error {
 	userConfigDir := filepath.Join(getUserHome(), ".portunix")
-	if err := os.MkdirAll(userConfigDir, 0755); err != nil {
+	if err := os.MkdirAll(userConfigDir, 0750); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -82,7 +82,7 @@ func SaveConfig(config *Config) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	return os.WriteFile(configPath, data, 0644)
+	return os.WriteFile(configPath, data, 0600)
 }
 
 // GetConfigValue returns a specific configuration value

@@ -154,7 +154,7 @@ func DownloadFile(url, filepath string) error {
 	defer outFile.Close()
 
 	// Perform the HTTP GET request
-	response, err := http.Get(url)
+	response, err := http.Get(url) // #nosec G107 -- callers pass download URLs built by Portunix
 	if err != nil {
 		return err
 	}
@@ -190,39 +190,6 @@ func ReplaceTemplateVariables(template string, replacements map[string]string) s
 		template = strings.ReplaceAll(template, "$"+"{"+key+"}", value)
 	}
 	return template
-}
-
-func ProcessArguments(arguments []string, enabledArguments []string) (map[string]string, []string) {
-	argsMap := map[string]string{}
-	other := []string{}
-	skip := 0
-	founded := false
-	for i, str := range arguments {
-		if skip > 0 {
-			skip--
-			continue
-		}
-		founded = false
-		for _, ea := range enabledArguments {
-			if strings.HasPrefix(str, ea+"=") {
-				version := strings.SplitN(str, "=", 2)[1]
-				argsMap[ea] = version
-				founded = true
-				break
-			} else if strings.HasPrefix(str, "-"+ea) || strings.HasPrefix(str, "--"+ea) {
-				if i+1 < len(arguments) {
-					argsMap[ea] = arguments[i+1]
-					skip = 1
-					founded = true
-					break
-				}
-			}
-		}
-		if !founded {
-			other = append(other, str)
-		}
-	}
-	return argsMap, other
 }
 
 func FileExist(path string) bool {

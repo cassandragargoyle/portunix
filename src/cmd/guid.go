@@ -19,7 +19,7 @@ var guidCmd = &cobra.Command{
 	Hidden: true, // Hidden from standard help - only visible in expert and AI help
 	Run: func(cmd *cobra.Command, args []string) {
 		// Show help when no subcommand is provided
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 

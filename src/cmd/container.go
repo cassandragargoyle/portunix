@@ -826,7 +826,7 @@ Configuration:
 		// Handle help flag manually since DisableFlagParsing is true
 		for _, arg := range args {
 			if arg == "--help" || arg == "-h" {
-				cmd.Help()
+				_ = cmd.Help()
 				return
 			}
 		}

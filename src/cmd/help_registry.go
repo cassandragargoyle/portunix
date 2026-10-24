@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -90,6 +91,7 @@ var CommandRegistry = []CommandInfo{
 			"portunix plugin list",
 			"portunix plugin install ./my-plugin",
 			"portunix plugin enable agile",
+			"portunix plugin repair my-python-plugin",
 		},
 	},
 	{

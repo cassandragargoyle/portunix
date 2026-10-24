@@ -240,14 +240,14 @@ func UnmaskLibvirtDaemon(daemonName string) error {
 
 	// Start (ignore error if already running)
 	cmd = exec.Command("sudo", "systemctl", "start", daemonName)
-	cmd.Run() // Ignore error - daemon might already be running
+	_ = cmd.Run() // Ignore error - daemon might already be running
 	return nil
 }
 
 // StartLibvirtDaemon starts libvirt daemon
 func StartLibvirtDaemon(daemonName string) error {
 	cmd := exec.Command("sudo", "systemctl", "start", daemonName)
-	cmd.Run() // Ignore error - daemon might already be running
+	_ = cmd.Run() // Ignore error - daemon might already be running
 	return nil
 }
 
@@ -261,12 +261,12 @@ func EnableLibvirtDaemon(daemonName string) error {
 func ResetFailedSocket(socketName string) error {
 	// Reset failed state for both socket and service
 	cmd := exec.Command("sudo", "systemctl", "reset-failed", socketName)
-	cmd.Run() // Ignore error - might not be in failed state
+	_ = cmd.Run() // Ignore error - might not be in failed state
 
 	// Also reset the daemon service
 	daemonName := strings.Replace(socketName, ".socket", "", 1)
 	cmd = exec.Command("sudo", "systemctl", "reset-failed", daemonName)
-	cmd.Run() // Ignore error
+	_ = cmd.Run() // Ignore error
 
 	// Restart socket
 	cmd = exec.Command("sudo", "systemctl", "restart", socketName)
@@ -277,10 +277,10 @@ func ResetFailedSocket(socketName string) error {
 func SwitchToDirectDaemon(daemonName, socketName string) error {
 	// Stop and disable socket activation
 	cmd := exec.Command("sudo", "systemctl", "stop", socketName)
-	cmd.Run() // Ignore error
+	_ = cmd.Run() // Ignore error
 
 	cmd = exec.Command("sudo", "systemctl", "disable", socketName)
-	cmd.Run() // Ignore error
+	_ = cmd.Run() // Ignore error
 
 	// Enable and start direct daemon
 	cmd = exec.Command("sudo", "systemctl", "enable", daemonName)
@@ -289,7 +289,7 @@ func SwitchToDirectDaemon(daemonName, socketName string) error {
 	}
 
 	cmd = exec.Command("sudo", "systemctl", "start", daemonName)
-	cmd.Run() // Ignore error - might already be running
+	_ = cmd.Run() // Ignore error - might already be running
 
 	return nil
 }
@@ -303,11 +303,11 @@ func UnmaskDependency(depName string) error {
 // ResetFailedDependency resets a failed dependency
 func ResetFailedDependency(depName string) error {
 	cmd := exec.Command("sudo", "systemctl", "reset-failed", depName)
-	cmd.Run() // Ignore error if not failed
+	_ = cmd.Run() // Ignore error if not failed
 
 	// Try to start it
 	cmd = exec.Command("sudo", "systemctl", "start", depName)
-	cmd.Run() // Ignore error - might auto-start via socket
+	_ = cmd.Run() // Ignore error - might auto-start via socket
 
 	return nil
 }

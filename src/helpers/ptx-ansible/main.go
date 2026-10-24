@@ -429,7 +429,7 @@ func handlePlaybookBuild(args []string) {
 	}
 
 	// Write Dockerfile
-	if err := os.WriteFile(outputFile, []byte(dockerfile.String()), 0644); err != nil {
+	if err := os.WriteFile(outputFile, []byte(dockerfile.String()), 0644); err != nil { // #nosec G306 -- output requested by the user, holds no credentials
 		fmt.Printf("Error writing Dockerfile: %v\n", err)
 		os.Exit(1)
 	}

@@ -81,7 +81,7 @@ func (i *InputComponent) Validate() error {
 
 	if i.Validation.Required && i.Value == "" {
 		if i.Validation.Message != "" {
-			return fmt.Errorf(i.Validation.Message)
+			return fmt.Errorf("%s", i.Validation.Message)
 		}
 		return fmt.Errorf("this field is required")
 	}
@@ -101,7 +101,7 @@ func (i *InputComponent) Validate() error {
 		}
 		if !matched {
 			if i.Validation.Message != "" {
-				return fmt.Errorf(i.Validation.Message)
+				return fmt.Errorf("%s", i.Validation.Message)
 			}
 			return fmt.Errorf("invalid format")
 		}

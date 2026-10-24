@@ -1,10 +1,10 @@
 package sandbox
 
 import (
-	"archive/zip"
 	"bufio"
 	"fmt"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"os"
@@ -69,7 +69,7 @@ func GenerateWsbFile(config SandboxConfig) (string, string, error) {
 	// Create the temporary directory if it doesn't exist
 	tempDir := ".tmp"
 	if _, err := os.Stat(tempDir); os.IsNotExist(err) {
-		err = os.MkdirAll(tempDir, 0755)
+		err = os.MkdirAll(tempDir, 0755) // #nosec G301 -- mapped into Windows Sandbox, the sandbox user must read it
 		if err != nil {
 			return "", "", fmt.Errorf("failed to create temporary directory: %w", err)
 		}
@@ -215,7 +215,7 @@ func GenerateWsbFile(config SandboxConfig) (string, string, error) {
 		}...)
 
 		// Write batch file
-		err = os.WriteFile(batchFileName, []byte(strings.Join(batchContent, "\r\n")), 0644)
+		err = os.WriteFile(batchFileName, []byte(strings.Join(batchContent, "\r\n")), 0644) // #nosec G306 -- mapped into Windows Sandbox, the sandbox user must read it
 		if err != nil {
 			return "", "", fmt.Errorf("failed to create batch file: %w", err)
 		}
@@ -313,7 +313,7 @@ func WaitForSSH(port string, timeout time.Duration) error {
 			addr := net.JoinHostPort(host, port)
 			conn, err := net.DialTimeout("tcp", addr, 1*time.Second)
 			if err == nil {
-				conn.Close()
+				_ = conn.Close()
 				fmt.Printf("✓ SSH is ready on %s\n", addr)
 				return nil
 			}
@@ -401,7 +401,7 @@ func EnsureNotepadPlusPlus(tempDir string) error {
 	notepadExecutable := filepath.Join(notepadCacheDir, "notepad++.exe")
 
 	// Create cache directory if it doesn't exist
-	if err := os.MkdirAll(notepadCacheDir, 0755); err != nil {
+	if err := os.MkdirAll(notepadCacheDir, 0755); err != nil { // #nosec G301 -- mapped into Windows Sandbox, the sandbox user must read it
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
@@ -417,7 +417,7 @@ func EnsureNotepadPlusPlus(tempDir string) error {
 
 	// Copy Notepad++ to temp directory
 	notepadTempDir := filepath.Join(tempDir, "notepadplusplus")
-	if err := os.MkdirAll(notepadTempDir, 0755); err != nil {
+	if err := os.MkdirAll(notepadTempDir, 0755); err != nil { // #nosec G301 -- mapped into Windows Sandbox, the sandbox user must read it
 		return fmt.Errorf("failed to create temp notepad directory: %w", err)
 	}
 
@@ -439,7 +439,7 @@ func EnsureWin32OpenSSH(tempDir string) error {
 	sshExecutable := filepath.Join(sshCacheDir, "OpenSSH-Win64", "sshd.exe")
 
 	// Create cache directory if it doesn't exist
-	if err := os.MkdirAll(sshCacheDir, 0755); err != nil {
+	if err := os.MkdirAll(sshCacheDir, 0755); err != nil { // #nosec G301 -- mapped into Windows Sandbox, the sandbox user must read it
 		return fmt.Errorf("failed to create SSH cache directory: %w", err)
 	}
 
@@ -459,7 +459,7 @@ func EnsureWin32OpenSSH(tempDir string) error {
 
 	// Copy Win32-OpenSSH to temp directory
 	sshTempDir := filepath.Join(tempDir, "openssh")
-	if err := os.MkdirAll(sshTempDir, 0755); err != nil {
+	if err := os.MkdirAll(sshTempDir, 0755); err != nil { // #nosec G301 -- mapped into Windows Sandbox, the sandbox user must read it
 		return fmt.Errorf("failed to create temp SSH directory: %w", err)
 	}
 
@@ -511,74 +511,37 @@ func downloadNotepadPlusPlus(destDir string) error {
 
 // extractZip extracts a zip file to destination directory
 func extractZip(src, dest string) error {
-	r, err := zip.OpenReader(src)
-	if err != nil {
-		return err
-	}
-	defer r.Close()
-
-	// Make destination directory
-	os.MkdirAll(dest, 0755)
-
-	// Extract files
-	for _, f := range r.File {
-		path := filepath.Join(dest, f.Name)
-
-		if f.FileInfo().IsDir() {
-			os.MkdirAll(path, f.FileInfo().Mode())
-			continue
-		}
-
-		// Create parent directories
-		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
-			return err
-		}
-
-		// Extract file
-		rc, err := f.Open()
-		if err != nil {
-			return err
-		}
-
-		outFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.FileInfo().Mode())
-		if err != nil {
-			rc.Close()
-			return err
-		}
-
-		_, err = io.Copy(outFile, rc)
-		outFile.Close()
-		rc.Close()
-
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return archive.ExtractZip(src, dest)
 }
 
 // copyDirectory recursively copies a directory
 func copyDirectory(src, dst string) error {
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+	// Read through os.Root so a symlink swapped in during the walk cannot lead outside src
+	root, err := os.OpenRoot(src)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	srcFS := root.FS()
+
+	return fs.WalkDir(srcFS, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		// Get relative path
-		relPath, err := filepath.Rel(src, path)
+		info, err := d.Info()
 		if err != nil {
 			return err
 		}
 
-		dstPath := filepath.Join(dst, relPath)
+		dstPath := filepath.Join(dst, filepath.FromSlash(path))
 
-		if info.IsDir() {
+		if d.IsDir() {
 			return os.MkdirAll(dstPath, info.Mode())
 		}
 
 		// Copy file
-		srcFile, err := os.Open(path)
+		srcFile, err := srcFS.Open(path)
 		if err != nil {
 			return err
 		}
@@ -712,7 +675,7 @@ func EnsurePythonEmbeddable(args []string, tempDir string) error {
 	pythonZipPath := filepath.Join(pythonCacheDir, pythonZipFile)
 
 	// Create cache directory if it doesn't exist
-	if err := os.MkdirAll(pythonCacheDir, 0755); err != nil {
+	if err := os.MkdirAll(pythonCacheDir, 0755); err != nil { // #nosec G301 -- mapped into Windows Sandbox, the sandbox user must read it
 		return fmt.Errorf("failed to create Python cache directory: %w", err)
 	}
 
@@ -730,7 +693,7 @@ func EnsurePythonEmbeddable(args []string, tempDir string) error {
 
 	// Copy Python ZIP to temp directory (same structure as cache)
 	pythonTempDir := filepath.Join(tempDir, "python-embeddable")
-	if err := os.MkdirAll(pythonTempDir, 0755); err != nil {
+	if err := os.MkdirAll(pythonTempDir, 0755); err != nil { // #nosec G301 -- mapped into Windows Sandbox, the sandbox user must read it
 		return fmt.Errorf("failed to create temp Python directory: %w", err)
 	}
 
@@ -859,13 +822,13 @@ func PreDownloadWinget(sandboxDir string) error {
 
 	// Use persistent cache directory in current working directory
 	cacheDir := ".cache"
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0755); err != nil { // #nosec G301 -- mapped into Windows Sandbox, the sandbox user must read it
 		return fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
 	// Also create cache in sandbox folder for copying
 	sandboxCacheDir := filepath.Join(sandboxDir, ".cache")
-	if err := os.MkdirAll(sandboxCacheDir, 0755); err != nil {
+	if err := os.MkdirAll(sandboxCacheDir, 0755); err != nil { // #nosec G301 -- mapped into Windows Sandbox, the sandbox user must read it
 		return fmt.Errorf("failed to create sandbox cache directory: %w", err)
 	}
 
@@ -954,7 +917,7 @@ func downloadWingetDependencies(cacheDir string) error {
 		if matches, err := filepath.Glob(filepath.Join(cacheDir, pattern)); err == nil {
 			for _, oldFile := range matches {
 				if oldFile != targetFile { // Don't delete the target file
-					os.Remove(oldFile)
+					_ = os.Remove(oldFile)
 					fmt.Printf("├─ Removed old version: %s\n", filepath.Base(oldFile))
 				}
 			}
@@ -970,7 +933,7 @@ func downloadWingetDependencies(cacheDir string) error {
 
 // downloadFileFromURL downloads a file from URL and saves it with progress indicator
 func downloadFileFromURL(url, filepath string) error {
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) // #nosec G107 -- URLs of sandbox dependencies are defined in this package
 	if err != nil {
 		return err
 	}

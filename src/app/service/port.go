@@ -49,10 +49,10 @@ func (pa *PortAllocator) AllocatePort(state *ProcessState) (int, error) {
 
 // isPortFree checks if a TCP port is actually available
 func isPortFree(port int) bool {
-	ln, err := net.Listen("tcp", ":"+strconv.Itoa(port))
+	ln, err := net.Listen("tcp", ":"+strconv.Itoa(port)) // #nosec G102 -- probe on all interfaces like the plugin will bind, closed immediately
 	if err != nil {
 		return false
 	}
-	ln.Close()
+	_ = ln.Close()
 	return true
 }

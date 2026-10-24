@@ -60,13 +60,13 @@ func (p *GRPCPlugin) Start(ctx context.Context) error {
 
 	// Connect to plugin via gRPC
 	if err := p.connectGRPC(ctx); err != nil {
-		p.stopPluginBinary()
+		_ = p.stopPluginBinary()
 		return fmt.Errorf("failed to connect to plugin: %w", err)
 	}
 
 	// Initialize plugin
 	if err := p.initializePlugin(ctx); err != nil {
-		p.Stop(ctx)
+		_ = p.Stop(ctx)
 		return fmt.Errorf("failed to initialize plugin: %w", err)
 	}
 

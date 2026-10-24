@@ -360,7 +360,7 @@ func (d *DockerInstaller) installWindows() error {
 	// Try to start Docker Desktop automatically
 	fmt.Println("🚀 Starting Docker Desktop...")
 	startCmd := exec.Command("cmd", "/C", "start", "", "Docker Desktop")
-	startCmd.Run() // Ignore errors
+	_ = startCmd.Run() // Ignore errors
 
 	// Wait for Docker daemon to become available (up to 120 seconds)
 	fmt.Println("⏳ Waiting for Docker daemon to start...")
@@ -384,7 +384,7 @@ func (d *DockerInstaller) installWindows() error {
 
 func (d *DockerInstaller) configureWindowsDataRoot(dataRoot string) error {
 	// Create data directory
-	if err := os.MkdirAll(dataRoot, 0755); err != nil {
+	if err := os.MkdirAll(dataRoot, 0750); err != nil {
 		return fmt.Errorf("failed to create data directory: %w", err)
 	}
 
@@ -395,7 +395,7 @@ func (d *DockerInstaller) configureWindowsDataRoot(dataRoot string) error {
 	}
 
 	configDir := filepath.Join(homeDir, ".docker")
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0755); err != nil { // #nosec G301 -- Docker daemon configuration is world-readable by convention
 		return err
 	}
 
@@ -406,7 +406,7 @@ func (d *DockerInstaller) configureWindowsDataRoot(dataRoot string) error {
   "data-root": "%s"
 }`, strings.ReplaceAll(dataRoot, "\\", "\\\\"))
 
-	return os.WriteFile(configPath, []byte(config), 0644)
+	return os.WriteFile(configPath, []byte(config), 0644) // #nosec G306 -- Docker daemon configuration is world-readable by convention
 }
 
 // installLinux installs Docker Engine on Linux
@@ -542,8 +542,8 @@ func (d *DockerInstaller) installDockerUbuntuDebian(dataRoot string) error {
 	d.addUserToDockerGroup()
 
 	// Start and enable Docker
-	exec.Command("sudo", "systemctl", "start", "docker").Run()
-	exec.Command("sudo", "systemctl", "enable", "docker").Run()
+	_ = exec.Command("sudo", "systemctl", "start", "docker").Run()
+	_ = exec.Command("sudo", "systemctl", "enable", "docker").Run()
 
 	fmt.Println("\n✅ Docker Engine installed successfully!")
 	return nil
@@ -578,12 +578,12 @@ func (d *DockerInstaller) installDockerFedoraCentOS(dataRoot string) error {
 	}
 
 	if dataRoot != "/var/lib/docker" {
-		d.configureLinuxDataRoot(dataRoot)
+		_ = d.configureLinuxDataRoot(dataRoot)
 	}
 
 	d.addUserToDockerGroup()
-	exec.Command("sudo", "systemctl", "start", "docker").Run()
-	exec.Command("sudo", "systemctl", "enable", "docker").Run()
+	_ = exec.Command("sudo", "systemctl", "start", "docker").Run()
+	_ = exec.Command("sudo", "systemctl", "enable", "docker").Run()
 
 	fmt.Println("\n✅ Docker Engine installed successfully!")
 	return nil
@@ -605,12 +605,12 @@ func (d *DockerInstaller) installDockerArch(dataRoot string) error {
 	}
 
 	if dataRoot != "/var/lib/docker" {
-		d.configureLinuxDataRoot(dataRoot)
+		_ = d.configureLinuxDataRoot(dataRoot)
 	}
 
 	d.addUserToDockerGroup()
-	exec.Command("sudo", "systemctl", "start", "docker").Run()
-	exec.Command("sudo", "systemctl", "enable", "docker").Run()
+	_ = exec.Command("sudo", "systemctl", "start", "docker").Run()
+	_ = exec.Command("sudo", "systemctl", "enable", "docker").Run()
 
 	fmt.Println("\n✅ Docker Engine installed successfully!")
 	return nil
@@ -629,12 +629,12 @@ func (d *DockerInstaller) installDockerGeneric(dataRoot string) error {
 	}
 
 	if dataRoot != "/var/lib/docker" {
-		d.configureLinuxDataRoot(dataRoot)
+		_ = d.configureLinuxDataRoot(dataRoot)
 	}
 
 	d.addUserToDockerGroup()
-	exec.Command("sudo", "systemctl", "start", "docker").Run()
-	exec.Command("sudo", "systemctl", "enable", "docker").Run()
+	_ = exec.Command("sudo", "systemctl", "start", "docker").Run()
+	_ = exec.Command("sudo", "systemctl", "enable", "docker").Run()
 
 	fmt.Println("\n✅ Docker Engine installed successfully!")
 	return nil
@@ -652,12 +652,12 @@ func (d *DockerInstaller) configureLinuxDataRoot(dataRoot string) error {
 }`, dataRoot)
 
 	tmpFile := filepath.Join(os.TempDir(), "docker-daemon.json")
-	if err := os.WriteFile(tmpFile, []byte(config), 0644); err != nil {
+	if err := os.WriteFile(tmpFile, []byte(config), 0644); err != nil { // #nosec G306 -- Docker daemon configuration is world-readable by convention
 		return err
 	}
 
 	// Move to /etc/docker/daemon.json
-	exec.Command("sudo", "mkdir", "-p", "/etc/docker").Run()
+	_ = exec.Command("sudo", "mkdir", "-p", "/etc/docker").Run()
 	return exec.Command("sudo", "mv", tmpFile, "/etc/docker/daemon.json").Run()
 }
 
@@ -669,7 +669,7 @@ func (d *DockerInstaller) addUserToDockerGroup() {
 
 	if user != "" && user != "root" {
 		fmt.Printf("👤 Adding user '%s' to docker group...\n", user)
-		exec.Command("sudo", "usermod", "-aG", "docker", user).Run()
+		_ = exec.Command("sudo", "usermod", "-aG", "docker", user).Run()
 		fmt.Println("   Log out and back in for group changes to take effect")
 	}
 }

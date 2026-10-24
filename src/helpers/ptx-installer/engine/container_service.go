@@ -341,11 +341,11 @@ func waitForHealthCheck(healthCheck *registry.HealthCheckSpec) error {
 	for attempt := 0; attempt < retries; attempt++ {
 		resp, err := client.Get(endpoint)
 		if err == nil && resp.StatusCode >= 200 && resp.StatusCode < 400 {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			return nil
 		}
 		if resp != nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 		}
 
 		fmt.Printf("   Attempt %d/%d - waiting...\n", attempt+1, retries)

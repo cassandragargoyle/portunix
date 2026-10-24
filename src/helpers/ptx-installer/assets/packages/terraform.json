@@ -67,7 +67,7 @@
             },
             "extractTo": "/usr/local/bin",
             "postInstall": [
-              "sudo chmod +x /usr/local/bin/terraform"
+              "${sudo_prefix}chmod +x /usr/local/bin/terraform"
             ]
           },
           "1.15": {
@@ -79,7 +79,7 @@
             },
             "extractTo": "/usr/local/bin",
             "postInstall": [
-              "sudo chmod +x /usr/local/bin/terraform"
+              "${sudo_prefix}chmod +x /usr/local/bin/terraform"
             ]
           },
           "1.14": {
@@ -91,7 +91,7 @@
             },
             "extractTo": "/usr/local/bin",
             "postInstall": [
-              "sudo chmod +x /usr/local/bin/terraform"
+              "${sudo_prefix}chmod +x /usr/local/bin/terraform"
             ]
           }
         },
@@ -112,7 +112,7 @@
             },
             "extractTo": "/usr/local/bin",
             "postInstall": [
-              "sudo chmod +x /usr/local/bin/terraform"
+              "${sudo_prefix}chmod +x /usr/local/bin/terraform"
             ]
           },
           "1.15": {
@@ -124,7 +124,7 @@
             },
             "extractTo": "/usr/local/bin",
             "postInstall": [
-              "sudo chmod +x /usr/local/bin/terraform"
+              "${sudo_prefix}chmod +x /usr/local/bin/terraform"
             ]
           },
           "1.14": {
@@ -136,7 +136,7 @@
             },
             "extractTo": "/usr/local/bin",
             "postInstall": [
-              "sudo chmod +x /usr/local/bin/terraform"
+              "${sudo_prefix}chmod +x /usr/local/bin/terraform"
             ]
           }
         },

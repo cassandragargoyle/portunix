@@ -312,10 +312,10 @@ func BuildImage(baseImage string) error {
 
 	// Write Containerfile to temp location
 	tempDir := ".tmp"
-	os.MkdirAll(tempDir, 0755)
+	_ = os.MkdirAll(tempDir, 0750)
 
 	containerfilePath := filepath.Join(tempDir, "Containerfile")
-	if err := os.WriteFile(containerfilePath, []byte(containerfile), 0644); err != nil {
+	if err := os.WriteFile(containerfilePath, []byte(containerfile), 0600); err != nil {
 		return fmt.Errorf("failed to write Containerfile: %w", err)
 	}
 
@@ -643,7 +643,7 @@ func setupCacheDirectory(cachePath string) error {
 		cachePath = ".cache"
 	}
 
-	return os.MkdirAll(cachePath, 0755)
+	return os.MkdirAll(cachePath, 0755) // #nosec G301 -- mounted into containers, the container user must be able to traverse it
 }
 
 func buildPodmanRunArgs(config PodmanConfig) []string {
@@ -848,7 +848,7 @@ func findAvailablePort(start, end int) int {
 	for port := start; port <= end; port++ {
 		conn, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
 		if err == nil {
-			conn.Close()
+			_ = conn.Close()
 			return port
 		}
 	}
@@ -866,7 +866,7 @@ func getSSHPortFromContainer(containerName string) int {
 		if parts := strings.Split(portInfo, ":"); len(parts) == 2 {
 			if port, err := fmt.Sscanf(parts[1], "%d", new(int)); err == nil && port == 1 {
 				var p int
-				fmt.Sscanf(parts[1], "%d", &p)
+				_, _ = fmt.Sscanf(parts[1], "%d", &p)
 				return p
 			}
 		}
@@ -913,7 +913,7 @@ func testSSHConnectivity(containerName string, sshPort int) error {
 		if ip != "" && ip != "<no value>" {
 			conn, err := net.DialTimeout("tcp", net.JoinHostPort(ip, "22"), 1*time.Second)
 			if err == nil {
-				conn.Close()
+				_ = conn.Close()
 				fmt.Printf("✓ SSH accessible via container IP: %s:22\n", ip)
 				return nil
 			}
@@ -922,7 +922,7 @@ func testSSHConnectivity(containerName string, sshPort int) error {
 		// Also try localhost with actual SSH port (port mapping)
 		conn, err := net.DialTimeout("tcp", fmt.Sprintf("localhost:%d", sshPort), 1*time.Second)
 		if err == nil {
-			conn.Close()
+			_ = conn.Close()
 			fmt.Printf("✓ SSH accessible via localhost:%d\n", sshPort)
 			return nil
 		}
@@ -947,7 +947,7 @@ func cleanSSHHostKeys(port int) {
 
 	// Clean host key for this port
 	cmd := exec.Command("ssh-keygen", "-f", knownHostsPath, "-R", fmt.Sprintf("[localhost]:%d", port))
-	cmd.Run() // Ignore errors - the key might not exist
+	_ = cmd.Run() // Ignore errors - the key might not exist
 }
 
 func displaySSHInfo(containerName, username, password string, sshPort int) {
@@ -1384,19 +1384,19 @@ func CheckRequirements() error {
 
 	// Test if we can create a test file (needed for volume mounting)
 	testFile := filepath.Join(currentDir, ".portunix-test")
-	err = os.WriteFile(testFile, []byte("test"), 0644)
+	err = os.WriteFile(testFile, []byte("test"), 0600)
 	if err != nil {
 		fmt.Println("❌ FAILED")
 		fmt.Printf("   Cannot write to current directory: %s\n", currentDir)
 		return fmt.Errorf("insufficient permissions in current directory")
 	}
-	os.Remove(testFile) // cleanup
+	_ = os.Remove(testFile) // cleanup
 	fmt.Printf("✅ OK (%s)\n", currentDir)
 
 	// Check cache directory
 	fmt.Print("🗂️  Cache directory: ")
 	cacheDir := ".cache"
-	err = os.MkdirAll(cacheDir, 0755)
+	err = os.MkdirAll(cacheDir, 0755) // #nosec G301 -- mounted into containers, the container user must be able to traverse it
 	if err != nil {
 		fmt.Println("❌ FAILED")
 		fmt.Printf("   Cannot create cache directory: %s\n", cacheDir)
@@ -1569,7 +1569,7 @@ func installPodmanUbuntuDebian(dataRoot string) error {
 	// Create containers storage directory
 	if dataRoot != "" {
 		fmt.Printf("🔧 Configuring storage location: %s\n", dataRoot)
-		if err := os.MkdirAll(dataRoot, 0755); err != nil {
+		if err := os.MkdirAll(dataRoot, 0750); err != nil {
 			fmt.Printf("⚠️  Could not create storage directory: %v\n", err)
 		}
 	}
@@ -1618,7 +1618,7 @@ func installPodmanCentOSFedora(dataRoot string) error {
 	// Create containers storage directory
 	if dataRoot != "" {
 		fmt.Printf("🔧 Configuring storage location: %s\n", dataRoot)
-		if err := os.MkdirAll(dataRoot, 0755); err != nil {
+		if err := os.MkdirAll(dataRoot, 0750); err != nil {
 			fmt.Printf("⚠️  Could not create storage directory: %v\n", err)
 		}
 	}
@@ -1666,7 +1666,7 @@ func installPodmanAlpine(dataRoot string) error {
 	// Create containers storage directory
 	if dataRoot != "" {
 		fmt.Printf("🔧 Configuring storage location: %s\n", dataRoot)
-		if err := os.MkdirAll(dataRoot, 0755); err != nil {
+		if err := os.MkdirAll(dataRoot, 0750); err != nil {
 			fmt.Printf("⚠️  Could not create storage directory: %v\n", err)
 		}
 	}
@@ -1933,7 +1933,7 @@ func installPodmanDesktopFlatpak(autoAccept bool) error {
 	addRepoCmd := exec.Command("flatpak", "remote-add", "--if-not-exists", "flathub", "https://flathub.org/repo/flathub.flatpakrepo")
 	addRepoCmd.Stdout = os.Stdout
 	addRepoCmd.Stderr = os.Stderr
-	addRepoCmd.Run() // Ignore errors - may already exist
+	_ = addRepoCmd.Run() // Ignore errors - may already exist
 
 	// Install Podman Desktop
 	fmt.Println("📦 Installing Podman Desktop...")
@@ -2023,12 +2023,12 @@ func downloadPodmanDesktopInstaller(url, filePath string) error {
 	fmt.Printf("⬇️  Downloading from: %s\n", url)
 
 	// Create cache directory
-	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil { // #nosec G301 -- download cache holds public distribution archives
 		return err
 	}
 
 	// Download the file
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) // #nosec G107 -- URL of the Podman Desktop release, built in this package
 	if err != nil {
 		return fmt.Errorf("failed to download file: %w", err)
 	}
@@ -2086,7 +2086,7 @@ func installFlatpakAndPodmanDesktop(autoAccept bool) error {
 	addRepoCmd := exec.Command("flatpak", "remote-add", "--if-not-exists", "flathub", "https://flathub.org/repo/flathub.flatpakrepo")
 	addRepoCmd.Stdout = os.Stdout
 	addRepoCmd.Stderr = os.Stderr
-	addRepoCmd.Run()
+	_ = addRepoCmd.Run()
 
 	// Now install Podman Desktop
 	return installPodmanDesktopFlatpak(true) // Use autoAccept since user already confirmed
@@ -2110,7 +2110,7 @@ func createPodmanDesktopAlias() error {
 	}
 
 	// Add alias to .bashrc
-	file, err := os.OpenFile(bashrcPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(bashrcPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644) // #nosec G302 -- shell startup files are world-readable by convention
 	if err != nil {
 		return fmt.Errorf("failed to open .bashrc: %w", err)
 	}
@@ -2126,10 +2126,10 @@ func createPodmanDesktopAlias() error {
 	// Also try to add to .bash_aliases if it exists
 	bashAliasesPath := filepath.Join(homeDir, ".bash_aliases")
 	if _, err := os.Stat(bashAliasesPath); err == nil {
-		aliasFile, err := os.OpenFile(bashAliasesPath, os.O_APPEND|os.O_WRONLY, 0644)
+		aliasFile, err := os.OpenFile(bashAliasesPath, os.O_APPEND|os.O_WRONLY, 0644) // #nosec G302 -- shell startup files are world-readable by convention
 		if err == nil {
 			defer aliasFile.Close()
-			aliasFile.WriteString(fmt.Sprintf("\n# Podman Desktop alias (added by Portunix)\n%s\n", aliasLine))
+			_, _ = aliasFile.WriteString(fmt.Sprintf("\n# Podman Desktop alias (added by Portunix)\n%s\n", aliasLine))
 		}
 	}
 
@@ -2139,7 +2139,7 @@ func createPodmanDesktopAlias() error {
 func createDesktopEntry(appImagePath string) {
 	homeDir, _ := os.UserHomeDir()
 	desktopDir := filepath.Join(homeDir, ".local", "share", "applications")
-	os.MkdirAll(desktopDir, 0755)
+	_ = os.MkdirAll(desktopDir, 0755) // #nosec G301 -- desktop entries must be readable by the desktop environment
 
 	desktopEntry := fmt.Sprintf(`[Desktop Entry]
 Name=Podman Desktop
@@ -2152,7 +2152,7 @@ Categories=Development;
 `, appImagePath)
 
 	desktopFile := filepath.Join(desktopDir, "podman-desktop.desktop")
-	os.WriteFile(desktopFile, []byte(desktopEntry), 0644)
+	_ = os.WriteFile(desktopFile, []byte(desktopEntry), 0644) // #nosec G306 -- desktop entries must be readable by the desktop environment
 }
 
 // parsePodmanArgs parses command line arguments into PodmanConfig

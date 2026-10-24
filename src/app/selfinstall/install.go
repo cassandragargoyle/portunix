@@ -58,7 +58,7 @@ func InstallSilent(options Options) error {
 
 	// Create target directory if it doesn't exist
 	targetDir := filepath.Dir(options.TargetPath)
-	if err := os.MkdirAll(targetDir, 0755); err != nil {
+	if err := os.MkdirAll(targetDir, 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
 		return fmt.Errorf("failed to create target directory: %w", err)
 	}
 
@@ -172,7 +172,7 @@ func InstallInteractive(sourcePath string) error {
 	}
 
 	// Show summary
-	ShowInstallationSummary(targetPath)
+	_ = ShowInstallationSummary(targetPath)
 
 	return nil
 }
@@ -231,7 +231,7 @@ func copyFile(src, dst string) error {
 
 	// Create destination directory if needed
 	dstDir := filepath.Dir(dst)
-	if err := os.MkdirAll(dstDir, 0755); err != nil {
+	if err := os.MkdirAll(dstDir, 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
 		return err
 	}
 
@@ -262,8 +262,8 @@ func checkWriteAccess(dir string) error {
 	if err != nil {
 		return err
 	}
-	file.Close()
-	os.Remove(testFile)
+	_ = file.Close()
+	_ = os.Remove(testFile)
 	return nil
 }
 
@@ -274,7 +274,7 @@ func createDefaultConfig() error {
 		return err
 	}
 
-	if err := os.MkdirAll(configDir, 0755); err != nil {
+	if err := os.MkdirAll(configDir, 0750); err != nil {
 		return err
 	}
 
@@ -295,7 +295,7 @@ auto_update: true
 update_channel: stable
 `
 
-	return os.WriteFile(configFile, []byte(defaultConfig), 0644)
+	return os.WriteFile(configFile, []byte(defaultConfig), 0600)
 }
 
 // getConfigDir returns the configuration directory path
@@ -340,7 +340,7 @@ func installAllBinaries(sourcePath, targetPath string) error {
 
 	// Make executable on Unix systems
 	if runtime.GOOS != "windows" {
-		if err := os.Chmod(targetPath, 0755); err != nil {
+		if err := os.Chmod(targetPath, 0755); err != nil { // #nosec G302 -- binaries must be executable by all users
 			return fmt.Errorf("failed to set executable permissions for main binary: %w", err)
 		}
 	}
@@ -381,7 +381,7 @@ func installAllBinaries(sourcePath, targetPath string) error {
 		}
 
 		if runtime.GOOS != "windows" {
-			if err := os.Chmod(helperTarget, 0755); err != nil {
+			if err := os.Chmod(helperTarget, 0755); err != nil { // #nosec G302 -- binaries must be executable by all users
 				fmt.Printf("⚠ Warning: Failed to set executable permissions for %s: %v\n", name, err)
 				continue
 			}

@@ -189,7 +189,7 @@ func performNetworkHandshake(protocol, bindAddress string, port int, timeout tim
 	transport := &http.Transport{}
 	if scheme == "https" {
 		// Self-signed certificates are common in local development.
-		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		transport.TLSClientConfig = &tls.Config{InsecureSkipVerify: true} // #nosec G402 -- handshake probe of the locally started MCP server, no data is sent
 	}
 	client := &http.Client{Timeout: timeout, Transport: transport}
 

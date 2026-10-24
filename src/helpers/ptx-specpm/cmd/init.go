@@ -161,7 +161,7 @@ func resolveTarget(args []string) (target, projectName string, err error) {
 			target = filepath.Join(cwd, name)
 		}
 		projectName = filepath.Base(target)
-		if err := os.MkdirAll(target, 0o755); err != nil {
+		if err := os.MkdirAll(target, 0o755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 			return "", "", fmt.Errorf("create %q: %w", target, err)
 		}
 	default:

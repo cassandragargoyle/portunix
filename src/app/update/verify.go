@@ -103,7 +103,7 @@ func GenerateChecksum(binaryPath string, outputPath string) error {
 
 	// Write checksum to file
 	content := fmt.Sprintf("%s  %s\n", checksum, binaryPath)
-	if err := os.WriteFile(outputPath, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(outputPath, []byte(content), 0644); err != nil { // #nosec G306 -- checksum files are public release assets
 		return fmt.Errorf("failed to write checksum file: %w", err)
 	}
 

@@ -84,7 +84,7 @@ func (f *FileDatastore) Initialize(ctx context.Context, config map[string]interf
 
 	// Create base directory if it doesn't exist
 	if f.createDirectories {
-		if err := os.MkdirAll(f.basePath, 0755); err != nil {
+		if err := os.MkdirAll(f.basePath, 0750); err != nil {
 			return fmt.Errorf("failed to create base directory: %w", err)
 		}
 	}
@@ -109,7 +109,7 @@ func (f *FileDatastore) Store(ctx context.Context, key string, value interface{}
 
 	// Create directory if needed
 	if f.createDirectories {
-		if err := os.MkdirAll(filepath.Dir(filePath), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(filePath), 0750); err != nil {
 			return fmt.Errorf("failed to create directory: %w", err)
 		}
 	}
@@ -387,7 +387,7 @@ func (f *FileDatastore) writeEntry(filePath string, entry *FileEntry) error {
 		return err
 	}
 
-	return os.WriteFile(filePath, data, 0644)
+	return os.WriteFile(filePath, data, 0600)
 }
 
 func (f *FileDatastore) loadEntry(filePath string) (*FileEntry, error) {
@@ -453,7 +453,7 @@ func (f *FileDatastore) updateStats() {
 	var totalSize int64
 	collections := make(map[string]int64)
 
-	filepath.Walk(f.basePath, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(f.basePath, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info.IsDir() || !f.isDataFile(path) {
 			return nil
 		}
@@ -498,7 +498,7 @@ func (f *FileDatastore) backupFile(filePath string) error {
 		return err
 	}
 
-	return os.WriteFile(backupPath, input, 0644)
+	return os.WriteFile(backupPath, input, 0600)
 }
 
 func expandPath(path string) string {

@@ -101,10 +101,10 @@ func (p *ProgressComponent) Render(ctx *wizard.WizardContext) error {
 		}
 		completedWork += weight
 		progress := int((completedWork / p.TotalWork) * 100)
-		p.Progress.Set(progress)
+		_ = p.Progress.Set(progress)
 	}
 
-	p.Progress.Finish()
+	_ = p.Progress.Finish()
 	fmt.Println()
 	return nil
 }

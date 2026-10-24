@@ -39,7 +39,7 @@ func (i *InfoComponent) Render(ctx *wizard.WizardContext) error {
 	}
 
 	fmt.Print("\nPress Enter to continue...")
-	fmt.Scanln()
+	_, _ = fmt.Scanln()
 	return nil
 }
 
@@ -89,7 +89,7 @@ func (s *SuccessComponent) Render(ctx *wizard.WizardContext) error {
 	}
 
 	fmt.Print("\nPress Enter to finish...")
-	fmt.Scanln()
+	_, _ = fmt.Scanln()
 	return nil
 }
 
@@ -132,6 +132,6 @@ func (e *ErrorComponent) Render(ctx *wizard.WizardContext) error {
 	}
 
 	fmt.Print("\nPress Enter to exit...")
-	fmt.Scanln()
+	_, _ = fmt.Scanln()
 	return nil
 }

@@ -34,7 +34,7 @@ func getEververseDeployDir() (string, error) {
 	}
 
 	deployDir := filepath.Join(homeDir, ".portunix", "pft", "eververse")
-	if err := os.MkdirAll(deployDir, 0755); err != nil {
+	if err := ensureSharedDir(deployDir); err != nil {
 		return "", fmt.Errorf("failed to create deploy directory: %w", err)
 	}
 
@@ -147,7 +147,7 @@ func cloneEververseRepo(buildDir string) error {
 
 	// Clone fresh
 	fmt.Println("  Cloning Eververse from GitHub...")
-	if err := os.MkdirAll(filepath.Dir(buildDir), 0755); err != nil {
+	if err := ensureSharedDir(filepath.Dir(buildDir)); err != nil {
 		return err
 	}
 
@@ -228,7 +228,7 @@ func buildEververseImage(buildDir string) error {
 	// Write Dockerfile
 	dockerfilePath := filepath.Join(buildDir, "Dockerfile.portunix")
 	dockerfile := generateEververseDockerfile()
-	if err := os.WriteFile(dockerfilePath, []byte(dockerfile), 0644); err != nil {
+	if err := writeSharedFile(dockerfilePath, []byte(dockerfile)); err != nil {
 		return fmt.Errorf("failed to write Dockerfile: %w", err)
 	}
 
@@ -305,7 +305,7 @@ func writeEververseComposeFile(deployDir string) (string, error) {
 		}
 
 		composePath := filepath.Join(deployDir, eververseComposeFile)
-		if err := os.WriteFile(composePath, yamlData, 0644); err != nil {
+		if err := writePrivateFile(composePath, yamlData); err != nil {
 			return "", fmt.Errorf("failed to write compose file: %w", err)
 		}
 
@@ -315,7 +315,7 @@ func writeEververseComposeFile(deployDir string) (string, error) {
 	// Fallback to embedded compose content if package not found
 	composeContent := generateEververseComposeYAML()
 	composePath := filepath.Join(deployDir, eververseComposeFile)
-	if err := os.WriteFile(composePath, []byte(composeContent), 0644); err != nil {
+	if err := writePrivateFile(composePath, []byte(composeContent)); err != nil {
 		return "", fmt.Errorf("failed to write compose file: %w", err)
 	}
 
@@ -648,7 +648,7 @@ STRIPE_WEBHOOK_SECRET=whsec_dummy
 // createKongConfig creates the Kong API Gateway configuration
 func createKongConfig(deployDir string) error {
 	kongDir := filepath.Join(deployDir, "volumes", "kong")
-	if err := os.MkdirAll(kongDir, 0755); err != nil {
+	if err := ensureSharedDir(kongDir); err != nil {
 		return err
 	}
 
@@ -730,13 +730,13 @@ plugins:
 `
 
 	kongPath := filepath.Join(kongDir, "kong.yml")
-	return os.WriteFile(kongPath, []byte(kongConfig), 0644)
+	return writeSharedFile(kongPath, []byte(kongConfig))
 }
 
 // createFunctionsDir creates the functions directory for edge functions
 func createFunctionsDir(deployDir string) error {
 	functionsDir := filepath.Join(deployDir, "volumes", "functions")
-	return os.MkdirAll(functionsDir, 0755)
+	return ensureSharedDir(functionsDir)
 }
 
 // runEververseContainerCompose executes portunix container compose command for Eververse
@@ -775,7 +775,7 @@ func DeployEververse(config *Config) (*DeployResult, error) {
 	if !sufficient {
 		fmt.Print("Do you want to continue anyway? [y/N]: ")
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if response != "y" && response != "Y" {
 			return nil, fmt.Errorf("deployment cancelled due to insufficient resources")
 		}
@@ -1015,7 +1015,7 @@ func DeployEververseInstance(instanceName string, port int, config *Config) (*De
 	if !sufficient {
 		fmt.Print("Do you want to continue anyway? [y/N]: ")
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if response != "y" && response != "Y" {
 			return nil, fmt.Errorf("deployment cancelled due to insufficient resources")
 		}
@@ -1028,7 +1028,7 @@ func DeployEververseInstance(instanceName string, port int, config *Config) (*De
 	}
 
 	deployDir := filepath.Join(homeDir, ".portunix", "pft", "eververse-"+instanceName)
-	if err := os.MkdirAll(deployDir, 0755); err != nil {
+	if err := ensureSharedDir(deployDir); err != nil {
 		return nil, fmt.Errorf("failed to create deploy directory: %w", err)
 	}
 
@@ -1047,7 +1047,7 @@ func DeployEververseInstance(instanceName string, port int, config *Config) (*De
 	// Generate compose file with custom ports
 	composeContent := generateEververseInstanceComposeYAML(instanceName, port)
 	composePath := filepath.Join(deployDir, eververseComposeFile)
-	if err := os.WriteFile(composePath, []byte(composeContent), 0644); err != nil {
+	if err := writePrivateFile(composePath, []byte(composeContent)); err != nil {
 		return nil, fmt.Errorf("failed to write compose file: %w", err)
 	}
 	result.ComposeFile = composePath

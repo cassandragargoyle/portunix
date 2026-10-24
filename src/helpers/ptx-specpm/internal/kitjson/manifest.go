@@ -30,7 +30,7 @@ func Write(path string, m Manifest) error {
 	if m.WrittenAt.IsZero() {
 		m.WrittenAt = time.Now().UTC()
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 		return err
 	}
 	data, err := json.MarshalIndent(m, "", "  ")
@@ -38,7 +38,7 @@ func Write(path string, m Manifest) error {
 		return err
 	}
 	data = append(data, '\n')
-	return os.WriteFile(path, data, 0o644)
+	return os.WriteFile(path, data, 0o644) // #nosec G306 -- scaffolded project files use regular source tree permissions
 }
 
 // Read loads a manifest previously written by Write.

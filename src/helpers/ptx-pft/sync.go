@@ -348,7 +348,7 @@ func FindNextAvailableNumber(targetDir string, prefix string) int {
 		if matches := pattern.FindStringSubmatch(entry.Name()); len(matches) > 1 {
 			if num, err := fmt.Sscanf(matches[1], "%d", new(int)); err == nil && num > 0 {
 				var n int
-				fmt.Sscanf(matches[1], "%d", &n)
+				_, _ = fmt.Sscanf(matches[1], "%d", &n)
 				if n > maxNum {
 					maxNum = n
 				}
@@ -457,7 +457,7 @@ func UpdateFileWithFiderID(filePath string, fiderID int, authorName string) erro
 			fiderID, authorName, time.Now().Format("2006-01-02"))
 	}
 
-	return os.WriteFile(filePath, []byte(contentStr), 0644)
+	return rewriteExistingFile(filePath, []byte(contentStr))
 }
 
 // PushNewToFider pushes only new (unsynced) local files to Fider
@@ -599,7 +599,7 @@ func PullFromFider(client *FiderClient, targetDir string, feedbackType string, d
 
 	// Ensure target directory exists
 	if !dryRun {
-		if err := os.MkdirAll(targetDir, 0755); err != nil {
+		if err := ensureSharedDir(targetDir); err != nil {
 			return 0, 0, fmt.Errorf("failed to create directory: %w", err)
 		}
 	}
@@ -660,7 +660,7 @@ func PullFromFider(client *FiderClient, targetDir string, feedbackType string, d
 			continue
 		}
 
-		if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+		if err := writeSharedFile(filePath, []byte(content)); err != nil {
 			fmt.Printf("  ✗ Failed to write %s: %v\n", filename, err)
 			continue
 		}
@@ -885,7 +885,7 @@ func UpdateFileCategories(filePath string, categories []string) error {
 	// Rebuild file
 	result := "---" + frontmatter + "---" + afterFrontmatter
 
-	return os.WriteFile(filePath, []byte(result), 0644)
+	return rewriteExistingFile(filePath, []byte(result))
 }
 
 // AddCategoryToFile adds a category to a file's Categories section

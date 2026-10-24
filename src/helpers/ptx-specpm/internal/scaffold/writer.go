@@ -90,7 +90,7 @@ func Write(opts Options) (*Result, error) {
 		res.WrittenKitFiles += written
 	}
 	for _, sub := range []string{"memory", "scripts", "extensions", "presets"} {
-		if err := os.MkdirAll(filepath.Join(specpmRoot, sub), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Join(specpmRoot, sub), 0o755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 			return nil, fmt.Errorf("mkdir %s: %w", sub, err)
 		}
 	}
@@ -103,7 +103,7 @@ func Write(opts Options) (*Result, error) {
 	//    entirely (upgrade does not touch specs/project/).
 	if !opts.Refresh {
 		artifactDir := filepath.Join(opts.TargetDir, "specs", "project", opts.ProjectID)
-		if err := os.MkdirAll(artifactDir, 0o755); err != nil {
+		if err := os.MkdirAll(artifactDir, 0o755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 			return nil, fmt.Errorf("mkdir artifacts: %w", err)
 		}
 		charterPath := filepath.Join(artifactDir, "project.md")
@@ -112,20 +112,20 @@ func Write(opts Options) (*Result, error) {
 			// PM agent's preflight has something to read on day one.
 			tplPath := filepath.Join(opts.KitDir, "templates", "project", "charter.md")
 			if data, terr := os.ReadFile(tplPath); terr == nil {
-				if werr := os.WriteFile(charterPath, data, 0o644); werr != nil {
+				if werr := os.WriteFile(charterPath, data, 0o644); werr != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 					return nil, fmt.Errorf("write Charter placeholder: %w", werr)
 				}
 				res.CreatedArtifacts = append(res.CreatedArtifacts, charterPath)
 			} else {
 				// No upstream template — drop a TODO stub so the dir is non-empty.
-				if werr := os.WriteFile(charterPath, []byte(stubCharter(opts.ProjectID)), 0o644); werr != nil {
+				if werr := os.WriteFile(charterPath, []byte(stubCharter(opts.ProjectID)), 0o644); werr != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 					return nil, fmt.Errorf("write Charter stub: %w", werr)
 				}
 				res.CreatedArtifacts = append(res.CreatedArtifacts, charterPath)
 			}
 		}
 		for _, sub := range []string{"execution", "validation"} {
-			if err := os.MkdirAll(filepath.Join(artifactDir, sub), 0o755); err != nil {
+			if err := os.MkdirAll(filepath.Join(artifactDir, sub), 0o755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 				return nil, fmt.Errorf("mkdir %s: %w", sub, err)
 			}
 		}
@@ -153,7 +153,7 @@ func copyTree(src, dst string, force bool) (int, error) {
 		}
 		target := filepath.Join(dst, rel)
 		if info.IsDir() {
-			return os.MkdirAll(target, 0o755)
+			return os.MkdirAll(target, 0o755) // #nosec G301 -- scaffolded project files use regular source tree permissions
 		}
 		if !force {
 			if _, err := os.Stat(target); err == nil {
@@ -162,7 +162,7 @@ func copyTree(src, dst string, force bool) (int, error) {
 				return nil
 			}
 		}
-		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 			return err
 		}
 		if err := copyFile(path, target); err != nil {
@@ -180,7 +180,7 @@ func copyFile(src, dst string) error {
 		return err
 	}
 	defer in.Close()
-	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644)
+	out, err := os.OpenFile(dst, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0o644) // #nosec G302 -- scaffolded project files use regular source tree permissions
 	if err != nil {
 		return err
 	}
@@ -193,10 +193,10 @@ func writeIfMissing(path, content string) error {
 	if _, err := os.Stat(path); err == nil {
 		return nil
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 		return err
 	}
-	return os.WriteFile(path, []byte(content), 0o644)
+	return os.WriteFile(path, []byte(content), 0o644) // #nosec G306 -- scaffolded project files use regular source tree permissions
 }
 
 func stubCharter(projectID string) string {

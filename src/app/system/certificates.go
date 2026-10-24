@@ -100,7 +100,7 @@ func testHTTPSConnectivity() bool {
 		go func(u string) {
 			resp, err := client.Get(u)
 			if err == nil {
-				resp.Body.Close()
+				_ = resp.Body.Close()
 				results <- true
 				return
 			}

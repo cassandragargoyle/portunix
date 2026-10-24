@@ -229,7 +229,7 @@ func getMCPConfigFile() string {
 		home = os.TempDir()
 	}
 	configDir := filepath.Join(home, ".portunix")
-	os.MkdirAll(configDir, 0755)
+	_ = os.MkdirAll(configDir, 0750)
 	return filepath.Join(configDir, "mcp-server.json")
 }
 
@@ -276,7 +276,7 @@ func saveMCPConfiguration(config *MCPConfiguration) error {
 		return err
 	}
 
-	return os.WriteFile(configFile, data, 0644)
+	return os.WriteFile(configFile, data, 0600)
 }
 
 // removeMCPConfiguration removes MCP configuration file
@@ -391,7 +391,7 @@ func isServerRunning() bool {
 	}
 
 	pid := 0
-	fmt.Sscanf(string(data), "%d", &pid)
+	_, _ = fmt.Sscanf(string(data), "%d", &pid)
 	if pid == 0 {
 		return false
 	}
@@ -412,7 +412,7 @@ func isServerRunning() bool {
 
 // savePID saves process ID to file
 func savePID(pidFile string, pid int) error {
-	return os.WriteFile(pidFile, []byte(strconv.Itoa(pid)), 0644)
+	return os.WriteFile(pidFile, []byte(strconv.Itoa(pid)), 0600)
 }
 
 // formatDuration formats duration for display

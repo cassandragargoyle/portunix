@@ -26,7 +26,9 @@ func AgentStart() error {
 	if err != nil {
 		return fmt.Errorf("start ssh-agent: %w", err)
 	}
-	os.Stdout.Write(out)
+	if _, err := os.Stdout.Write(out); err != nil {
+		return fmt.Errorf("write ssh-agent environment: %w", err)
+	}
 	return nil
 }
 

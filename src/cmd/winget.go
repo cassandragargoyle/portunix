@@ -39,7 +39,7 @@ Examples:
 			fmt.Println()
 			return
 		}
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 

@@ -455,7 +455,7 @@ func writeEntity(path string, v interface{}) error {
 			return err
 		}
 	}
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := ensureSharedDir(filepath.Dir(path)); err != nil {
 		return err
 	}
 	var buf bytes.Buffer
@@ -465,7 +465,7 @@ func writeEntity(path string, v interface{}) error {
 	if err := enc.Encode(v); err != nil {
 		return err
 	}
-	return os.WriteFile(path, buf.Bytes(), 0644)
+	return writeSharedFile(path, buf.Bytes())
 }
 
 // readEntity unmarshals the JSON document at path into v.

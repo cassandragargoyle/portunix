@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -48,6 +49,9 @@ Examples:
   portunix plugin enable my-plugin       # Enable plugin
   portunix plugin start my-plugin        # Start plugin`,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// Arguments are validated before this hook, so from here on errors are
+		// runtime failures whose fix hint must not be buried under usage text
+		cmd.SilenceUsage = true
 		return initializePluginManager()
 	},
 	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
@@ -310,6 +314,29 @@ Examples:
 	},
 }
 
+// Plugin repair command
+var pluginRepairCmd = &cobra.Command{
+	Use:   "repair <plugin-name>",
+	Short: "Repair an installed plugin",
+	Long: `Reinstall a plugin from its own installed files and manifest.
+
+For Python wheel plugins this recreates the virtual environment, e.g. after an
+OS upgrade removed the interpreter the venv was bound to. When uv is available
+the venv uses a uv-managed interpreter (the version the wheel was built for,
+taken from plugin.python_version or detected from the wheel), so later system
+Python upgrades do not break it. The plugin source is not needed.
+
+The repair is atomic: if it fails, the previous installation is restored.
+
+Examples:
+  portunix plugin repair reco-worker
+  portunix plugin list        # broken plugins show status "broken"`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return repairPlugin(args[0])
+	},
+}
+
 // Plugin check command
 var pluginCheckCmd = &cobra.Command{
 	Use:   "check [plugin-name]",
@@ -323,16 +350,21 @@ Examples:
   portunix plugin check text-extractor        # Check single plugin
   portunix plugin check --all                 # Check all installed plugins
   portunix plugin check --all --json          # JSON output for programmatic use`,
+	Args: func(cmd *cobra.Command, args []string) error {
+		if checkAll, _ := cmd.Flags().GetBool("all"); checkAll {
+			return nil
+		}
+		if len(args) < 1 {
+			return fmt.Errorf("plugin name required. Use --all to check all plugins")
+		}
+		return cobra.MaximumNArgs(1)(cmd, args)
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		checkAll, _ := cmd.Flags().GetBool("all")
 		jsonOutput, _ := cmd.Flags().GetBool("json")
 
 		if checkAll {
 			return checkAllPluginPrerequisites(jsonOutput)
-		}
-
-		if len(args) < 1 {
-			return fmt.Errorf("plugin name required. Use --all to check all plugins")
 		}
 
 		return checkPluginPrerequisites(args[0], jsonOutput)
@@ -358,6 +390,7 @@ func init() {
 	pluginCmd.AddCommand(pluginValidateCmd)
 	pluginCmd.AddCommand(pluginRunCmd)
 	pluginCmd.AddCommand(pluginCheckCmd)
+	pluginCmd.AddCommand(pluginRepairCmd)
 
 	// Flags for check command
 	pluginCheckCmd.Flags().Bool("all", false, "Check prerequisites for all installed plugins")
@@ -525,12 +558,31 @@ func installPlugin(pluginPath string, force bool) error {
 	return nil
 }
 
+// repairPlugin reinstalls a plugin from its installed files
+func repairPlugin(pluginName string) error {
+	fmt.Printf("Repairing plugin %s...\n", pluginName)
+	if err := pluginManager.RepairPlugin(pluginName); err != nil {
+		return fmt.Errorf("failed to repair plugin: %w", err)
+	}
+
+	state, reason, _, err := pluginManager.CheckPluginInstall(pluginName)
+	if err != nil {
+		return err
+	}
+	if state != manager.InstallStateOK {
+		return fmt.Errorf("plugin reinstalled but still not usable: %s", reason)
+	}
+
+	fmt.Println("✅ Plugin repaired successfully!")
+	return nil
+}
+
 // uninstallPlugin uninstalls a plugin
 func uninstallPlugin(pluginName string, force bool) error {
 	if !force {
 		fmt.Printf("Are you sure you want to uninstall plugin '%s'? (y/N): ", pluginName)
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if response != "y" && response != "Y" {
 			fmt.Println("Uninstall cancelled.")
 			return nil
@@ -657,7 +709,7 @@ func checkPluginHealth(pluginName string) error {
 	fmt.Printf("Message:    %s\n", health.Message)
 
 	// Only show uptime for service plugins (helper plugins don't have uptime)
-	if health.Status != "ready" {
+	if health.Status != "ready" && !strings.HasPrefix(health.Status, "install_") {
 		fmt.Printf("Uptime:     %d seconds\n", health.UptimeSeconds)
 	}
 
@@ -752,7 +804,7 @@ func createPluginTemplate(pluginName, author, description, outputDir string) err
 	pluginDir := filepath.Join(outputDir, pluginName)
 
 	// Create plugin directory
-	if err := os.MkdirAll(pluginDir, 0755); err != nil {
+	if err := os.MkdirAll(pluginDir, 0755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 		return fmt.Errorf("failed to create plugin directory: %w", err)
 	}
 
@@ -760,7 +812,7 @@ func createPluginTemplate(pluginName, author, description, outputDir string) err
 	manifestPath := filepath.Join(pluginDir, "plugin.json")
 	manifestContent := plugins.GetManifestTemplate(pluginName, description, author)
 
-	if err := os.WriteFile(manifestPath, []byte(manifestContent), 0644); err != nil {
+	if err := os.WriteFile(manifestPath, []byte(manifestContent), 0644); err != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 		return fmt.Errorf("failed to create plugin.json: %w", err)
 	}
 
@@ -1164,7 +1216,7 @@ func createPluginStructure(pluginDir, pluginName string) error {
 	// Create directories
 	dirs := []string{"src", "proto"}
 	for _, dir := range dirs {
-		if err := os.MkdirAll(filepath.Join(pluginDir, dir), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Join(pluginDir, dir), 0755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 			return err
 		}
 	}
@@ -1179,7 +1231,7 @@ require (
 )
 `, pluginName, goVersion())
 
-	if err := os.WriteFile(filepath.Join(pluginDir, "go.mod"), []byte(goModContent), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(pluginDir, "go.mod"), []byte(goModContent), 0644); err != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 		return err
 	}
 
@@ -1193,7 +1245,7 @@ require (
 *.out
 `, pluginName, pluginName)
 
-	if err := os.WriteFile(filepath.Join(pluginDir, ".gitignore"), []byte(gitignoreContent), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(pluginDir, ".gitignore"), []byte(gitignoreContent), 0644); err != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 		return err
 	}
 
@@ -1229,7 +1281,7 @@ message HealthCheckResponse {
 }
 `, pluginName, pluginName)
 
-	if err := os.WriteFile(filepath.Join(pluginDir, "proto", "plugin.proto"), []byte(protoContent), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(pluginDir, "proto", "plugin.proto"), []byte(protoContent), 0644); err != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 		return err
 	}
 
@@ -1282,14 +1334,14 @@ func main() {
 }
 `, pluginName)
 
-	if err := os.WriteFile(filepath.Join(pluginDir, "main.go"), []byte(mainGoContent), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(pluginDir, "main.go"), []byte(mainGoContent), 0644); err != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 		return err
 	}
 
 	// Create README.md
 	readmeContent := fmt.Sprintf("# %s Plugin\n\nA Portunix plugin for %s functionality.\n\n## Building\n\n```bash\ngo mod tidy\ngo build -o %s\n```\n\n## Installation\n\n```bash\nportunix plugin install .\n```\n\n## Usage\n\n```bash\nportunix plugin enable %s\nportunix plugin start %s\n```\n", pluginName, pluginName, pluginName, pluginName, pluginName)
 
-	return os.WriteFile(filepath.Join(pluginDir, "README.md"), []byte(readmeContent), 0644)
+	return os.WriteFile(filepath.Join(pluginDir, "README.md"), []byte(readmeContent), 0644) // #nosec G306 -- scaffolded project files use regular source tree permissions
 }
 
 // Helper functions for GitHub plugin installation
@@ -1334,7 +1386,7 @@ func progressBar(percentage, width int) string {
 // extractAsset extracts a downloaded asset to a directory
 func extractAsset(assetPath, extractDir string) error {
 	// Create extract directory
-	if err := os.MkdirAll(extractDir, 0755); err != nil {
+	if err := os.MkdirAll(extractDir, 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
 		return fmt.Errorf("failed to create extract directory: %w", err)
 	}
 

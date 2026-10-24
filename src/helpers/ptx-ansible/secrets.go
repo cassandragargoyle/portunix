@@ -91,7 +91,7 @@ func (sm *SecretManager) LoadSecretStores(configPath string) error {
 		}
 	}
 
-	sm.auditMgr.LogSystemEvent(AuditLevelInfo, "secret.store.loaded", "system", "local", map[string]interface{}{
+	_ = sm.auditMgr.LogSystemEvent(AuditLevelInfo, "secret.store.loaded", "system", "local", map[string]interface{}{
 		"stores": len(sm.stores),
 	})
 
@@ -129,7 +129,7 @@ func (sm *SecretManager) createDefaultConfig(configPath string) error {
 	}
 
 	// Ensure directory exists
-	os.MkdirAll(filepath.Dir(configPath), 0700)
+	_ = os.MkdirAll(filepath.Dir(configPath), 0700)
 
 	data, err := json.MarshalIndent(defaultConfig, "", "  ")
 	if err != nil {
@@ -195,7 +195,7 @@ func (sm *SecretManager) ProcessSecretsInPlaybook(ptxbook *PtxbookFile, context 
 		}
 	}
 
-	sm.auditMgr.LogSystemEvent(AuditLevelInfo, "secret.references.processed", "system", "local", map[string]interface{}{
+	_ = sm.auditMgr.LogSystemEvent(AuditLevelInfo, "secret.references.processed", "system", "local", map[string]interface{}{
 		"playbook": ptxbook.Metadata.Name,
 	})
 
@@ -231,7 +231,7 @@ func (sm *SecretManager) ProcessSecretReferences(ptxbook *PtxbookFile) error {
 		}
 	}
 
-	sm.auditMgr.LogSystemEvent(AuditLevelInfo, "secret.references.processed", "system", "local", map[string]interface{}{
+	_ = sm.auditMgr.LogSystemEvent(AuditLevelInfo, "secret.references.processed", "system", "local", map[string]interface{}{
 		"playbook": ptxbook.Metadata.Name,
 	})
 
@@ -309,11 +309,11 @@ func (sm *SecretManager) resolveSecretReference(input string, context *Execution
 		value, err := sm.GetSecret(store, key, context)
 		if err != nil {
 			// Log error but don't expose in template
-			sm.auditMgr.LogSecretAccess(context.User, context.Environment, store, key, false)
+			_ = sm.auditMgr.LogSecretAccess(context.User, context.Environment, store, key, false)
 			return fmt.Sprintf("{{ SECRET_ERROR:%s }}", key)
 		}
 
-		sm.auditMgr.LogSecretAccess(context.User, context.Environment, store, key, true)
+		_ = sm.auditMgr.LogSecretAccess(context.User, context.Environment, store, key, true)
 
 		return value
 	}), nil
@@ -462,7 +462,7 @@ func (sm *SecretManager) setFileSecret(store *SecretStore, key, value string, co
 		return fmt.Errorf("failed to write secret file: %v", err)
 	}
 
-	sm.auditMgr.LogSystemEvent(AuditLevelInfo, "secret.stored", context.User, context.Environment, map[string]interface{}{
+	_ = sm.auditMgr.LogSystemEvent(AuditLevelInfo, "secret.stored", context.User, context.Environment, map[string]interface{}{
 		"store": "file",
 		"key":   key,
 	})

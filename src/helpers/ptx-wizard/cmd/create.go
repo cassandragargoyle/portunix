@@ -58,7 +58,7 @@ func createWizard(_ *cobra.Command, args []string) {
         Setup completed successfully!
 `
 
-	if err := os.WriteFile(fileName, []byte(template), 0o644); err != nil {
+	if err := os.WriteFile(fileName, []byte(template), 0o644); err != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 		fmt.Printf("Error creating wizard file: %v\n", err)
 		os.Exit(1)
 	}

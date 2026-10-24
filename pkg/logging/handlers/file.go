@@ -59,7 +59,7 @@ func NewFileHandler(config FileConfig) (*FileHandler, error) {
 func (h *FileHandler) openFile() error {
 	// Ensure directory exists
 	dir := filepath.Dir(h.config.FilePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create log directory %s: %w", dir, err)
 	}
 
@@ -72,7 +72,7 @@ func (h *FileHandler) openFile() error {
 	}
 
 	// Open file
-	file, err := os.OpenFile(h.config.FilePath, flags, 0644)
+	file, err := os.OpenFile(h.config.FilePath, flags, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to open log file %s: %w", h.config.FilePath, err)
 	}
@@ -121,7 +121,7 @@ func (h *FileHandler) shouldRotate(writeSize int) bool {
 func (h *FileHandler) rotate() error {
 	// Close current file
 	if h.file != nil {
-		h.file.Close()
+		_ = h.file.Close()
 	}
 
 	// Create backup filename with timestamp
@@ -212,7 +212,7 @@ func (h *FileHandler) cleanupOldBackups() {
 		}
 
 		if shouldDelete {
-			os.Remove(info.path)
+			_ = os.Remove(info.path)
 		}
 	}
 }

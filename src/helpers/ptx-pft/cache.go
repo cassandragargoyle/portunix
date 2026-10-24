@@ -67,7 +67,7 @@ func (c *SyncCache) Save() error {
 		return fmt.Errorf("failed to serialize cache: %w", err)
 	}
 
-	if err := os.WriteFile(c.filePath, data, 0644); err != nil {
+	if err := writePrivateFile(c.filePath, data); err != nil {
 		return fmt.Errorf("failed to write cache: %w", err)
 	}
 
@@ -137,6 +137,10 @@ func hashItem(item *FeedbackItem) string {
 	content := item.Title + "|" + item.Description + "|" + item.Status
 	var hash uint32
 	for _, c := range content {
+		// Runes produced by ranging over a string are never negative
+		if c < 0 {
+			continue
+		}
 		hash = hash*31 + uint32(c)
 	}
 	return fmt.Sprintf("%08x", hash)

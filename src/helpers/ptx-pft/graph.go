@@ -227,7 +227,7 @@ func WriteGraphJSON(doc *GraphDoc, outPath string) error {
 	if err := enc.Encode(doc); err != nil {
 		return err
 	}
-	return os.WriteFile(outPath, buf.Bytes(), 0644)
+	return writeSharedFile(outPath, buf.Bytes())
 }
 
 // collectVoiceFiles walks base recursively and returns sorted *.md paths,

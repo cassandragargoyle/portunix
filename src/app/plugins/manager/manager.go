@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -89,13 +90,13 @@ func (m *Manager) InstallPlugin(manifestPath string) error {
 	}
 
 	// Check prerequisites (warn but don't block installation)
-	prereqResult := plugins.CheckPrerequisites(manifest)
+	prereqResult := manifestPrerequisites(manifest, filepath.Dir(manifestPath))
 	if prereqResult.HasErrors() {
 		fmt.Printf("\n%s", prereqResult.FormatHuman())
 		fmt.Println("\n\u26a0\ufe0f  Prerequisites check found issues. Plugin will be installed but may not work correctly.")
 		fmt.Println("   Run 'portunix plugin check " + manifest.Name + "' for details.\n")
 	} else if prereqResult.HasWarnings() {
-		fmt.Printf("\n%s", prereqResult.FormatHuman())
+		fmt.Printf("\n%s\n", prereqResult.FormatHuman())
 	}
 
 	// Copy plugin files to plugins directory
@@ -107,24 +108,52 @@ func (m *Manager) InstallPlugin(manifestPath string) error {
 	// Setup Python wheel plugin (venv + pip install)
 	if manifest.Plugin.Runtime == "python" && manifest.Plugin.Wheel != "" {
 		if err := m.setupPythonWheelPlugin(manifest, pluginDir); err != nil {
-			os.RemoveAll(pluginDir)
+			_ = os.RemoveAll(pluginDir)
 			return fmt.Errorf("failed to setup Python wheel plugin: %w", err)
 		}
 	}
 
-	// Register plugin
+	// Register plugin (never leave files behind without a registry entry)
 	if err := m.registry.RegisterPlugin(manifest, pluginDir); err != nil {
+		_ = os.RemoveAll(pluginDir)
 		return fmt.Errorf("failed to register plugin: %w", err)
 	}
 
 	return nil
 }
 
-// ForceInstallPlugin reinstalls a plugin, replacing existing installation
+// ForceInstallPlugin reinstalls a plugin, replacing existing installation.
+// The replacement is atomic from the user's point of view: new files are
+// staged and checked first, the old installation is kept as a backup until
+// the new one is set up and registered, and it is restored on any failure
 func (m *Manager) ForceInstallPlugin(manifestPath string) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
+	return m.forceInstallPlugin(manifestPath)
+}
+
+// RepairPlugin reinstalls a plugin from its own installed manifest and files,
+// recreating the Python venv; the original plugin source is not needed
+func (m *Manager) RepairPlugin(name string) error {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	registryData, err := m.registry.GetPluginRegistryData(name)
+	if err != nil {
+		return err
+	}
+
+	manifestPath := filepath.Join(registryData.InstallPath, "plugin.json")
+	if _, err := os.Stat(manifestPath); err != nil {
+		return fmt.Errorf("installed manifest not found at %s; reinstall from source with: portunix plugin install --force <plugin-path>", manifestPath)
+	}
+
+	return m.forceInstallPlugin(manifestPath)
+}
+
+// forceInstallPlugin implements ForceInstallPlugin; caller holds m.mutex
+func (m *Manager) forceInstallPlugin(manifestPath string) error {
 	manifest, err := plugins.LoadManifest(manifestPath)
 	if err != nil {
 		return fmt.Errorf("failed to load manifest: %w", err)
@@ -142,11 +171,44 @@ func (m *Manager) ForceInstallPlugin(manifestPath string) error {
 	}
 
 	// Check if plugin exists (to decide register vs reregister)
-	_, existsInRegistry := m.registry.GetPlugin(manifest.Name)
+	_, registryErr := m.registry.GetPlugin(manifest.Name)
+	existsInRegistry := registryErr == nil
 	pluginDir := filepath.Join(m.config.PluginsDir, manifest.Name)
+	isWheel := manifest.Plugin.Runtime == "python" && manifest.Plugin.Wheel != ""
+
+	// Check prerequisites
+	prereqResult := manifestPrerequisites(manifest, filepath.Dir(manifestPath))
+	if prereqResult.HasErrors() {
+		fmt.Printf("\n%s", prereqResult.FormatHuman())
+		fmt.Println("\n\u26a0\ufe0f  Prerequisites check found issues. Plugin will be installed but may not work correctly.")
+		fmt.Println("   Run 'portunix plugin check " + manifest.Name + "' for details.\n")
+	} else if prereqResult.HasWarnings() {
+		fmt.Printf("\n%s\n", prereqResult.FormatHuman())
+	}
+
+	// Stage new files next to the target so the final rename stays on one filesystem
+	if err := os.MkdirAll(m.config.PluginsDir, 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
+		return fmt.Errorf("failed to create plugins directory: %w", err)
+	}
+	stagingDir, err := os.MkdirTemp(m.config.PluginsDir, ".staging-"+manifest.Name+"-")
+	if err != nil {
+		return fmt.Errorf("failed to create staging directory: %w", err)
+	}
+	defer os.RemoveAll(stagingDir) // no-op once the staging directory was moved into place
+
+	if err := m.copyPluginFiles(manifestPath, stagingDir); err != nil {
+		return fmt.Errorf("failed to copy plugin files: %w", err)
+	}
+
+	// Pre-check the venv backend before anything touches the old installation
+	if isWheel {
+		if _, err := planPythonWheelVenv(manifest, stagingDir); err != nil {
+			return fmt.Errorf("failed to setup Python wheel plugin: %w (existing installation left unchanged)", err)
+		}
+	}
 
 	// Stop running plugin if it exists
-	if existsInRegistry == nil {
+	if existsInRegistry {
 		if p, running := m.plugins[manifest.Name]; running {
 			if err := p.Stop(m.ctx); err != nil {
 				return fmt.Errorf("failed to stop plugin before reinstall: %w", err)
@@ -154,44 +216,52 @@ func (m *Manager) ForceInstallPlugin(manifestPath string) error {
 			delete(m.plugins, manifest.Name)
 		}
 		m.stopServiceInstances(manifest.Name)
-
-		// Remove old venv for Python wheel plugins (will be recreated)
-		venvPath := filepath.Join(pluginDir, ".venv")
-		os.RemoveAll(venvPath)
 	}
 
-	// Check prerequisites
-	prereqResult := plugins.CheckPrerequisites(manifest)
-	if prereqResult.HasErrors() {
-		fmt.Printf("\n%s", prereqResult.FormatHuman())
-		fmt.Println("\n\u26a0\ufe0f  Prerequisites check found issues. Plugin will be installed but may not work correctly.")
-		fmt.Println("   Run 'portunix plugin check " + manifest.Name + "' for details.\n")
-	} else if prereqResult.HasWarnings() {
-		fmt.Printf("\n%s", prereqResult.FormatHuman())
+	// Keep the old installation as a backup until the new one is complete
+	backupDir := ""
+	if _, err := os.Stat(pluginDir); err == nil {
+		backupDir = filepath.Join(m.config.PluginsDir, fmt.Sprintf(".backup-%s-%d", manifest.Name, time.Now().UnixNano()))
+		if err := os.Rename(pluginDir, backupDir); err != nil {
+			return fmt.Errorf("failed to back up existing installation: %w", err)
+		}
 	}
 
-	// Copy plugin files (overwrites existing)
-	if err := m.copyPluginFiles(manifestPath, pluginDir); err != nil {
-		return fmt.Errorf("failed to copy plugin files: %w", err)
+	restore := func() {
+		_ = os.RemoveAll(pluginDir)
+		if backupDir != "" {
+			if err := os.Rename(backupDir, pluginDir); err != nil {
+				fmt.Printf("⚠️  Failed to restore previous installation from %s: %v\n", backupDir, err)
+			}
+		}
 	}
 
-	// Setup Python wheel plugin
-	if manifest.Plugin.Runtime == "python" && manifest.Plugin.Wheel != "" {
+	if err := os.Rename(stagingDir, pluginDir); err != nil {
+		restore()
+		return fmt.Errorf("failed to move new installation into place: %w", err)
+	}
+
+	// The venv is created in its final location: venvs embed absolute paths
+	if isWheel {
 		if err := m.setupPythonWheelPlugin(manifest, pluginDir); err != nil {
-			os.RemoveAll(pluginDir)
-			return fmt.Errorf("failed to setup Python wheel plugin: %w", err)
+			restore()
+			return fmt.Errorf("failed to setup Python wheel plugin: %w (previous installation restored)", err)
 		}
 	}
 
 	// Register or re-register
-	if existsInRegistry == nil {
-		if err := m.registry.ReregisterPlugin(manifest, pluginDir); err != nil {
-			return fmt.Errorf("failed to update plugin registry: %w", err)
-		}
+	if existsInRegistry {
+		err = m.registry.ReregisterPlugin(manifest, pluginDir)
 	} else {
-		if err := m.registry.RegisterPlugin(manifest, pluginDir); err != nil {
-			return fmt.Errorf("failed to register plugin: %w", err)
-		}
+		err = m.registry.RegisterPlugin(manifest, pluginDir)
+	}
+	if err != nil {
+		restore()
+		return fmt.Errorf("failed to update plugin registry: %w (previous installation restored)", err)
+	}
+
+	if backupDir != "" {
+		_ = os.RemoveAll(backupDir)
 	}
 
 	return nil
@@ -216,7 +286,7 @@ func (m *Manager) UninstallPlugin(name string) error {
 	// Get install path and remove plugin directory
 	installPath, err := m.registry.GetPluginInstallPath(name)
 	if err != nil {
-		return fmt.Errorf("plugin not found in registry: %w", err)
+		return err
 	}
 
 	if err := os.RemoveAll(installPath); err != nil {
@@ -244,7 +314,7 @@ func (m *Manager) EnablePlugin(name string) error {
 	// Get plugin registry data
 	registryData, err := m.registry.GetPluginRegistryData(name)
 	if err != nil {
-		return fmt.Errorf("plugin not found: %w", err)
+		return err
 	}
 
 	// Warn (do not block) if current OS is not in supported list
@@ -356,7 +426,7 @@ func (m *Manager) StartPlugin(name string) error {
 
 	// Start plugin
 	if err := plugin.Start(m.ctx); err != nil {
-		m.registry.UpdatePluginStatus(name, plugins.PluginStatusFailed)
+		_ = m.registry.UpdatePluginStatus(name, plugins.PluginStatusFailed)
 		return fmt.Errorf("failed to start plugin: %w", err)
 	}
 
@@ -389,7 +459,7 @@ func (m *Manager) StopPlugin(name string) error {
 
 	// Stop plugin
 	if err := plugin.Stop(m.ctx); err != nil {
-		m.registry.UpdatePluginStatus(name, plugins.PluginStatusFailed)
+		_ = m.registry.UpdatePluginStatus(name, plugins.PluginStatusFailed)
 		return fmt.Errorf("failed to stop plugin: %w", err)
 	}
 
@@ -424,9 +494,38 @@ func (m *Manager) ExecuteCommand(pluginName, command string, args []string, opti
 	return plugin.Execute(m.ctx, request)
 }
 
-// ListPlugins returns list of all registered plugins
+// ListPlugins returns list of all registered plugins; the status reflects the
+// installed files, so a missing directory or broken venv is never "ready"
 func (m *Manager) ListPlugins() ([]plugins.PluginInfo, error) {
-	return m.registry.ListPlugins()
+	pluginList, err := m.registry.ListPlugins()
+	if err != nil {
+		return nil, err
+	}
+	for i := range pluginList {
+		m.applyInstallStatus(&pluginList[i])
+	}
+	return pluginList, nil
+}
+
+// applyInstallStatus overrides the stored status with the install state
+func (m *Manager) applyInstallStatus(info *plugins.PluginInfo) {
+	registryData, err := m.registry.GetPluginRegistryData(info.Name)
+	if err != nil {
+		return
+	}
+	state, _ := registryData.CheckInstall()
+	info.Status = installStatus(info.Status, state)
+}
+
+// CheckPluginInstall returns the install state of a registered plugin, the
+// reason and the command that repairs it
+func (m *Manager) CheckPluginInstall(name string) (InstallState, string, string, error) {
+	registryData, err := m.registry.GetPluginRegistryData(name)
+	if err != nil {
+		return "", "", "", err
+	}
+	state, reason := registryData.CheckInstall()
+	return state, reason, registryData.RepairHint(state), nil
 }
 
 // ListPluginsForPlatform returns plugins whose supported_platforms[] declares
@@ -438,7 +537,12 @@ func (m *Manager) ListPluginsForPlatform(platformName, platformVersion string, r
 
 // GetPlugin returns information about a specific plugin
 func (m *Manager) GetPlugin(name string) (plugins.PluginInfo, error) {
-	return m.registry.GetPlugin(name)
+	info, err := m.registry.GetPlugin(name)
+	if err != nil {
+		return info, err
+	}
+	m.applyInstallStatus(&info)
+	return info, nil
 }
 
 // GetPluginRegistryData returns the full registry data for a plugin
@@ -473,6 +577,16 @@ func (m *Manager) GetPluginHealth(name string) (plugins.PluginHealth, error) {
 
 // checkHelperPluginHealth performs health check for helper-type plugins
 func (m *Manager) checkHelperPluginHealth(plugin *RegistryPlugin) plugins.PluginHealth {
+	// Installed files first: a broken venv still leaves the entry script in place
+	if state, reason := plugin.CheckInstall(); state != InstallStateOK {
+		return plugins.PluginHealth{
+			Healthy:       false,
+			Status:        "install_" + string(state),
+			Message:       fmt.Sprintf("%s. Fix: %s", reason, plugin.RepairHint(state)),
+			LastCheckTime: time.Now(),
+		}
+	}
+
 	binaryPath := plugin.BinaryPath()
 
 	// Check binary exists
@@ -581,42 +695,149 @@ func (m *Manager) validatePlugin(manifest *plugins.PluginManifest) error {
 	return nil
 }
 
-// setupPythonWheelPlugin creates venv and installs the wheel package
-func (m *Manager) setupPythonWheelPlugin(manifest *plugins.PluginManifest, pluginDir string) error {
+// pythonVenvPlan describes how the venv of a wheel plugin will be created
+type pythonVenvPlan struct {
+	wheelPath string
+	uv        string // uv binary; empty means the system python3 fallback
+	pythonCmd string // system python3 for the fallback
+	pyVersion string // exact "major.minor" the wheel needs, empty if any
+}
+
+// planPythonWheelVenv runs every check needed to create the venv without
+// side effects, so a reinstall can fail before touching the old installation
+func planPythonWheelVenv(manifest *plugins.PluginManifest, pluginDir string) (*pythonVenvPlan, error) {
+	// Check wheel file exists in plugin directory
+	wheelPath := filepath.Join(pluginDir, manifest.Plugin.Wheel)
+	if _, err := os.Stat(wheelPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("wheel file not found: %s (expected at %s)", manifest.Plugin.Wheel, wheelPath)
+	}
+
+	// Exact minor for bytecode wheels, e.g. "3.13"; detected from the wheel
+	// itself when the manifest does not pin it
+	pyVersion := manifest.Plugin.PythonVersion
+	if pyVersion == "" {
+		pyVersion = detectWheelPythonVersion(wheelPath)
+	}
+
+	// Preferred path: uv provisions a uv-managed interpreter (downloads CPython
+	// when needed) that survives OS upgrades of the system Python
+	if uv := findUV(); uv != "" {
+		return &pythonVenvPlan{wheelPath: wheelPath, uv: uv, pyVersion: pyVersion}, nil
+	}
+
+	// Fallback: system python3
+	pythonCmd, err := systemPythonForVenv(manifest, pyVersion)
+	if err != nil {
+		return nil, err
+	}
+	return &pythonVenvPlan{wheelPath: wheelPath, pythonCmd: pythonCmd, pyVersion: pyVersion}, nil
+}
+
+// systemPythonForVenv returns the host python3 if it can create a working
+// venv for the plugin, or an error suggesting uv
+func systemPythonForVenv(manifest *plugins.PluginManifest, pyVersion string) (string, error) {
+	pythonCmd := findPython()
+	if pythonCmd == "" {
+		return "", fmt.Errorf("Python not found. Install uv (portunix install uv) or Python (portunix install python)")
+	}
+
 	// Validate Python version if specified
 	if manifest.Plugin.PythonMinVersion != "" {
 		constraint := ">=" + manifest.Plugin.PythonMinVersion
 		runtimeCheck := plugins.CheckPythonRuntime("python "+constraint, constraint)
 		if runtimeCheck.Status == plugins.CheckStatusError {
-			return fmt.Errorf("%s\n   Fix: %s", runtimeCheck.Message, runtimeCheck.Fix)
+			return "", fmt.Errorf("%s\n   Fix: %s", runtimeCheck.Message, runtimeCheck.Fix)
 		}
 	}
 
-	// Check wheel file exists in plugin directory
-	wheelPath := filepath.Join(pluginDir, manifest.Plugin.Wheel)
-	if _, err := os.Stat(wheelPath); os.IsNotExist(err) {
-		return fmt.Errorf("wheel file not found: %s (expected at %s)", manifest.Plugin.Wheel, wheelPath)
+	// A bytecode-only wheel needs the exact minor; refuse to build a venv that
+	// would only fail later at runtime with "bad magic number"
+	if pyVersion != "" {
+		hostMinor := pythonMinor(pythonCmd)
+		if hostMinor != pyVersion {
+			return "", fmt.Errorf(
+				"plugin %s needs Python %s but host python is %s; install uv "+
+					"(portunix install uv) so the exact interpreter can be provisioned",
+				manifest.Name, pyVersion, hostMinor)
+		}
+	}
+
+	// Check venv module is available
+	checkCmd := exec.Command(pythonCmd, "-m", "venv", "--help")
+	if err := checkCmd.Run(); err != nil {
+		return "", fmt.Errorf("Python venv module not available. Install uv (portunix install uv), or install python3-venv (apt install python3-venv on Debian/Ubuntu, dnf install python3-venv on Fedora)")
+	}
+
+	// venv bootstraps pip through ensurepip, which distributions may ship separately
+	ensurepipCmd := exec.Command(pythonCmd, "-c", "import ensurepip")
+	if err := ensurepipCmd.Run(); err != nil {
+		return "", fmt.Errorf("Python ensurepip module not available, so venv cannot install pip. Install uv (portunix install uv), or install python3-venv (apt install python3-venv on Debian/Ubuntu, dnf install python3-venv on Fedora)")
+	}
+
+	return pythonCmd, nil
+}
+
+// setupPythonWheelPlugin creates venv and installs the wheel package
+func (m *Manager) setupPythonWheelPlugin(manifest *plugins.PluginManifest, pluginDir string) error {
+	plan, err := planPythonWheelVenv(manifest, pluginDir)
+	if err != nil {
+		return err
 	}
 
 	venvPath := filepath.Join(pluginDir, ".venv")
-	pyVersion := manifest.Plugin.PythonVersion // exact minor for bytecode wheels, e.g. "3.13"
-
-	// Preferred path: uv provisions the exact interpreter (downloads a managed
-	// CPython when the host lacks it), guaranteeing build/runtime bytecode match
-	if uv := findUV(); uv != "" && pyVersion != "" {
-		return m.setupPythonWheelPluginUV(manifest, pluginDir, wheelPath, venvPath, uv, pyVersion)
+	if plan.uv != "" {
+		pyRequest, defaulted := uvPythonRequest(manifest, plan.pyVersion)
+		if defaulted {
+			fmt.Printf("  ⚠️  Plugin %s does not set plugin.python_version; using Python %s (override with %s)\n",
+				manifest.Name, pyRequest, pluginPythonVersionEnv)
+			fmt.Printf("     Recommended: pin the interpreter in plugin.json: \"python_version\": \"%s\"\n", pyRequest)
+		}
+		return m.setupPythonWheelPluginUV(manifest, pluginDir, plan.wheelPath, venvPath, plan.uv, pyRequest)
 	}
-
-	// Fallback: system python3
-	return m.setupPythonWheelPluginSystem(manifest, pluginDir, wheelPath, venvPath, pyVersion)
+	return m.setupPythonWheelPluginSystem(manifest, pluginDir, plan.wheelPath, venvPath, plan.pythonCmd)
 }
 
-// setupPythonWheelPluginUV creates the venv with the pinned interpreter via uv
-func (m *Manager) setupPythonWheelPluginUV(manifest *plugins.PluginManifest, pluginDir, wheelPath, venvPath, uv, pyVersion string) error {
-	fmt.Printf("  Creating Python virtual environment with uv (Python %s)...\n", pyVersion)
-	cmd := exec.Command(uv, "venv", "--python", pyVersion, venvPath)
+// uvPythonRequest returns the --python request for uv: the exact minor when
+// known, otherwise the default plugin minor (if it meets the manifest
+// minimum), otherwise the manifest minimum; defaulted reports that the
+// default minor was chosen because the plugin does not pin one
+func uvPythonRequest(manifest *plugins.PluginManifest, pyVersion string) (request string, defaulted bool) {
+	if pyVersion != "" {
+		return pyVersion, false
+	}
+	defaultVersion := defaultPluginPythonVersion()
+	if minVersion := manifest.Plugin.PythonMinVersion; minVersion != "" &&
+		!plugins.SatisfiesVersionConstraint(defaultVersion, ">="+minVersion) {
+		return ">=" + minVersion, false
+	}
+	return defaultVersion, true
+}
+
+// uvVenvArgs builds the "uv venv" arguments; managed restricts uv to its own
+// interpreters so the venv does not bind to the system Python
+func uvVenvArgs(venvPath, pyRequest string, managed bool) []string {
+	args := []string{"venv"}
+	if managed {
+		args = append(args, "--managed-python")
+	}
+	if pyRequest != "" {
+		args = append(args, "--python", pyRequest)
+	}
+	return append(args, venvPath)
+}
+
+// setupPythonWheelPluginUV creates the venv with a uv-managed interpreter
+func (m *Manager) setupPythonWheelPluginUV(manifest *plugins.PluginManifest, pluginDir, wheelPath, venvPath, uv, pyRequest string) error {
+	fmt.Printf("  Creating Python virtual environment with uv (Python %s)...\n", pyRequest)
+	cmd := exec.Command(uv, uvVenvArgs(venvPath, pyRequest, true)...)
 	if output, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("failed to create virtual environment with uv: %s\n%s", err, string(output))
+		// Offline or older uv: accept any interpreter uv can find
+		fmt.Printf("  uv-managed Python unavailable, using any matching interpreter: %s\n", strings.TrimSpace(string(output)))
+		_ = os.RemoveAll(venvPath)
+		cmd = exec.Command(uv, uvVenvArgs(venvPath, pyRequest, false)...)
+		if output, err := cmd.CombinedOutput(); err != nil {
+			return fmt.Errorf("failed to create virtual environment with uv: %s\n%s", err, string(output))
+		}
 	}
 
 	install := func(whl string) error {
@@ -643,31 +864,7 @@ func (m *Manager) setupPythonWheelPluginUV(manifest *plugins.PluginManifest, plu
 }
 
 // setupPythonWheelPluginSystem creates the venv with the host's python3 (fallback)
-func (m *Manager) setupPythonWheelPluginSystem(manifest *plugins.PluginManifest, pluginDir, wheelPath, venvPath, pyVersion string) error {
-	// Find python3 binary
-	pythonCmd := findPython()
-	if pythonCmd == "" {
-		return fmt.Errorf("Python not found. Install with: portunix install python")
-	}
-
-	// A bytecode-only wheel needs the exact minor; refuse to build a venv that
-	// would only fail later at runtime with "bad magic number"
-	if pyVersion != "" {
-		hostMinor := pythonMinor(pythonCmd)
-		if hostMinor != pyVersion {
-			return fmt.Errorf(
-				"plugin %s needs Python %s but host python is %s; install uv "+
-					"(portunix install uv) so the exact interpreter can be provisioned",
-				manifest.Name, pyVersion, hostMinor)
-		}
-	}
-
-	// Check venv module is available
-	checkCmd := exec.Command(pythonCmd, "-m", "venv", "--help")
-	if err := checkCmd.Run(); err != nil {
-		return fmt.Errorf("Python venv module not available. Install it with: apt install python3-venv (Debian/Ubuntu) or dnf install python3-venv (Fedora)")
-	}
-
+func (m *Manager) setupPythonWheelPluginSystem(manifest *plugins.PluginManifest, pluginDir, wheelPath, venvPath, pythonCmd string) error {
 	// Create virtual environment
 	fmt.Printf("  Creating Python virtual environment...\n")
 	cmd := exec.Command(pythonCmd, "-m", "venv", venvPath)
@@ -772,7 +969,7 @@ func (m *Manager) copyPluginFiles(manifestPath, destDir string) error {
 	sourceDir := filepath.Dir(manifestPath)
 
 	// Create destination directory
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
 		return fmt.Errorf("failed to create plugin directory: %w", err)
 	}
 
@@ -789,6 +986,11 @@ func (m *Manager) copyPluginFiles(manifestPath, destDir string) error {
 		}
 
 		destPath := filepath.Join(destDir, relPath)
+
+		// Venvs embed absolute paths and are recreated, never copied
+		if info.IsDir() && info.Name() == ".venv" && path != sourceDir {
+			return filepath.SkipDir
+		}
 
 		if info.IsDir() {
 			return os.MkdirAll(destPath, info.Mode())
@@ -850,7 +1052,7 @@ func (m *Manager) performHealthChecks() {
 
 			// Update registry with health status
 			if !health.Healthy {
-				m.registry.UpdatePluginStatus(name, plugins.PluginStatusFailed)
+				_ = m.registry.UpdatePluginStatus(name, plugins.PluginStatusFailed)
 			}
 		}
 	}
@@ -863,7 +1065,7 @@ func (m *Manager) CheckPluginPrerequisites(name string) (*plugins.PrerequisiteCh
 
 	registryData, err := m.registry.GetPluginRegistryData(name)
 	if err != nil {
-		return nil, fmt.Errorf("plugin not found: %w", err)
+		return nil, err
 	}
 
 	result := plugins.CheckPrerequisitesFromRegistry(
@@ -875,6 +1077,8 @@ func (m *Manager) CheckPluginPrerequisites(name string) (*plugins.PrerequisiteCh
 		registryData.SupportedOS,
 		registryData.OptionalTools,
 	)
+	applyInstalledRuntimeCheck(result, registryData)
+	result.SetInstallCheck(installCheckResult(registryData))
 
 	return result, nil
 }
@@ -907,6 +1111,8 @@ func (m *Manager) CheckAllPrerequisites() (*plugins.PrerequisitesSummary, error)
 			registryData.SupportedOS,
 			registryData.OptionalTools,
 		)
+		applyInstalledRuntimeCheck(result, registryData)
+		result.SetInstallCheck(installCheckResult(registryData))
 
 		summary.Results = append(summary.Results, *result)
 
@@ -923,9 +1129,57 @@ func (m *Manager) CheckAllPrerequisites() (*plugins.PrerequisitesSummary, error)
 	return summary, nil
 }
 
+// installCheckResult converts the install state into a prerequisite check entry
+func installCheckResult(rp *RegistryPlugin) *plugins.InstallCheckResult {
+	state, reason := rp.CheckInstall()
+	check := &plugins.InstallCheckResult{
+		Status:  plugins.CheckStatusOK,
+		State:   string(state),
+		Message: reason,
+		Fix:     rp.RepairHint(state),
+	}
+	if state != InstallStateOK {
+		check.Status = plugins.CheckStatusError
+	}
+	return check
+}
+
+// applyInstalledRuntimeCheck replaces the host runtime check of an installed
+// wheel plugin with a check of its venv interpreter, which is what it runs on
+func applyInstalledRuntimeCheck(result *plugins.PrerequisiteCheckResult, rp *RegistryPlugin) {
+	if rp.Runtime != "python" || rp.Wheel == "" || rp.InstallPath == "" {
+		return
+	}
+	interpreter := venvExecPath(filepath.Join(rp.InstallPath, ".venv"), "python")
+	result.SetRuntimeCheck(plugins.CheckVenvPythonRuntime(
+		result.Runtime.Required, rp.RuntimeVersion, interpreter, rp.RepairHint(InstallStateBroken)))
+}
+
 // CheckManifestPrerequisites checks prerequisites for a manifest (used during install)
 func (m *Manager) CheckManifestPrerequisites(manifest *plugins.PluginManifest) *plugins.PrerequisiteCheckResult {
 	return plugins.CheckPrerequisites(manifest)
+}
+
+// manifestPrerequisites checks prerequisites before install or repair; for a
+// wheel plugin with uv available the runtime is the interpreter uv will
+// provide for the venv, not the host python3
+func manifestPrerequisites(manifest *plugins.PluginManifest, sourceDir string) *plugins.PrerequisiteCheckResult {
+	result := plugins.CheckPrerequisites(manifest)
+	if manifest.Plugin.Runtime != "python" || manifest.Plugin.Wheel == "" {
+		return result
+	}
+	uv := findUV()
+	if uv == "" {
+		return result
+	}
+
+	pyVersion := manifest.Plugin.PythonVersion
+	if pyVersion == "" {
+		pyVersion = detectWheelPythonVersion(filepath.Join(sourceDir, manifest.Plugin.Wheel))
+	}
+	pyRequest, _ := uvPythonRequest(manifest, pyVersion)
+	result.SetRuntimeCheck(plugins.CheckUVPythonRuntime(result.Runtime.Required, uv, pyRequest))
+	return result
 }
 
 // stopServiceInstances stops all service orchestrator instances for a plugin
@@ -937,7 +1191,7 @@ func (m *Manager) stopServiceInstances(name string) {
 	if err != nil {
 		return
 	}
-	orch.StopPlugin(name)
+	_, _ = orch.StopPlugin(name)
 }
 
 // serviceOrchestratorFactory creates a service orchestrator (set via RegisterServiceOrchestrator)

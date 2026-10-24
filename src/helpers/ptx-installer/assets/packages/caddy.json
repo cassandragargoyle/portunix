@@ -46,7 +46,7 @@
             },
             "extractTo": "/usr/local/bin",
             "postInstall": [
-              "sudo chmod +x /usr/local/bin/caddy"
+              "${sudo_prefix}chmod +x /usr/local/bin/caddy"
             ]
           },
           "apt": {

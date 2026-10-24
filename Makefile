@@ -254,7 +254,7 @@ mocks: ## Generate mocks
 
 security: ## Run security scans
 	@echo "Running security scans..."
-	gosec ./...
+	@uv run --script scripts/gosec-scan.py
 	go list -json -deps ./... | nancy sleuth
 
 setup-test: ## Setup test environment

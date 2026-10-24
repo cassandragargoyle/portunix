@@ -20,9 +20,9 @@
         "type": "zip",
         "variants": {
           "extended": {
-            "version": "0.150.1",
+            "version": "0.167.0",
             "urls": {
-              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_extended_0.150.1_windows-amd64.zip"
+              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_extended_0.167.0_windows-amd64.zip"
             },
             "extractTo": "C:/Program Files/Hugo"
           }
@@ -39,13 +39,13 @@
         "type": "tar.gz",
         "variants": {
           "extended": {
-            "version": "0.150.1",
+            "version": "0.167.0",
             "urls": {
-              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_extended_0.150.1_linux-amd64.tar.gz"
+              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_extended_0.167.0_linux-amd64.tar.gz"
             },
             "extractTo": "/usr/local/bin",
             "postInstall": [
-              "sudo chmod +x /usr/local/bin/hugo"
+              "${sudo_prefix}chmod +x /usr/local/bin/hugo"
             ]
           }
         },

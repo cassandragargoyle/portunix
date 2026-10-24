@@ -51,13 +51,13 @@ func ExtractZip(zipFile, destDir string) error {
 	defer r.Close()
 
 	// Ensure destination directory exists
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
 	// Extract files
 	for _, f := range r.File {
-		fpath := filepath.Join(destDir, f.Name) //nolint:gosec // G305: ZipSlip check on the next line
+		fpath := filepath.Join(destDir, f.Name) // #nosec G305 -- ZipSlip check on the next line
 
 		// Check for ZipSlip vulnerability
 		if !strings.HasPrefix(fpath, filepath.Clean(destDir)+string(os.PathSeparator)) {
@@ -73,7 +73,7 @@ func ExtractZip(zipFile, destDir string) error {
 		}
 
 		// Create parent directory
-		if err := os.MkdirAll(filepath.Dir(fpath), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(fpath), 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
 			return err
 		}
 
@@ -85,16 +85,19 @@ func ExtractZip(zipFile, destDir string) error {
 
 		rc, err := f.Open()
 		if err != nil {
-			outFile.Close()
+			_ = outFile.Close()
 			return err
 		}
 
-		_, err = io.Copy(outFile, rc) //nolint:gosec // G110: archives are checksummed package distributions from the trusted registry
-		outFile.Close()
-		rc.Close()
+		err = copyLimited(outFile, rc, maxExtractedFileSize)
+		closeErr := outFile.Close()
+		_ = rc.Close()
 
 		if err != nil {
 			return err
+		}
+		if closeErr != nil {
+			return closeErr
 		}
 
 		fmt.Printf("   ✓ %s\n", f.Name)
@@ -141,7 +144,7 @@ func extractTarReader(r io.Reader, destDir string) error {
 	tr := tar.NewReader(r)
 
 	// Ensure destination directory exists
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 
@@ -155,7 +158,7 @@ func extractTarReader(r io.Reader, destDir string) error {
 			return fmt.Errorf("failed to read tar: %w", err)
 		}
 
-		target := filepath.Join(destDir, header.Name) //nolint:gosec // G305: ZipSlip check on the next line
+		target := filepath.Join(destDir, header.Name) // #nosec G305 -- ZipSlip check on the next line
 
 		// Check for ZipSlip vulnerability
 		if !strings.HasPrefix(target, filepath.Clean(destDir)+string(os.PathSeparator)) {
@@ -164,27 +167,36 @@ func extractTarReader(r io.Reader, destDir string) error {
 
 		switch header.Typeflag {
 		case tar.TypeDir:
-			if err := os.MkdirAll(target, 0755); err != nil {
+			if err := os.MkdirAll(target, 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
 				return err
 			}
 
 		case tar.TypeReg:
 			// Create parent directory
-			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
+				return err
+			}
+
+			// Replace an existing file instead of writing over it: a shorter new file
+			// would otherwise keep the tail of the old one, and unlinking first also
+			// works for a binary that is currently running
+			if err := removeExistingFile(target); err != nil {
 				return err
 			}
 
 			// Extract file (mask Mode to permission+special bits so it fits in uint32 / FileMode)
-			outFile, err := os.OpenFile(target, os.O_CREATE|os.O_RDWR, os.FileMode(header.Mode&0o7777)) //nolint:gosec // G115: masked to 0o7777, always fits in uint32
+			outFile, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.FileMode(header.Mode&0o7777)) //nolint:gosec // G115: masked to 0o7777, always fits in uint32
 			if err != nil {
 				return err
 			}
 
-			if _, err := io.Copy(outFile, tr); err != nil { //nolint:gosec // G110: archives are checksummed package distributions from the trusted registry
-				outFile.Close()
+			if err := copyLimited(outFile, tr, maxExtractedFileSize); err != nil {
+				_ = outFile.Close()
 				return err
 			}
-			outFile.Close()
+			if err := outFile.Close(); err != nil {
+				return err
+			}
 
 			extractedFiles++
 			if extractedFiles%10 == 0 {
@@ -193,7 +205,11 @@ func extractTarReader(r io.Reader, destDir string) error {
 
 		case tar.TypeSymlink:
 			// Create symlink
-			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(target), 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
+				return err
+			}
+			// Reinstall: replace a symlink or file left by the previous version
+			if err := removeExistingFile(target); err != nil {
 				return err
 			}
 			if err := os.Symlink(header.Linkname, target); err != nil {
@@ -207,6 +223,37 @@ func extractTarReader(r io.Reader, destDir string) error {
 
 	fmt.Printf("✅ Extracted %d files\n", extractedFiles)
 	return nil
+}
+
+// maxExtractedFileSize caps a single extracted file to stop decompression bombs
+const maxExtractedFileSize int64 = 8 << 30
+
+// copyLimited copies one archive entry and fails once it exceeds limit bytes
+func copyLimited(dst io.Writer, src io.Reader, limit int64) error {
+	written, err := io.CopyN(dst, src, limit+1)
+	if err != nil && err != io.EOF {
+		return err
+	}
+	if written > limit {
+		return fmt.Errorf("extracted file exceeds the %d byte limit", limit)
+	}
+	return nil
+}
+
+// removeExistingFile removes a file or symlink at path so it can be recreated;
+// a missing path is fine, an existing directory is left untouched
+func removeExistingFile(path string) error {
+	info, err := os.Lstat(path)
+	if os.IsNotExist(err) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	if info.IsDir() {
+		return nil
+	}
+	return os.Remove(path)
 }
 
 // ExtractGzip extracts a single gzipped file
@@ -236,8 +283,7 @@ func ExtractGzip(gzipFile, destDir string) error {
 	}
 	defer outFile.Close()
 
-	_, err = io.Copy(outFile, gzr) //nolint:gosec // G110: archives are checksummed package distributions from the trusted registry
-	if err != nil {
+	if err := copyLimited(outFile, gzr, maxExtractedFileSize); err != nil {
 		return err
 	}
 

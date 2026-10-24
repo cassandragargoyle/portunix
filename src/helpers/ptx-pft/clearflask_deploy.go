@@ -83,7 +83,7 @@ func getClearFlaskDeployDir() (string, error) {
 	}
 
 	deployDir := filepath.Join(homeDir, ".portunix", "pft", "clearflask")
-	if err := os.MkdirAll(deployDir, 0755); err != nil {
+	if err := ensureSharedDir(deployDir); err != nil {
 		return "", fmt.Errorf("failed to create deploy directory: %w", err)
 	}
 
@@ -103,7 +103,7 @@ func writeClearFlaskComposeFile(deployDir string) (string, error) {
 	}
 
 	composePath := filepath.Join(deployDir, clearflaskComposeFile)
-	if err := os.WriteFile(composePath, yamlData, 0644); err != nil {
+	if err := writePrivateFile(composePath, yamlData); err != nil {
 		return "", fmt.Errorf("failed to write compose file: %w", err)
 	}
 
@@ -192,7 +192,7 @@ func DeployClearFlask(config *Config) (*DeployResult, error) {
 		fmt.Println(warning)
 		fmt.Print("Do you want to continue anyway? [y/N]: ")
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if response != "y" && response != "Y" {
 			return nil, fmt.Errorf("deployment cancelled due to kernel compatibility issue")
 		}
@@ -388,7 +388,7 @@ func DeployClearFlaskInstance(instanceName string, port int, config *Config) (*D
 	}
 
 	deployDir := filepath.Join(homeDir, ".portunix", "pft", "clearflask-"+instanceName)
-	if err := os.MkdirAll(deployDir, 0755); err != nil {
+	if err := ensureSharedDir(deployDir); err != nil {
 		return nil, fmt.Errorf("failed to create deploy directory: %w", err)
 	}
 
@@ -397,7 +397,7 @@ func DeployClearFlaskInstance(instanceName string, port int, config *Config) (*D
 	// Generate compose file with custom port
 	composeContent := generateClearFlaskInstanceComposeYAML(instanceName, port)
 	composePath := filepath.Join(deployDir, clearflaskComposeFile)
-	if err := os.WriteFile(composePath, []byte(composeContent), 0644); err != nil {
+	if err := writePrivateFile(composePath, []byte(composeContent)); err != nil {
 		return nil, fmt.Errorf("failed to write compose file: %w", err)
 	}
 	result.ComposeFile = composePath

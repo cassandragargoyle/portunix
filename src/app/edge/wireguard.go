@@ -107,7 +107,7 @@ func (m *Manager) GenerateWireGuardConfig(config *Config, configPath string) err
 		if err := os.WriteFile(serverPrivateKeyFile, []byte(serverKeyPair.PrivateKey), 0600); err != nil {
 			return fmt.Errorf("failed to save server private key: %w", err)
 		}
-		if err := os.WriteFile(serverPublicKeyFile, []byte(serverKeyPair.PublicKey), 0644); err != nil {
+		if err := os.WriteFile(serverPublicKeyFile, []byte(serverKeyPair.PublicKey), 0644); err != nil { // #nosec G306 -- public key, not a secret
 			return fmt.Errorf("failed to save server public key: %w", err)
 		}
 

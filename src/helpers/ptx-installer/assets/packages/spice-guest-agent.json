@@ -23,8 +23,8 @@
             "version": "latest",
             "packages": ["spice-vdagent"],
             "postInstall": [
-              "sudo systemctl enable spice-vdagentd",
-              "sudo systemctl start spice-vdagentd",
+              "${sudo_prefix}systemctl enable spice-vdagentd",
+              "${sudo_prefix}systemctl start spice-vdagentd",
               "echo '✅ SPICE guest agent installed and service enabled'",
               "echo '💡 Clipboard sharing requires a SPICE channel in the VM XML'"
             ]
@@ -34,8 +34,8 @@
             "version": "latest",
             "packages": ["spice-vdagent"],
             "postInstall": [
-              "sudo systemctl enable spice-vdagentd",
-              "sudo systemctl start spice-vdagentd",
+              "${sudo_prefix}systemctl enable spice-vdagentd",
+              "${sudo_prefix}systemctl start spice-vdagentd",
               "echo '✅ SPICE guest agent installed and service enabled'",
               "echo '💡 Clipboard sharing requires a SPICE channel in the VM XML'"
             ]
@@ -45,8 +45,8 @@
             "version": "latest",
             "packages": ["spice-vdagent"],
             "postInstall": [
-              "sudo systemctl enable spice-vdagentd",
-              "sudo systemctl start spice-vdagentd",
+              "${sudo_prefix}systemctl enable spice-vdagentd",
+              "${sudo_prefix}systemctl start spice-vdagentd",
               "echo '✅ SPICE guest agent installed and service enabled'",
               "echo '💡 Clipboard sharing requires a SPICE channel in the VM XML'"
             ]

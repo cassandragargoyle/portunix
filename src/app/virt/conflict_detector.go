@@ -113,7 +113,7 @@ func UnloadKVMModules() error {
 	for _, module := range modules {
 		cmd := exec.Command("sudo", "rmmod", module)
 		// Ignore errors - module might not be loaded
-		cmd.Run()
+		_ = cmd.Run()
 	}
 
 	// Verify KVM is unloaded
@@ -163,7 +163,7 @@ func SwitchToKVM() error {
 	for _, module := range vboxModules {
 		cmd := exec.Command("sudo", "rmmod", module)
 		// Ignore errors
-		cmd.Run()
+		_ = cmd.Run()
 	}
 
 	// Load KVM modules

@@ -37,7 +37,7 @@ var edgeInitCmd = &cobra.Command{
 		}
 
 		configDir := filepath.Join(".", "edge-config", name)
-		if err := os.MkdirAll(configDir, 0755); err != nil {
+		if err := os.MkdirAll(configDir, 0755); err != nil { // #nosec G301 -- mounted into containers, the container user must be able to traverse it
 			return fmt.Errorf("failed to create config directory: %w", err)
 		}
 

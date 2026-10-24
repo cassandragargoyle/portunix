@@ -45,7 +45,7 @@
             ],
             "packages": ["powershell"],
             "postInstall": [
-              "sudo apt-get install -f"
+              "${sudo_prefix}apt-get install -f"
             ]
           },
           "dnf": {

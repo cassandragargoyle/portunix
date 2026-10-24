@@ -50,7 +50,7 @@ func Download(opts Options) (*Result, error) {
 	if opts.Dest == "" {
 		return nil, fmt.Errorf("download: destination required")
 	}
-	if err := os.MkdirAll(filepath.Dir(opts.Dest), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(opts.Dest), 0o755); err != nil { // #nosec G301 -- downloaded release assets are public
 		return nil, fmt.Errorf("create destination dir: %w", err)
 	}
 
@@ -107,7 +107,7 @@ func Download(opts Options) (*Result, error) {
 	} else {
 		flags |= os.O_TRUNC
 	}
-	out, err := os.OpenFile(opts.Dest, flags, 0o644)
+	out, err := os.OpenFile(opts.Dest, flags, 0o644) // #nosec G302 -- downloaded release assets are public
 	if err != nil {
 		return nil, fmt.Errorf("open destination: %w", err)
 	}

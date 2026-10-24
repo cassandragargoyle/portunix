@@ -35,7 +35,12 @@ func SetEmbeddedScripts(scriptsFS embed.FS) {
 
 // checkExistingDirectory checks if target directory exists and is not empty
 // Returns true if installation should proceed, false if user cancelled
+// A shared directory (e.g. /usr/local/bin) is never removed, not even with force
 func checkExistingDirectory(targetDir string, force bool) (bool, error) {
+	if isSharedDirectory(targetDir) {
+		return true, nil
+	}
+
 	// Check if directory exists
 	info, err := os.Stat(targetDir)
 	if os.IsNotExist(err) {
@@ -93,6 +98,31 @@ func checkExistingDirectory(targetDir string, force bool) (bool, error) {
 
 	fmt.Println("❌ Installation cancelled by user")
 	return false, nil
+}
+
+// prepareSharedDirectory handles extraction into a shared directory such as
+// /usr/local/bin or /usr/local: the directory itself is never removed and files
+// from the archive replace existing ones in place; only a top-level directory
+// created by the archive (e.g. /usr/local/go) is offered for removal (issue #226)
+func prepareSharedDirectory(archivePath, targetDir string, force bool) (bool, error) {
+	fmt.Printf("ℹ️  %s is a shared directory — it is never removed, files from the archive replace existing ones\n", targetDir)
+
+	entries, err := archive.ListTopLevelEntries(archivePath)
+	if err != nil {
+		fmt.Printf("⚠️  Could not list archive contents: %v\n", err)
+		return true, nil
+	}
+
+	for _, entry := range entries {
+		if !entry.IsDir {
+			continue
+		}
+		proceed, err := checkExistingDirectory(filepath.Join(targetDir, entry.Name), force)
+		if err != nil || !proceed {
+			return proceed, err
+		}
+	}
+	return true, nil
 }
 
 // expandEnvVars expands environment variables in a string
@@ -197,7 +227,7 @@ func NewInstaller(assetsPath string) (*Installer, error) {
 	}
 
 	cacheDir := filepath.Join(homeDir, ".portunix", "cache")
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0755); err != nil { // #nosec G301 -- download cache holds public distribution archives
 		return nil, fmt.Errorf("failed to create cache directory: %w", err)
 	}
 
@@ -444,6 +474,13 @@ func (i *Installer) Install(options *InstallOptions) error {
 		return installErr
 	}
 
+	// Package-manager types have no install method of their own that runs
+	// postInstall, so it runs here (issue #227)
+	switch effectiveType {
+	case "deb", "apt", "dnf", "yum", "snap", "pacman":
+		runPackageManagerPostInstall(variantSpec.PostInstall)
+	}
+
 	// Apply environment.PATH_APPEND after a successful install. Env-var
 	// placeholders (${LOCALAPPDATA}, $HOME, %USERPROFILE%, …) are expanded
 	// up-front; ${install_path}/${extract_to} are then resolved from the
@@ -545,12 +582,12 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 	}
 
 	// Ensure extract directory exists, with fallback to user directory
-	if err := os.MkdirAll(extractTo, 0755); err != nil {
+	if err := os.MkdirAll(extractTo, 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
 		// Primary path failed (likely permission denied), try fallback
 		if extractTo != fallbackDir {
 			fmt.Printf("⚠️  Cannot create %s (permission denied), using user directory\n", extractTo)
 			extractTo = fallbackDir
-			if err := os.MkdirAll(extractTo, 0755); err != nil {
+			if err := os.MkdirAll(extractTo, 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
 				return installResult{}, fmt.Errorf("failed to create extract directory: %w", err)
 			}
 			fmt.Printf("📁 Using fallback: %s\n", extractTo)
@@ -560,7 +597,12 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 	}
 
 	// Check if target directory already exists and is not empty (after determining final path)
-	proceed, err := checkExistingDirectory(extractTo, options.Force)
+	var proceed bool
+	if isSharedDirectory(extractTo) {
+		proceed, err = prepareSharedDirectory(archivePath, extractTo, options.Force)
+	} else {
+		proceed, err = checkExistingDirectory(extractTo, options.Force)
+	}
 	if err != nil {
 		return installResult{}, fmt.Errorf("directory check failed: %w", err)
 	}
@@ -598,12 +640,12 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 		// Create symlink in ~/.local/bin
 		homeDir, _ := os.UserHomeDir()
 		binDir := filepath.Join(homeDir, ".local", "bin")
-		os.MkdirAll(binDir, 0755)
+		_ = os.MkdirAll(binDir, 0755) // #nosec G301 -- installed software must be readable by all users
 
 		linkPath := filepath.Join(binDir, variant.Binary)
 
 		// Remove existing symlink if exists
-		os.Remove(linkPath)
+		_ = os.Remove(linkPath)
 
 		// Create symlink
 		if err := os.Symlink(binaryPath, linkPath); err != nil {
@@ -628,40 +670,7 @@ func (i *Installer) installArchive(platform *registry.PlatformSpec, variant *reg
 	// Run post-install commands if specified
 	if len(variant.PostInstall) > 0 {
 		fmt.Println("🔧 Running post-install commands...")
-		var postInstallErrors []string
-		for _, cmd := range variant.PostInstall {
-			// Expand environment variables in command
-			cmd = expandEnvVars(cmd)
-
-			// Replace ${install_path} placeholder with actual extraction path
-			cmd = strings.ReplaceAll(cmd, "${install_path}", extractTo)
-			cmd = strings.ReplaceAll(cmd, "%install_path%", extractTo)
-
-			// Replace original extractTo path with actual path if fallback was used
-			originalExtractTo := expandEnvVars(variant.ExtractTo)
-			if originalExtractTo != "" && originalExtractTo != extractTo {
-				// Normalize paths for replacement (handle both / and \ on Windows)
-				originalPath := filepath.ToSlash(originalExtractTo)
-				actualPath := filepath.ToSlash(extractTo)
-				cmd = strings.ReplaceAll(cmd, originalPath, actualPath)
-				// Also try with backslashes for Windows
-				originalPathWin := strings.ReplaceAll(originalExtractTo, "/", "\\")
-				actualPathWin := strings.ReplaceAll(extractTo, "/", "\\")
-				cmd = strings.ReplaceAll(cmd, originalPathWin, actualPathWin)
-			}
-
-			fmt.Printf("   Running: %s\n", cmd)
-
-			// Execute the command
-			execCmd := shellCommand(cmd)
-			execCmd.Stdout = os.Stdout
-			execCmd.Stderr = os.Stderr
-			if err := execCmd.Run(); err != nil {
-				errMsg := fmt.Sprintf("Command failed: %s (error: %v)", cmd, err)
-				fmt.Printf("   ❌ %s\n", errMsg)
-				postInstallErrors = append(postInstallErrors, errMsg)
-			}
-		}
+		postInstallErrors := runPostInstallCommands(variant.PostInstall, extractTo, expandEnvVars(variant.ExtractTo))
 
 		if len(postInstallErrors) > 0 {
 			return installResult{}, fmt.Errorf("❌ Installation failed: %d post-install command(s) failed:\n   - %s",
@@ -704,7 +713,7 @@ func (i *Installer) installDownload(platform *registry.PlatformSpec, variant *re
 	}
 
 	// Ensure target directory exists
-	if err := os.MkdirAll(targetDir, 0755); err != nil {
+	if err := os.MkdirAll(targetDir, 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
 		return installResult{}, fmt.Errorf("failed to create target directory %s: %w", targetDir, err)
 	}
 
@@ -763,19 +772,8 @@ func (i *Installer) installDownload(platform *registry.PlatformSpec, variant *re
 	// Run post-install commands if specified
 	if len(variant.PostInstall) > 0 {
 		fmt.Println("\n🔧 Running post-install commands...")
-		for _, cmd := range variant.PostInstall {
-			cmd = expandEnvVars(cmd)
-			cmd = strings.ReplaceAll(cmd, "${install_path}", targetDir)
-			cmd = strings.ReplaceAll(cmd, "%install_path%", targetDir)
-
-			fmt.Printf("   Running: %s\n", cmd)
-
-			execCmd := shellCommand(cmd)
-			execCmd.Stdout = os.Stdout
-			execCmd.Stderr = os.Stderr
-			if err := execCmd.Run(); err != nil {
-				return installResult{}, fmt.Errorf("post-install command failed: %s (error: %w)", cmd, err)
-			}
+		if failures := runPostInstallCommands(variant.PostInstall, targetDir, ""); len(failures) > 0 {
+			return installResult{}, fmt.Errorf("post-install command failed: %s", strings.Join(failures, "; "))
 		}
 	}
 
@@ -1058,7 +1056,7 @@ func (i *Installer) executeEmbeddedScript(scriptPath, scriptArgs, installPath st
 	scriptFileName := filepath.Base(normalizedPath)
 	tempScriptPath := filepath.Join(tempDir, scriptFileName)
 
-	if err := os.WriteFile(tempScriptPath, scriptContent, 0755); err != nil {
+	if err := os.WriteFile(tempScriptPath, scriptContent, 0700); err != nil { // #nosec G306 -- install script must be executable
 		return fmt.Errorf("failed to write temp script: %w", err)
 	}
 

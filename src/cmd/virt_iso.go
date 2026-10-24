@@ -140,7 +140,7 @@ Examples:
 			return
 		}
 
-		if err := os.MkdirAll(isoDir, 0755); err != nil {
+		if err := os.MkdirAll(isoDir, 0755); err != nil { // #nosec G301 -- ISO images are read by hypervisors running as other users
 			fmt.Printf("Error creating ISO cache directory: %v\n", err)
 			os.Exit(1)
 		}
@@ -171,7 +171,7 @@ Examples:
 			fmt.Println("Verifying checksum...")
 			if err := verifyChecksum(isoPath, isoInfo.Checksum); err != nil {
 				fmt.Printf("❌ Checksum verification failed: %v\n", err)
-				os.Remove(isoPath) // Remove corrupted file
+				_ = os.Remove(isoPath) // Remove corrupted file
 				os.Exit(1)
 			}
 			fmt.Println("✅ Checksum verified successfully")
@@ -361,7 +361,7 @@ Use --force to delete all downloaded ISOs without confirmation.`,
 		} else {
 			fmt.Printf("\nDelete all ISO files? This will free %s [y/N]: ", formatBytes(totalSize))
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if response == "y" || response == "Y" {
 				for _, file := range isoFiles {
 					isoPath := filepath.Join(isoDir, file)
@@ -526,7 +526,7 @@ func downloadISO(url, destPath string) error {
 	tempPath := destPath + ".tmp"
 	defer os.Remove(tempPath)
 
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) // #nosec G107 -- URL comes from the built-in ISO catalog
 	if err != nil {
 		return err
 	}

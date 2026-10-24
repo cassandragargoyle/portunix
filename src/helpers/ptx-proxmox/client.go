@@ -50,7 +50,7 @@ func NewClient(p *Profile) (*Client, error) {
 		port = 8006
 	}
 	transport := &http.Transport{
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: !p.VerifyTLS}, //nolint:gosec // controlled by user flag
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: !p.VerifyTLS}, // #nosec G402 -- verification is on unless the profile opts out, Proxmox ships self-signed certificates
 	}
 	return &Client{
 		profile: p,
@@ -234,7 +234,7 @@ func (c *Client) attachAuth(req *http.Request) error {
 		if c.ticket == "" {
 			return fmt.Errorf("no active session — call Login() first")
 		}
-		req.AddCookie(&http.Cookie{Name: "PVEAuthCookie", Value: c.ticket})
+		req.AddCookie(&http.Cookie{Name: "PVEAuthCookie", Value: c.ticket, Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
 		if req.Method != http.MethodGet && c.csrfToken != "" {
 			req.Header.Set("CSRFPreventionToken", c.csrfToken)
 		}

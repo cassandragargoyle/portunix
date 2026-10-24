@@ -138,7 +138,7 @@ func NewRBACManager(config *RBACConfig, auditMgr *AuditManager) (*RBACManager, e
 	// Initialize admin users
 	for _, adminUser := range config.AdminUsers {
 		if _, exists := mgr.users[adminUser]; !exists {
-			mgr.createUser(adminUser, "System Administrator", "", []string{"admin"}, true)
+			_ = mgr.createUser(adminUser, "System Administrator", "", []string{"admin"}, true)
 		}
 	}
 
@@ -157,7 +157,7 @@ func (rbac *RBACManager) CheckAccess(req *AccessRequest) *AccessResult {
 	// Get user
 	user, exists := rbac.users[req.User]
 	if !exists {
-		rbac.auditMgr.LogRoleAccess(req.User, req.Environment, "unknown", string(req.Permission), false)
+		_ = rbac.auditMgr.LogRoleAccess(req.User, req.Environment, "unknown", string(req.Permission), false)
 		return &AccessResult{
 			Granted: false,
 			Reason:  "User not found",
@@ -165,7 +165,7 @@ func (rbac *RBACManager) CheckAccess(req *AccessRequest) *AccessResult {
 	}
 
 	if !user.Enabled {
-		rbac.auditMgr.LogRoleAccess(req.User, req.Environment, "disabled", string(req.Permission), false)
+		_ = rbac.auditMgr.LogRoleAccess(req.User, req.Environment, "disabled", string(req.Permission), false)
 		return &AccessResult{
 			Granted: false,
 			Reason:  "User account disabled",
@@ -192,7 +192,7 @@ func (rbac *RBACManager) CheckAccess(req *AccessRequest) *AccessResult {
 			}
 
 			// Access granted
-			rbac.auditMgr.LogRoleAccess(req.User, req.Environment, roleName, string(req.Permission), true)
+			_ = rbac.auditMgr.LogRoleAccess(req.User, req.Environment, roleName, string(req.Permission), true)
 			return &AccessResult{
 				Granted:     true,
 				Reason:      "Permission granted",
@@ -202,7 +202,7 @@ func (rbac *RBACManager) CheckAccess(req *AccessRequest) *AccessResult {
 	}
 
 	// Access denied
-	rbac.auditMgr.LogRoleAccess(req.User, req.Environment, "none", string(req.Permission), false)
+	_ = rbac.auditMgr.LogRoleAccess(req.User, req.Environment, "none", string(req.Permission), false)
 	return &AccessResult{
 		Granted:      false,
 		Reason:       "Insufficient permissions",
@@ -532,7 +532,7 @@ func (rbac *RBACManager) saveData() error {
 		return fmt.Errorf("failed to marshal RBAC data: %w", err)
 	}
 
-	if err := os.WriteFile(rbac.dataFile, data, 0640); err != nil {
+	if err := os.WriteFile(rbac.dataFile, data, 0600); err != nil {
 		return fmt.Errorf("failed to write RBAC data file: %w", err)
 	}
 

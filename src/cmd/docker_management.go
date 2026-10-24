@@ -136,7 +136,7 @@ Output format:
 				container.Created)
 		}
 
-		w.Flush()
+		_ = w.Flush()
 	},
 }
 

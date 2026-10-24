@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"portunix.ai/portunix/src/helpers/ptx-trace/index"
 	"portunix.ai/portunix/src/helpers/ptx-trace/models"
@@ -56,7 +57,12 @@ func (s *Server) Start() error {
 	addr := fmt.Sprintf("%s:%d", s.host, s.port)
 	fmt.Printf("Starting dashboard server at http://%s\n", addr)
 
-	return http.ListenAndServe(addr, s.corsMiddleware(mux))
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           s.corsMiddleware(mux),
+		ReadHeaderTimeout: 10 * time.Second,
+	}
+	return server.ListenAndServe()
 }
 
 // corsMiddleware adds CORS headers
@@ -178,7 +184,7 @@ func (s *Server) handleSessionEvents(w http.ResponseWriter, r *http.Request, ses
 		filter.Status = status
 	}
 	if limit := query.Get("limit"); limit != "" {
-		fmt.Sscanf(limit, "%d", &filter.Limit)
+		_, _ = fmt.Sscanf(limit, "%d", &filter.Limit)
 	}
 	if filter.Limit == 0 {
 		filter.Limit = 100
@@ -211,7 +217,7 @@ func (s *Server) handleSessionErrors(w http.ResponseWriter, r *http.Request, ses
 
 	limit := 20
 	if l := r.URL.Query().Get("limit"); l != "" {
-		fmt.Sscanf(l, "%d", &limit)
+		_, _ = fmt.Sscanf(l, "%d", &limit)
 	}
 
 	groups, err := s.index.GetErrorGroups(sessionID, limit)
@@ -330,7 +336,7 @@ func (s *Server) handleDashboard(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Pragma", "no-cache")
 	w.Header().Set("Expires", "0")
 	w.Header().Set("Content-Type", "text/html")
-	w.Write([]byte(dashboardHTML))
+	_, _ = w.Write([]byte(dashboardHTML))
 }
 
 // BroadcastEvent sends an event to all connected WebSocket clients
@@ -345,7 +351,7 @@ func (s *Server) BroadcastEvent(event interface{}) {
 // jsonResponse sends a JSON response
 func (s *Server) jsonResponse(w http.ResponseWriter, data interface{}) {
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }
 
 // rebuildIndexIfNeeded rebuilds index if session is not indexed
@@ -359,7 +365,7 @@ func (s *Server) rebuildIndexIfNeeded(sessionID string) {
 		session, _ := s.storage.LoadSession(sessionID)
 		events, _ := s.storage.ReadEvents(sessionID, nil)
 		if session != nil && events != nil {
-			s.index.RebuildSessionIndex(sessionID, events, session)
+			_ = s.index.RebuildSessionIndex(sessionID, events, session)
 		}
 	}
 }

@@ -162,7 +162,7 @@ func performUpdate(force bool) {
 	}
 
 	// Clean up backup on success
-	os.Remove(backupPath)
+	_ = os.Remove(backupPath)
 
 	fmt.Println("✓ Update completed successfully!")
 	if !force {

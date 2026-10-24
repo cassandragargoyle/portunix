@@ -1150,8 +1150,18 @@ Behavior of the field:
   matches `python_version`. On mismatch the install **fails with a clear message**
   (offering `portunix install uv`) instead of crashing later at runtime with
   `ImportError: bad magic number`.
-- Plugins that do **not** set `python_version` keep the previous behavior (venv
-  created with whatever `python3` is on PATH).
+- Plugins that do **not** set `python_version` (and whose wheel does not reveal
+  its minor through a `cpXY` tag or bytecode) get, with uv, a conservative default:
+  the newest CPython minor released at least six months ago (new minors ship each
+  October, so freshly released ones, which native dependencies such as numpy or
+  onnxruntime may not support yet, are skipped). If `python_min_version` is above
+  that default, `>=python_min_version` is used instead. The default can be
+  overridden with the `PORTUNIX_PLUGIN_PYTHON_VERSION` environment variable, and
+  install/repair prints a warning recommending a pin. Without uv the venv is
+  created with whatever `python3` is on PATH.
+
+**Recommendation:** set `python_version` in every wheel plugin, not only in
+bytecode-only ones, so all hosts run the plugin on the interpreter it was tested with.
 
 Pin the same version on the build side (e.g. a `.python-version` file) so the
 wheel's bytecode is compiled with that interpreter and build/runtime always match.

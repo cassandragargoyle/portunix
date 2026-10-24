@@ -24,7 +24,7 @@ func ExtractInstallScript(tempDir string) (string, error) {
 
 	scriptPath := filepath.Join(tempDir, "Install-PortableOpenSSH.ps1")
 
-	err := os.WriteFile(scriptPath, []byte(InstallOpenSSHScript), 0644)
+	err := os.WriteFile(scriptPath, []byte(InstallOpenSSHScript), 0644) // #nosec G306 -- mapped into Windows Sandbox, the sandbox user must read it
 	if err != nil {
 		return "", err
 	}
@@ -43,7 +43,7 @@ func ExtractVSCodeScripts(tempDir string) error {
 	// Modify the script to include mkdir c:\temp
 	modifiedScript := "REM Create temp directory first\nmkdir c:\\temp\n\n" + VSCodeInstallScript
 
-	err := os.WriteFile(scriptPath, []byte(modifiedScript), 0644)
+	err := os.WriteFile(scriptPath, []byte(modifiedScript), 0644) // #nosec G306 -- mapped into Windows Sandbox, the sandbox user must read it
 	if err != nil {
 		return err
 	}
@@ -59,7 +59,7 @@ func ExtractPortunixSystemScript(tempDir string) error {
 
 	scriptPath := filepath.Join(tempDir, "PortunixSystem.ps1")
 
-	err := os.WriteFile(scriptPath, []byte(PortunixSystemPSScript), 0644)
+	err := os.WriteFile(scriptPath, []byte(PortunixSystemPSScript), 0644) // #nosec G306 -- mapped into Windows Sandbox, the sandbox user must read it
 	if err != nil {
 		return err
 	}

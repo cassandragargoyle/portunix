@@ -109,7 +109,7 @@ Flags:
 			return
 		}
 		fmt.Printf("Creating temporary directory: %s\n", tempPortunixDir)
-		err = os.MkdirAll(tempPortunixDir, 0755)
+		err = os.MkdirAll(tempPortunixDir, 0755) // #nosec G301 -- mapped into Windows Sandbox, the sandbox user must read it
 		if err != nil {
 			fmt.Printf("Error creating temporary directory: %v\n", err)
 			return
@@ -119,7 +119,7 @@ Flags:
 		shouldCleanup := true
 		defer func() {
 			if shouldCleanup {
-				os.RemoveAll(tempPortunixDir)
+				_ = os.RemoveAll(tempPortunixDir)
 			}
 		}()
 
@@ -138,7 +138,7 @@ Flags:
 				fmt.Printf("Executable already copied (%d bytes), skipping\n", destStat.Size())
 			} else {
 				fmt.Printf("Executable exists but wrong size, re-copying\n")
-				os.Remove(destExecutablePath)
+				_ = os.Remove(destExecutablePath)
 			}
 		}
 
@@ -242,7 +242,7 @@ Flags:
 			fmt.Print("Press Enter after VSCode installation completes to clean up and exit...")
 
 			reader := bufio.NewReader(os.Stdin)
-			reader.ReadString('\n')
+			_, _ = reader.ReadString('\n')
 
 			fmt.Println("Cleaning up temporary files...")
 			// Note: cleanup happens when function exits
@@ -309,7 +309,7 @@ Flags:
 				return
 			}
 
-			err = os.WriteFile(psScriptDestPath, psScriptContent, 0644)
+			err = os.WriteFile(psScriptDestPath, psScriptContent, 0644) // #nosec G306 -- mapped into Windows Sandbox, the sandbox user must read it
 			if err != nil {
 				fmt.Printf("Error writing PowerShell script: %v\n", err)
 				return
