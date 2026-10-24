@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -74,6 +75,7 @@ Runtime: %s`,
 			getPluginMode(plugin.Mode),
 			getPluginRuntime(plugin.Runtime)),
 		DisableFlagParsing: true, // pass all flags to plugin
+		SilenceUsage:       true, // args belong to the plugin; errors here are runtime failures
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return executePlugin(plugin, args)
 		},
@@ -123,33 +125,18 @@ func executePlugin(plugin *manager.RegistryPlugin, args []string) error {
 		return fmt.Errorf("plugin '%s' is not enabled. Enable it with: portunix plugin enable %s", plugin.Name, plugin.Name)
 	}
 
-	// Resolve binary path (OS-specific suffix, venv location for wheels)
-	binaryPath := freshPlugin.BinaryPath()
-
-	// Determine runtime and build command
-	pluginRuntime := freshPlugin.Runtime
-	if pluginRuntime == "" {
-		pluginRuntime = "native"
+	// Refuse to run a plugin whose installed files are unusable, with a fix hint
+	if state, reason := freshPlugin.CheckInstall(); state != manager.InstallStateOK {
+		return fmt.Errorf("plugin '%s' is %s: %s\nFix: %s", plugin.Name, state, reason, freshPlugin.RepairHint(state))
 	}
 
-	var cmd *exec.Cmd
-
-	switch pluginRuntime {
-	case "java":
-		cmd = buildJavaCommand(binaryPath, freshPlugin.JVMArgs, args)
-	case "python":
-		if freshPlugin.Wheel != "" {
-			// Wheel plugin: entry point script is in the venv
-			cmd = buildNativeCommand(binaryPath, args)
-		} else {
-			cmd = buildPythonCommand(binaryPath, args)
-		}
-	default: // native
-		cmd = buildNativeCommand(binaryPath, args)
+	// Capture caller working directory before the plugin changes it
+	callerDir, err := os.Getwd()
+	if err != nil {
+		callerDir = ""
 	}
 
-	// Set working directory
-	cmd.Dir = freshPlugin.InstallPath
+	cmd := buildPluginCommand(freshPlugin, args, callerDir)
 
 	// Connect stdio
 	cmd.Stdin = os.Stdin
@@ -166,6 +153,65 @@ func executePlugin(plugin *manager.RegistryPlugin, args []string) error {
 	}
 
 	return nil
+}
+
+// pluginCallerDirEnv is the environment variable carrying the absolute
+// working directory of the portunix caller into the plugin process
+const pluginCallerDirEnv = "PORTUNIX_CWD"
+
+// buildPluginCommand builds the plugin process command for the plugin runtime,
+// with the install path as working directory and the caller directory exported
+// in pluginCallerDirEnv (left unset when callerDir is empty)
+func buildPluginCommand(plugin *manager.RegistryPlugin, args []string, callerDir string) *exec.Cmd {
+	// Resolve binary path (OS-specific suffix, venv location for wheels)
+	binaryPath := plugin.BinaryPath()
+
+	// Determine runtime and build command
+	pluginRuntime := plugin.Runtime
+	if pluginRuntime == "" {
+		pluginRuntime = "native"
+	}
+
+	var cmd *exec.Cmd
+
+	switch pluginRuntime {
+	case "java":
+		cmd = buildJavaCommand(binaryPath, plugin.JVMArgs, args)
+	case "python":
+		if plugin.Wheel != "" {
+			// Wheel plugin: entry point script is in the venv
+			cmd = buildNativeCommand(binaryPath, args)
+		} else {
+			cmd = buildPythonCommand(binaryPath, args)
+		}
+	default: // native
+		cmd = buildNativeCommand(binaryPath, args)
+	}
+
+	// Set working directory
+	cmd.Dir = plugin.InstallPath
+
+	// Inherit environment and export the caller working directory
+	cmd.Env = pluginEnvironment(os.Environ(), callerDir)
+
+	return cmd
+}
+
+// pluginEnvironment returns env with pluginCallerDirEnv set to callerDir,
+// dropping any inherited value so the variable is never duplicated or stale
+func pluginEnvironment(env []string, callerDir string) []string {
+	result := make([]string, 0, len(env)+1)
+	for _, entry := range env {
+		key, _, _ := strings.Cut(entry, "=")
+		if key == pluginCallerDirEnv || (runtime.GOOS == "windows" && strings.EqualFold(key, pluginCallerDirEnv)) {
+			continue
+		}
+		result = append(result, entry)
+	}
+	if callerDir != "" {
+		result = append(result, pluginCallerDirEnv+"="+callerDir)
+	}
+	return result
 }
 
 // buildJavaCommand builds command for Java plugin

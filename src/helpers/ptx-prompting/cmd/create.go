@@ -71,12 +71,12 @@ func createTemplate(templateName string) error {
 
 	// Create directories if needed
 	dir := filepath.Dir(fullPath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0755); err != nil { // #nosec G301 -- output requested by the user, holds no credentials
 		return fmt.Errorf("failed to create directory %s: %v", dir, err)
 	}
 
 	// Write template file
-	if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil {
+	if err := os.WriteFile(fullPath, []byte(content), 0644); err != nil { // #nosec G306 -- output requested by the user, holds no credentials
 		return fmt.Errorf("failed to write template file: %v", err)
 	}
 

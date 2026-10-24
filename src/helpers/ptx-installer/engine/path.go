@@ -117,7 +117,7 @@ func addToUnixUserPath(binPath string) error {
 		return nil
 	}
 
-	f, err := os.OpenFile(target, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(target, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644) // #nosec G302 -- shell startup files are world-readable by convention
 	if err != nil {
 		return err
 	}

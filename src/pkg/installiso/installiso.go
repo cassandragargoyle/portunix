@@ -153,7 +153,7 @@ func (i *ISOInstaller) Download() (string, error) {
 	}
 
 	// Prepare output path
-	if err := os.MkdirAll(outputDir, 0755); err != nil {
+	if err := os.MkdirAll(outputDir, 0755); err != nil { // #nosec G301 -- ISO images are read by hypervisors running as other users
 		return "", fmt.Errorf("failed to create output directory: %w", err)
 	}
 
@@ -375,7 +375,7 @@ func (i *ISOInstaller) downloadWindowsISO(pkg *ISOPackage, variant *ISOVariant, 
 	fmt.Printf("🔄 Downloading %s ISO from Microsoft...\n", pkg.Name)
 
 	// Create output directory
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0755); err != nil { // #nosec G301 -- ISO images are read by hypervisors running as other users
 		return "", fmt.Errorf("failed to create cache directory: %w", err)
 	}
 

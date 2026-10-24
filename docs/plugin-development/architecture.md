@@ -432,6 +432,40 @@ portunix my-plugin command --arg value
 
 ```
 
+#### Process Environment and Working Directory
+
+When a plugin is started through CLI dispatch (`portunix <plugin> ...`):
+
+- The **working directory** of the plugin process is the plugin install directory
+  (for example `~/.portunix/plugins/my-plugin`), not the directory the user ran the
+  command from. Plugins may rely on it to find their own files (a uv project looks up
+  `pyproject.toml` there)
+- The environment variable **`PORTUNIX_CWD`** holds the absolute path of the directory
+  in which the `portunix` command was run
+- All other environment variables are inherited from the Portunix process unchanged
+
+Resolve every relative path received from the user (input files, output files, reports)
+against `PORTUNIX_CWD`, not against the process working directory. Fall back to the
+process working directory when the variable is missing — older Portunix versions do not
+set it, and it is also left unset when the caller's directory cannot be determined.
+
+```python
+import os
+from pathlib import Path
+
+def resolve_user_path(path: str) -> Path:
+    base = Path(os.environ.get("PORTUNIX_CWD") or os.getcwd())
+    return (base / path).resolve()  # absolute paths are kept as they are
+```
+
+The variable applies to all plugin runtimes (native, Java, Python) on Linux and Windows.
+
+**Long-running plugins (service / gRPC / MCP)**: `PORTUNIX_CWD` is **not** set for plugin
+processes started as services. A service outlives the command that started it and serves
+many requests, so there is no single caller directory. Such plugins must receive paths
+as absolute paths in the request, or accept a base directory as an explicit request
+parameter.
+
 ### MCP Tool Integration
 
 Expose tools to AI agents:

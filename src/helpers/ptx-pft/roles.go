@@ -125,7 +125,7 @@ func LoadRoles(projectDir, category string) (*RoleFile, error) {
 // SaveRoles saves roles to a category directory
 func SaveRoles(projectDir, category string, roleFile *RoleFile) error {
 	dirPath := getVoiceDir(projectDir, category)
-	if err := os.MkdirAll(dirPath, 0755); err != nil {
+	if err := ensureSharedDir(dirPath); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
@@ -136,7 +136,7 @@ func SaveRoles(projectDir, category string, roleFile *RoleFile) error {
 		return fmt.Errorf("failed to marshal roles: %w", err)
 	}
 
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
+	if err := writeSharedFile(filePath, data); err != nil {
 		return fmt.Errorf("failed to write roles.json: %w", err)
 	}
 
@@ -161,7 +161,7 @@ func InitializeRoles(projectDir string) error {
 		filePath := filepath.Join(dirPath, "roles.json")
 
 		if _, err := os.Stat(filePath); os.IsNotExist(err) {
-			if err := os.MkdirAll(dirPath, 0755); err != nil {
+			if err := ensureSharedDir(dirPath); err != nil {
 				return fmt.Errorf("failed to create %s directory: %w", cat.name, err)
 			}
 

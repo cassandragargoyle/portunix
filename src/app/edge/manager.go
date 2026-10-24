@@ -36,7 +36,7 @@ func (m *Manager) InitializeConfiguration(name, configDir string) error {
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0755); err != nil { // #nosec G301 -- mounted into containers, the container user must be able to traverse it
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
@@ -264,7 +264,7 @@ edge:
     auto_update: true
 `, name, time.Now().Format("2006-01-02 15:04:05"), name)
 
-	return os.WriteFile(configFile, []byte(defaultConfig), 0644)
+	return os.WriteFile(configFile, []byte(defaultConfig), 0600)
 }
 
 func (m *Manager) validateConfig(config *Config) error {
@@ -423,7 +423,7 @@ networks:
     driver: bridge
 `, config.Edge.Containers.Network, config.Edge.VPN.Port, config.Edge.Containers.Network, config.Edge.Containers.Network)
 
-	return os.WriteFile(composePath, []byte(composeContent), 0644)
+	return os.WriteFile(composePath, []byte(composeContent), 0600)
 }
 
 func (m *Manager) deployContainers(config *Config, configPath string) error {

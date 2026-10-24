@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -230,9 +231,9 @@ func (s *Server) StartStdioNewline() error {
 
 			// Write response to stdout with newline delimiter
 			// CRITICAL: Only JSON-RPC messages go to stdout!
-			writer.Write(responseJSON)
-			writer.WriteByte('\n')
-			writer.Flush()
+			_, _ = writer.Write(responseJSON)
+			_ = writer.WriteByte('\n')
+			_ = writer.Flush()
 		}
 	}
 }
@@ -244,8 +245,9 @@ func (s *Server) Start(daemon bool) error {
 	mux.HandleFunc("/health", s.handleHealth)
 
 	server := &http.Server{
-		Addr:    fmt.Sprintf(":%d", s.Port),
-		Handler: mux,
+		Addr:              fmt.Sprintf(":%d", s.Port),
+		Handler:           mux,
+		ReadHeaderTimeout: 10 * time.Second,
 	}
 
 	// Setup graceful shutdown
@@ -290,7 +292,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	log.Printf("New MCP client connected from %s", r.RemoteAddr)
+	log.Printf("New MCP client connected from %s", strconv.Quote(r.RemoteAddr))
 
 	for {
 		var request MCPRequest
@@ -307,7 +309,7 @@ func (s *Server) handleWebSocket(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	log.Printf("MCP client disconnected from %s", r.RemoteAddr)
+	log.Printf("MCP client disconnected from %s", strconv.Quote(r.RemoteAddr))
 }
 
 // handleHealth handles health check requests
@@ -319,7 +321,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, r *http.Request) {
 		"permissions": s.Permissions,
 		"timestamp":   time.Now().UTC(),
 	}
-	json.NewEncoder(w).Encode(response)
+	_ = json.NewEncoder(w).Encode(response)
 }
 
 // processRequest processes an incoming MCP request
@@ -417,7 +419,7 @@ func (s *Server) StartTCP(port int) error {
 		<-sigChan
 		fmt.Fprintf(os.Stderr, "Shutting down MCP TCP server...\n")
 		cancel()
-		listener.Close()
+		_ = listener.Close()
 	}()
 
 	fmt.Fprintf(os.Stderr, "MCP Server listening on TCP port %d\n", port)
@@ -470,8 +472,8 @@ func (s *Server) StartUnix(socketPath string) error {
 		<-sigChan
 		fmt.Fprintf(os.Stderr, "Shutting down MCP Unix socket server...\n")
 		cancel()
-		listener.Close()
-		os.Remove(socketPath)
+		_ = listener.Close()
+		_ = os.Remove(socketPath)
 	}()
 
 	fmt.Fprintf(os.Stderr, "MCP Server listening on Unix socket: %s\n", socketPath)
@@ -525,7 +527,7 @@ func (s *Server) handleGenericConnection(conn net.Conn) {
 
 	for {
 		// Set read timeout
-		conn.SetReadDeadline(time.Now().Add(30 * time.Second))
+		_ = conn.SetReadDeadline(time.Now().Add(30 * time.Second))
 
 		// Read one line (newline-delimited JSON-RPC message)
 		line, err := reader.ReadString('\n')
@@ -537,9 +539,9 @@ func (s *Server) handleGenericConnection(conn net.Conn) {
 					Result:  map[string]string{"type": "ping"},
 				}
 				if pingJSON, err := json.Marshal(ping); err == nil {
-					writer.Write(pingJSON)
-					writer.WriteByte('\n')
-					writer.Flush()
+					_, _ = writer.Write(pingJSON)
+					_ = writer.WriteByte('\n')
+					_ = writer.Flush()
 				}
 				continue
 			}
@@ -574,8 +576,8 @@ func (s *Server) handleGenericConnection(conn net.Conn) {
 		}
 
 		// Write response with newline delimiter
-		writer.Write(responseJSON)
-		writer.WriteByte('\n')
-		writer.Flush()
+		_, _ = writer.Write(responseJSON)
+		_ = writer.WriteByte('\n')
+		_ = writer.Flush()
 	}
 }

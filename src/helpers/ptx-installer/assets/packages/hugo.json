@@ -20,18 +20,17 @@
         "type": "zip",
         "variants": {
           "standard": {
-            "version": "0.150.1",
+            "version": "0.167.0",
             "urls": {
-              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_0.150.1_windows-amd64.zip",
-              "arm64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_0.150.1_windows-arm64.zip"
+              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_0.167.0_windows-amd64.zip",
+              "arm64": "https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_0.167.0_windows-arm64.zip"
             },
             "extractTo": "C:/Portunix/bin/hugo"
           },
           "extended": {
-            "version": "0.150.1",
+            "version": "0.167.0",
             "urls": {
-              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_extended_0.150.1_windows-amd64.zip",
-              "arm64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_extended_0.150.1_windows-arm64.zip"
+              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_extended_0.167.0_windows-amd64.zip"
             },
             "extractTo": "C:/Portunix/bin/hugo"
           }
@@ -48,10 +47,10 @@
         "type": "tar.gz",
         "variants": {
           "standard": {
-            "version": "0.150.1",
+            "version": "0.167.0",
             "urls": {
-              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_0.150.1_linux-amd64.tar.gz",
-              "arm64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_0.150.1_linux-arm64.tar.gz"
+              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_0.167.0_linux-amd64.tar.gz",
+              "arm64": "https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_0.167.0_linux-arm64.tar.gz"
             },
             "extractTo": "/usr/local/bin",
             "postInstall": [
@@ -59,10 +58,10 @@
             ]
           },
           "extended": {
-            "version": "0.150.1",
+            "version": "0.167.0",
             "urls": {
-              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_extended_0.150.1_linux-amd64.tar.gz",
-              "arm64": "https://github.com/gohugoio/hugo/releases/download/v0.150.1/hugo_extended_0.150.1_linux-arm64.tar.gz"
+              "x64": "https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_extended_0.167.0_linux-amd64.tar.gz",
+              "arm64": "https://github.com/gohugoio/hugo/releases/download/v0.167.0/hugo_extended_0.167.0_linux-arm64.tar.gz"
             },
             "extractTo": "/usr/local/bin",
             "postInstall": [

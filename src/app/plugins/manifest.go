@@ -53,7 +53,7 @@ func SaveManifest(manifest *PluginManifest, manifestPath string) error {
 		return fmt.Errorf("failed to encode manifest: %w", err)
 	}
 
-	return os.WriteFile(manifestPath, data, 0644)
+	return os.WriteFile(manifestPath, data, 0644) // #nosec G306 -- plugin manifest is a public asset
 }
 
 // ValidateManifest validates a plugin manifest

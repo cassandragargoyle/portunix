@@ -49,7 +49,7 @@ func stopMCPServer(force bool) error {
 	}
 
 	var pid int
-	fmt.Sscanf(string(data), "%d", &pid)
+	_, _ = fmt.Sscanf(string(data), "%d", &pid)
 	if pid == 0 {
 		return fmt.Errorf("invalid PID in file")
 	}

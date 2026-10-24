@@ -6,9 +6,9 @@
 package sampling
 
 import (
-	"math/rand"
+	"crypto/rand"
+	"encoding/binary"
 	"sync"
-	"time"
 
 	"portunix.ai/portunix/src/helpers/ptx-trace/models"
 )
@@ -16,7 +16,6 @@ import (
 // Sampler determines which events should be recorded
 type Sampler struct {
 	config *Config
-	rng    *rand.Rand
 	mu     sync.Mutex
 }
 
@@ -103,7 +102,6 @@ func NewSampler(config *Config) *Sampler {
 
 	return &Sampler{
 		config: config,
-		rng:    rand.New(rand.NewSource(time.Now().UnixNano())),
 	}
 }
 
@@ -175,7 +173,7 @@ func (s *Sampler) shouldSampleWithRate(rate float64) bool {
 	if rate <= 0.0 {
 		return false
 	}
-	return s.rng.Float64() < rate
+	return randomFloat64() < rate
 }
 
 // GetConfig returns the current configuration
@@ -198,4 +196,12 @@ func (s *Sampler) AddRule(condition RuleCondition, rate float64) {
 		Condition: condition,
 		Rate:      rate,
 	})
+}
+
+// randomFloat64 returns a uniformly distributed value in [0.0, 1.0)
+func randomFloat64() float64 {
+	var b [8]byte
+	// crypto/rand.Read never returns an error
+	_, _ = rand.Read(b[:])
+	return float64(binary.BigEndian.Uint64(b[:])>>11) / (1 << 53)
 }

@@ -17,7 +17,7 @@ func Setup() {
 	}
 
 	newPath := execDir + ";" + os.Getenv("PATH")
-	os.Setenv("PATH", newPath)
+	_ = os.Setenv("PATH", newPath)
 
 	fmt.Println("New PATH value:", newPath)
 

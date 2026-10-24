@@ -69,6 +69,7 @@ Language-specific coding standards and conventions:
 ### Testing
 
 - [Testing Methodology](TESTING_METHODOLOGY.md) — Verbose test framework and container-based testing policy
+- [Security Scan](SECURITY-SCAN.md) — gosec invocation, excluded rules, `#nosec` annotation rules
 - [Testing — Go](TESTING-GO.md) — Unit testing patterns for Go
 - [Testing — Go Project](TESTING-GO-PROJECT.md) — Project-wide testing standards for Go
 - [Testing — Java](TESTING-JAVA.md)

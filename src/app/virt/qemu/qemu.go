@@ -24,7 +24,7 @@ type Backend struct {
 func NewBackend() *Backend {
 	homeDir, _ := os.UserHomeDir()
 	vmDir := filepath.Join(homeDir, ".portunix", "vms")
-	os.MkdirAll(vmDir, 0755)
+	_ = os.MkdirAll(vmDir, 0755) // #nosec G301 -- VM files are read by hypervisors running as other users
 
 	return &Backend{
 		vmDir: vmDir,
@@ -67,7 +67,7 @@ func (b *Backend) GetVersion() (string, error) {
 // Create creates a new VM
 func (b *Backend) Create(config *types.VMConfig) error {
 	vmPath := filepath.Join(b.vmDir, config.Name)
-	if err := os.MkdirAll(vmPath, 0755); err != nil {
+	if err := os.MkdirAll(vmPath, 0755); err != nil { // #nosec G301 -- VM files are read by hypervisors running as other users
 		return fmt.Errorf("failed to create VM directory: %w", err)
 	}
 
@@ -97,7 +97,7 @@ func (b *Backend) Create(config *types.VMConfig) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	if err := os.WriteFile(configPath, configData, 0644); err != nil {
+	if err := os.WriteFile(configPath, configData, 0600); err != nil {
 		return fmt.Errorf("failed to save config: %w", err)
 	}
 
@@ -129,7 +129,7 @@ func (b *Backend) Start(vmName string) error {
 	// Save PID for management
 	pidPath := filepath.Join(b.vmDir, vmName, "qemu.pid")
 	pidData := fmt.Sprintf("%d", cmd.Process.Pid)
-	os.WriteFile(pidPath, []byte(pidData), 0644)
+	_ = os.WriteFile(pidPath, []byte(pidData), 0600)
 
 	return nil
 }
@@ -186,7 +186,7 @@ func (b *Backend) Resume(vmName string) error {
 // Delete deletes a VM
 func (b *Backend) Delete(vmName string, keepDisk bool) error {
 	// Stop VM first
-	b.Stop(vmName, true)
+	_ = b.Stop(vmName, true)
 
 	vmPath := filepath.Join(b.vmDir, vmName)
 
@@ -198,7 +198,7 @@ func (b *Backend) Delete(vmName string, keepDisk bool) error {
 	// Keep disk but remove other files
 	files := []string{"config.json", "qemu.pid", "monitor.sock", "run.sh"}
 	for _, file := range files {
-		os.Remove(filepath.Join(vmPath, file))
+		_ = os.Remove(filepath.Join(vmPath, file))
 	}
 
 	return nil
@@ -591,7 +591,7 @@ func (b *Backend) buildQEMUArgs(config *QEMUVMConfig) []string {
 
 			// Copy OVMF_VARS template if it doesn't exist
 			if _, err := os.Stat(ovmfVars); os.IsNotExist(err) {
-				exec.Command("cp", "/usr/share/OVMF/OVMF_VARS.fd", ovmfVars).Run()
+				_ = exec.Command("cp", "/usr/share/OVMF/OVMF_VARS.fd", ovmfVars).Run()
 			}
 
 			args = append(args, "-drive", fmt.Sprintf("if=pflash,format=raw,readonly=on,file=%s", ovmfCode))

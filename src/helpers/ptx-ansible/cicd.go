@@ -209,7 +209,7 @@ func (cicd *CICDManager) CreatePipeline(user string, def *PipelineDefinition) er
 	})
 
 	if !accessResult.Granted {
-		cicd.auditMgr.LogSystemEvent(AuditLevelWarning, "cicd.pipeline.create.denied", user, "cicd", map[string]interface{}{
+		_ = cicd.auditMgr.LogSystemEvent(AuditLevelWarning, "cicd.pipeline.create.denied", user, "cicd", map[string]interface{}{
 			"pipeline_name": def.Name,
 			"reason":        accessResult.Reason,
 		})
@@ -231,7 +231,7 @@ func (cicd *CICDManager) CreatePipeline(user string, def *PipelineDefinition) er
 		return fmt.Errorf("failed to save pipeline: %w", err)
 	}
 
-	cicd.auditMgr.LogSystemEvent(AuditLevelInfo, "cicd.pipeline.create", user, "cicd", map[string]interface{}{
+	_ = cicd.auditMgr.LogSystemEvent(AuditLevelInfo, "cicd.pipeline.create", user, "cicd", map[string]interface{}{
 		"pipeline_name": def.Name,
 		"provider":      def.Provider,
 		"stages":        len(def.Stages),
@@ -283,7 +283,7 @@ func (cicd *CICDManager) ExecutePipeline(user, pipelineName, environment, branch
 	// Start execution asynchronously
 	go cicd.runPipelineExecution(pipeline, execution)
 
-	cicd.auditMgr.LogSystemEvent(AuditLevelInfo, "cicd.pipeline.execute", user, environment, map[string]interface{}{
+	_ = cicd.auditMgr.LogSystemEvent(AuditLevelInfo, "cicd.pipeline.execute", user, environment, map[string]interface{}{
 		"pipeline_name": pipelineName,
 		"execution_id":  execution.ID,
 		"branch":        branch,
@@ -322,7 +322,7 @@ func (cicd *CICDManager) HandleWebhook(payload *WebhookPayload) error {
 			// Start execution
 			go cicd.runPipelineExecution(pipeline, execution)
 
-			cicd.auditMgr.LogSystemEvent(AuditLevelInfo, "cicd.webhook.trigger", payload.Author, execution.Environment, map[string]interface{}{
+			_ = cicd.auditMgr.LogSystemEvent(AuditLevelInfo, "cicd.webhook.trigger", payload.Author, execution.Environment, map[string]interface{}{
 				"pipeline_name": pipeline.Name,
 				"execution_id":  execution.ID,
 				"event":         payload.Event,
@@ -466,7 +466,7 @@ func (cicd *CICDManager) executeStagePlaybook(stageConfig PipelineStageConfig, e
 	// This would integrate with the main playbook execution system
 	// For now, we'll simulate execution
 
-	cicd.auditMgr.LogSystemEvent(AuditLevelInfo, "cicd.stage.execute", execution.User, execution.Environment, map[string]interface{}{
+	_ = cicd.auditMgr.LogSystemEvent(AuditLevelInfo, "cicd.stage.execute", execution.User, execution.Environment, map[string]interface{}{
 		"execution_id":  execution.ID,
 		"stage_name":    stageConfig.Name,
 		"playbook_path": stageConfig.PlaybookPath,
@@ -601,7 +601,7 @@ func (cicd *CICDManager) savePipeline(pipeline *PipelineDefinition) error {
 	}
 
 	filename := filepath.Join(cicd.pipelinesDir, pipeline.Name+".json")
-	return os.WriteFile(filename, data, 0640)
+	return os.WriteFile(filename, data, 0600)
 }
 
 func (cicd *CICDManager) generateGitHubActionsConfig(pipeline *PipelineDefinition) string {

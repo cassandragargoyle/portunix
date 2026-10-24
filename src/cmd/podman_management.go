@@ -134,7 +134,7 @@ Output format:
 			)
 		}
 
-		w.Flush()
+		_ = w.Flush()
 
 		fmt.Printf("\nFound %d Portunix container(s).\n", len(containers))
 		fmt.Println("\nManagement commands:")

@@ -139,7 +139,7 @@ func handleNewVenture(args []string) {
 
 	// Skeleton directories.
 	for _, d := range []string{productsDir(root), teamsDir(root), initiativesDir(root), recordsDir(root), backlogsDir(root)} {
-		if err := os.MkdirAll(d, 0755); err != nil {
+		if err := ensureSharedDir(d); err != nil {
 			ideaFail("cannot create %s: %v", d, err)
 			return
 		}
@@ -1093,7 +1093,7 @@ func handleIdeasMigrate(args []string) {
 
 	// Move flat *.opportunity.json into records/ and drop the legacy v1
 	// 'estimate.storyPoints' (ideas carry complexity in v2, not story points).
-	_ = os.MkdirAll(recordsDir(dst), 0755)
+	_ = ensureSharedDir(recordsDir(dst))
 	moved := 0
 	entries, _ := os.ReadDir(dst)
 	for _, e := range entries {

@@ -52,7 +52,7 @@ func getOllamaDataDir() string {
 // ensureOllamaDataDir creates Ollama data directory if it doesn't exist
 func ensureOllamaDataDir() error {
 	dataDir := getOllamaDataDir()
-	return os.MkdirAll(dataDir, 0755)
+	return os.MkdirAll(dataDir, 0755) // #nosec G301 -- mounted as a volume, the container user must be able to traverse it
 }
 
 // detectContainerRuntime returns the available container runtime
@@ -253,7 +253,7 @@ func handleOllamaContainerCreate(args []string) {
 
 		resp, err := http.Get(OllamaAPIEndpoint + "/api/tags")
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			ready = true
 			break
 		}
@@ -326,7 +326,7 @@ func handleOllamaContainerStatus() {
 		fmt.Print("API Status:  ")
 		resp, err := http.Get(OllamaAPIEndpoint + "/api/tags")
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			fmt.Println("✓ Available at", OllamaAPIEndpoint)
 		} else {
 			fmt.Println("⚠ Not responding")
@@ -400,7 +400,7 @@ func handleOllamaContainerStart() {
 		fmt.Print(".")
 		resp, err := http.Get(OllamaAPIEndpoint + "/api/tags")
 		if err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			fmt.Println(" Ready!")
 			return
 		}
@@ -458,7 +458,7 @@ func handleOllamaContainerRemove() {
 		fmt.Printf("⚠ Container '%s' is external (not created by Portunix).\n", status.Name)
 		fmt.Printf("Remove it anyway? [y/N]: ")
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if response != "y" && response != "Y" && response != "yes" && response != "Yes" {
 			fmt.Println("Cancelled.")
 			return
@@ -469,7 +469,7 @@ func handleOllamaContainerRemove() {
 	if status.Running {
 		fmt.Printf("Stopping container '%s'...\n", status.Name)
 		cmd := exec.Command(runtime, "stop", status.Name)
-		cmd.Run()
+		_ = cmd.Run()
 	}
 
 	// Remove container
@@ -1154,7 +1154,7 @@ func handleModelRemove(args []string) {
 	if !force {
 		fmt.Printf("Are you sure you want to remove model '%s'? [y/N]: ", modelName)
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		if response != "y" && response != "Y" && response != "yes" && response != "Yes" {
 			fmt.Println("Cancelled.")
 			return
@@ -1242,7 +1242,7 @@ func handleModelRun(args []string) {
 		cmd := exec.Command(runtime, "exec", containerName, "ollama", "run", modelName, prompt)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		cmd.Run()
+		_ = cmd.Run()
 	} else {
 		// Interactive mode
 		fmt.Printf("\nUsing model: %s", modelName)
@@ -1257,6 +1257,6 @@ func handleModelRun(args []string) {
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		cmd.Run()
+		_ = cmd.Run()
 	}
 }

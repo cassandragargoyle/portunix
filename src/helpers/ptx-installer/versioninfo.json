@@ -3,13 +3,13 @@
         "FileVersion": {
             "Major": 2,
             "Minor": 6,
-            "Patch": 1,
+            "Patch": 3,
             "Build": 0
         },
         "ProductVersion": {
             "Major": 2,
             "Minor": 6,
-            "Patch": 1,
+            "Patch": 3,
             "Build": 0
         },
         "FileFlagsMask": "3f",
@@ -22,14 +22,14 @@
         "Comments": "",
         "CompanyName": "Portunix",
         "FileDescription": "Portunix installer helper",
-        "FileVersion": "2.6.1",
+        "FileVersion": "2.6.3",
         "InternalName": "ptx-installer",
         "LegalCopyright": "CassandraGargoyle team. All rights reserved.",
         "LegalTrademarks": "",
         "OriginalFilename": "ptx-installer.exe",
         "PrivateBuild": "",
         "ProductName": "Portunix",
-        "ProductVersion": "2.6.1",
+        "ProductVersion": "2.6.3",
         "SpecialBuild": ""
     },
     "VarFileInfo": {

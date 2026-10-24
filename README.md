@@ -27,8 +27,8 @@
 ```bash
 # Linux (amd64) — archive contains portunix + 12 ptx-* helpers + install.sh
 mkdir portunix-install && cd portunix-install
-wget https://github.com/cassandragargoyle/portunix/releases/latest/download/portunix_2.2.3_linux_amd64.tar.gz
-tar -xzf portunix_2.2.3_linux_amd64.tar.gz
+wget https://github.com/cassandragargoyle/portunix/releases/latest/download/portunix_2.6.2_linux_amd64.tar.gz
+tar -xzf portunix_2.6.2_linux_amd64.tar.gz
 sudo bash install.sh         # installs all binaries via `portunix install-self`
 cd .. && rm -rf portunix-install
 

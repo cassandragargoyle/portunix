@@ -336,7 +336,7 @@ func generateUpdateReport(cmd *cobra.Command, args []string) {
 	saveFlag, _ := cmd.Flags().GetBool("save")
 	if saveFlag {
 		reportPath := filepath.Join(".", "package-update-report.txt")
-		if err := os.WriteFile(reportPath, []byte(report), 0644); err != nil {
+		if err := os.WriteFile(reportPath, []byte(report), 0644); err != nil { // #nosec G306 -- output requested by the user, holds no credentials
 			fmt.Printf("⚠️  Failed to save report to file: %v\n", err)
 		} else {
 			fmt.Printf("💾 Report saved to: %s\n", reportPath)

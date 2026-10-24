@@ -251,5 +251,5 @@ func WritePlaybook(content, outputPath string) error {
 		return fmt.Errorf("file already exists: %s", outputPath)
 	}
 
-	return os.WriteFile(outputPath, []byte(content), 0644)
+	return os.WriteFile(outputPath, []byte(content), 0600)
 }

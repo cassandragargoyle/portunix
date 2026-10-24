@@ -97,10 +97,10 @@ func runAuthLogin(cmd *cobra.Command, args []string) error {
 		// Validate token without persisting it: drop it into the env-var
 		// resolver, run /user, then unset.
 		prev, hadPrev := os.LookupEnv(auth.EnvTokenVars[0])
-		os.Setenv(auth.EnvTokenVars[0], token)
+		_ = os.Setenv(auth.EnvTokenVars[0], token)
 		defer func() {
 			if hadPrev {
-				os.Setenv(auth.EnvTokenVars[0], prev)
+				_ = os.Setenv(auth.EnvTokenVars[0], prev)
 			} else {
 				os.Unsetenv(auth.EnvTokenVars[0])
 			}

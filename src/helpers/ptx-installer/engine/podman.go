@@ -151,7 +151,7 @@ func (p *PodmanInstaller) initializePodmanMachine() error {
 	cmd = exec.Command("podman", "machine", "start")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	cmd.Run()
+	_ = cmd.Run()
 
 	return nil
 }

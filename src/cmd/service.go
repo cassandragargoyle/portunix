@@ -5,10 +5,13 @@
 package cmd
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -137,7 +140,7 @@ func init() {
 	serviceListCmd.Flags().StringP("output", "o", "text", "Output format: text, json")
 
 	serviceInfoCmd.Flags().IntP("port", "p", 0, "Port of the service instance")
-	serviceInfoCmd.MarkFlagRequired("port")
+	_ = serviceInfoCmd.MarkFlagRequired("port")
 	serviceInfoCmd.Flags().StringP("output", "o", "text", "Output format: text, json")
 
 	serviceReleaseCmd.Flags().StringP("session", "s", "", "Session ID to release")
@@ -165,7 +168,12 @@ func serviceStart(pluginName string, mode service.AllocationMode, outputFormat s
 		return err
 	}
 
-	result, err := orch.StartService(pluginName, binaryPath, runtime, jvmArgs, mode)
+	// Clients stop a slow start with SIGTERM (e.g. an execFile timeout); cancel
+	// the start so the spawned plugin is not left running
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	result, err := orch.StartService(ctx, pluginName, binaryPath, runtime, jvmArgs, mode)
 	if err != nil {
 		return fmt.Errorf("failed to start service: %w", err)
 	}
@@ -348,13 +356,13 @@ func resolvePluginBinary(pluginName string) (binaryPath, runtime string, jvmArgs
 	}
 	defer func() {
 		if pluginManager != nil {
-			pluginManager.Shutdown()
+			_ = pluginManager.Shutdown()
 		}
 	}()
 
 	registryData, regErr := pluginManager.GetPluginRegistryData(pluginName)
 	if regErr != nil {
-		return "", "", nil, fmt.Errorf("plugin %s not found: %w", pluginName, regErr)
+		return "", "", nil, regErr
 	}
 
 	// Only gRPC/service plugins can be started as services

@@ -267,7 +267,7 @@ func getDeployDir() (string, error) {
 	}
 
 	deployDir := filepath.Join(homeDir, ".portunix", "pft", "fider")
-	if err := os.MkdirAll(deployDir, 0755); err != nil {
+	if err := ensureSharedDir(deployDir); err != nil {
 		return "", fmt.Errorf("failed to create deploy directory: %w", err)
 	}
 
@@ -287,7 +287,7 @@ func writeComposeFile(deployDir string) (string, error) {
 	}
 
 	composePath := filepath.Join(deployDir, fiderComposeFile)
-	if err := os.WriteFile(composePath, yamlData, 0644); err != nil {
+	if err := writePrivateFile(composePath, yamlData); err != nil {
 		return "", fmt.Errorf("failed to write compose file: %w", err)
 	}
 
@@ -462,7 +462,7 @@ func DeployInstance(instanceName string, port int, config *Config) (*DeployResul
 	}
 
 	deployDir := filepath.Join(homeDir, ".portunix", "pft", "fider-"+instanceName)
-	if err := os.MkdirAll(deployDir, 0755); err != nil {
+	if err := ensureSharedDir(deployDir); err != nil {
 		return nil, fmt.Errorf("failed to create deploy directory: %w", err)
 	}
 
@@ -471,7 +471,7 @@ func DeployInstance(instanceName string, port int, config *Config) (*DeployResul
 	// Generate compose file with custom port
 	composeContent := generateInstanceComposeYAML(instanceName, port)
 	composePath := filepath.Join(deployDir, fiderComposeFile)
-	if err := os.WriteFile(composePath, []byte(composeContent), 0644); err != nil {
+	if err := writePrivateFile(composePath, []byte(composeContent)); err != nil {
 		return nil, fmt.Errorf("failed to write compose file: %w", err)
 	}
 	result.ComposeFile = composePath
@@ -705,7 +705,7 @@ func DeployEmailOnly(config *Config) (*DeployResult, error) {
 	}
 
 	deployDir := filepath.Join(homeDir, ".portunix", "pft", "email-only")
-	if err := os.MkdirAll(deployDir, 0755); err != nil {
+	if err := ensureSharedDir(deployDir); err != nil {
 		return nil, fmt.Errorf("failed to create deploy directory: %w", err)
 	}
 
@@ -714,7 +714,7 @@ func DeployEmailOnly(config *Config) (*DeployResult, error) {
 	// Generate compose file with only Mailhog
 	composeContent := generateEmailOnlyComposeYAML()
 	composePath := filepath.Join(deployDir, fiderComposeFile)
-	if err := os.WriteFile(composePath, []byte(composeContent), 0644); err != nil {
+	if err := writePrivateFile(composePath, []byte(composeContent)); err != nil {
 		return nil, fmt.Errorf("failed to write compose file: %w", err)
 	}
 	result.ComposeFile = composePath

@@ -87,7 +87,7 @@ func RequiresSudo(path string) bool {
 // CanWriteToDirectory checks if the current user can write to the specified directory
 func CanWriteToDirectory(dir string) bool {
 	// Create directory if it doesn't exist
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0755); err != nil { // #nosec G301 -- probes install directories that must be readable by all users
 		return false
 	}
 
@@ -97,8 +97,8 @@ func CanWriteToDirectory(dir string) bool {
 	if err != nil {
 		return false
 	}
-	f.Close()
-	os.Remove(testFile)
+	_ = f.Close()
+	_ = os.Remove(testFile)
 
 	return true
 }

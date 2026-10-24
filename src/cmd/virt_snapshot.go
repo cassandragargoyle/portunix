@@ -192,7 +192,7 @@ Examples:
 			fmt.Printf("Reverting to snapshot will stop the VM and lose any unsaved changes.\n\n")
 			fmt.Printf("Are you sure you want to continue? [y/N]: ")
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if response != "y" && response != "Y" {
 				fmt.Println("Revert cancelled.")
 				return
@@ -241,7 +241,7 @@ Examples:
 			fmt.Printf("⚠️  Are you sure you want to delete snapshot '%s' from VM '%s'?\n", snapshotName, vmName)
 			fmt.Printf("This action cannot be undone. [y/N]: ")
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if response != "y" && response != "Y" {
 				fmt.Println("Deletion cancelled.")
 				return

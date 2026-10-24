@@ -84,6 +84,6 @@ func multiLevelHelp(cmd *cobra.Command, args []string) {
 		}
 	} else {
 		// For subcommands, use default cobra help
-		cmd.Usage()
+		_ = cmd.Usage()
 	}
 }

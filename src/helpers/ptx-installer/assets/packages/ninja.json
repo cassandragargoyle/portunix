@@ -51,7 +51,7 @@
             },
             "extractTo": "/usr/local/bin",
             "postInstall": [
-              "sudo chmod +x /usr/local/bin/ninja"
+              "${sudo_prefix}chmod +x /usr/local/bin/ninja"
             ]
           },
           "apt": {

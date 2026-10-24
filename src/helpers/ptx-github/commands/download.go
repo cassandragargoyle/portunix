@@ -122,7 +122,7 @@ func runDownload(cmd *cobra.Command, args []string) error {
 }
 
 func downloadAll(token string, assets []*github.ReleaseAsset, outDir string) error {
-	if err := os.MkdirAll(outDir, 0o755); err != nil {
+	if err := os.MkdirAll(outDir, 0o755); err != nil { // #nosec G301 -- downloaded release assets are public
 		return err
 	}
 	for _, a := range assets {
@@ -181,7 +181,7 @@ func resolveDest(outBase, assetName string) (string, error) {
 	}
 	if os.IsNotExist(err) && (strings.HasSuffix(outBase, string(os.PathSeparator)) ||
 		strings.HasSuffix(outBase, "/")) {
-		if err := os.MkdirAll(outBase, 0o755); err != nil {
+		if err := os.MkdirAll(outBase, 0o755); err != nil { // #nosec G301 -- downloaded release assets are public
 			return "", err
 		}
 		return filepath.Join(outBase, assetName), nil
@@ -193,7 +193,7 @@ func resolveDest(outBase, assetName string) (string, error) {
 	if os.IsNotExist(err) {
 		// Treat as a file path.
 		if dir := filepath.Dir(outBase); dir != "" && dir != "." {
-			if err := os.MkdirAll(dir, 0o755); err != nil {
+			if err := os.MkdirAll(dir, 0o755); err != nil { // #nosec G301 -- downloaded release assets are public
 				return "", err
 			}
 		}

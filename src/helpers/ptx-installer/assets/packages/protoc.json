@@ -47,7 +47,7 @@
             },
             "extractTo": "/usr/local",
             "postInstall": [
-              "sudo chmod +x /usr/local/bin/protoc"
+              "${sudo_prefix}chmod +x /usr/local/bin/protoc"
             ]
           },
           "apt": {

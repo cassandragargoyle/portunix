@@ -60,12 +60,10 @@
             },
             "extractTo": "/opt/maven",
             "postInstall": [
-              "sudo mkdir -p /opt/maven",
-              "sudo tar -C /opt/maven -xzf ${downloaded_file} --strip-components=1",
-              "echo 'export M2_HOME=/opt/maven' | sudo tee /etc/profile.d/maven.sh",
-              "echo 'export MAVEN_HOME=/opt/maven' | sudo tee -a /etc/profile.d/maven.sh",
-              "echo 'export PATH=$PATH:/opt/maven/bin' | sudo tee -a /etc/profile.d/maven.sh",
-              "sudo chmod +x /etc/profile.d/maven.sh"
+              "echo 'export M2_HOME=/opt/maven' | ${sudo_prefix}tee /etc/profile.d/maven.sh",
+              "echo 'export MAVEN_HOME=/opt/maven' | ${sudo_prefix}tee -a /etc/profile.d/maven.sh",
+              "echo 'export PATH=$PATH:/opt/maven/bin' | ${sudo_prefix}tee -a /etc/profile.d/maven.sh",
+              "${sudo_prefix}chmod +x /etc/profile.d/maven.sh"
             ]
           },
           "latest": {
@@ -75,12 +73,10 @@
             },
             "extractTo": "/opt/maven",
             "postInstall": [
-              "sudo mkdir -p /opt/maven",
-              "sudo tar -C /opt/maven -xzf ${downloaded_file} --strip-components=1",
-              "echo 'export M2_HOME=/opt/maven' | sudo tee /etc/profile.d/maven.sh",
-              "echo 'export MAVEN_HOME=/opt/maven' | sudo tee -a /etc/profile.d/maven.sh",
-              "echo 'export PATH=$PATH:/opt/maven/bin' | sudo tee -a /etc/profile.d/maven.sh",
-              "sudo chmod +x /etc/profile.d/maven.sh"
+              "echo 'export M2_HOME=/opt/maven' | ${sudo_prefix}tee /etc/profile.d/maven.sh",
+              "echo 'export MAVEN_HOME=/opt/maven' | ${sudo_prefix}tee -a /etc/profile.d/maven.sh",
+              "echo 'export PATH=$PATH:/opt/maven/bin' | ${sudo_prefix}tee -a /etc/profile.d/maven.sh",
+              "${sudo_prefix}chmod +x /etc/profile.d/maven.sh"
             ]
           },
           "apt": {

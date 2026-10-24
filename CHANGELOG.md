@@ -5,6 +5,59 @@ All notable changes to Portunix will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.3] - 2026-10-24
+
+### Fixed in 2.6.3
+
+- **`portunix unzip` extracts again** (Issue #231) — the command rebuilt its flags as `--path=<file>`, which
+  the old argument parser could not read, so nothing was extracted and a directory named after a flag could
+  appear. The command now calls the hardened extractor directly; a missing archive, a missing `--path` and an
+  entry outside the destination are reported with exit code 1.
+- **Python plugins after a Python upgrade** (Issue #233) — `plugin list` and `plugin check` detect a plugin
+  venv whose interpreter no longer exists and report it as broken; `portunix plugin repair <name>` rebuilds
+  it. `plugin install --force` is atomic: a failed reinstall keeps the working installation.
+- **Plugin runtime check with uv** (Issues #234, #239) — install, reinstall and repair of a wheel plugin no
+  longer report a missing Python when uv provides the interpreter; a plugin without `plugin.python_version`
+  gets a conservative default Python with a recommendation to pin it; plugin runtime errors are no longer
+  followed by the full usage text.
+- **`--` separator in `container run` and `container exec`** (Issues #235, #238) — the separator is no longer
+  passed to podman/docker as the container command, and `-h`/`--help` after it belongs to the container
+  command instead of showing the Portunix help.
+- **Interrupted `service start`** (Issue #236) — a plugin process started by a CLI that was killed during
+  start is stopped instead of running untracked; the "plugin not found" reason is printed once (Issue #237).
+- **Plugins get the caller's working directory** (Issue #229) — the dispatcher exports `PORTUNIX_CWD`, so
+  plugins can resolve relative paths from the command line.
+- **ptx-installer `postInstall` placeholders** (Issue #227) — `${sudo_prefix}` and `${actual_extract_to}`
+  are substituted again; the shell used to expand them to empty strings.
+- **gosec findings** (Issues #224, #228) — the root module and every module with its own `go.mod` pass the
+  gosec scan; modules below Go 1.24 raise their `go` directive to 1.24.
+
+### Changed in 2.6.3
+
+- **Security Scan covers nested modules** (Issue #228) — the preflight check and the CI Security Scan run
+  gosec in every Go module, not only the root one.
+
+## [2.6.2] - 2026-10-07
+
+### Fixed in 2.6.2
+
+- **Reinstall no longer removes shared directories** (Issue #226) — reinstalling a package whose archive is
+  extracted into a shared location (`/usr/local/bin`, `/usr/local`, `C:/Program Files` and other well-known
+  directories) could remove the whole directory. Shared directories are now never removed, not even with
+  `--force`; files from the archive replace existing ones in place, and removal is offered only for a
+  top-level directory created by the archive itself (e.g. `/usr/local/go`).
+- **Tar extraction over an existing file** (Issue #226) — existing files and symlinks are replaced instead of
+  written over; a shorter new binary used to keep the tail of the old one.
+- **Hugo extended on Windows arm64** — removed a download URL that does not exist upstream.
+
+### Changed in 2.6.2
+
+- **Hugo 0.167.0** — `hugo` and `hugo-extended` packages updated; the hugo-book theme requires
+  Hugo >= 0.158.0 extended.
+- **Preflight check runs gosec** — `scripts/github-01-preflight-check.sh` runs the same gosec scan as the
+  GitHub Security Scan job (local binary, or a `golang` container through `portunix container`) and fails
+  on any finding.
+
 ## [2.6.1] - 2026-10-07
 
 ### Added in 2.6.1

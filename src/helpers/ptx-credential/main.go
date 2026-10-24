@@ -282,7 +282,7 @@ Examples:
 			}
 			fmt.Fprintf(w, "%s\t%s\t%s\n", cred.Name, label, cred.Updated.Format("2006-01-02"))
 		}
-		w.Flush()
+		_ = w.Flush()
 		return nil
 	},
 }

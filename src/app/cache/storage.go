@@ -83,7 +83,7 @@ func (m *Manager) Store(cat Category, key string, sourcePath string, source stri
 
 	// Create entry directory
 	entryDir := m.entryDir(cat, key)
-	if err := os.MkdirAll(entryDir, 0755); err != nil {
+	if err := os.MkdirAll(entryDir, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create entry directory: %w", err)
 	}
 
@@ -191,7 +191,7 @@ func (m *Manager) saveMeta(cat Category, key string, meta *EntryMeta) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(m.metaFilePath(cat, key), data, 0644)
+	return os.WriteFile(m.metaFilePath(cat, key), data, 0600)
 }
 
 // loadMeta loads entry metadata from JSON

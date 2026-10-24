@@ -110,7 +110,7 @@ func parseVersion(version string) [3]int {
 
 	for i := 0; i < len(versionParts) && i < 3; i++ {
 		// Parse the number, ignoring any non-numeric suffix
-		fmt.Sscanf(versionParts[i], "%d", &parts[i])
+		_, _ = fmt.Sscanf(versionParts[i], "%d", &parts[i])
 	}
 
 	return parts

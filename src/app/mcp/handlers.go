@@ -8,6 +8,7 @@ package mcp
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -4228,7 +4229,7 @@ func validatePermissions() []ValidationResult {
 
 	// Check if we can write to current directory
 	testFile := ".portunix_test"
-	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+	if err := os.WriteFile(testFile, []byte("test"), 0600); err != nil {
 		results = append(results, ValidationResult{
 			Status:      "fail",
 			Category:    "permissions",
@@ -4238,7 +4239,7 @@ func validatePermissions() []ValidationResult {
 			Suggestions: []string{"Check directory permissions", "Run with appropriate privileges"},
 		})
 	} else {
-		os.Remove(testFile)
+		_ = os.Remove(testFile)
 		results = append(results, ValidationResult{
 			Status:      "pass",
 			Category:    "permissions",
@@ -4599,7 +4600,7 @@ func handleAuditLogExport(req interface{}) (interface{}, error) {
 
 func createProjectByType(req interface{}, projectPath string, systemInfo *system.SystemInfo) (map[string]interface{}, error) {
 	// Create project directory
-	if err := os.MkdirAll(projectPath, 0755); err != nil {
+	if err := os.MkdirAll(projectPath, 0755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 		return nil, fmt.Errorf("failed to create project directory: %w", err)
 	}
 
@@ -4680,7 +4681,7 @@ func writeCICDFiles(projectPath, platform string, config map[string]interface{})
 	switch platform {
 	case "github":
 		workflowDir := filepath.Join(projectPath, ".github", "workflows")
-		if err := os.MkdirAll(workflowDir, 0755); err != nil {
+		if err := os.MkdirAll(workflowDir, 0755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 			return nil, err
 		}
 		files = append(files, ".github/workflows/ci.yml")
@@ -4928,20 +4929,26 @@ func (s *Server) handleGetPluginTemplate(args map[string]interface{}) (interface
 		}, nil
 	}
 
-	// Read template files
+	// Read template files through os.Root so a symlink cannot lead outside the template directory
 	templateFiles := make(map[string]string)
-	err := filepath.Walk(templatePath, func(path string, info os.FileInfo, err error) error {
+	root, err := os.OpenRoot(templatePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open template directory: %w", err)
+	}
+	defer root.Close()
+	templateFS := root.FS()
+
+	err = fs.WalkDir(templateFS, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if !info.IsDir() {
-			relativePath, _ := filepath.Rel(templatePath, path)
-			content, readErr := os.ReadFile(path)
+		if !d.IsDir() {
+			content, readErr := fs.ReadFile(templateFS, path)
 			if readErr != nil {
 				return readErr
 			}
-			templateFiles[relativePath] = string(content)
+			templateFiles[filepath.FromSlash(path)] = string(content)
 		}
 		return nil
 	})

@@ -23,8 +23,8 @@
             "version": "latest",
             "packages": ["qemu-system-x86", "qemu-utils", "libvirt-daemon-system", "libvirt-clients"],
             "postInstall": [
-              "sudo systemctl enable libvirtd",
-              "sudo systemctl start libvirtd",
+              "${sudo_prefix}systemctl enable libvirtd",
+              "${sudo_prefix}systemctl start libvirtd",
               "echo '✅ QEMU/KVM and Libvirt installed successfully'",
               "echo '💡 Use: portunix virt create <vm-name> to create your first VM'",
               "echo '💡 Use: portunix virt check to verify virtualization support'"
@@ -34,8 +34,8 @@
             "version": "latest",
             "packages": ["qemu-system-x86", "qemu-utils", "libvirt-daemon-system", "libvirt-clients"],
             "postInstall": [
-              "sudo systemctl enable libvirtd",
-              "sudo systemctl start libvirtd"
+              "${sudo_prefix}systemctl enable libvirtd",
+              "${sudo_prefix}systemctl start libvirtd"
             ]
           },
           "dnf": {
@@ -43,16 +43,16 @@
             "version": "latest",
             "packages": ["qemu-system-x86", "qemu-img", "libvirt-daemon", "libvirt-client"],
             "postInstall": [
-              "sudo systemctl enable libvirtd",
-              "sudo systemctl start libvirtd"
+              "${sudo_prefix}systemctl enable libvirtd",
+              "${sudo_prefix}systemctl start libvirtd"
             ]
           },
           "full": {
             "version": "latest",
             "packages": ["qemu-system-x86", "qemu-utils", "libvirt-daemon-system", "libvirt-clients", "virt-manager"],
             "postInstall": [
-              "sudo systemctl enable libvirtd",
-              "sudo systemctl start libvirtd",
+              "${sudo_prefix}systemctl enable libvirtd",
+              "${sudo_prefix}systemctl start libvirtd",
               "echo '✅ QEMU/KVM, Libvirt, and virt-manager (GUI) installed successfully'",
               "echo '💡 Use: portunix virt create <vm-name> or launch virt-manager GUI'",
               "echo '💡 Use: portunix virt check to verify virtualization support'"

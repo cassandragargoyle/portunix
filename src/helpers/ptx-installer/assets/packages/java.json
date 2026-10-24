@@ -72,8 +72,8 @@
             },
             "extractTo": "/opt/java/jdk-8u462b08",
             "postInstall": [
-              "sudo update-alternatives --install /usr/bin/java java /opt/java/jdk-8u462b08/bin/java 1",
-              "sudo update-alternatives --install /usr/bin/javac javac /opt/java/jdk-8u462b08/bin/javac 1"
+              "${sudo_prefix}update-alternatives --install /usr/bin/java java /opt/java/jdk-8u462b08/bin/java 1",
+              "${sudo_prefix}update-alternatives --install /usr/bin/javac javac /opt/java/jdk-8u462b08/bin/javac 1"
             ]
           },
           "11": {
@@ -84,8 +84,8 @@
             },
             "extractTo": "/opt/java/jdk-11.0.28+6",
             "postInstall": [
-              "sudo update-alternatives --install /usr/bin/java java /opt/java/jdk-11.0.28+6/bin/java 1",
-              "sudo update-alternatives --install /usr/bin/javac javac /opt/java/jdk-11.0.28+6/bin/javac 1"
+              "${sudo_prefix}update-alternatives --install /usr/bin/java java /opt/java/jdk-11.0.28+6/bin/java 1",
+              "${sudo_prefix}update-alternatives --install /usr/bin/javac javac /opt/java/jdk-11.0.28+6/bin/javac 1"
             ]
           },
           "17": {
@@ -96,8 +96,8 @@
             },
             "extractTo": "/opt/java/jdk-17.0.16+8",
             "postInstall": [
-              "sudo update-alternatives --install /usr/bin/java java /opt/java/jdk-17.0.16+8/bin/java 1",
-              "sudo update-alternatives --install /usr/bin/javac javac /opt/java/jdk-17.0.16+8/bin/javac 1"
+              "${sudo_prefix}update-alternatives --install /usr/bin/java java /opt/java/jdk-17.0.16+8/bin/java 1",
+              "${sudo_prefix}update-alternatives --install /usr/bin/javac javac /opt/java/jdk-17.0.16+8/bin/javac 1"
             ]
           },
           "21": {
@@ -108,8 +108,8 @@
             },
             "extractTo": "/opt/java/jdk-21.0.8+9",
             "postInstall": [
-              "sudo update-alternatives --install /usr/bin/java java /opt/java/jdk-21.0.8+9/bin/java 1",
-              "sudo update-alternatives --install /usr/bin/javac javac /opt/java/jdk-21.0.8+9/bin/javac 1"
+              "${sudo_prefix}update-alternatives --install /usr/bin/java java /opt/java/jdk-21.0.8+9/bin/java 1",
+              "${sudo_prefix}update-alternatives --install /usr/bin/javac javac /opt/java/jdk-21.0.8+9/bin/javac 1"
             ]
           }
         },

@@ -60,18 +60,18 @@ func RestoreBackup(backupPath string) error {
 		// Try to remove the current (broken) binary
 		if err := os.Remove(execPath); err != nil {
 			// If we can't remove it, we don't have permission
-			os.Remove(tempPath)
+			_ = os.Remove(tempPath)
 			return fmt.Errorf("failed to remove broken binary: %w", err)
 		}
 
 		// Rename temp to original location
 		if err := os.Rename(tempPath, execPath); err != nil {
-			os.Remove(tempPath)
+			_ = os.Remove(tempPath)
 			return fmt.Errorf("failed to restore backup: %w", err)
 		}
 
 		// Remove backup file
-		os.Remove(backupPath)
+		_ = os.Remove(backupPath)
 	} else {
 		// On Unix-like systems, we can overwrite
 		if err := copyFile(backupPath, execPath); err != nil {
@@ -143,21 +143,21 @@ func applyUpdateUnix(execPath, newBinaryPath string) error {
 
 	// Copy new binary to temp file
 	if _, err := io.Copy(tmpFile, newBinary); err != nil {
-		tmpFile.Close()
-		os.Remove(tmpPath)
+		_ = tmpFile.Close()
+		_ = os.Remove(tmpPath)
 		return fmt.Errorf("failed to copy new binary: %w", err)
 	}
-	tmpFile.Close()
+	_ = tmpFile.Close()
 
 	// Set executable permissions
 	if err := os.Chmod(tmpPath, info.Mode()|0755); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
 		return fmt.Errorf("failed to set permissions: %w", err)
 	}
 
 	// Atomic rename
 	if err := os.Rename(tmpPath, execPath); err != nil {
-		os.Remove(tmpPath)
+		_ = os.Remove(tmpPath)
 		return fmt.Errorf("failed to replace binary: %w", err)
 	}
 
@@ -175,8 +175,8 @@ func applyUpdateWindows(execPath, newBinaryPath string) error {
 	}
 
 	// Set executable permissions
-	if err := os.Chmod(tempPath, 0755); err != nil {
-		os.Remove(tempPath)
+	if err := os.Chmod(tempPath, 0755); err != nil { // #nosec G302 -- binaries must be executable by all users
+		_ = os.Remove(tempPath)
 		return fmt.Errorf("failed to set permissions: %w", err)
 	}
 
@@ -184,7 +184,7 @@ func applyUpdateWindows(execPath, newBinaryPath string) error {
 	backupPath := execPath + ".old"
 	if err := os.Rename(execPath, backupPath); err != nil {
 		// If we can't rename, we don't have permission - create PowerShell fallback
-		os.Remove(tempPath)
+		_ = os.Remove(tempPath)
 
 		// Create PowerShell update script as fallback
 		psScriptPath := execPath + ".update.ps1"
@@ -215,7 +215,7 @@ Remove-Item $PSCommandPath -Force
 Read-Host "Press Enter to close"
 `, execPath, execPath, newBinaryPath, execPath)
 
-		if err := os.WriteFile(psScriptPath, []byte(psScript), 0644); err == nil {
+		if err := os.WriteFile(psScriptPath, []byte(psScript), 0600); err == nil {
 			return fmt.Errorf("permission denied\n  Cannot write to %s\n  \n  Alternative: Run this PowerShell script as Administrator:\n  %s\n  \n  Or try running as administrator: Right-click cmd.exe -> Run as administrator", execPath, psScriptPath)
 		}
 
@@ -225,13 +225,16 @@ Read-Host "Press Enter to close"
 	// Rename new binary to original location
 	if err := os.Rename(tempPath, execPath); err != nil {
 		// If this fails, try to restore the backup
-		os.Rename(backupPath, execPath)
-		os.Remove(tempPath)
+		restoreErr := os.Rename(backupPath, execPath)
+		_ = os.Remove(tempPath)
+		if restoreErr != nil {
+			return fmt.Errorf("failed to install update: %w (restoring the backup %s failed too: %v)", err, backupPath, restoreErr)
+		}
 		return fmt.Errorf("failed to install update: %w", err)
 	}
 
 	// Remove backup on success
-	os.Remove(backupPath)
+	_ = os.Remove(backupPath)
 	return nil
 }
 
@@ -242,7 +245,7 @@ func checkWritePermission(path string) error {
 	if err != nil {
 		return err
 	}
-	file.Close()
+	_ = file.Close()
 	return nil
 }
 
@@ -312,7 +315,7 @@ func applyUpdateAllBinaries(targetDir string, binaries []*BinaryInfo) error {
 			if err := copyFile(targetPath, backupPath); err != nil {
 				// Clean up any backups we've already created
 				for _, backup := range backups {
-					os.Remove(backup)
+					_ = os.Remove(backup)
 				}
 				return fmt.Errorf("failed to backup %s: %w", binary.Name, err)
 			}
@@ -326,33 +329,47 @@ func applyUpdateAllBinaries(targetDir string, binaries []*BinaryInfo) error {
 
 		if err := copyFile(binary.Path, targetPath); err != nil {
 			// Restore all backups on failure
-			for name, backupPath := range backups {
-				targetPath := filepath.Join(targetDir, name+binSuffix)
-				copyFile(backupPath, targetPath)
+			if restoreErr := restoreBackups(backups, targetDir, binSuffix); restoreErr != nil {
+				return fmt.Errorf("failed to update %s: %w (%v)", binary.Name, err, restoreErr)
 			}
 			return fmt.Errorf("failed to update %s: %w", binary.Name, err)
 		}
 
 		// Set executable permissions on Unix
 		if runtime.GOOS != "windows" {
-			if err := os.Chmod(targetPath, 0755); err != nil {
+			if err := os.Chmod(targetPath, 0755); err != nil { // #nosec G302 -- binaries must be executable by all users
 				// Restore all backups on failure
-				for name, backupPath := range backups {
-					targetPath := filepath.Join(targetDir, name+binSuffix)
-					copyFile(backupPath, targetPath)
+				if restoreErr := restoreBackups(backups, targetDir, binSuffix); restoreErr != nil {
+					return fmt.Errorf("failed to set permissions for %s: %w (%v)", binary.Name, err, restoreErr)
 				}
 				return fmt.Errorf("failed to set permissions for %s: %w", binary.Name, err)
 			}
 		}
 
 		// Clean up temporary file
-		os.Remove(binary.Path)
+		_ = os.Remove(binary.Path)
 	}
 
 	// Clean up backup files on success
 	for _, backupPath := range backups {
-		os.Remove(backupPath)
+		_ = os.Remove(backupPath)
 	}
 
+	return nil
+}
+
+// restoreBackups copies every backup back over its binary and reports the
+// binaries that could not be restored, their backup files are left in place
+func restoreBackups(backups map[string]string, targetDir, binSuffix string) error {
+	var failed []string
+	for name, backupPath := range backups {
+		targetPath := filepath.Join(targetDir, name+binSuffix)
+		if err := copyFile(backupPath, targetPath); err != nil {
+			failed = append(failed, fmt.Sprintf("%s from %s: %v", name, backupPath, err))
+		}
+	}
+	if len(failed) > 0 {
+		return fmt.Errorf("restoring backups failed: %s", strings.Join(failed, "; "))
+	}
 	return nil
 }

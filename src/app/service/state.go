@@ -22,7 +22,8 @@ type Instance struct {
 	PluginName string    `json:"plugin_name"`
 	PID        int       `json:"pid"`
 	Port       int       `json:"port"`
-	Mode       string    `json:"mode"` // shared, exclusive
+	Mode       string    `json:"mode"`             // shared, exclusive
+	Status     string    `json:"status,omitempty"` // starting while the health check runs, empty when ready
 	Sessions   []Session `json:"sessions"`
 	Services   []string  `json:"services"`
 	StartedAt  time.Time `json:"started_at"`
@@ -53,8 +54,12 @@ func NewStateManager() (*StateManager, error) {
 		return nil, fmt.Errorf("failed to get home directory: %w", err)
 	}
 
-	portunixDir := filepath.Join(homeDir, ".portunix")
-	if err := os.MkdirAll(portunixDir, 0755); err != nil {
+	return newStateManagerAt(filepath.Join(homeDir, ".portunix"))
+}
+
+// newStateManagerAt creates a state manager for the given directory
+func newStateManagerAt(portunixDir string) (*StateManager, error) {
+	if err := os.MkdirAll(portunixDir, 0750); err != nil {
 		return nil, fmt.Errorf("failed to create .portunix directory: %w", err)
 	}
 
@@ -70,7 +75,7 @@ func (sm *StateManager) WithLock(fn func(state *ProcessState) error) error {
 	defer sm.mu.Unlock()
 
 	// Acquire file lock
-	lockFd, err := os.OpenFile(sm.lockFile, os.O_CREATE|os.O_RDWR, 0644)
+	lockFd, err := os.OpenFile(sm.lockFile, os.O_CREATE|os.O_RDWR, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to open lock file: %w", err)
 	}
@@ -136,7 +141,7 @@ func (sm *StateManager) saveState(state *ProcessState) error {
 		return fmt.Errorf("failed to marshal state: %w", err)
 	}
 
-	return os.WriteFile(sm.stateFile, data, 0644)
+	return os.WriteFile(sm.stateFile, data, 0600)
 }
 
 // GenerateSessionID creates a short random alphanumeric session ID

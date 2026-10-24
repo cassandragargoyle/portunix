@@ -368,7 +368,7 @@ func (h *AlertHistory) load() error {
 
 func (h *AlertHistory) save() error {
 	dir := filepath.Dir(h.filePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return err
 	}
 
@@ -377,7 +377,7 @@ func (h *AlertHistory) save() error {
 		return err
 	}
 
-	return os.WriteFile(h.filePath, data, 0644)
+	return os.WriteFile(h.filePath, data, 0600)
 }
 
 // Stats returns alert statistics

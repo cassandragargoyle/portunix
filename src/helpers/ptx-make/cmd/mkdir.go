@@ -15,5 +15,5 @@ func RunMkdir(args []string) error {
 		return fmt.Errorf("usage: mkdir <path>")
 	}
 	path := args[0]
-	return os.MkdirAll(path, 0755)
+	return os.MkdirAll(path, 0755) // #nosec G301 -- build helper mirrors mkdir -p, artifacts must be readable by all users
 }

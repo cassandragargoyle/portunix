@@ -338,17 +338,16 @@ func showRunHelp() {
 	fmt.Println("  --max-cpu COUNT        CPU limit alias (forwarded to --cpus)")
 	fmt.Println()
 	fmt.Println("💡 TIP: For development environments, use 'run-in-container' instead.")
-	fmt.Println("Use -- to separate flags from command arguments when needed.")
+	fmt.Println("Use -- to separate flags from command arguments when needed;")
+	fmt.Println("everything after the first -- is passed to the container verbatim.")
 }
 
 // handleContainerRun handles basic run subcommand
 func handleContainerRun(args []string) {
-	// Check for help flag first
-	for _, arg := range args {
-		if arg == "--help" || arg == "-h" {
-			showRunHelp()
-			return
-		}
+	// Check for help flag first — only before the separator (#238)
+	if hasHelpFlag(args) {
+		showRunHelp()
+		return
 	}
 
 	fmt.Println("ℹ️  Basic container run functionality")
@@ -368,13 +367,26 @@ func handleContainerRun(args []string) {
 		os.Exit(2)
 	}
 
+	// Detach detection must look only at the flags part — a "-d" after the
+	// separator belongs to the container command (e.g. "-- ls -d /tmp")
+	detached := hasDetachFlag(cleaned)
+
+	// Podman/Docker treat everything after the image as the command, so the
+	// "--" separator would be executed as the program name (#235)
+	cleaned = stripCommandSeparator(cleaned)
+	if len(cleaned) == 0 {
+		fmt.Println("❌ Error: Image name required")
+		fmt.Println("Usage: portunix container run <image> [command...]")
+		return
+	}
+
 	if lc.HasAny() {
 		runtime, err := selectRuntime()
 		if err != nil {
 			fmt.Println("❌ Error: Neither Podman nor Docker is available")
 			os.Exit(1)
 		}
-		runManagedContainer(runtime, lc, cleaned)
+		runManagedContainer(runtime, lc, cleaned, detached)
 		return
 	}
 
@@ -383,9 +395,9 @@ func handleContainerRun(args []string) {
 
 	// Try Podman first, then Docker
 	if isPodmanAvailable() {
-		runPodmanContainer(image, command)
+		runPodmanContainer(image, command, detached)
 	} else if isDockerAvailable() {
-		runDockerContainer(image, command)
+		runDockerContainer(image, command, detached)
 	} else {
 		fmt.Println("❌ Error: Neither Podman nor Docker is available")
 	}
@@ -393,21 +405,11 @@ func handleContainerRun(args []string) {
 
 // Placeholder implementations for other subcommands
 func handleContainerExec(args []string) {
-	// Check for help flag first
-	for _, arg := range args {
-		if arg == "--help" || arg == "-h" {
-			showExecHelp()
-			return
-		}
-	}
-
-	if len(args) < 2 {
+	containerName, command, help := parseExecArgs(args)
+	if help {
 		showExecHelp()
 		return
 	}
-
-	containerName := args[0]
-	command := args[1:]
 
 	// Try Podman first, then Docker
 	// Silent execution - only show command output, not execution messages
@@ -1302,12 +1304,12 @@ func runPodmanInContainerImpl(installationType string, imageName string, args []
 	fmt.Printf("📦 Using image: %s\n", imageName)
 
 	// Remove existing container if it exists
-	exec.Command("podman", "rm", "-f", containerName).Run()
+	_ = exec.Command("podman", "rm", "-f", containerName).Run()
 
 	// Copy current portunix binary to container
 	// First create a temporary copy
 	tempPath := "/tmp/portunix-container-test"
-	exec.Command("cp", "./portunix", tempPath).Run()
+	_ = exec.Command("cp", "./portunix", tempPath).Run()
 
 	// Build run arguments with TTY detection
 	var runArgs []string
@@ -1359,12 +1361,12 @@ func runDockerInContainerImpl(installationType string, imageName string, args []
 	fmt.Printf("📦 Using image: %s\n", imageName)
 
 	// Remove existing container if it exists
-	exec.Command("docker", "rm", "-f", containerName).Run()
+	_ = exec.Command("docker", "rm", "-f", containerName).Run()
 
 	// Copy current portunix binary to container
 	// First create a temporary copy
 	tempPath := "/tmp/portunix-container-test"
-	exec.Command("cp", "./portunix", tempPath).Run()
+	_ = exec.Command("cp", "./portunix", tempPath).Run()
 
 	// Build run arguments with TTY detection
 	var runArgs []string
@@ -1387,22 +1389,8 @@ func runDockerInContainerImpl(installationType string, imageName string, args []
 	}
 }
 
-func runPodmanContainer(image string, command []string) {
-	// Check if running in detached mode (service container)
-	// Detached containers should NOT use --rm as they are persistent services
-	detached := isDetachedMode(image, command)
-
-	// Only use -t flag if stdin is a terminal
-	// This prevents "the input device is not a TTY" error
-	var args []string
-	if detached {
-		args = []string{"run", image}
-	} else if term.IsTerminal(int(os.Stdin.Fd())) {
-		args = []string{"run", "-it", "--rm", image}
-	} else {
-		args = []string{"run", "-i", "--rm", image}
-	}
-	args = append(args, command...)
+func runPodmanContainer(image string, command []string, detached bool) {
+	args := buildRunArgs(image, command, detached, term.IsTerminal(int(os.Stdin.Fd())))
 
 	if debugMode {
 		fmt.Fprintf(os.Stderr, "🔍 DEBUG podman args: %v\n", args)
@@ -1422,22 +1410,8 @@ func runPodmanContainer(image string, command []string) {
 	}
 }
 
-func runDockerContainer(image string, command []string) {
-	// Check if running in detached mode (service container)
-	// Detached containers should NOT use --rm as they are persistent services
-	detached := isDetachedMode(image, command)
-
-	// Only use -t flag if stdin is a terminal
-	// This prevents "the input device is not a TTY" error
-	var args []string
-	if detached {
-		args = []string{"run", image}
-	} else if term.IsTerminal(int(os.Stdin.Fd())) {
-		args = []string{"run", "-it", "--rm", image}
-	} else {
-		args = []string{"run", "-i", "--rm", image}
-	}
-	args = append(args, command...)
+func runDockerContainer(image string, command []string, detached bool) {
+	args := buildRunArgs(image, command, detached, term.IsTerminal(int(os.Stdin.Fd())))
 
 	if debugMode {
 		fmt.Fprintf(os.Stderr, "🔍 DEBUG docker args: %v\n", args)
@@ -1456,13 +1430,30 @@ func runDockerContainer(image string, command []string) {
 	}
 }
 
-// isDetachedMode checks if -d or --detach flag is present in image name or command args
-// When called from handleContainerRun, flags like -d end up as the "image" parameter
-func isDetachedMode(image string, command []string) bool {
-	if image == "-d" || image == "--detach" {
-		return true
+// buildRunArgs builds the "run" argument list for podman/docker.
+// When called from handleContainerRun, flags like -d end up as the "image"
+// parameter, so image+command is spliced verbatim after the base flags.
+// Detached containers should NOT use --rm as they are persistent services;
+// -t is only used when stdin is a terminal to avoid "the input device is not a TTY"
+func buildRunArgs(image string, command []string, detached, tty bool) []string {
+	var args []string
+	if detached {
+		args = []string{"run", image}
+	} else if tty {
+		args = []string{"run", "-it", "--rm", image}
+	} else {
+		args = []string{"run", "-i", "--rm", image}
 	}
-	for _, arg := range command {
+	return append(args, command...)
+}
+
+// hasDetachFlag reports whether -d or --detach appears before the first
+// standalone "--" separator (args after it belong to the container command)
+func hasDetachFlag(args []string) bool {
+	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
 		if arg == "-d" || arg == "--detach" {
 			return true
 		}
@@ -1470,17 +1461,63 @@ func isDetachedMode(image string, command []string) bool {
 	return false
 }
 
-// execPodmanCommand executes a command inside an existing Podman container
-func execPodmanCommand(containerName string, command []string) error {
+// stripCommandSeparator returns a copy of args without the first standalone
+// "--"; any later "--" is part of the container command and is kept
+func stripCommandSeparator(args []string) []string {
+	for i, arg := range args {
+		if arg == "--" {
+			out := make([]string, 0, len(args)-1)
+			out = append(out, args[:i]...)
+			return append(out, args[i+1:]...)
+		}
+	}
+	return args
+}
+
+// hasHelpFlag reports whether -h/--help appears before the first standalone
+// "--"; flags after the separator belong to the container command (#238)
+func hasHelpFlag(args []string) bool {
+	for _, arg := range args {
+		if arg == "--" {
+			return false
+		}
+		if arg == "--help" || arg == "-h" {
+			return true
+		}
+	}
+	return false
+}
+
+// parseExecArgs splits exec arguments into the container name and command.
+// Help is requested only by -h/--help before the container name; the first
+// standalone "--" (before or after the name) is removed (#238)
+func parseExecArgs(args []string) (containerName string, command []string, help bool) {
+	if len(args) > 0 && (args[0] == "--help" || args[0] == "-h") {
+		return "", nil, true
+	}
+	cleaned := stripCommandSeparator(args)
+	if len(cleaned) < 2 {
+		return "", nil, true
+	}
+	return cleaned[0], cleaned[1:], false
+}
+
+// buildExecArgs builds the runtime arguments for "<runtime> exec"
+func buildExecArgs(containerName string, command []string, tty bool) []string {
 	// Only use -t flag if stdin is a terminal (interactive mode)
 	// This prevents "the input device is not a TTY" error on Windows
 	var args []string
-	if term.IsTerminal(int(os.Stdin.Fd())) {
+	if tty {
 		args = []string{"exec", "-it", containerName}
 	} else {
 		args = []string{"exec", "-i", containerName}
 	}
-	args = append(args, command...)
+	return append(args, command...)
+}
+
+// execPodmanCommand executes a command inside an existing Podman container
+func execPodmanCommand(containerName string, command []string) error {
+	args := buildExecArgs(containerName, command, term.IsTerminal(int(os.Stdin.Fd())))
 
 	cmd := exec.Command("podman", args...)
 	cmd.Stdin = os.Stdin
@@ -1492,15 +1529,7 @@ func execPodmanCommand(containerName string, command []string) error {
 
 // execDockerCommand executes a command inside an existing Docker container
 func execDockerCommand(containerName string, command []string) error {
-	// Only use -t flag if stdin is a terminal (interactive mode)
-	// This prevents "the input device is not a TTY" error on Windows
-	var args []string
-	if term.IsTerminal(int(os.Stdin.Fd())) {
-		args = []string{"exec", "-it", containerName}
-	} else {
-		args = []string{"exec", "-i", containerName}
-	}
-	args = append(args, command...)
+	args := buildExecArgs(containerName, command, term.IsTerminal(int(os.Stdin.Fd())))
 
 	cmd := exec.Command("docker", args...)
 	cmd.Stdin = os.Stdin
@@ -2472,13 +2501,17 @@ func showExecHelp() {
 	fmt.Println("  [args...]          Optional arguments for the command")
 	fmt.Println()
 	fmt.Println("Options:")
-	fmt.Println("  -h, --help         Show this help message")
+	fmt.Println("  -h, --help         Show this help message (only before <container-name>)")
 	fmt.Println()
 	fmt.Println("Examples:")
 	fmt.Println("  portunix container exec my-container bash")
 	fmt.Println("  portunix container exec my-container ls -la /app")
+	fmt.Println("  portunix container exec my-container -- ls -h /")
 	fmt.Println("  portunix container exec web-server cat /etc/nginx/nginx.conf")
 	fmt.Println("  portunix container exec python-dev python --version")
+	fmt.Println()
+	fmt.Println("Use -- to separate the command from Portunix arguments when needed;")
+	fmt.Println("everything after the first -- is passed to the container verbatim.")
 }
 
 func showListHelp() {

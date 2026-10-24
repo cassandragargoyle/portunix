@@ -45,7 +45,7 @@
             },
             "extractTo": "/usr/local/bin",
             "postInstall": [
-              "sudo chmod +x /usr/local/bin/actionlint"
+              "${sudo_prefix}chmod +x /usr/local/bin/actionlint"
             ]
           }
         },

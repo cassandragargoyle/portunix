@@ -671,7 +671,7 @@ func (r *PackageRegistry) SavePackage(pkg *Package) error {
 		return fmt.Errorf("failed to marshal package: %w", err)
 	}
 
-	if err := os.WriteFile(packagePath, data, 0644); err != nil {
+	if err := os.WriteFile(packagePath, data, 0644); err != nil { // #nosec G306 -- package definitions are public assets
 		return fmt.Errorf("failed to write package file: %w", err)
 	}
 
@@ -757,7 +757,7 @@ func (r *PackageRegistry) SaveIndex() error {
 		return fmt.Errorf("failed to marshal index: %w", err)
 	}
 
-	if err := os.WriteFile(indexPath, data, 0644); err != nil {
+	if err := os.WriteFile(indexPath, data, 0644); err != nil { // #nosec G306 -- package definitions are public assets
 		return fmt.Errorf("failed to write index file: %w", err)
 	}
 

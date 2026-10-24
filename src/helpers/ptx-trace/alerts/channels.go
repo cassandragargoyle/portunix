@@ -200,12 +200,12 @@ func NewFileChannel(name string, config ChannelConfig) (*FileChannel, error) {
 func (c *FileChannel) Send(alert *Alert) error {
 	// Ensure directory exists
 	dir := filepath.Dir(c.filePath)
-	if err := os.MkdirAll(dir, 0755); err != nil {
+	if err := os.MkdirAll(dir, 0750); err != nil {
 		return fmt.Errorf("failed to create directory: %w", err)
 	}
 
 	// Open file in append mode
-	f, err := os.OpenFile(c.filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(c.filePath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to open file: %w", err)
 	}

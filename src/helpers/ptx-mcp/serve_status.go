@@ -55,12 +55,12 @@ func showServeTextStatus() {
 	}
 
 	var pid int
-	fmt.Sscanf(string(data), "%d", &pid)
+	_, _ = fmt.Sscanf(string(data), "%d", &pid)
 
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		fmt.Println("\n📊 Server State: ❌ Not Running (stale PID file)")
-		os.Remove(pidFile)
+		_ = os.Remove(pidFile)
 		return
 	}
 
@@ -68,7 +68,7 @@ func showServeTextStatus() {
 	if runtime.GOOS != "windows" {
 		if err := process.Signal(os.Signal(nil)); err != nil {
 			fmt.Println("\n📊 Server State: ❌ Not Running (process died)")
-			os.Remove(pidFile)
+			_ = os.Remove(pidFile)
 			return
 		}
 	}
@@ -116,7 +116,7 @@ func showServeJSONStatus() {
 
 	if _, err := os.Stat(pidFile); err == nil {
 		if data, err := os.ReadFile(pidFile); err == nil {
-			fmt.Sscanf(string(data), "%d", &pid)
+			_, _ = fmt.Sscanf(string(data), "%d", &pid)
 			if process, err := os.FindProcess(pid); err == nil {
 				if runtime.GOOS == "windows" {
 					running = true

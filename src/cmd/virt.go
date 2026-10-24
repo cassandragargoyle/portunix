@@ -44,7 +44,7 @@ Use 'portunix virt check' to verify your system meets virtualization requirement
 		}
 
 		// Fallback: show help for built-in virt commands
-		cmd.Help()
+		_ = cmd.Help()
 	},
 }
 

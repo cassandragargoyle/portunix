@@ -276,7 +276,7 @@ func runInteractiveWizard(force, installMissing bool) error {
 		choice, _ := reader.ReadString('\n')
 		choice = strings.TrimSpace(choice)
 		idx := 0
-		fmt.Sscanf(choice, "%d", &idx)
+		_, _ = fmt.Sscanf(choice, "%d", &idx)
 
 		if idx < 1 || idx > len(detectedAssistants) {
 			return fmt.Errorf("invalid choice")
@@ -701,7 +701,7 @@ func configureClaudeDesktop(serverType string, opts initOptions, config *MCPConf
 	fmt.Println("   🔧 Configuring Claude Desktop MCP integration...")
 
 	configPath := getClaudeDesktopConfigPath()
-	if err := os.MkdirAll(filepath.Dir(configPath), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(configPath), 0o750); err != nil {
 		return fmt.Errorf("failed to create config directory: %w", err)
 	}
 
@@ -750,7 +750,7 @@ func configureClaudeDesktop(serverType string, opts initOptions, config *MCPConf
 	if err != nil {
 		return fmt.Errorf("failed to marshal configuration: %w", err)
 	}
-	if err := os.WriteFile(configPath, out, 0o644); err != nil {
+	if err := os.WriteFile(configPath, out, 0o600); err != nil {
 		return fmt.Errorf("failed to write %s: %w", configPath, err)
 	}
 
@@ -806,7 +806,7 @@ func generateSelfSignedCert(certPath, keyPath string) error {
 		return fmt.Errorf("create cert: %w", err)
 	}
 
-	if err := os.MkdirAll(filepath.Dir(certPath), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(certPath), 0o750); err != nil {
 		return fmt.Errorf("create cert dir: %w", err)
 	}
 	certOut, err := os.Create(certPath)

@@ -233,17 +233,20 @@ jobs:
           go install github.com/sonatype-nexus-community/nancy@latest
 
       - name: Run Gosec Security Scanner
-        run: gosec -fmt json -out gosec-report.json ./...
+        # Scans every Go module, excluded rules are documented in
+        # docs/contributing/SECURITY-SCAN.md
+        run: python3 scripts/gosec-scan.py --report-dir gosec-reports
 
       - name: Run Nancy vulnerability scanner
         run: |
           go list -json -deps ./... | nancy sleuth
 
       - name: Upload Gosec results
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gosec-report
-          path: gosec-report.json
+          path: gosec-reports/
 
   performance:
     name: Performance Tests

@@ -65,11 +65,11 @@ func (c *claudeDriver) Render(opts RenderOptions) (*RenderResult, error) {
 				return nil, fmt.Errorf("read embedded claude template %q: %w", verb, err)
 			}
 			skillDir := filepath.Join(opts.TargetDir, ".claude", "skills", "specpm-"+verb)
-			if err := os.MkdirAll(skillDir, 0o755); err != nil {
+			if err := os.MkdirAll(skillDir, 0o755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 				return nil, err
 			}
 			skillFile := filepath.Join(skillDir, "SKILL.md")
-			if err := os.WriteFile(skillFile, data, 0o644); err != nil {
+			if err := os.WriteFile(skillFile, data, 0o644); err != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 				return nil, err
 			}
 			res.WrittenPaths = append(res.WrittenPaths, skillFile)
@@ -77,7 +77,7 @@ func (c *claudeDriver) Render(opts RenderOptions) (*RenderResult, error) {
 	} else {
 		res.Mode = "slash-commands"
 		cmdDir := filepath.Join(opts.TargetDir, ".claude", "commands")
-		if err := os.MkdirAll(cmdDir, 0o755); err != nil {
+		if err := os.MkdirAll(cmdDir, 0o755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 			return nil, err
 		}
 		for _, verb := range claudeVerbs {
@@ -86,7 +86,7 @@ func (c *claudeDriver) Render(opts RenderOptions) (*RenderResult, error) {
 				return nil, fmt.Errorf("read embedded claude template %q: %w", verb, err)
 			}
 			out := filepath.Join(cmdDir, "specpm."+verb+".md")
-			if err := os.WriteFile(out, data, 0o644); err != nil {
+			if err := os.WriteFile(out, data, 0o644); err != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 				return nil, err
 			}
 			res.WrittenPaths = append(res.WrittenPaths, out)

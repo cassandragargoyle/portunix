@@ -82,7 +82,7 @@ func (c *Config) Save() error {
 // saveConfig saves configuration to specified path
 func saveConfig(config *Config, configPath string) error {
 	// Create directory if it doesn't exist
-	if err := os.MkdirAll(filepath.Dir(configPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(configPath), 0750); err != nil {
 		return err
 	}
 
@@ -91,7 +91,7 @@ func saveConfig(config *Config, configPath string) error {
 		return err
 	}
 
-	return os.WriteFile(configPath, data, 0644)
+	return os.WriteFile(configPath, data, 0600)
 }
 
 // getConfigPath returns the configuration file path
@@ -165,7 +165,7 @@ func getTemplatesPath() string {
 // saveTemplates saves templates to file
 func saveTemplates(templates map[string]*VMTemplate, templatesPath string) error {
 	// Create directory if it doesn't exist
-	if err := os.MkdirAll(filepath.Dir(templatesPath), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(templatesPath), 0750); err != nil {
 		return err
 	}
 
@@ -180,7 +180,7 @@ func saveTemplates(templates map[string]*VMTemplate, templatesPath string) error
 		return err
 	}
 
-	return os.WriteFile(templatesPath, data, 0644)
+	return os.WriteFile(templatesPath, data, 0600)
 }
 
 // getDefaultTemplates returns default VM templates

@@ -224,13 +224,13 @@ func writeToFile(content, filename string) error {
 	// Create directory if it doesn't exist
 	dir := filepath.Dir(filename)
 	if dir != "." {
-		err := os.MkdirAll(dir, 0755)
+		err := os.MkdirAll(dir, 0755) // #nosec G301 -- output requested by the user, holds no credentials
 		if err != nil {
 			return fmt.Errorf("failed to create directory %s: %v", dir, err)
 		}
 	}
 
-	err := os.WriteFile(filename, []byte(content), 0644)
+	err := os.WriteFile(filename, []byte(content), 0644) // #nosec G306 -- output requested by the user, holds no credentials
 	if err != nil {
 		return fmt.Errorf("failed to write file %s: %v", filename, err)
 	}

@@ -140,14 +140,14 @@ func (m *Manager) CategoryDir(cat Category) string {
 func (m *Manager) EnsureDirs() error {
 	for _, cat := range AllCategories() {
 		dir := m.CategoryDir(cat)
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			return fmt.Errorf("failed to create cache directory %s: %w", dir, err)
 		}
 	}
 
 	// Create locks directory
 	locksDir := filepath.Join(m.config.BaseDir, "locks")
-	if err := os.MkdirAll(locksDir, 0755); err != nil {
+	if err := os.MkdirAll(locksDir, 0750); err != nil {
 		return fmt.Errorf("failed to create locks directory: %w", err)
 	}
 

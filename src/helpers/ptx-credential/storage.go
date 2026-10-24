@@ -18,7 +18,7 @@ const (
 	defaultStoreName = "default"
 	storeExtension   = ".enc"
 	passwordMarker   = ".password-protected"
-	m365TokenFile    = ".portunix-m365-tokens.enc"
+	m365TokenFile    = ".portunix-m365-tokens.enc" // #nosec G101 -- file name, not a credential
 	portunixDir      = ".portunix"
 	currentVersion   = 1
 )
@@ -363,7 +363,7 @@ func (s *Storage) GetM365Tokens() (*M365Tokens, error) {
 			tokens.RefreshToken = cred.Value
 		case "expiresAt":
 			// Parse as int64
-			fmt.Sscanf(cred.Value, "%d", &tokens.ExpiresAt)
+			_, _ = fmt.Sscanf(cred.Value, "%d", &tokens.ExpiresAt)
 		case "tokenType":
 			tokens.TokenType = cred.Value
 		}
@@ -546,7 +546,7 @@ func DeleteStoreByName(storeName string) error {
 
 	// Delete password marker if exists
 	markerPath := filepath.Join(baseDir, storeName+passwordMarker)
-	os.Remove(markerPath) // Ignore error if marker doesn't exist
+	_ = os.Remove(markerPath) // Ignore error if marker doesn't exist
 
 	return nil
 }

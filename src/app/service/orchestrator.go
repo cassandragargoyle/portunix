@@ -20,6 +20,9 @@ const (
 	DefaultHealthTimeout = 10 * time.Second
 )
 
+// StatusStarting marks an instance that is spawned but not yet healthy
+const StatusStarting = "starting"
+
 // AllocationMode defines how service instances are allocated
 type AllocationMode string
 
@@ -45,6 +48,11 @@ type Orchestrator struct {
 	stateManager  *StateManager
 	portAllocator *PortAllocator
 	healthTimeout time.Duration
+
+	// Process operations; replaced in tests
+	spawn       func(binaryPath, runtime string, jvmArgs []string, port int) (int, error)
+	waitHealthy func(ctx context.Context, port int) ([]string, error)
+	kill        func(pid int)
 }
 
 // NewOrchestrator creates a new service orchestrator
@@ -54,18 +62,34 @@ func NewOrchestrator() (*Orchestrator, error) {
 		return nil, err
 	}
 
-	return &Orchestrator{
+	return newOrchestrator(sm), nil
+}
+
+// newOrchestrator creates an orchestrator with the real process operations
+func newOrchestrator(sm *StateManager) *Orchestrator {
+	o := &Orchestrator{
 		stateManager:  sm,
 		portAllocator: NewPortAllocator(DefaultPortStart, DefaultPortEnd),
 		healthTimeout: DefaultHealthTimeout,
-	}, nil
+		kill:          killProcess,
+	}
+	o.spawn = o.spawnPlugin
+	o.waitHealthy = o.waitForHealthy
+	return o
 }
 
-// StartService starts or joins a plugin service instance
-func (o *Orchestrator) StartService(pluginName, binaryPath, runtime string, jvmArgs []string, mode AllocationMode) (*StartResult, error) {
+// StartService starts or joins a plugin service instance. When ctx is
+// cancelled (the CLI got SIGTERM/SIGINT), a spawned process is stopped and
+// no session is created
+func (o *Orchestrator) StartService(ctx context.Context, pluginName, binaryPath, runtime string, jvmArgs []string, mode AllocationMode) (*StartResult, error) {
 	var result *StartResult
 
 	err := o.stateManager.WithLock(func(state *ProcessState) error {
+		// The lock wait can be long; the client may have given up
+		if err := ctx.Err(); err != nil {
+			return fmt.Errorf("start interrupted: %w", err)
+		}
+
 		// Clean stale entries
 		o.cleanStaleEntries(state)
 
@@ -81,9 +105,12 @@ func (o *Orchestrator) StartService(pluginName, binaryPath, runtime string, jvmA
 					// Verify via gRPC health check
 					if !o.checkHealth(inst.Port) {
 						// Process alive but not serving - remove
-						killProcess(inst.PID)
+						o.kill(inst.PID)
 						delete(state.Instances, key)
 						continue
+					}
+					if err := ctx.Err(); err != nil {
+						return fmt.Errorf("start interrupted: %w", err)
 					}
 					// Join existing instance
 					sessionID := GenerateSessionID()
@@ -112,19 +139,6 @@ func (o *Orchestrator) StartService(pluginName, binaryPath, runtime string, jvmA
 			return err
 		}
 
-		// Spawn process
-		pid, err := o.spawnPlugin(binaryPath, runtime, jvmArgs, port)
-		if err != nil {
-			return fmt.Errorf("failed to spawn plugin: %w", err)
-		}
-
-		// Wait for health check
-		services, err := o.waitForHealthy(port)
-		if err != nil {
-			killProcess(pid)
-			return fmt.Errorf("plugin failed to become healthy: %w", err)
-		}
-
 		// Determine effective mode
 		effectiveMode := string(mode)
 		if mode == ModePreferExclusive {
@@ -134,20 +148,52 @@ func (o *Orchestrator) StartService(pluginName, binaryPath, runtime string, jvmA
 			effectiveMode = string(ModeShared)
 		}
 
-		sessionID := GenerateSessionID()
+		// Spawn process
+		pid, err := o.spawn(binaryPath, runtime, jvmArgs, port)
+		if err != nil {
+			return fmt.Errorf("failed to spawn plugin: %w", err)
+		}
+
+		// Record the process before waiting, so a start that is killed during
+		// the wait leaves a stoppable entry instead of an untracked process
 		key := InstanceKey(pluginName, port)
 		state.Instances[key] = Instance{
 			PluginName: pluginName,
 			PID:        pid,
 			Port:       port,
 			Mode:       effectiveMode,
-			Sessions: []Session{{
-				ID:        sessionID,
-				CreatedAt: time.Now(),
-			}},
-			Services:  services,
-			StartedAt: time.Now(),
+			Status:     StatusStarting,
+			StartedAt:  time.Now(),
 		}
+		abort := func(cause error) error {
+			o.kill(pid)
+			delete(state.Instances, key)
+			// WithLock does not save on error; remove the starting entry here
+			_ = o.stateManager.saveState(state)
+			return cause
+		}
+		if err := o.stateManager.saveState(state); err != nil {
+			return abort(fmt.Errorf("failed to record starting instance: %w", err))
+		}
+
+		// Wait for health check
+		services, err := o.waitHealthy(ctx, port)
+		if err != nil {
+			return abort(fmt.Errorf("plugin failed to become healthy: %w", err))
+		}
+		if err := ctx.Err(); err != nil {
+			return abort(fmt.Errorf("start interrupted: %w", err))
+		}
+
+		sessionID := GenerateSessionID()
+		inst := state.Instances[key]
+		inst.Status = ""
+		inst.Sessions = []Session{{
+			ID:        sessionID,
+			CreatedAt: time.Now(),
+		}}
+		inst.Services = services
+		state.Instances[key] = inst
 
 		result = &StartResult{
 			SessionID:  sessionID,
@@ -216,7 +262,7 @@ func (o *Orchestrator) ReleaseSession(sessionID string) (bool, error) {
 					inst.Sessions = append(inst.Sessions[:i], inst.Sessions[i+1:]...)
 					if len(inst.Sessions) == 0 {
 						// Last session - stop instance
-						killProcess(inst.PID)
+						o.kill(inst.PID)
 						delete(state.Instances, key)
 						stopped = true
 					} else {
@@ -239,7 +285,7 @@ func (o *Orchestrator) StopPlugin(pluginName string) (int, error) {
 	err := o.stateManager.WithLock(func(state *ProcessState) error {
 		for key, inst := range state.Instances {
 			if inst.PluginName == pluginName {
-				killProcess(inst.PID)
+				o.kill(inst.PID)
 				delete(state.Instances, key)
 				count++
 			}
@@ -259,7 +305,7 @@ func (o *Orchestrator) StopAll() (int, error) {
 
 	err := o.stateManager.WithLock(func(state *ProcessState) error {
 		for key, inst := range state.Instances {
-			killProcess(inst.PID)
+			o.kill(inst.PID)
 			delete(state.Instances, key)
 			count++
 		}
@@ -276,8 +322,11 @@ func (o *Orchestrator) cleanStaleEntries(state *ProcessState) {
 			delete(state.Instances, key)
 			continue
 		}
-		if !o.checkHealth(inst.Port) {
-			killProcess(inst.PID)
+		// A start holds the state lock until the instance is healthy, so a
+		// starting entry seen here belongs to an interrupted start and has no
+		// session
+		if inst.Status == StatusStarting || !o.checkHealth(inst.Port) {
+			o.kill(inst.PID)
 			delete(state.Instances, key)
 		}
 	}
@@ -322,13 +371,13 @@ func (o *Orchestrator) spawnPlugin(binaryPath, runtime string, jvmArgs []string,
 
 	// Release the process so it survives parent exit
 	pid := cmd.Process.Pid
-	cmd.Process.Release()
+	_ = cmd.Process.Release()
 
 	return pid, nil
 }
 
-// waitForHealthy polls the gRPC health endpoint until SERVING
-func (o *Orchestrator) waitForHealthy(port int) ([]string, error) {
+// waitForHealthy polls the gRPC health endpoint until SERVING or ctx is cancelled
+func (o *Orchestrator) waitForHealthy(ctx context.Context, port int) ([]string, error) {
 	deadline := time.Now().Add(o.healthTimeout)
 
 	for time.Now().Before(deadline) {
@@ -336,7 +385,11 @@ func (o *Orchestrator) waitForHealthy(port int) ([]string, error) {
 			services, _ := o.discoverServices(port)
 			return services, nil
 		}
-		time.Sleep(200 * time.Millisecond)
+		select {
+		case <-ctx.Done():
+			return nil, fmt.Errorf("start interrupted: %w", ctx.Err())
+		case <-time.After(200 * time.Millisecond):
+		}
 	}
 
 	return nil, fmt.Errorf("health check timeout after %s", o.healthTimeout)
@@ -505,18 +558,34 @@ func killProcess(pid int) {
 	}
 	// Try graceful first
 	if err := proc.Signal(os.Interrupt); err != nil {
-		proc.Kill()
+		_ = proc.Kill()
 		return
 	}
-	// Wait briefly, then force kill
-	done := make(chan struct{})
+	// Wait briefly, then force kill. Wait reaps only our own children; a plugin
+	// started by an earlier CLI is not one, so liveness is polled as well
+	exited := make(chan struct{})
 	go func() {
-		proc.Wait()
-		close(done)
+		if _, err := proc.Wait(); err == nil {
+			close(exited)
+		}
 	}()
-	select {
-	case <-done:
-	case <-time.After(3 * time.Second):
-		proc.Kill()
+	deadline := time.After(killGracePeriod)
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-exited:
+			return
+		case <-ticker.C:
+			if !IsProcessAlive(pid) {
+				return
+			}
+		case <-deadline:
+			_ = proc.Kill()
+			return
+		}
 	}
 }
+
+// killGracePeriod is how long killProcess waits after the interrupt; replaced in tests
+var killGracePeriod = 3 * time.Second

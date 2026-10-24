@@ -294,7 +294,7 @@ func handleGraphCommand(args []string) {
 			view = true
 		case "--port":
 			if i+1 < len(args) {
-				fmt.Sscanf(args[i+1], "%d", &port)
+				_, _ = fmt.Sscanf(args[i+1], "%d", &port)
 				i++
 			}
 		case "--no-open":
@@ -428,7 +428,7 @@ func handleConfigureCommand(args []string) {
 			}
 		case "--smtp-port":
 			if i+1 < len(args) {
-				fmt.Sscanf(args[i+1], "%d", &smtpPort)
+				_, _ = fmt.Sscanf(args[i+1], "%d", &smtpPort)
 				i++
 			}
 		case "--smtp-user":
@@ -1108,7 +1108,7 @@ func handleDestroyCommand(args []string) {
 			fmt.Println("WARNING: This will remove all Fider data including the database!")
 			fmt.Print("Are you sure? (y/N): ")
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if response != "y" && response != "Y" {
 				fmt.Println("Aborted.")
 				return
@@ -1131,7 +1131,7 @@ func handleDestroyCommand(args []string) {
 			fmt.Println("WARNING: This will remove all ClearFlask data including MySQL database and Elasticsearch indices!")
 			fmt.Print("Are you sure? (y/N): ")
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if response != "y" && response != "Y" {
 				fmt.Println("Aborted.")
 				return
@@ -1149,7 +1149,7 @@ func handleDestroyCommand(args []string) {
 			fmt.Println("This includes data from all 12 Supabase stack containers.")
 			fmt.Print("Are you sure? (y/N): ")
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if response != "y" && response != "Y" {
 				fmt.Println("Aborted.")
 				return
@@ -1340,8 +1340,11 @@ func handleSyncCommand(args []string) {
 	if vocToken != "" || vosToken != "" {
 		configPath, _ := findConfigFile()
 		if configPath != "" {
-			config.SaveToPath(configPath)
-			fmt.Println("Configuration updated with API tokens.")
+			if err := config.SaveToPath(configPath); err != nil {
+				fmt.Printf("Warning: failed to save configuration: %v\n", err)
+			} else {
+				fmt.Println("Configuration updated with API tokens.")
+			}
 		}
 	}
 
@@ -1492,8 +1495,11 @@ func handlePullCommand(args []string) {
 	if vocToken != "" || vosToken != "" {
 		configPath, _ := findConfigFile()
 		if configPath != "" {
-			config.SaveToPath(configPath)
-			fmt.Println("Configuration updated with API tokens.")
+			if err := config.SaveToPath(configPath); err != nil {
+				fmt.Printf("Warning: failed to save configuration: %v\n", err)
+			} else {
+				fmt.Println("Configuration updated with API tokens.")
+			}
 		}
 	}
 }
@@ -1651,8 +1657,11 @@ func handlePushCommand(args []string) {
 	if vocToken != "" || vosToken != "" {
 		configPath, _ := findConfigFile()
 		if configPath != "" {
-			config.SaveToPath(configPath)
-			fmt.Println("Configuration updated with API tokens.")
+			if err := config.SaveToPath(configPath); err != nil {
+				fmt.Printf("Warning: failed to save configuration: %v\n", err)
+			} else {
+				fmt.Println("Configuration updated with API tokens.")
+			}
 		}
 	}
 }
@@ -2145,7 +2154,7 @@ func handleAddCommand(args []string) {
 	targetDir := filepath.Join(areaDir, "needs")
 
 	// Create directory if it doesn't exist
-	if err := os.MkdirAll(targetDir, 0755); err != nil {
+	if err := ensureSharedDir(targetDir); err != nil {
 		fmt.Printf("Error creating directory: %v\n", err)
 		return
 	}
@@ -2185,7 +2194,7 @@ func handleAddCommand(args []string) {
 	content := generateFeedbackMarkdown(params)
 
 	// Write file
-	if err := os.WriteFile(filePath, []byte(content), 0644); err != nil {
+	if err := writeSharedFile(filePath, []byte(content)); err != nil {
 		fmt.Printf("Error writing file: %v\n", err)
 		return
 	}
@@ -2318,7 +2327,7 @@ func handleUpdateCommand(args []string) {
 		needsDir := filepath.Join(areaDir, "needs")
 
 		// Search for file matching the ID
-		filepath.WalkDir(needsDir, func(path string, d os.DirEntry, err error) error {
+		_ = filepath.WalkDir(needsDir, func(path string, d os.DirEntry, err error) error {
 			if err != nil || d.IsDir() {
 				return nil
 			}
@@ -2415,7 +2424,7 @@ func handleUpdateCommand(args []string) {
 	newContent := generateFeedbackMarkdown(*existingParams)
 
 	// Write file
-	if err := os.WriteFile(itemPath, []byte(newContent), 0644); err != nil {
+	if err := writeSharedFile(itemPath, []byte(newContent)); err != nil {
 		fmt.Printf("Error writing file: %v\n", err)
 		return
 	}
@@ -2597,7 +2606,7 @@ func generateNextItemID(areaDir, area string) string {
 	maxNum := 0
 
 	// Scan all files in area directory and subdirectories
-	filepath.WalkDir(areaDir, func(path string, d os.DirEntry, err error) error {
+	_ = filepath.WalkDir(areaDir, func(path string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return nil
 		}
@@ -2610,7 +2619,7 @@ func generateNextItemID(areaDir, area string) string {
 		if strings.HasPrefix(name, "P") {
 			// Find the number after P
 			var num int
-			fmt.Sscanf(name[1:], "%d", &num)
+			_, _ = fmt.Sscanf(name[1:], "%d", &num)
 			if num > maxNum {
 				maxNum = num
 			}
@@ -2870,7 +2879,7 @@ func handleLinkCommand(args []string) {
 	}
 
 	// Write updated content
-	if err := os.WriteFile(filePath, []byte(contentStr), 0644); err != nil {
+	if err := rewriteExistingFile(filePath, []byte(contentStr)); err != nil {
 		fmt.Printf("Error writing file: %v\n", err)
 		return
 	}
@@ -3233,7 +3242,7 @@ func tryLoadFromDir(dir, itemID, configURL, defaultURL string) (*FeedbackItem, s
 		if strings.HasPrefix(line, "fider_id:") || strings.HasPrefix(line, "Fider ID:") {
 			parts := strings.SplitN(line, ":", 2)
 			if len(parts) == 2 {
-				fmt.Sscanf(strings.TrimSpace(parts[1]), "%d", &fiderID)
+				_, _ = fmt.Sscanf(strings.TrimSpace(parts[1]), "%d", &fiderID)
 				item.ExternalID = strings.TrimSpace(parts[1])
 			}
 		}
@@ -3333,7 +3342,7 @@ func handleReportCommand(args []string) {
 
 	// Output
 	if outputFile != "" {
-		if err := os.WriteFile(outputFile, []byte(report.String()), 0644); err != nil {
+		if err := writeSharedFile(outputFile, []byte(report.String())); err != nil {
 			fmt.Printf("Error writing report: %v\n", err)
 			return
 		}
@@ -3581,7 +3590,7 @@ func handleExportCommand(args []string) {
 
 	// Output
 	if outputFile != "" {
-		if err := os.WriteFile(outputFile, []byte(output), 0644); err != nil {
+		if err := writeSharedFile(outputFile, []byte(output)); err != nil {
 			fmt.Printf("Error writing export: %v\n", err)
 			return
 		}
@@ -3786,13 +3795,13 @@ func handleExampleCommand(args []string) {
 	vocPath := filepath.Join(demoPath, "voc")
 	vosPath := filepath.Join(demoPath, "vos")
 
-	if err := os.MkdirAll(vocPath, 0755); err != nil {
+	if err := ensureSharedDir(vocPath); err != nil {
 		fmt.Printf("   Error creating voc/: %v\n", err)
 		return
 	}
 	fmt.Println("   ✓ Created: voc/ (Voice of Customer - public)")
 
-	if err := os.MkdirAll(vosPath, 0755); err != nil {
+	if err := ensureSharedDir(vosPath); err != nil {
 		fmt.Printf("   Error creating vos/: %v\n", err)
 		return
 	}
@@ -3804,7 +3813,7 @@ func handleExampleCommand(args []string) {
 	vocSamples := getVoCSamples()
 	for _, sample := range vocSamples {
 		samplePath := filepath.Join(vocPath, sample.Filename)
-		if err := os.WriteFile(samplePath, []byte(sample.Content), 0644); err != nil {
+		if err := writeSharedFile(samplePath, []byte(sample.Content)); err != nil {
 			fmt.Printf("   Error creating %s: %v\n", sample.Filename, err)
 			continue
 		}
@@ -3817,7 +3826,7 @@ func handleExampleCommand(args []string) {
 	vosSamples := getVoSSamples()
 	for _, sample := range vosSamples {
 		samplePath := filepath.Join(vosPath, sample.Filename)
-		if err := os.WriteFile(samplePath, []byte(sample.Content), 0644); err != nil {
+		if err := writeSharedFile(samplePath, []byte(sample.Content)); err != nil {
 			fmt.Printf("   Error creating %s: %v\n", sample.Filename, err)
 			continue
 		}
@@ -4641,7 +4650,7 @@ func handleUserLinkCommand(args []string, projectDir string) {
 
 	for i := 1; i < len(args); i++ {
 		if args[i] == "--fider" && i+1 < len(args) {
-			fmt.Sscanf(args[i+1], "%d", &fiderID)
+			_, _ = fmt.Sscanf(args[i+1], "%d", &fiderID)
 			i++
 		}
 	}
@@ -4840,8 +4849,11 @@ func handleUserSyncCommand(args []string, projectDir string) {
 	if vocToken != "" || vosToken != "" {
 		configPath, _ := findConfigFile()
 		if configPath != "" {
-			config.SaveToPath(configPath)
-			fmt.Println("Configuration updated with API tokens.")
+			if err := config.SaveToPath(configPath); err != nil {
+				fmt.Printf("Warning: failed to save configuration: %v\n", err)
+			} else {
+				fmt.Println("Configuration updated with API tokens.")
+			}
 		}
 	}
 

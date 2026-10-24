@@ -33,7 +33,7 @@ type CredFlags struct {
 }
 
 const (
-	envPassword = "PTX_SSH_PASSWORD"
+	envPassword = "PTX_SSH_PASSWORD" // #nosec G101 -- environment variable name, not a credential
 	envCIFlag   = "PORTUNIX_CI"
 )
 

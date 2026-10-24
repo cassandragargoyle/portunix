@@ -23,8 +23,8 @@
             "version": "latest",
             "packages": ["libvirt-daemon-system", "libvirt-clients"],
             "postInstall": [
-              "sudo systemctl enable libvirtd",
-              "sudo systemctl start libvirtd"
+              "${sudo_prefix}systemctl enable libvirtd",
+              "${sudo_prefix}systemctl start libvirtd"
             ]
           },
           "dnf": {
@@ -32,8 +32,8 @@
             "version": "latest",
             "packages": ["libvirt-daemon", "libvirt-client"],
             "postInstall": [
-              "sudo systemctl enable libvirtd",
-              "sudo systemctl start libvirtd"
+              "${sudo_prefix}systemctl enable libvirtd",
+              "${sudo_prefix}systemctl start libvirtd"
             ]
           },
           "pacman": {
@@ -41,8 +41,8 @@
             "version": "latest",
             "packages": ["libvirt"],
             "postInstall": [
-              "sudo systemctl enable libvirtd",
-              "sudo systemctl start libvirtd"
+              "${sudo_prefix}systemctl enable libvirtd",
+              "${sudo_prefix}systemctl start libvirtd"
             ]
           }
         },

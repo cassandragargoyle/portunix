@@ -49,11 +49,7 @@
             "urls": {
               "x64": "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-x64",
               "arm64": "https://code.visualstudio.com/sha/download?build=stable&os=linux-deb-arm64"
-            },
-            "postInstall": [
-              "sudo dpkg -i ${downloaded_file}",
-              "sudo apt-get install -f"
-            ]
+            }
           },
           "snap": {
             "version": "latest",

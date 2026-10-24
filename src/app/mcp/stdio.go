@@ -286,9 +286,9 @@ func StartStdioWithConfig(config *ServerConfig) error {
 				continue
 			}
 
-			writer.Write(responseBytes)
-			writer.WriteByte('\n')
-			writer.Flush()
+			_, _ = writer.Write(responseBytes)
+			_ = writer.WriteByte('\n')
+			_ = writer.Flush()
 		}
 	}
 }

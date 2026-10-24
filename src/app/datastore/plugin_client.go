@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math"
 	"time"
 
 	"portunix.ai/app/plugins/proto"
@@ -144,8 +145,8 @@ func (p *PluginDatastore) Query(ctx context.Context, criteria QueryCriteria) ([]
 		Collection: criteria.Collection,
 		Filter:     stringFilter,
 		Sort:       stringSort,
-		Limit:      int32(criteria.Limit),
-		Offset:     int32(criteria.Offset),
+		Limit:      clampInt32(criteria.Limit),
+		Offset:     clampInt32(criteria.Offset),
 	}
 
 	resp, err := p.client.Query(ctx, req)
@@ -362,4 +363,15 @@ func (p *PluginDatastore) convertStringsToMetadata(stringMap map[string]string) 
 		}
 	}
 	return result
+}
+
+// clampInt32 converts n to int32, saturating at the int32 range
+func clampInt32(n int) int32 {
+	if n > math.MaxInt32 {
+		return math.MaxInt32
+	}
+	if n < math.MinInt32 {
+		return math.MinInt32
+	}
+	return int32(n)
 }

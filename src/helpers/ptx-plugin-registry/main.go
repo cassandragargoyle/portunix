@@ -181,7 +181,7 @@ func openListener(mode, bind string, port int, socket string) (net.Listener, fun
 			return nil, nil, fmt.Errorf("listen unix %s: %w", socket, err)
 		}
 		if err := os.Chmod(socket, 0o600); err != nil {
-			lis.Close()
+			_ = lis.Close()
 			return nil, nil, fmt.Errorf("chmod socket: %w", err)
 		}
 		return lis, func() { _ = os.Remove(socket) }, nil

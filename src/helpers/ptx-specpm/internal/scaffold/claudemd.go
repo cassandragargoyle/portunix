@@ -24,7 +24,7 @@ func AugmentClaudeMD(targetDir string) (path string, changed bool, err error) {
 	body, readErr := os.ReadFile(path)
 	if os.IsNotExist(readErr) {
 		header := []byte("# Project Instructions\n\n" + includeLine + "\n")
-		if werr := os.WriteFile(path, header, 0o644); werr != nil {
+		if werr := os.WriteFile(path, header, 0o644); werr != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 			return path, false, werr
 		}
 		return path, true, nil
@@ -40,7 +40,7 @@ func AugmentClaudeMD(targetDir string) (path string, changed bool, err error) {
 	}
 	body = append(body, '\n')
 	body = append(body, []byte(includeLine+"\n")...)
-	if werr := os.WriteFile(path, body, 0o644); werr != nil {
+	if werr := os.WriteFile(path, body, 0o644); werr != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 		return path, false, werr
 	}
 	return path, true, nil

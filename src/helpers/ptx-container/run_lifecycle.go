@@ -82,6 +82,11 @@ func extractLifecycleFlags(args []string) ([]string, LifecycleConfig, error) {
 			rest = append(rest, "--cpus", args[i+1])
 			i += 2
 			continue
+		case "--":
+			// Everything after the separator is the container command — a
+			// "--ttl" there is an argument for the command, not our flag
+			rest = append(rest, args[i:]...)
+			return rest, lc, nil
 		default:
 			rest = append(rest, args[i])
 			i++
@@ -99,35 +104,11 @@ func extractLifecycleFlags(args []string) ([]string, LifecycleConfig, error) {
 // the runtime --rm flag still applies (image is removed when the foreground
 // process exits, which is the same effect as our policy). For detached runs
 // we drop --rm so the lifecycle service can remove the container later.
-func runManagedContainer(runtime string, lc LifecycleConfig, runArgs []string) {
-	detached := containsAny(runArgs, "-d", "--detach")
-
-	args := []string{"run"}
-	if !detached {
-		// Preserve the existing TTY behaviour from runPodman/runDocker: only
-		// allocate -t when stdin is a terminal so non-interactive callers
-		// (CI, tests) don't get "input device is not a TTY".
-		if term.IsTerminal(int(os.Stdin.Fd())) {
-			args = append(args, "-it")
-		} else {
-			args = append(args, "-i")
-		}
-		// Detached managed runs cannot use --rm — the lifecycle service
-		// needs the container to exist past its own exit so it can poll
-		// expires_at. For foreground runs with policy=on-exit, --rm matches
-		// the policy semantics so we still want it.
-		if lc.resolvePolicy() == PolicyOnExit {
-			args = append(args, "--rm")
-		}
-	}
-
-	// Inject lifecycle labels and health command.
-	args = append(args, lc.ToLabels(time.Now())...)
-	args = append(args, lc.RuntimeHealthArgs()...)
-
-	// Then user flags + image + command. extractLifecycleFlags has stripped
-	// the lifecycle flags, so what's left is the runtime's native vocabulary.
-	args = append(args, runArgs...)
+//
+// runArgs must already have the "--" separator stripped; detached is decided
+// by the caller on the unstripped args (see hasDetachFlag).
+func runManagedContainer(runtime string, lc LifecycleConfig, runArgs []string, detached bool) {
+	args := buildManagedRunArgs(lc, runArgs, detached, term.IsTerminal(int(os.Stdin.Fd())), time.Now())
 
 	if debugMode {
 		fmt.Fprintf(os.Stderr, "🔍 DEBUG %s args: %v\n", runtime, args)
@@ -143,13 +124,32 @@ func runManagedContainer(runtime string, lc LifecycleConfig, runArgs []string) {
 	}
 }
 
-func containsAny(s []string, needles ...string) bool {
-	for _, item := range s {
-		for _, n := range needles {
-			if item == n {
-				return true
-			}
+// buildManagedRunArgs builds the runtime argument list for runManagedContainer
+func buildManagedRunArgs(lc LifecycleConfig, runArgs []string, detached, tty bool, now time.Time) []string {
+	args := []string{"run"}
+	if !detached {
+		// Preserve the existing TTY behaviour from runPodman/runDocker: only
+		// allocate -t when stdin is a terminal so non-interactive callers
+		// (CI, tests) don't get "input device is not a TTY".
+		if tty {
+			args = append(args, "-it")
+		} else {
+			args = append(args, "-i")
+		}
+		// Detached managed runs cannot use --rm — the lifecycle service
+		// needs the container to exist past its own exit so it can poll
+		// expires_at. For foreground runs with policy=on-exit, --rm matches
+		// the policy semantics so we still want it.
+		if lc.resolvePolicy() == PolicyOnExit {
+			args = append(args, "--rm")
 		}
 	}
-	return false
+
+	// Inject lifecycle labels and health command.
+	args = append(args, lc.ToLabels(now)...)
+	args = append(args, lc.RuntimeHealthArgs()...)
+
+	// Then user flags + image + command. extractLifecycleFlags has stripped
+	// the lifecycle flags, so what's left is the runtime's native vocabulary.
+	return append(args, runArgs...)
 }

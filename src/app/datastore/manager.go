@@ -381,7 +381,7 @@ func (m *Manager) ReloadConfig(ctx context.Context, newConfig *Config) error {
 
 	// Close existing datastores
 	for _, datastore := range m.datastores {
-		datastore.Close(ctx)
+		_ = datastore.Close(ctx)
 	}
 
 	// Update config and reinitialize

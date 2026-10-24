@@ -116,7 +116,7 @@ func (f *FileAuditLogger) LogEvent(event *AuditEvent) error {
 	}
 
 	logFile := f.getLogFileName(event.Timestamp)
-	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0640)
+	file, err := os.OpenFile(logFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to open audit log file: %w", err)
 	}
@@ -133,7 +133,7 @@ func (f *FileAuditLogger) LogEvent(event *AuditEvent) error {
 
 	// Check if file rotation is needed
 	if stat, err := file.Stat(); err == nil && stat.Size() > f.maxFileSize {
-		f.rotateLogFile(logFile)
+		_ = f.rotateLogFile(logFile)
 	}
 
 	return nil

@@ -121,7 +121,7 @@ func SaveCategoryRegistry(projectDir, area string, registry *CategoryRegistry) e
 
 	// Ensure area directory exists
 	areaDir := getVoiceDir(projectDir, area)
-	if err := os.MkdirAll(areaDir, 0755); err != nil {
+	if err := ensureSharedDir(areaDir); err != nil {
 		return fmt.Errorf("failed to create area directory: %w", err)
 	}
 
@@ -133,7 +133,7 @@ func SaveCategoryRegistry(projectDir, area string, registry *CategoryRegistry) e
 	}
 
 	filePath := GetCategoriesFilePath(projectDir, area)
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
+	if err := writeSharedFile(filePath, data); err != nil {
 		return fmt.Errorf("failed to write categories file: %w", err)
 	}
 

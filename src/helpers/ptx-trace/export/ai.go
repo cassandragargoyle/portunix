@@ -439,5 +439,5 @@ func (e *AIExporter) rebuildIndex(sessionID string) {
 		return
 	}
 
-	e.index.RebuildSessionIndex(sessionID, events, session)
+	_ = e.index.RebuildSessionIndex(sessionID, events, session)
 }

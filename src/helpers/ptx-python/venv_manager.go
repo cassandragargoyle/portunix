@@ -50,7 +50,7 @@ func NewVenvManager() (*VenvManager, error) {
 	venvBaseDir := filepath.Join(homeDir, ".portunix", "python", "venvs")
 
 	// Create base directory if it doesn't exist
-	if err := os.MkdirAll(venvBaseDir, 0755); err != nil {
+	if err := os.MkdirAll(venvBaseDir, 0755); err != nil { // #nosec G301 -- Python environments are shared with other tools and users
 		return nil, fmt.Errorf("failed to create venv base directory: %v", err)
 	}
 

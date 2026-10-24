@@ -173,7 +173,7 @@ func editConfiguration() error {
 		input, _ = reader.ReadString('\n')
 		input = strings.TrimSpace(input)
 		if input != "" {
-			fmt.Sscanf(input, "%d", &config.Port)
+			_, _ = fmt.Sscanf(input, "%d", &config.Port)
 		}
 
 		fmt.Printf("\n3. Protocol (current: %s)\n", config.Protocol)

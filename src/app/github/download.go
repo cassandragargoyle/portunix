@@ -40,7 +40,7 @@ func (d *DownloadManager) DownloadFile(url, dest string) error {
 func (d *DownloadManager) DownloadWithProgress(url, dest string, progress ProgressCallback) error {
 	// Create destination directory if it doesn't exist
 	destDir := filepath.Dir(dest)
-	if err := os.MkdirAll(destDir, 0755); err != nil {
+	if err := os.MkdirAll(destDir, 0755); err != nil { // #nosec G301 -- downloaded release assets are public
 		return fmt.Errorf("failed to create destination directory: %w", err)
 	}
 

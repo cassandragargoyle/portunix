@@ -59,7 +59,7 @@ func AddAptRepository(repository string, keyUrl string) error {
 		}
 
 		// Cleanup temp file
-		os.Remove(tmpFile)
+		_ = os.Remove(tmpFile)
 	}
 
 	// Add repository to sources.list.d

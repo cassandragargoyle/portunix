@@ -129,7 +129,7 @@ func addToUnixPath(binPath string) error {
 	}
 
 	// Append PATH export
-	file, err := os.OpenFile(configFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(configFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644) // #nosec G302 -- shell startup files are world-readable by convention
 	if err != nil {
 		return err
 	}
@@ -226,7 +226,7 @@ func removeFromUnixPath(binPath string) error {
 		// Write back if changes were made
 		newContent := strings.Join(newLines, "\n")
 		if newContent != string(content) {
-			if err := os.WriteFile(configFile, []byte(newContent), 0644); err != nil {
+			if err := os.WriteFile(configFile, []byte(newContent), 0644); err != nil { // #nosec G306 -- shell startup files are world-readable by convention
 				return err
 			}
 			fmt.Printf("Removed from %s\n", configFile)

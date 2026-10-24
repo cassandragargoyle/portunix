@@ -20,6 +20,22 @@ const (
 	githubAPI   = "https://api.github.com"
 )
 
+// maxExtractedBinarySize caps a single binary extracted from a release archive
+// to stop decompression bombs
+const maxExtractedBinarySize int64 = 1 << 30
+
+// copyLimited copies src to dst and fails once more than limit bytes were written
+func copyLimited(dst io.Writer, src io.Reader, limit int64) error {
+	written, err := io.CopyN(dst, src, limit+1)
+	if err != nil && err != io.EOF {
+		return err
+	}
+	if written > limit {
+		return fmt.Errorf("extracted file exceeds the %d byte limit", limit)
+	}
+	return nil
+}
+
 // BinaryInfo represents information about an extracted binary
 type BinaryInfo struct {
 	Name string // Binary name (e.g., "portunix", "ptx-container")
@@ -216,7 +232,7 @@ func DownloadUpdate(release *ReleaseInfo) (string, error) {
 		return "", fmt.Errorf("failed to create temp file: %w", err)
 	}
 	defer os.Remove(tmpArchive.Name())
-	tmpArchive.Close()
+	_ = tmpArchive.Close()
 
 	// Download the archive
 	client := &http.Client{
@@ -234,13 +250,13 @@ func DownloadUpdate(release *ReleaseInfo) (string, error) {
 	}
 
 	// Save archive to file
-	out, err := os.OpenFile(tmpArchive.Name(), os.O_WRONLY|os.O_TRUNC, 0755)
+	out, err := os.OpenFile(tmpArchive.Name(), os.O_WRONLY|os.O_TRUNC, 0755) // #nosec G302 -- binaries must be executable by all users
 	if err != nil {
 		return "", fmt.Errorf("failed to open temp file: %w", err)
 	}
 
 	_, err = io.Copy(out, resp.Body)
-	out.Close()
+	_ = out.Close()
 	if err != nil {
 		return "", fmt.Errorf("failed to save download: %w", err)
 	}
@@ -267,7 +283,7 @@ func extractBinary(archivePath string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("failed to create temp binary: %w", err)
 	}
-	tmpBinary.Close()
+	_ = tmpBinary.Close()
 
 	if runtime.GOOS == "windows" {
 		// Extract from zip
@@ -296,13 +312,13 @@ func extractFromZip(zipPath, destPath string) (string, error) {
 			defer rc.Close()
 
 			// Write to destination
-			out, err := os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+			out, err := os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755) // #nosec G302 -- binaries must be executable by all users
 			if err != nil {
 				return "", fmt.Errorf("failed to create output file: %w", err)
 			}
 			defer out.Close()
 
-			_, err = io.Copy(out, rc)
+			err = copyLimited(out, rc, maxExtractedBinarySize)
 			if err != nil {
 				return "", fmt.Errorf("failed to extract file: %w", err)
 			}
@@ -345,19 +361,19 @@ func extractFromTarGz(tarGzPath, destPath string) (string, error) {
 		// Check if this is the portunix binary
 		if strings.Contains(header.Name, "portunix") && header.Typeflag == tar.TypeReg {
 			// Write to destination
-			out, err := os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+			out, err := os.OpenFile(destPath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755) // #nosec G302 -- binaries must be executable by all users
 			if err != nil {
 				return "", fmt.Errorf("failed to create output file: %w", err)
 			}
 			defer out.Close()
 
-			_, err = io.Copy(out, tarReader)
+			err = copyLimited(out, tarReader, maxExtractedBinarySize)
 			if err != nil {
 				return "", fmt.Errorf("failed to extract file: %w", err)
 			}
 
 			// Set executable permissions
-			if err := os.Chmod(destPath, 0755); err != nil {
+			if err := os.Chmod(destPath, 0755); err != nil { // #nosec G302 -- binaries must be executable by all users
 				return "", fmt.Errorf("failed to set permissions: %w", err)
 			}
 
@@ -418,40 +434,40 @@ func extractAllFromZip(zipPath string) ([]*BinaryInfo, error) {
 				if err != nil {
 					// Clean up any previously extracted files
 					for _, binary := range binaries {
-						os.Remove(binary.Path)
+						_ = os.Remove(binary.Path)
 					}
 					return nil, fmt.Errorf("failed to create temp file for %s: %w", expectedBinary, err)
 				}
-				tmpFile.Close()
+				_ = tmpFile.Close()
 
 				// Extract the binary
 				rc, err := file.Open()
 				if err != nil {
-					os.Remove(tmpFile.Name())
+					_ = os.Remove(tmpFile.Name())
 					for _, binary := range binaries {
-						os.Remove(binary.Path)
+						_ = os.Remove(binary.Path)
 					}
 					return nil, fmt.Errorf("failed to open %s in zip: %w", expectedBinary, err)
 				}
 
-				out, err := os.OpenFile(tmpFile.Name(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+				out, err := os.OpenFile(tmpFile.Name(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755) // #nosec G302 -- binaries must be executable by all users
 				if err != nil {
-					rc.Close()
-					os.Remove(tmpFile.Name())
+					_ = rc.Close()
+					_ = os.Remove(tmpFile.Name())
 					for _, binary := range binaries {
-						os.Remove(binary.Path)
+						_ = os.Remove(binary.Path)
 					}
 					return nil, fmt.Errorf("failed to create output file for %s: %w", expectedBinary, err)
 				}
 
-				_, err = io.Copy(out, rc)
-				rc.Close()
-				out.Close()
+				err = copyLimited(out, rc, maxExtractedBinarySize)
+				_ = rc.Close()
+				_ = out.Close()
 
 				if err != nil {
-					os.Remove(tmpFile.Name())
+					_ = os.Remove(tmpFile.Name())
 					for _, binary := range binaries {
-						os.Remove(binary.Path)
+						_ = os.Remove(binary.Path)
 					}
 					return nil, fmt.Errorf("failed to extract %s: %w", expectedBinary, err)
 				}
@@ -469,7 +485,7 @@ func extractAllFromZip(zipPath string) ([]*BinaryInfo, error) {
 		// Main binary is required, helpers are optional
 		if !found && expectedBinary == "portunix" {
 			for _, binary := range binaries {
-				os.Remove(binary.Path)
+				_ = os.Remove(binary.Path)
 			}
 			return nil, fmt.Errorf("main binary %s not found in zip", expectedBinary)
 		}
@@ -515,7 +531,7 @@ func extractAllFromTarGz(tarGzPath string) ([]*BinaryInfo, error) {
 		if err != nil {
 			// Clean up any extracted files
 			for _, binary := range binaries {
-				os.Remove(binary.Path)
+				_ = os.Remove(binary.Path)
 			}
 			return nil, fmt.Errorf("failed to read tar: %w", err)
 		}
@@ -530,38 +546,38 @@ func extractAllFromTarGz(tarGzPath string) ([]*BinaryInfo, error) {
 					tmpFile, err := os.CreateTemp("", expectedBinary+"-*")
 					if err != nil {
 						for _, binary := range binaries {
-							os.Remove(binary.Path)
+							_ = os.Remove(binary.Path)
 						}
 						return nil, fmt.Errorf("failed to create temp file for %s: %w", expectedBinary, err)
 					}
-					tmpFile.Close()
+					_ = tmpFile.Close()
 
 					// Extract the binary
-					out, err := os.OpenFile(tmpFile.Name(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755)
+					out, err := os.OpenFile(tmpFile.Name(), os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0755) // #nosec G302 -- binaries must be executable by all users
 					if err != nil {
-						os.Remove(tmpFile.Name())
+						_ = os.Remove(tmpFile.Name())
 						for _, binary := range binaries {
-							os.Remove(binary.Path)
+							_ = os.Remove(binary.Path)
 						}
 						return nil, fmt.Errorf("failed to create output file for %s: %w", expectedBinary, err)
 					}
 
-					_, err = io.Copy(out, tarReader)
-					out.Close()
+					err = copyLimited(out, tarReader, maxExtractedBinarySize)
+					_ = out.Close()
 
 					if err != nil {
-						os.Remove(tmpFile.Name())
+						_ = os.Remove(tmpFile.Name())
 						for _, binary := range binaries {
-							os.Remove(binary.Path)
+							_ = os.Remove(binary.Path)
 						}
 						return nil, fmt.Errorf("failed to extract %s: %w", expectedBinary, err)
 					}
 
 					// Set executable permissions
-					if err := os.Chmod(tmpFile.Name(), 0755); err != nil {
-						os.Remove(tmpFile.Name())
+					if err := os.Chmod(tmpFile.Name(), 0755); err != nil { // #nosec G302 -- binaries must be executable by all users
+						_ = os.Remove(tmpFile.Name())
 						for _, binary := range binaries {
-							os.Remove(binary.Path)
+							_ = os.Remove(binary.Path)
 						}
 						return nil, fmt.Errorf("failed to set permissions for %s: %w", expectedBinary, err)
 					}
@@ -583,7 +599,7 @@ func extractAllFromTarGz(tarGzPath string) ([]*BinaryInfo, error) {
 	// Main binary is required
 	if !foundBinaries["portunix"] {
 		for _, binary := range binaries {
-			os.Remove(binary.Path)
+			_ = os.Remove(binary.Path)
 		}
 		return nil, fmt.Errorf("main binary portunix not found in tar.gz")
 	}

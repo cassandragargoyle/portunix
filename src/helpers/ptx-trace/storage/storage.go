@@ -54,7 +54,7 @@ func NewStorageWithPath(baseDir string) (*Storage, error) {
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			return nil, fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
@@ -85,7 +85,7 @@ func (s *Storage) CreateSession(session *models.Session) error {
 	}
 
 	for _, dir := range dirs {
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0750); err != nil {
 			return fmt.Errorf("failed to create directory %s: %w", dir, err)
 		}
 	}
@@ -188,7 +188,7 @@ func (s *Storage) WriteEvent(sessionID string, event *models.TraceEvent) error {
 	}
 
 	// Append event as NDJSON
-	f, err := os.OpenFile(chunkFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	f, err := os.OpenFile(chunkFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
 	if err != nil {
 		return fmt.Errorf("failed to open chunk file: %w", err)
 	}
@@ -351,7 +351,7 @@ func (s *Storage) writeJSON(path string, data interface{}) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, jsonData, 0644)
+	return os.WriteFile(path, jsonData, 0600)
 }
 
 // DeleteSession deletes a session and all its data

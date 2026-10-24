@@ -27,7 +27,7 @@ type Backend struct {
 func NewBackend() *Backend {
 	homeDir, _ := os.UserHomeDir()
 	vmDir := filepath.Join(homeDir, ".portunix", "vms")
-	os.MkdirAll(vmDir, 0755)
+	_ = os.MkdirAll(vmDir, 0755) // #nosec G301 -- VM files are read by hypervisors running as other users
 
 	backend := &Backend{
 		vmDir: vmDir,
@@ -70,7 +70,7 @@ func (b *Backend) GetVersion() (string, error) {
 // Create creates a new VM
 func (b *Backend) Create(config *types.VMConfig) error {
 	vmPath := filepath.Join(b.vmDir, config.Name)
-	if err := os.MkdirAll(vmPath, 0755); err != nil {
+	if err := os.MkdirAll(vmPath, 0755); err != nil { // #nosec G301 -- VM files are read by hypervisors running as other users
 		return fmt.Errorf("failed to create VM directory: %w", err)
 	}
 
@@ -173,7 +173,7 @@ func (b *Backend) Create(config *types.VMConfig) error {
 		return fmt.Errorf("failed to marshal config: %w", err)
 	}
 
-	return os.WriteFile(configPath, configData, 0644)
+	return os.WriteFile(configPath, configData, 0600)
 }
 
 // Start starts a VM
@@ -230,7 +230,7 @@ func (b *Backend) Resume(vmName string) error {
 // Delete deletes a VM
 func (b *Backend) Delete(vmName string, keepDisk bool) error {
 	// Stop VM first
-	b.Stop(vmName, true)
+	_ = b.Stop(vmName, true)
 
 	if keepDisk {
 		// Unregister VM but keep disk

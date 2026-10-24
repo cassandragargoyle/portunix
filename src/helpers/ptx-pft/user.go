@@ -77,7 +77,7 @@ func SaveUserRegistry(projectDir string, registry *UserRegistry) error {
 		return fmt.Errorf("failed to marshal users: %w", err)
 	}
 
-	if err := os.WriteFile(filePath, data, 0644); err != nil {
+	if err := writeSharedFile(filePath, data); err != nil {
 		return fmt.Errorf("failed to write users.json: %w", err)
 	}
 

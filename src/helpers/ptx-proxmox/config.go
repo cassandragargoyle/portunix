@@ -85,11 +85,11 @@ func saveConfig(cfg *Config) (string, error) {
 		}
 	}()
 	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return path, fmt.Errorf("write temp file: %w", err)
 	}
 	if err := tmp.Chmod(0o600); err != nil {
-		tmp.Close()
+		_ = tmp.Close()
 		return path, fmt.Errorf("chmod temp file: %w", err)
 	}
 	if err := tmp.Close(); err != nil {

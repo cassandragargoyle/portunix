@@ -23,7 +23,7 @@ func CreateVm(vmtype string, vmname string, iso string, basefolder string) ([]by
 func createQemuVm(vmname string, iso string, basefolder string) ([]byte, error) {
 	// Create VM directory
 	vmDir := filepath.Join(basefolder, vmname)
-	if err := os.MkdirAll(vmDir, 0755); err != nil {
+	if err := os.MkdirAll(vmDir, 0755); err != nil { // #nosec G301 -- VM files are read by hypervisors running as other users
 		return nil, fmt.Errorf("failed to create VM directory: %w", err)
 	}
 
@@ -66,7 +66,7 @@ func createQemuVm(vmname string, iso string, basefolder string) ([]byte, error) 
 			uefiVarsPath := filepath.Join(vmDir, "OVMF_VARS.fd")
 			// Copy UEFI vars template
 			copyCmd := exec.Command("cp", "/usr/share/OVMF/OVMF_VARS.fd", uefiVarsPath)
-			copyCmd.Run() // Ignore error - fallback will work
+			_ = copyCmd.Run() // Ignore error - fallback will work
 
 			qemuArgs = append(qemuArgs,
 				"-drive", fmt.Sprintf("if=pflash,format=raw,readonly=on,file=%s", uefiCode),
@@ -95,7 +95,7 @@ func createQemuVm(vmname string, iso string, basefolder string) ([]byte, error) 
 	script := fmt.Sprintf("#!/bin/bash\n%s\n",
 		fmt.Sprintf("%s", joinArgs(qemuArgs)))
 
-	if err := os.WriteFile(scriptPath, []byte(script), 0755); err != nil {
+	if err := os.WriteFile(scriptPath, []byte(script), 0700); err != nil { // #nosec G306 -- generated run script must be executable
 		return nil, fmt.Errorf("failed to create run script: %w", err)
 	}
 

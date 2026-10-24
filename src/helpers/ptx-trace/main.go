@@ -552,7 +552,7 @@ Examples:
 				duration,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 	},
 }
 
@@ -827,7 +827,7 @@ Examples:
 				errorInfo,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 
 		fmt.Printf("\nTotal: %d events\n", len(results))
 	},
@@ -1102,7 +1102,7 @@ Examples:
 		}
 
 		if output != "" {
-			if err := os.WriteFile(output, []byte(result), 0644); err != nil {
+			if err := os.WriteFile(output, []byte(result), 0600); err != nil {
 				fmt.Fprintf(os.Stderr, "Error writing file: %v\n", err)
 				os.Exit(1)
 			}
@@ -1172,7 +1172,7 @@ Examples:
 		}
 
 		if output != "" {
-			if err := os.WriteFile(output, data, 0644); err != nil {
+			if err := os.WriteFile(output, data, 0600); err != nil {
 				fmt.Fprintf(os.Stderr, "Error writing file: %v\n", err)
 				os.Exit(1)
 			}
@@ -1184,7 +1184,7 @@ Examples:
 }
 
 // trace export db - export to database
-var exportDBCmd = &cobra.Command{
+var exportDBCmd = &cobra.Command{ // #nosec G101 -- help text shows the connection string format with placeholder values
 	Use:   "db [session-id]",
 	Short: "Export session to PostgreSQL or MySQL database",
 	Long: `Export a trace session to a SQL database (PostgreSQL or MySQL).
@@ -1325,7 +1325,7 @@ func parseQueryString(query string) *index.QueryFilter {
 			// Parse duration_us > N
 			val := extractValue(part)
 			var dur int64
-			fmt.Sscanf(val, "%d", &dur)
+			_, _ = fmt.Sscanf(val, "%d", &dur)
 			filter.MinDuration = dur
 		}
 	}
@@ -1382,7 +1382,7 @@ func rebuildSessionIndex(store *storage.Storage, idx *index.Index, sessionID str
 		return
 	}
 
-	idx.RebuildSessionIndex(sessionID, events, session)
+	_ = idx.RebuildSessionIndex(sessionID, events, session)
 }
 
 // getSeverityIcon returns an icon for error severity
@@ -1472,7 +1472,7 @@ Examples:
 				strings.Join(r.Channels, ", "),
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 
 		fmt.Printf("\nConfigured channels: %d\n", len(config.Alerts.Channels))
 		for name, ch := range config.Alerts.Channels {
@@ -1544,7 +1544,7 @@ Examples:
 				session,
 			)
 		}
-		w.Flush()
+		_ = w.Flush()
 
 		fmt.Printf("\nTotal alerts: %d\n", history.Count())
 	},
@@ -1786,7 +1786,7 @@ Examples:
 		if !force {
 			fmt.Print("Are you sure you want to clear all alert history? (y/N): ")
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if response != "y" && response != "Y" {
 				fmt.Println("Cancelled")
 				return

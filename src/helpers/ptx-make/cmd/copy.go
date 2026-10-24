@@ -32,7 +32,7 @@ func RunCopy(args []string) error {
 		}
 
 		// Ensure destination directory exists
-		if err := os.MkdirAll(dst, 0755); err != nil {
+		if err := os.MkdirAll(dst, 0755); err != nil { // #nosec G301 -- build helper mirrors mkdir -p, artifacts must be readable by all users
 			return fmt.Errorf("failed to create destination: %w", err)
 		}
 
@@ -70,7 +70,7 @@ func copyFile(src, dst string) error {
 		dst = filepath.Join(dst, filepath.Base(src))
 	} else {
 		// Ensure parent directory exists
-		if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil {
+		if err := os.MkdirAll(filepath.Dir(dst), 0755); err != nil { // #nosec G301 -- build helper mirrors mkdir -p, artifacts must be readable by all users
 			return err
 		}
 	}

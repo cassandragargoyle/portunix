@@ -69,12 +69,12 @@ func ExecutePlaybook(filePath string, options ExecutionOptions) (*ExecutionResul
 
 	// Start audit logging for this execution
 	startTime := time.Now()
-	auditMgr.LogPlaybookExecution(options.User, options.Environment, filePath, true, 0, nil)
+	_ = auditMgr.LogPlaybookExecution(options.User, options.Environment, filePath, true, 0, nil)
 
 	// Parse the playbook file first
 	ptxbook, err := ParsePtxbookFile(filePath)
 	if err != nil {
-		auditMgr.LogPlaybookExecution(options.User, options.Environment, filePath, false, time.Since(startTime), err)
+		_ = auditMgr.LogPlaybookExecution(options.User, options.Environment, filePath, false, time.Since(startTime), err)
 		return &ExecutionResult{
 			Success: false,
 			Message: "Failed to parse playbook",
@@ -91,7 +91,7 @@ func ExecutePlaybook(filePath string, options ExecutionOptions) (*ExecutionResul
 	})
 
 	if !accessResult.Granted {
-		auditMgr.LogPlaybookExecution(options.User, options.Environment, filePath, false, time.Since(startTime),
+		_ = auditMgr.LogPlaybookExecution(options.User, options.Environment, filePath, false, time.Since(startTime),
 			fmt.Errorf("access denied: %s", accessResult.Reason))
 		return &ExecutionResult{
 			Success: false,
@@ -117,7 +117,7 @@ func ExecutePlaybook(filePath string, options ExecutionOptions) (*ExecutionResul
 
 	// Phase 4: Process secret references in playbook
 	if err := secretMgr.ProcessSecretReferences(ptxbook); err != nil {
-		auditMgr.LogPlaybookExecution(options.User, options.Environment, filePath, false, time.Since(startTime), err)
+		_ = auditMgr.LogPlaybookExecution(options.User, options.Environment, filePath, false, time.Since(startTime), err)
 		return &ExecutionResult{
 			Success: false,
 			Message: "Failed to process secret references",
@@ -207,7 +207,7 @@ func ExecutePlaybook(filePath string, options ExecutionOptions) (*ExecutionResul
 				}
 			}
 
-			return result, fmt.Errorf(errMsg)
+			return result, fmt.Errorf("%s", errMsg)
 		}
 
 		if err := executeAnsiblePlaybooksWithRollback(ptxbook, options, envCtx, rollbackManager); err != nil {
@@ -260,7 +260,7 @@ func ExecutePlaybook(filePath string, options ExecutionOptions) (*ExecutionResul
 	}
 
 	// Phase 4: Final audit logging
-	auditMgr.LogPlaybookExecution(options.User, options.Environment, filePath, result.Success, time.Since(startTime), nil)
+	_ = auditMgr.LogPlaybookExecution(options.User, options.Environment, filePath, result.Success, time.Since(startTime), nil)
 
 	return result, nil
 }
@@ -508,7 +508,7 @@ func extractPlatformArchive(platform string, verbose bool) (string, error) {
 
 	// Create cache directory
 	cacheDir := filepath.Join(execDir, "cache", platform)
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0755); err != nil { // #nosec G301 -- installed software must be readable by all users
 		return "", fmt.Errorf("failed to create cache directory: %v", err)
 	}
 
@@ -729,7 +729,7 @@ func copyBinariesToContainer(containerName string, options ExecutionOptions, por
 		} else {
 			chmodCmd = exec.Command(portunixPath, "container", "exec", containerName, "chmod", "+x", "/usr/local/bin/"+binaryName)
 		}
-		chmodCmd.Run()
+		_ = chmodCmd.Run()
 
 		if options.Verbose {
 			fmt.Printf("   ✓ Copied %s\n", binaryName)
@@ -756,7 +756,7 @@ func copyBinariesToContainer(containerName string, options ExecutionOptions, por
 		installCACmd.Stdout = os.Stdout
 		installCACmd.Stderr = os.Stderr
 	}
-	installCACmd.Run() // Ignore errors, some distros may not need this
+	_ = installCACmd.Run() // Ignore errors, some distros may not need this
 
 	return nil
 }
@@ -896,7 +896,7 @@ func setupContainerEnvironment(options ExecutionOptions) (*EnvironmentContext, e
 	} else {
 		mkdirCmd = exec.Command(portunixPath, "container", "exec", containerName, "mkdir", "-p", workDir)
 	}
-	mkdirCmd.Run() // Ignore errors if directory already exists
+	_ = mkdirCmd.Run() // Ignore errors if directory already exists
 
 	if options.Verbose {
 		fmt.Printf("   Container initialized\n")
@@ -943,7 +943,7 @@ func cleanupContainer(portunixPath, containerName, runtime string, useDirectRunt
 	} else {
 		cmd = exec.Command(portunixPath, "container", "rm", "-f", containerName)
 	}
-	cmd.Run() // Ignore errors
+	_ = cmd.Run() // Ignore errors
 }
 
 // setupVirtEnvironment configures a virtual machine for playbook execution
@@ -1132,7 +1132,7 @@ func ensureContainerRuntime(options ExecutionOptions) (string, error) {
 		fmt.Printf("\n🤔 Would you like to try installing Podman instead? (y/N): ")
 
 		var response string
-		fmt.Scanln(&response)
+		_, _ = fmt.Scanln(&response)
 		response = strings.ToLower(strings.TrimSpace(response))
 
 		if response != "y" && response != "yes" {
@@ -1300,7 +1300,7 @@ func ensureDockerDaemonRunning(verbose bool, portunixPath string) error {
 
 		// Start Docker Desktop
 		startCmd := exec.Command("cmd", "/C", "start", "", dockerDesktopPath)
-		startCmd.Run() // Ignore errors
+		_ = startCmd.Run() // Ignore errors
 
 		fmt.Println("   ⏳ Waiting for Docker daemon to start (up to 5 minutes)...")
 
@@ -1358,7 +1358,7 @@ func offerDockerInstallation(verbose bool, portunixPath string) error {
 	fmt.Print("Your choice (1/2/3): ")
 
 	var response string
-	fmt.Scanln(&response)
+	_, _ = fmt.Scanln(&response)
 	response = strings.TrimSpace(response)
 
 	switch response {
@@ -1420,7 +1420,7 @@ func createTemporaryInventory(inventoryContent string) (string, error) {
 	defer tmpFile.Close()
 
 	if _, err := tmpFile.WriteString(inventoryContent); err != nil {
-		os.Remove(tmpFile.Name())
+		_ = os.Remove(tmpFile.Name())
 		return "", fmt.Errorf("failed to write inventory content: %v", err)
 	}
 

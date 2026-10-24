@@ -49,8 +49,7 @@
             },
             "extractTo": "/usr/local",
             "postInstall": [
-              "sudo tar -C /usr/local -xzf ${downloaded_file}",
-              "echo 'export PATH=$PATH:/usr/local/go/bin' | sudo tee /etc/profile.d/go.sh"
+              "echo 'export PATH=$PATH:/usr/local/go/bin' | ${sudo_prefix}tee /etc/profile.d/go.sh"
             ]
           }
         },

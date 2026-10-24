@@ -134,7 +134,7 @@ func createQFDProject(projectPath, projectName string) error {
 	data := ProjectTemplateData{ProjectName: projectName}
 
 	// Create main directory
-	if err := os.MkdirAll(projectPath, 0755); err != nil {
+	if err := ensureSharedDir(projectPath); err != nil {
 		return fmt.Errorf("failed to create project directory: %w", err)
 	}
 
@@ -152,19 +152,19 @@ func createQFDProject(projectPath, projectName string) error {
 
 	for _, vc := range voiceConfigs {
 		voicePath := filepath.Join(projectPath, vc.name)
-		if err := os.MkdirAll(voicePath, 0755); err != nil {
+		if err := ensureSharedDir(voicePath); err != nil {
 			return fmt.Errorf("failed to create %s directory: %w", vc.name, err)
 		}
 
 		// Create subdirectories with .gitkeep
 		for _, subdir := range vc.subdirs {
 			subdirPath := filepath.Join(voicePath, subdir)
-			if err := os.MkdirAll(subdirPath, 0755); err != nil {
+			if err := ensureSharedDir(subdirPath); err != nil {
 				return fmt.Errorf("failed to create %s/%s directory: %w", vc.name, subdir, err)
 			}
 			// Create .gitkeep
 			gitkeepPath := filepath.Join(subdirPath, ".gitkeep")
-			if err := os.WriteFile(gitkeepPath, []byte{}, 0644); err != nil {
+			if err := writeSharedFile(gitkeepPath, []byte{}); err != nil {
 				return fmt.Errorf("failed to create .gitkeep in %s/%s: %w", vc.name, subdir, err)
 			}
 		}
@@ -175,7 +175,7 @@ func createQFDProject(projectPath, projectName string) error {
 			return fmt.Errorf("failed to render %s README: %w", vc.name, err)
 		}
 		readmePath := filepath.Join(voicePath, "README.md")
-		if err := os.WriteFile(readmePath, []byte(readme), 0644); err != nil {
+		if err := writeSharedFile(readmePath, []byte(readme)); err != nil {
 			return fmt.Errorf("failed to write %s README: %w", vc.name, err)
 		}
 
@@ -184,34 +184,34 @@ func createQFDProject(projectPath, projectName string) error {
 
 	// Create requirements directory
 	reqPath := filepath.Join(projectPath, "requirements")
-	if err := os.MkdirAll(reqPath, 0755); err != nil {
+	if err := ensureSharedDir(reqPath); err != nil {
 		return fmt.Errorf("failed to create requirements directory: %w", err)
 	}
-	if err := os.WriteFile(filepath.Join(reqPath, ".gitkeep"), []byte{}, 0644); err != nil {
+	if err := writeSharedFile(filepath.Join(reqPath, ".gitkeep"), []byte{}); err != nil {
 		return fmt.Errorf("failed to create .gitkeep in requirements: %w", err)
 	}
 	reqReadme, err := renderTemplate("qfd/requirements-README.md.tmpl", data)
 	if err != nil {
 		return fmt.Errorf("failed to render requirements README: %w", err)
 	}
-	if err := os.WriteFile(filepath.Join(reqPath, "README.md"), []byte(reqReadme), 0644); err != nil {
+	if err := writeSharedFile(filepath.Join(reqPath, "README.md"), []byte(reqReadme)); err != nil {
 		return fmt.Errorf("failed to write requirements README: %w", err)
 	}
 	fmt.Println("  Created: requirements/")
 
 	// Create matrices directory
 	matPath := filepath.Join(projectPath, "matrices")
-	if err := os.MkdirAll(matPath, 0755); err != nil {
+	if err := ensureSharedDir(matPath); err != nil {
 		return fmt.Errorf("failed to create matrices directory: %w", err)
 	}
-	if err := os.WriteFile(filepath.Join(matPath, ".gitkeep"), []byte{}, 0644); err != nil {
+	if err := writeSharedFile(filepath.Join(matPath, ".gitkeep"), []byte{}); err != nil {
 		return fmt.Errorf("failed to create .gitkeep in matrices: %w", err)
 	}
 	matReadme, err := renderTemplate("qfd/matrices-README.md.tmpl", data)
 	if err != nil {
 		return fmt.Errorf("failed to render matrices README: %w", err)
 	}
-	if err := os.WriteFile(filepath.Join(matPath, "README.md"), []byte(matReadme), 0644); err != nil {
+	if err := writeSharedFile(filepath.Join(matPath, "README.md"), []byte(matReadme)); err != nil {
 		return fmt.Errorf("failed to write matrices README: %w", err)
 	}
 	fmt.Println("  Created: matrices/")
@@ -221,7 +221,7 @@ func createQFDProject(projectPath, projectName string) error {
 	if err != nil {
 		return fmt.Errorf("failed to render main README: %w", err)
 	}
-	if err := os.WriteFile(filepath.Join(projectPath, "README.md"), []byte(mainReadme), 0644); err != nil {
+	if err := writeSharedFile(filepath.Join(projectPath, "README.md"), []byte(mainReadme)); err != nil {
 		return fmt.Errorf("failed to write main README: %w", err)
 	}
 	fmt.Println("  Created: README.md")
@@ -232,7 +232,7 @@ func createQFDProject(projectPath, projectName string) error {
 // createBasicProject creates a minimal project with only Voice directories
 func createBasicProject(projectPath, projectName string) error {
 	// Create main directory
-	if err := os.MkdirAll(projectPath, 0755); err != nil {
+	if err := ensureSharedDir(projectPath); err != nil {
 		return fmt.Errorf("failed to create project directory: %w", err)
 	}
 
@@ -240,12 +240,12 @@ func createBasicProject(projectPath, projectName string) error {
 	voices := []string{"voc", "vos", "vob", "voe"}
 	for _, voice := range voices {
 		voicePath := filepath.Join(projectPath, voice)
-		if err := os.MkdirAll(voicePath, 0755); err != nil {
+		if err := ensureSharedDir(voicePath); err != nil {
 			return fmt.Errorf("failed to create %s directory: %w", voice, err)
 		}
 		// Create .gitkeep
 		gitkeepPath := filepath.Join(voicePath, ".gitkeep")
-		if err := os.WriteFile(gitkeepPath, []byte{}, 0644); err != nil {
+		if err := writeSharedFile(gitkeepPath, []byte{}); err != nil {
 			return fmt.Errorf("failed to create .gitkeep in %s: %w", voice, err)
 		}
 		fmt.Printf("  Created: %s/\n", voice)
@@ -253,7 +253,7 @@ func createBasicProject(projectPath, projectName string) error {
 
 	// Create simple README
 	readme := fmt.Sprintf("# %s\n\nProduct Feedback Tool project.\n\n## Structure\n\n- `voc/` - Voice of Customer\n- `vos/` - Voice of Stakeholder\n- `vob/` - Voice of Business\n- `voe/` - Voice of Engineering\n", projectName)
-	if err := os.WriteFile(filepath.Join(projectPath, "README.md"), []byte(readme), 0644); err != nil {
+	if err := writeSharedFile(filepath.Join(projectPath, "README.md"), []byte(readme)); err != nil {
 		return fmt.Errorf("failed to write README: %w", err)
 	}
 	fmt.Println("  Created: README.md")
