@@ -222,13 +222,17 @@ Arguments:
   [args...]          Optional arguments for the command
 
 Options:
-  -h, --help         Show this help message
+  -h, --help         Show this help message (only before <container-name>)
 
 Examples:
   portunix container exec my-container bash
   portunix container exec my-container ls -la /app
+  portunix container exec my-container -- ls -h /
   portunix container exec web-server cat /etc/nginx/nginx.conf
   portunix container exec python-dev python --version
+
+Use -- to separate the command from Portunix arguments when needed;
+everything after the first -- is passed to the container verbatim.
 ```
 
 ### info
@@ -508,7 +512,8 @@ Lifecycle flags (issue #027):
   --max-cpu COUNT        CPU limit alias (forwarded to --cpus)
 
 💡 TIP: For development environments, use 'run-in-container' instead.
-Use -- to separate flags from command arguments when needed.
+Use -- to separate flags from command arguments when needed;
+everything after the first -- is passed to the container verbatim.
 ```
 
 ### run-in-container

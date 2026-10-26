@@ -15,8 +15,8 @@ import (
 	"portunix.ai/portunix/test/testframework"
 )
 
-// SupportedDistribution represents officially supported distributions from ADR-009
-type SupportedDistribution struct {
+// criticalFixesDistribution represents officially supported distributions from ADR-009
+type criticalFixesDistribution struct {
 	Name           string
 	Image          string
 	Priority       string // CRITICAL, HIGH, MEDIUM
@@ -26,9 +26,9 @@ type SupportedDistribution struct {
 	Expected       string // Expected success/failure based on current issues
 }
 
-// GetOfficiallySupported returns all 9 officially supported distributions from ADR-009
-func GetOfficiallySupported() []SupportedDistribution {
-	return []SupportedDistribution{
+// criticalFixesOfficiallySupported returns all 9 officially supported distributions from ADR-009
+func criticalFixesOfficiallySupported() []criticalFixesDistribution {
+	return []criticalFixesDistribution{
 		// CRITICAL Priority - Must Pass (Primary platforms)
 		{
 			Name:           "Ubuntu 22.04 LTS",
@@ -128,7 +128,7 @@ func TestIssue045NodeJSCriticalFixes(t *testing.T) {
 
 	// Setup
 	tf.Step(t, "Setup test environment and locate Portunix binary")
-	binaryPath, err := findPortunixBinary()
+	binaryPath, err := criticalFixesFindPortunixBinary()
 	if err != nil {
 		tf.Error(t, "Failed to find Portunix binary", err.Error())
 		success = false
@@ -146,7 +146,7 @@ func TestIssue045NodeJSCriticalFixes(t *testing.T) {
 	}
 
 	// Get all supported distributions
-	distributions := GetOfficiallySupported()
+	distributions := criticalFixesOfficiallySupported()
 	tf.Info(t, "Testing distributions based on ADR-009",
 		fmt.Sprintf("Total: %d officially supported distributions", len(distributions)))
 
@@ -235,7 +235,7 @@ func TestIssue045NodeJSCriticalFixes(t *testing.T) {
 
 // TestResult tracks individual distribution test results
 type TestResult struct {
-	Distribution SupportedDistribution
+	Distribution criticalFixesDistribution
 	Success      bool
 	ErrorMessage string
 	InstallTime  time.Duration
@@ -245,7 +245,7 @@ type TestResult struct {
 }
 
 // testDistributionsByPriority tests all distributions of a given priority
-func testDistributionsByPriority(t *testing.T, tf *testframework.TestFramework, binaryPath string, distributions []SupportedDistribution, priority string, results map[string]TestResult) int {
+func testDistributionsByPriority(t *testing.T, tf *testframework.TestFramework, binaryPath string, distributions []criticalFixesDistribution, priority string, results map[string]TestResult) int {
 	failures := 0
 
 	for _, dist := range distributions {
@@ -269,7 +269,7 @@ func testDistributionsByPriority(t *testing.T, tf *testframework.TestFramework, 
 }
 
 // countDistributionsByPriority counts distributions of given priority
-func countDistributionsByPriority(distributions []SupportedDistribution, priority string) int {
+func countDistributionsByPriority(distributions []criticalFixesDistribution, priority string) int {
 	count := 0
 	for _, dist := range distributions {
 		if dist.Priority == priority {
@@ -280,7 +280,7 @@ func countDistributionsByPriority(distributions []SupportedDistribution, priorit
 }
 
 // testNodeJSInstallationForDistribution tests Node.js installation for a specific distribution
-func testNodeJSInstallationForDistribution(t *testing.T, tf *testframework.TestFramework, binaryPath string, dist SupportedDistribution) TestResult {
+func testNodeJSInstallationForDistribution(t *testing.T, tf *testframework.TestFramework, binaryPath string, dist criticalFixesDistribution) TestResult {
 	result := TestResult{
 		Distribution: dist,
 		Success:      false,
@@ -396,7 +396,7 @@ func testNodeJSInstallationForDistribution(t *testing.T, tf *testframework.TestF
 }
 
 // testAlternativeContainerInstallation tries alternative installation approach
-func testAlternativeContainerInstallation(t *testing.T, tf *testframework.TestFramework, binaryPath string, dist SupportedDistribution) bool {
+func testAlternativeContainerInstallation(t *testing.T, tf *testframework.TestFramework, binaryPath string, dist criticalFixesDistribution) bool {
 	tf.Info(t, "Attempting alternative installation approach")
 
 	// This would require creating a container manually and installing nodejs
@@ -476,7 +476,7 @@ func testContainerExecParsing(t *testing.T, tf *testframework.TestFramework, bin
 }
 
 // generateTestSummary generates comprehensive test results summary
-func generateTestSummary(t *testing.T, tf *testframework.TestFramework, distributions []SupportedDistribution, results map[string]TestResult) {
+func generateTestSummary(t *testing.T, tf *testframework.TestFramework, distributions []criticalFixesDistribution, results map[string]TestResult) {
 	tf.Step(t, "Distribution Test Results Matrix")
 
 	// Group results by priority
@@ -577,8 +577,8 @@ func extractContainerName(output string) string {
 	return ""
 }
 
-// findPortunixBinary locates the Portunix binary for testing
-func findPortunixBinary() (string, error) {
+// criticalFixesFindPortunixBinary locates the Portunix binary for testing
+func criticalFixesFindPortunixBinary() (string, error) {
 	// Check current directory
 	if _, err := os.Stat("./portunix"); err == nil {
 		abs, _ := filepath.Abs("./portunix")

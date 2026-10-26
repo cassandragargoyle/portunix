@@ -2,6 +2,7 @@
 // +build unit
 
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -9,10 +10,8 @@
 package cmd
 
 import (
-	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -25,37 +24,6 @@ func TestContainerGoCommandsSuite(t *testing.T) {
 	suite.Run(t, new(ContainerGoCommandsTestSuite))
 }
 
-// Test Docker run-in-container command validation
-func (suite *ContainerGoCommandsTestSuite) TestDockerRunInContainerCmd_ValidTypes() {
-	// Test that the command accepts "go" as a valid installation type
-	validTypes := []string{"default", "empty", "python", "java", "go", "vscode"}
-
-	// Check that "go" is in the valid types list
-	suite.Contains(validTypes, "go", "Go should be a valid installation type for Docker")
-
-	// Check all expected types are present
-	expectedTypes := []string{"default", "empty", "python", "java", "go", "vscode"}
-	for _, expectedType := range expectedTypes {
-		suite.Contains(validTypes, expectedType, "Expected type %s should be valid", expectedType)
-	}
-}
-
-// Test Podman run-in-container command validation
-func (suite *ContainerGoCommandsTestSuite) TestPodmanRunInContainerCmd_ValidTypes() {
-	// Test that the command accepts "go" as a valid installation type
-	validTypes := []string{"default", "empty", "python", "java", "go", "vscode"}
-
-	// Check that "go" is in the valid types list
-	suite.Contains(validTypes, "go", "Go should be a valid installation type for Podman")
-
-	// Check all expected types are present
-	expectedTypes := []string{"default", "empty", "python", "java", "go", "vscode"}
-	for _, expectedType := range expectedTypes {
-		suite.Contains(validTypes, expectedType, "Expected type %s should be valid", expectedType)
-	}
-}
-
-// Test Docker command help text includes Go
 func (suite *ContainerGoCommandsTestSuite) TestDockerRunInContainerCmd_HelpText() {
 	// Get the command
 	cmd := dockerRunInContainerCmd
@@ -161,61 +129,4 @@ func (suite *ContainerGoCommandsTestSuite) TestHelpTextFormatting() {
 
 	suite.Contains(dockerHelp, "Examples:", "Docker help should have examples section")
 	suite.Contains(podmanHelp, "Examples:", "Podman help should have examples section")
-}
-
-// Test installation type validation logic (conceptual test)
-func (suite *ContainerGoCommandsTestSuite) TestInstallationTypeValidation() {
-	validTypes := []string{"default", "empty", "python", "java", "go", "vscode"}
-
-	// Test valid types
-	validTestCases := []string{"default", "empty", "python", "java", "go", "vscode"}
-	for _, testType := range validTestCases {
-		isValid := false
-		for _, validType := range validTypes {
-			if testType == validType {
-				isValid = true
-				break
-			}
-		}
-		suite.True(isValid, "Type %s should be valid", testType)
-	}
-
-	// Test invalid types
-	invalidTestCases := []string{"invalid", "golang", "node", "ruby", "php"}
-	for _, testType := range invalidTestCases {
-		isValid := false
-		for _, validType := range validTypes {
-			if testType == validType {
-				isValid = true
-				break
-			}
-		}
-		suite.False(isValid, "Type %s should be invalid", testType)
-	}
-}
-
-// Test command string generation
-func (suite *ContainerGoCommandsTestSuite) TestCommandStringGeneration() {
-	// Test that valid installation type strings can be generated
-	installationTypes := []string{"default", "empty", "python", "java", "go", "vscode"}
-
-	for _, installType := range installationTypes {
-		// Test Docker command string
-		dockerCmd := []string{"portunix", "docker", "run-in-container", installType}
-		cmdString := strings.Join(dockerCmd, " ")
-
-		suite.Contains(cmdString, "portunix", "Command should start with portunix")
-		suite.Contains(cmdString, "docker", "Docker command should contain docker")
-		suite.Contains(cmdString, "run-in-container", "Command should contain run-in-container")
-		suite.Contains(cmdString, installType, "Command should contain installation type")
-
-		// Test Podman command string
-		podmanCmd := []string{"portunix", "podman", "run-in-container", installType}
-		cmdString = strings.Join(podmanCmd, " ")
-
-		suite.Contains(cmdString, "portunix", "Command should start with portunix")
-		suite.Contains(cmdString, "podman", "Podman command should contain podman")
-		suite.Contains(cmdString, "run-in-container", "Command should contain run-in-container")
-		suite.Contains(cmdString, installType, "Command should contain installation type")
-	}
 }

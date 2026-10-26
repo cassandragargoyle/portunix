@@ -211,6 +211,9 @@ func newRegistryManager(pluginDir string) (*manager.Manager, error) {
 }
 
 func main() {
+	if handleMetaArgs(os.Args[1:]) {
+		return
+	}
 	if err := rootCmd.Execute(); err != nil {
 		log.SetFlags(0)
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)

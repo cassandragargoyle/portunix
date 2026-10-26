@@ -1,12 +1,13 @@
 # Issue #225: CI Unit Tests job runs integration/E2E tests and always fails
 
-**Status**: Open
+**Status**: ✅ Implemented
 **Priority**: High
 **Type**: Bug
 **Component**: portunix
 **Created**: 2026-10-07
+**Closed**: 2026-10-25
 **GitHub**: #225
-**Related**: #224, #195
+**Related**: #224, #195, `docs/testing/acceptance-225.md`
 
 ## Summary
 

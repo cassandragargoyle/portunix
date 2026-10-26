@@ -160,8 +160,11 @@ jobs:
         run: make build
 
       - name: Run integration tests
+        # test/integration is local-only (needs built helpers, plugins and
+        # host-specific tools); see test/integration/README.md
         run: |
-          go test -tags=integration -race -coverprofile=integration-coverage.out -covermode=atomic -timeout=10m ./...
+          go test -tags=integration -race -coverprofile=integration-coverage.out -covermode=atomic -timeout=10m \
+            $(go list -tags=integration ./... | grep -v '/test/integration$')
 
       - name: Upload integration test coverage
         uses: codecov/codecov-action@v3
@@ -225,21 +228,25 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.GO_VERSION }}
+          # govulncheck reports standard library vulnerabilities of the
+          # toolchain it runs with, releases are built with the latest Go
+          go-version: stable
+          check-latest: true
 
       - name: Install security tools
         run: |
           go install github.com/securego/gosec/v2/cmd/gosec@latest
-          go install github.com/sonatype-nexus-community/nancy@latest
+          go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Run Gosec Security Scanner
         # Scans every Go module, excluded rules are documented in
         # docs/contributing/SECURITY-SCAN.md
         run: python3 scripts/gosec-scan.py --report-dir gosec-reports
 
-      - name: Run Nancy vulnerability scanner
-        run: |
-          go list -json -deps ./... | nancy sleuth
+      - name: Run govulncheck dependency scanner
+        # Scans every Go module, reports only vulnerabilities the code calls
+        if: always()
+        run: python3 scripts/govulncheck-scan.py --report-dir govulncheck-reports
 
       - name: Upload Gosec results
         if: always()
@@ -247,6 +254,13 @@ jobs:
         with:
           name: gosec-report
           path: gosec-reports/
+
+      - name: Upload govulncheck results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: govulncheck-report
+          path: govulncheck-reports/
 
   performance:
     name: Performance Tests

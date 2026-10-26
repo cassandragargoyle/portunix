@@ -195,7 +195,7 @@ go test -tags=e2e -timeout=30m ./test/e2e/...
 ### Security Scan Integration
 
 - **Gosec** - Security vulnerability scanning
-- **Nancy** - Dependency vulnerability checking
+- **govulncheck** - Dependency vulnerability checking, see [SECURITY-SCAN.md](../docs/contributing/SECURITY-SCAN.md)
 - **Trivy** - Container security scanning
 
 ### Test Data Security

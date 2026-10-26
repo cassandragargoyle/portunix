@@ -2136,7 +2136,7 @@ func showHelpAI() {
 }
 
 func showHelpExpert() {
-	fmt.Printf("PTX-TRACE v%s - Universal Tracing System\n", version)
+	fmt.Printf("PTX-TRACE v%s - Universal Tracing System\n", strings.TrimPrefix(version, "v"))
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println()
 	fmt.Println("DESCRIPTION:")

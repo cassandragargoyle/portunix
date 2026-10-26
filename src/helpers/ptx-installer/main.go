@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -43,17 +44,18 @@ This binary is typically invoked by the main portunix dispatcher and should not 
 }
 
 // handleCommand dispatches commands routed to this helper by the parent portunix
-// binary (see src/dispatcher/dispatcher.go): "install" and "package". args arrive
+// binary (see src/dispatcher/dispatcher.go): "install", "package" and "skills". args arrive
 // stripped of the binary name, so args[0] is the top-level command. Also handles
 // the --version / -v meta-flag used by the dispatcher for version discovery.
 func handleCommand(args []string) {
-	// Handle dispatched commands: install, package
+	// Handle dispatched commands: install, package, skills
 	if len(args) == 0 {
 		fmt.Println("No command specified")
 		fmt.Println("Usage: ptx-installer [command] [arguments]")
 		fmt.Println("\nAvailable commands:")
 		fmt.Println("  install  - Install software packages")
 		fmt.Println("  package  - Package management operations")
+		fmt.Println("  skills   - Install AI-agent skills (SKILL.md bundles)")
 		fmt.Println("  --help   - Show this help")
 		return
 	}
@@ -73,6 +75,8 @@ func handleCommand(args []string) {
 		handleInstall(subArgs)
 	case "package":
 		handlePackage(subArgs)
+	case "skills":
+		handleSkills(subArgs)
 	default:
 		fmt.Printf("Unknown command: %s\n", command)
 		fmt.Println("Use 'ptx-installer --help' for available commands")

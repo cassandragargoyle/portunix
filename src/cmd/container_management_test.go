@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -385,7 +386,7 @@ func TestContainerCommandErrorMessages(t *testing.T) {
 		// Test that error messages contain appropriate format
 		assert.Contains(t, containerStopCmd.Long, "portunix container stop",
 			"Expected stop command examples")
-		assert.Contains(t, containerStopCmd.Long, "configured container runtime",
+		assert.Contains(t, containerStopCmd.Long, "automatically selected runtime",
 			"Expected runtime delegation information")
 	})
 
@@ -396,9 +397,9 @@ func TestContainerCommandErrorMessages(t *testing.T) {
 		}
 
 		for _, cmd := range commands {
-			assert.Contains(t, cmd.Long, "configured container runtime",
+			assert.Contains(t, cmd.Long, "Automatic runtime detection",
 				"Expected %s command to mention runtime delegation", cmd.Name())
-			assert.Contains(t, cmd.Long, "Docker or Podman",
+			assert.Contains(t, cmd.Long, "Docker and Podman",
 				"Expected %s command to mention Docker and Podman support", cmd.Name())
 		}
 	})

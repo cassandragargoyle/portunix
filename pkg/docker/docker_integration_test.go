@@ -95,12 +95,11 @@ func (suite *DockerIntegrationTestSuite) TestPackageManagerDetection_Ubuntu_Succ
 	suite.container = container
 
 	// Act
-	pkgManager, err := detectPackageManager("ubuntu:22.04")
+	pkgManager, err := detectPackageManager(suite.ctx, container)
 
 	// Assert
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "apt-get", pkgManager.Manager)
-	assert.Equal(suite.T(), "debian-based", pkgManager.Distribution)
+	assert.Equal(suite.T(), "apt-get", pkgManager)
 }
 
 func (suite *DockerIntegrationTestSuite) TestPackageManagerDetection_Alpine_Success() {
@@ -118,12 +117,11 @@ func (suite *DockerIntegrationTestSuite) TestPackageManagerDetection_Alpine_Succ
 	suite.container = container
 
 	// Act
-	pkgManager, err := detectPackageManager("alpine:latest")
+	pkgManager, err := detectPackageManager(suite.ctx, container)
 
 	// Assert
 	assert.NoError(suite.T(), err)
-	assert.Equal(suite.T(), "apk", pkgManager.Manager)
-	assert.Equal(suite.T(), "alpine", pkgManager.Distribution)
+	assert.Equal(suite.T(), "apk", pkgManager)
 }
 
 func (suite *DockerIntegrationTestSuite) TestContainerExecuteCommand_ValidCommand_Success() {
@@ -315,7 +313,14 @@ func (suite *DockerIntegrationTestSuite) TestContainerPerformance_CreationTime_W
 
 // Helper functions
 
-func isDockerAvailable() bool {
+func isDockerAvailable() (available bool) {
+	// testcontainers panics when no Docker host can be resolved
+	defer func() {
+		if recover() != nil {
+			available = false
+		}
+	}()
+
 	// Simple check to see if Docker daemon is accessible
 	ctx := context.Background()
 	_, err := testcontainers.GenericContainer(ctx, testcontainers.GenericContainerRequest{
@@ -325,6 +330,30 @@ func isDockerAvailable() bool {
 		Started: false, // Don't actually start it
 	})
 	return err == nil
+}
+
+// pullImageIfNeeded pulls the image through the testcontainers provider
+func pullImageIfNeeded(image string) error {
+	provider, err := testcontainers.NewDockerProvider()
+	if err != nil {
+		return err
+	}
+	defer provider.Close()
+	return provider.PullImage(context.Background(), image)
+}
+
+// detectPackageManager returns the first package manager found inside the running container
+func detectPackageManager(ctx context.Context, container testcontainers.Container) (string, error) {
+	for _, manager := range []string{"apt-get", "dnf", "yum", "apk", "pacman", "zypper"} {
+		exitCode, _, err := container.Exec(ctx, []string{"sh", "-c", "command -v " + manager})
+		if err != nil {
+			return "", err
+		}
+		if exitCode == 0 {
+			return manager, nil
+		}
+	}
+	return "", fmt.Errorf("no known package manager found")
 }
 
 // Benchmark tests for integration scenarios

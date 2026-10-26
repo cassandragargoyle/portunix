@@ -662,7 +662,7 @@ func showHelpAI() {
 }
 
 func showHelpExpert() {
-	fmt.Printf("PTX-CREDENTIAL v%s - Secure Credential Management\n", version)
+	fmt.Printf("PTX-CREDENTIAL v%s - Secure Credential Management\n", strings.TrimPrefix(version, "v"))
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println()
 	fmt.Println("DESCRIPTION:")

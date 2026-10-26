@@ -7,11 +7,15 @@ package plugins
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"google.golang.org/grpc"
@@ -26,8 +30,28 @@ type GRPCPlugin struct {
 	conn       *grpc.ClientConn
 	client     pb.PluginServiceClient
 	cmd        *exec.Cmd
+	exited     *processExit // set for a child process started here
+	logPath    string       // plugin stdout and stderr
+	pid        int          // plugin process, also set when attached to a process started elsewhere
 	isRunning  bool
 	lastHealth time.Time
+}
+
+const (
+	// startConnectTimeout bounds the wait for a freshly started plugin to listen
+	startConnectTimeout = 10 * time.Second
+	// attachConnectTimeout bounds the connection to an already running plugin
+	attachConnectTimeout = 3 * time.Second
+	// stopTimeout bounds the wait for the plugin process to exit
+	stopTimeout = 5 * time.Second
+	// PluginLogFile receives the output of a plugin process in its working directory
+	PluginLogFile = "plugin.log"
+)
+
+// processExit reports the end of a plugin child process
+type processExit struct {
+	done chan struct{} // closed once the process has been reaped
+	err  error         // result of Wait, valid after done is closed
 }
 
 // NewGRPCPlugin creates a new gRPC plugin instance
@@ -50,28 +74,138 @@ func (p *GRPCPlugin) Start(ctx context.Context) error {
 		return fmt.Errorf("plugin %s is already running", p.config.Name)
 	}
 
+	// Another process on the port would answer in place of this plugin
+	if err := PortAvailable(p.config.Port); err != nil {
+		return err
+	}
+
 	// Start plugin binary
 	if err := p.startPluginBinary(ctx); err != nil {
 		return fmt.Errorf("failed to start plugin binary: %w", err)
 	}
 
-	// Wait for plugin to start
-	time.Sleep(2 * time.Second)
-
-	// Connect to plugin via gRPC
-	if err := p.connectGRPC(ctx); err != nil {
-		_ = p.stopPluginBinary()
+	// Connect to plugin via gRPC (blocks until the plugin listens or exits)
+	if err := p.connectGRPC(ctx, startConnectTimeout); err != nil {
+		if exitErr := p.startupExitError(); exitErr != nil {
+			p.abortStart()
+			return exitErr
+		}
+		p.abortStart()
 		return fmt.Errorf("failed to connect to plugin: %w", err)
 	}
 
 	// Initialize plugin
 	if err := p.initializePlugin(ctx); err != nil {
-		_ = p.Stop(ctx)
+		p.abortStart()
 		return fmt.Errorf("failed to initialize plugin: %w", err)
+	}
+
+	// The answer must come from the process started here, not from one that took the port
+	if exitErr := p.startupExitError(); exitErr != nil {
+		p.abortStart()
+		return exitErr
 	}
 
 	p.isRunning = true
 	return nil
+}
+
+// abortStart releases the connection and the process of a failed start
+func (p *GRPCPlugin) abortStart() {
+	if p.conn != nil {
+		_ = p.conn.Close()
+		p.conn = nil
+		p.client = nil
+	}
+	_ = p.stopPluginBinary()
+	p.pid = 0
+}
+
+// startupExitError returns an error with the exit status and the last output
+// lines when the plugin process has already exited, nil while it runs
+func (p *GRPCPlugin) startupExitError() error {
+	if p.exited == nil {
+		return nil
+	}
+	select {
+	case <-p.exited.done:
+	default:
+		return nil
+	}
+
+	msg := fmt.Sprintf("plugin %s exited during startup", p.config.Name)
+	if p.exited.err != nil {
+		msg += fmt.Sprintf(" (%v)", p.exited.err)
+	}
+	if output := lastLines(p.logPath, 10); output != "" {
+		msg += "\n   Plugin output (" + p.logPath + "):\n" + output
+	}
+	return errors.New(msg)
+}
+
+// lastLines returns the last n non-empty lines of a file, indented
+func lastLines(path string, n int) string {
+	if path == "" {
+		return ""
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return ""
+	}
+	var lines []string
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.TrimSpace(line) != "" {
+			lines = append(lines, "      "+strings.TrimRight(line, "\r"))
+		}
+	}
+	if len(lines) > n {
+		lines = lines[len(lines)-n:]
+	}
+	return strings.Join(lines, "\n")
+}
+
+// PortAvailable fails when another process already listens on the local port
+func PortAvailable(port int) error {
+	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		return fmt.Errorf("port %d is already in use by another process", port)
+	}
+	return listener.Close()
+}
+
+// Attach connects to a plugin process started by another Portunix process;
+// the process is tracked even if its gRPC endpoint does not answer, so it
+// can still be stopped
+func (p *GRPCPlugin) Attach(ctx context.Context, pid int) error {
+	if !ProcessAlive(pid) {
+		return fmt.Errorf("plugin %s process %d is not running", p.config.Name, pid)
+	}
+
+	p.pid = pid
+	p.isRunning = true
+
+	if err := p.connectGRPC(ctx, attachConnectTimeout); err != nil {
+		return fmt.Errorf("plugin %s process %d is running but not reachable: %w", p.config.Name, pid, err)
+	}
+	return nil
+}
+
+// Detach closes the gRPC connection and leaves the plugin process running
+func (p *GRPCPlugin) Detach() {
+	if p.conn != nil {
+		_ = p.conn.Close()
+		p.conn = nil
+		p.client = nil
+	}
+	p.cmd = nil
+	p.exited = nil
+	p.pid = 0
+	p.isRunning = false
+}
+
+// PID returns the plugin process ID, 0 when not running
+func (p *GRPCPlugin) PID() int {
+	return p.pid
 }
 
 // Stop plugin service
@@ -113,6 +247,7 @@ func (p *GRPCPlugin) Stop(ctx context.Context) error {
 		log.Printf("Failed to stop plugin binary: %v", err)
 	}
 
+	p.pid = 0
 	p.isRunning = false
 	return lastErr
 }
@@ -153,7 +288,15 @@ func (p *GRPCPlugin) GetInfo() PluginInfo {
 
 // Health check
 func (p *GRPCPlugin) Health(ctx context.Context) PluginHealth {
-	if !p.isRunning || p.client == nil {
+	if p.isRunning && p.client == nil {
+		return PluginHealth{
+			Healthy:       false,
+			Status:        "unreachable",
+			Message:       fmt.Sprintf("Plugin process %d is running but its gRPC endpoint does not respond", p.pid),
+			LastCheckTime: time.Now(),
+		}
+	}
+	if !p.isRunning {
 		return PluginHealth{
 			Healthy:       false,
 			Status:        "not_running",
@@ -191,7 +334,8 @@ func (p *GRPCPlugin) IsRunning() bool {
 	return p.isRunning
 }
 
-// startPluginBinary starts the plugin binary process
+// startPluginBinary starts the plugin binary process detached from the
+// caller, so the plugin keeps running after the CLI process exits
 func (p *GRPCPlugin) startPluginBinary(ctx context.Context) error {
 	var cmd string
 	var args []string
@@ -228,8 +372,9 @@ func (p *GRPCPlugin) startPluginBinary(ctx context.Context) error {
 		args = []string{"--port", strconv.Itoa(p.config.Port)}
 	}
 
-	p.cmd = exec.CommandContext(ctx, cmd, args...)
+	p.cmd = exec.Command(cmd, args...) // #nosec G204 -- binary and runtime come from the installed plugin manifest
 	p.cmd.Dir = p.config.WorkingDir
+	p.cmd.SysProcAttr = detachedSysProcAttr()
 
 	// Inherit current environment
 	p.cmd.Env = os.Environ()
@@ -241,20 +386,49 @@ func (p *GRPCPlugin) startPluginBinary(ctx context.Context) error {
 		}
 	}
 
+	// Plugin output goes to a log file: a pipe would break once the CLI process exits
+	p.logPath = ""
+	if p.config.WorkingDir != "" {
+		logPath := filepath.Join(p.config.WorkingDir, PluginLogFile)
+		logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+		if err == nil {
+			defer logFile.Close() // the child keeps its own handle
+			p.cmd.Stdout = logFile
+			p.cmd.Stderr = logFile
+			p.logPath = logPath
+		}
+	}
+
 	// Log plugin startup for debugging
 	log.Printf("Starting %s plugin: %s %v", runtime, cmd, args)
 
 	if err := p.cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start plugin binary (%s): %w", runtime, err)
 	}
+	p.pid = p.cmd.Process.Pid
+
+	// Reap the child whenever it exits, also after Detach, so it never stays a zombie
+	exited := &processExit{done: make(chan struct{})}
+	go func(cmd *exec.Cmd) {
+		exited.err = cmd.Wait()
+		close(exited.done)
+	}(p.cmd)
+	p.exited = exited
 
 	return nil
 }
 
 // stopPluginBinary stops the plugin binary process
 func (p *GRPCPlugin) stopPluginBinary() error {
-	if p.cmd == nil || p.cmd.Process == nil {
+	if p.cmd == nil || p.cmd.Process == nil || p.exited == nil {
+		return p.stopAttachedProcess()
+	}
+
+	// Already exited, e.g. after the gRPC Shutdown request
+	select {
+	case <-p.exited.done:
 		return nil
+	default:
 	}
 
 	// Try graceful termination first
@@ -264,26 +438,62 @@ func (p *GRPCPlugin) stopPluginBinary() error {
 	}
 
 	// Wait for process to exit
-	done := make(chan error, 1)
-	go func() {
-		done <- p.cmd.Wait()
-	}()
-
 	select {
-	case err := <-done:
-		return err
-	case <-time.After(5 * time.Second):
+	case <-p.exited.done:
+		return nil
+	case <-time.After(stopTimeout):
 		// Force kill after timeout
 		return p.cmd.Process.Kill()
 	}
 }
 
-// connectGRPC establishes gRPC connection to the plugin
-func (p *GRPCPlugin) connectGRPC(ctx context.Context) error {
+// stopAttachedProcess stops a plugin process that is not a child of this
+// process and can therefore only be polled, not waited for
+func (p *GRPCPlugin) stopAttachedProcess() error {
+	if !ProcessAlive(p.pid) {
+		return nil
+	}
+
+	if err := interruptProcess(p.pid); err != nil && ProcessAlive(p.pid) {
+		return fmt.Errorf("failed to stop plugin process %d: %w", p.pid, err)
+	}
+
+	deadline := time.Now().Add(stopTimeout)
+	for time.Now().Before(deadline) {
+		if !ProcessAlive(p.pid) {
+			return nil
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// Force kill after timeout
+	proc, err := os.FindProcess(p.pid)
+	if err != nil {
+		return err
+	}
+	return proc.Kill()
+}
+
+// connectGRPC establishes gRPC connection to the plugin, waiting at most timeout
+func (p *GRPCPlugin) connectGRPC(ctx context.Context, timeout time.Duration) error {
 	address := fmt.Sprintf("localhost:%d", p.config.Port)
 
+	dialCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	// A start ends as soon as the plugin process exits
+	if exited := p.exited; exited != nil {
+		go func() {
+			select {
+			case <-exited.done:
+				cancel()
+			case <-dialCtx.Done():
+			}
+		}()
+	}
+
 	conn, err := grpc.DialContext(
-		ctx,
+		dialCtx,
 		address,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithBlock(),

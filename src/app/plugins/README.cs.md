@@ -52,15 +52,18 @@ src/app/plugins/
 ├── types.go            # rozhraní Plugin, PluginConfig, PluginInfo, PluginManifest, …
 ├── manifest.go         # LoadManifest / SaveManifest / ValidateManifest
 ├── grpc_client.go      # GRPCPlugin — klientská implementace Plugin přes gRPC
+├── proc_*.go           # odpojené spuštění a kontrola procesu (Unix / Windows)
 ├── prerequisites.go    # kontrola dostupnosti runtime (Java/Python/native)
 ├── semver.go           # parser SemVer + match rozsahů pro supported_platforms
 ├── manager/            # lifecycle pluginů a persistence registry
 │   ├── manager.go      # Manager: install/enable/start/stop/uninstall, health smyčka
-│   └── registry.go     # Registry: registry.json
+│   ├── registry.go     # Registry: registry.json
+│   └── filelock_*.go   # zámek registry sdílený procesy Portunixu
 ├── proto/              # gRPC definice a generovaný kód
 │   ├── plugin.proto           # PluginService (plugin → ptx)
 │   ├── plugin_registry.proto  # PluginRegistryService (ptx → platformy)
-│   ├── generated.go
+│   ├── plugin.pb.go           # generováno z plugin.proto (protoc-gen-go)
+│   ├── plugin_grpc.pb.go      # generováno z plugin.proto (protoc-gen-go-grpc)
 │   └── pluginregistry/        # generovaný kód pro registry službu
 └── server/
     └── registry_server.go     # gRPC server pro PluginRegistryService
@@ -81,6 +84,38 @@ src/app/plugins/
 - `manager.Manager` — orchestruje celý životní cyklus a řídí periodickou
   health-check smyčku.
 - `manager.Registry` — drží seznam nainstalovaných pluginů v `registry.json`.
+
+## Životní cyklus napříč procesy
+
+Každý příkaz CLI běží v novém procesu, proto stav pluginu žije v
+`registry.json`, ne v paměti:
+
+- `enable` nastaví `enabled` a přidělí volný gRPC port (`active_port`);
+  helper pluginy port nedostanou, běží na vyžádání a nejdou spustit
+- `start` spustí plugin odpojeně od CLI a zapíše jeho `pid`; výstup pluginu
+  jde do `plugin.log` v adresáři pluginu a plugin, který při startu skončí,
+  shodí příkaz hned i s jeho výstupem
+- další příkazy sestaví instanci z registry a připojí se k zapsanému procesu;
+  mrtvý proces se hlásí jako `failed`
+- `stop` ukončí zapsaný proces, `disable` zruší `enabled`
+- změny serializuje zámek `registry.json.lock`, takže souběžné příkazy nikdy
+  nespustí plugin dvakrát
+
+Po změně `proto/plugin.proto` je potřeba gRPC kód vygenerovat znovu:
+
+```bash
+cd src/app/plugins/proto
+protoc -I . --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. plugin.proto
+```
+
+`portunix plugin create` vkládá kopii protokolu do nových pluginů; je potřeba ji obnovit také
+(`TestPluginTemplateProtoInSync` v `src/cmd` selže, dokud se liší):
+
+```bash
+cp plugin.proto ../../../cmd/plugintemplate/plugin.proto
+cp plugin.pb.go ../../../cmd/plugintemplate/plugin.pb.go.tmpl
+cp plugin_grpc.pb.go ../../../cmd/plugintemplate/plugin_grpc.pb.go.tmpl
+```
 
 ## Manifest
 

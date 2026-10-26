@@ -240,6 +240,13 @@ portunix-plugins/
 - `portunix completion` - Generate shell completion scripts
 - `portunix specpm` - Initialize project-management specifications using
   [spec-kit-pm](https://github.com/CassandraGargoyle/spec-kit-pm) (Issue #183, ADR-040)
+- `portunix skills` - Install AI-agent skills (`SKILL.md` bundles) from git
+  repositories or local paths (Issue #190, ADR-043): `add`, `list`, `remove`,
+  `update`, `sources`. Writes the universal `.agents/skills/` plus per-agent
+  directories (Amp, Claude Code, GitHub Copilot, Cursor, Gemini CLI, OpenCode,
+  Zed) with detection-based defaults, project or user scope, provenance manifest
+  `.portunix-skills.json`, trust gate for new sources. Routed through
+  `ptx-installer`.
 - `portunix github` - GitHub repositories, releases, and authentication
   (Issue #211): `clone`, `checkout`, `tags`, `releases`, `download`, `info`,
   `status`, `auth login|logout|status|list|set-default`. Pure-Go clone via

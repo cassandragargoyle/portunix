@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"portunix.ai/app/mcp"
@@ -133,7 +134,7 @@ func showHelpAI() {
 }
 
 func showHelpExpert() {
-	fmt.Printf("PTX-MCP v%s - Model Context Protocol Server\n", version)
+	fmt.Printf("PTX-MCP v%s - Model Context Protocol Server\n", strings.TrimPrefix(version, "v"))
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println()
 	fmt.Println("DESCRIPTION:")

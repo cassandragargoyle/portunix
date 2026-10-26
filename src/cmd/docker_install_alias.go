@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -69,6 +70,10 @@ func runDockerInstallAlias(args []string) error {
 	return nil
 }
 
+// init registers the alias as `portunix docker install` under dockerCmd.
+// Cobra reaches it only when ptx-container is missing next to the binary;
+// otherwise the root dispatcher hands `docker` to ptx-container, which
+// forwards `docker install` to `install docker` the same way
 func init() {
 	dockerCmd.AddCommand(dockerInstallCmd)
 }

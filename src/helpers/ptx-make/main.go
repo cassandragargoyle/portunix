@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"portunix.ai/portunix/src/helpers/ptx-make/cmd"
@@ -222,7 +223,7 @@ func showHelpAI() {
 }
 
 func showHelpExpert() {
-	fmt.Printf("PTX-MAKE v%s - Cross-Platform Makefile Utilities\n", version)
+	fmt.Printf("PTX-MAKE v%s - Cross-Platform Makefile Utilities\n", strings.TrimPrefix(version, "v"))
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println()
 	fmt.Println("DESCRIPTION:")
