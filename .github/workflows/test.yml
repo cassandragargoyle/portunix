@@ -11,9 +11,6 @@ on:
   pull_request:
     branches: [ main, master, develop ]
 
-env:
-  GO_VERSION: '1.21'
-
 jobs:
   lint:
     name: Lint
@@ -25,7 +22,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: go.mod
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -84,7 +81,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: go.mod
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -128,7 +125,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: go.mod
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -180,7 +177,6 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        go-version: ['1.21', '1.22']
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -188,7 +184,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: go.mod
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -196,9 +192,9 @@ jobs:
           path: |
             ~/.cache/go-build
             ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('**/go.sum') }}
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
           restore-keys: |
-            ${{ runner.os }}-go-${{ matrix.go-version }}-
+            ${{ runner.os }}-go-
 
       - name: Install dependencies
         run: go mod download
@@ -274,7 +270,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: go.mod
 
       - name: Cache Go modules
         uses: actions/cache@v3
@@ -310,7 +306,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: go.mod
 
       - name: Cache Go modules
         uses: actions/cache@v3
