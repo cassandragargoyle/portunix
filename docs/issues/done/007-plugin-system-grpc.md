@@ -32,9 +32,7 @@ the original scope:
 - **Cross-platform** — Linux / Windows / macOS validated via manifest support
   matrix and platform-capability query (#175)
 
-Numerous follow-up issues have refined this subsystem:
-#013, #016, #024, #033, #132, #133, #143, #152, #155, #156, #158, #160,
-#161, #162, #175.
+Numerous follow-up issues have refined this subsystem: #013, #016, #024, #033, #132, #133, #143, #152, #155, #156, #158, #160, #161, #162, #175.
 
 ### Items deferred to follow-up #185
 

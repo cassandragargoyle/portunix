@@ -11,9 +11,10 @@ gate #194 restored.
 ## 📋 Status
 
 - **Created**: 2026-07-08
-- **Status**: 📋 Open
+- **Status**: ✅ Implemented
+- **Completed**: 2026-10-26
 - **Assignee**: -
-- **Branch**: fix/issue-195-stale-src-cmd-container-tests
+- **Branch**: fix/issue-195-stale-src-cmd-container-tests (merged into `main` at `800da52`)
 - **Related**:
   - Issue #194 — `make test` multi-module coverage (revealed these failures)
   - `src/cmd/container_exec_test.go`
@@ -78,3 +79,28 @@ dispatcher/helper architecture, so they drifted without anyone noticing.
    packages (`portunix.ai/cmd/...`); container tests must pass
 3. Regression: `portunix container run ubuntu:22.04 --dry-run` and error
    paths (`container exec` without args) still behave as documented
+
+## Implementation
+
+The Cobra container commands in `src/cmd/container.go` are the fallback that runs when
+`ptx-container` is missing next to the binary; the failing tests were rewritten to test those
+real commands instead of synthetic Cobra commands or their own test data.
+
+Defects found in the fallback and fixed (verified against Podman, see
+`docs/testing/acceptance-195.md`):
+
+- `container run <image> sh -c "…"` failed with `unknown shorthand flag: 'c'`, and
+  `container run <image> ls -d /tmp` silently took `-d` as detach. Flags are now parsed only
+  before the image, as with `docker run`; a `--` right after the image is dropped
+- `container exec <name> grep -i …` removed `-i` from the command. `-i`/`-it` are now read
+  only before the container name. The `-it` help example itself worked before: the old code
+  took `-t` as the container name, but the runtime CLI read the forwarded `-t` as its own flag
+
+Test changes:
+
+- placeholder tests that asserted only their own data were replaced by tests of the real
+  code: runtime delegation, flag-to-options translation and runtime errors of `container run`
+  through replaceable runtime calls, and the runtime selection rules in
+  `src/app/container/runtime_test.go`
+- `container_go_commands_test.go` (build tag `unit`) did not compile; it now builds and keeps
+  only the tests of the real `run-in-container` commands

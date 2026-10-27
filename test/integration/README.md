@@ -27,37 +27,43 @@ This directory contains integration tests for the Portunix plugin system.
 
 ## Running Tests
 
+All test files in this directory carry the `integration` build tag, so they are
+excluded from the unit run (`go test -tags=unit ./...`). They need a built
+`portunix` binary with helpers, a container runtime and host-specific tools, and
+they are run locally only — the CI Integration Tests job skips this package
+(Issue #225). Always pass `-tags=integration`.
+
 ### Run all plugin tests
 ```bash
-go test -v ./test/integration -run TestPlugin
+go test -tags=integration -v ./test/integration -run TestPlugin
 ```
 
 ### Run all PowerShell tests
 ```bash
-go test -v ./test/integration -run TestPowerShell
+go test -tags=integration -v ./test/integration -run TestPowerShell
 ```
 
 ### Run specific tests
 ```bash
 # Test plugin installation workflow
-go test -v ./test/integration -run TestPluginInstallation
+go test -tags=integration -v ./test/integration -run TestPluginInstallation
 
 # Test plugin validation
-go test -v ./test/integration -run TestPluginValidation
+go test -tags=integration -v ./test/integration -run TestPluginValidation
 
 # Test plugin creation
-go test -v ./test/integration -run TestPluginCreate
+go test -tags=integration -v ./test/integration -run TestPluginCreate
 
 # Test PowerShell installation
-go test -v ./test/integration -run TestPowerShellInstallation
+go test -tags=integration -v ./test/integration -run TestPowerShellInstallation
 
 # Test PowerShell preset integration
-go test -v ./test/integration -run TestPowerShellPresetsIntegration
+go test -tags=integration -v ./test/integration -run TestPowerShellPresetsIntegration
 ```
 
 ### Run with timeout
 ```bash
-go test -v ./test/integration -run TestPlugin -timeout 30s
+go test -tags=integration -v ./test/integration -run TestPlugin -timeout 30s
 ```
 
 ## Test Plugin

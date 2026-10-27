@@ -20,39 +20,39 @@ Add UTF-8 configuration to your PowerShell profile:
 
 1. **Open PowerShell profile for editing:**
 
-```powershell
-notepad $PROFILE
-```
+   ```powershell
+   notepad $PROFILE
+   ```
 
-If the file doesn't exist, create it first:
+   If the file doesn't exist, create it first:
 
-```powershell
-New-Item -Path $PROFILE -Type File -Force
-notepad $PROFILE
-```
+   ```powershell
+   New-Item -Path $PROFILE -Type File -Force
+   notepad $PROFILE
+   ```
 
 2. **Add these lines to the profile:**
 
-```powershell
-# Set UTF-8 encoding for proper emoji display
-$OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-chcp 65001 | Out-Null
-```
+   ```powershell
+   # Set UTF-8 encoding for proper emoji display
+   $OutputEncoding = [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+   [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+   chcp 65001 | Out-Null
+   ```
 
 3. **Save and reload:**
 
-```powershell
-. $PROFILE
-```
+   ```powershell
+   . $PROFILE
+   ```
 
 4. **Verify it works:**
 
-```powershell
-make help
-```
+   ```powershell
+   make help
+   ```
 
-You should now see emoji correctly displayed: 🔧 📖 💡
+   You should now see emoji correctly displayed: 🔧 📖 💡
 
 ### Alternative: Windows Terminal
 
@@ -76,10 +76,10 @@ If you're using Git Bash or MSYS2:
 
 1. Add to `~/.bashrc`:
 
-```bash
-export LANG=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
-```
+   ```bash
+   export LANG=en_US.UTF-8
+   export LC_ALL=en_US.UTF-8
+   ```
 
 2. Restart your terminal
 
@@ -100,24 +100,24 @@ make clean     # 🧹 Clean build artifacts
 
 1. **Check your PowerShell version:**
 
-```powershell
-$PSVersionTable.PSVersion
-```
+   ```powershell
+   $PSVersionTable.PSVersion
+   ```
 
-Recommended: PowerShell 7.x (cross-platform)
+   Recommended: PowerShell 7.x (cross-platform)
 
 2. **Check current encoding:**
 
-```powershell
-[Console]::OutputEncoding
-[Console]::InputEncoding
-```
+   ```powershell
+   [Console]::OutputEncoding
+   [Console]::InputEncoding
+   ```
 
-Both should show UTF-8.
+   Both should show UTF-8.
 
 3. **Try Windows Terminal:**
 
-Modern replacement for CMD/PowerShell with better Unicode support.
+   Modern replacement for CMD/PowerShell with better Unicode support.
 
 ### Make commands fail on Windows?
 
@@ -167,5 +167,5 @@ portunix install full      # Python + Java + Go + VS Code
 
 ---
 
-**Last Updated:** 2025-01-04
+**Last Updated:** 2026-10-27
 **Maintainer:** Portunix Development Team

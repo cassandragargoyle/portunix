@@ -63,6 +63,8 @@ func TestCreateMCPLogger(t *testing.T) {
 	config := DefaultConfig()
 	config.FilePath = filepath.Join(tempDir, "mcp.log")
 	factory := NewFactory(config)
+	// Release the log file so t.TempDir cleanup can remove it on Windows
+	defer factory.Close()
 
 	logger := factory.CreateMCPLogger("mcp-server")
 	if logger == nil {
@@ -134,6 +136,7 @@ func TestCreateFileWriter(t *testing.T) {
 		FilePath: filepath.Join(tempDir, "test.log"),
 	}
 	factory := NewFactory(config)
+	defer factory.Close()
 
 	writer := factory.createFileWriter()
 	if writer == nil {
@@ -240,6 +243,7 @@ func TestFactoryWithMultipleOutputs(t *testing.T) {
 		FilePath: filepath.Join(tempDir, "multi.log"),
 	}
 	factory := NewFactory(config)
+	defer factory.Close()
 
 	logger := factory.CreateLogger("multi-output")
 	logger.Info("multi output test")
@@ -291,6 +295,7 @@ func BenchmarkLoggerCreationWithFile(b *testing.B) {
 		FilePath: filepath.Join(tempDir, "bench.log"),
 	}
 	factory := NewFactory(config)
+	defer factory.Close()
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -310,6 +315,7 @@ func TestMCPLoggerFileOutput(t *testing.T) {
 		FilePath: logPath,
 	}
 	factory := NewFactory(config)
+	defer factory.Close()
 
 	mcpLogger := factory.CreateMCPLogger("mcp-server")
 
@@ -334,5 +340,95 @@ func TestMCPLoggerFileOutput(t *testing.T) {
 	}
 	if !strings.Contains(contentStr, "mcp-server") {
 		t.Error("Expected component name not found in MCP log file")
+	}
+}
+
+// openFileCount returns the number of open descriptors of this process, or -1
+// where /proc is not available
+func openFileCount(t *testing.T) int {
+	t.Helper()
+	entries, err := os.ReadDir("/proc/self/fd")
+	if err != nil {
+		return -1
+	}
+	return len(entries)
+}
+
+// assertReleased checks that no log file is held open: the descriptor count is
+// back to before (Linux) and the file can be removed (fails on Windows while open)
+func assertReleased(t *testing.T, before int, logPath string) {
+	t.Helper()
+	if after := openFileCount(t); before >= 0 && after != before {
+		t.Errorf("Open descriptors after Close: %d, before: %d", after, before)
+	}
+	if err := os.Remove(logPath); err != nil {
+		t.Errorf("Log file still in use after Close: %v", err)
+	}
+}
+
+func TestFactoryCloseReleasesFiles(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "close.log")
+	before := openFileCount(t)
+
+	factory := NewFactory(&Config{
+		Level:    "debug",
+		Format:   "json",
+		Output:   []string{"file"},
+		FilePath: logPath,
+	})
+	factory.CreateLogger("first").Info("first")
+	factory.CreateLogger("second").Info("second")
+	factory.CreateMCPLogger("mcp").Warn("mcp")
+	factory.CreateTestLogger(t).Info("test")
+
+	if err := factory.Close(); err != nil {
+		t.Fatalf("Close() returned error: %v", err)
+	}
+	assertReleased(t, before, logPath)
+
+	if err := factory.Close(); err != nil {
+		t.Errorf("Second Close() returned error: %v", err)
+	}
+	if err := NewFactory(DefaultConfig()).Close(); err != nil {
+		t.Errorf("Close() without log files returned error: %v", err)
+	}
+}
+
+func TestFactorySharesFilePerPath(t *testing.T) {
+	tempDir := t.TempDir()
+	logPath := filepath.Join(tempDir, "shared.log")
+
+	factory := NewFactory(&Config{
+		Level:    "info",
+		Format:   "json",
+		Output:   []string{"file"},
+		FilePath: logPath,
+	})
+	defer factory.Close()
+
+	factory.CreateLogger("first").Info("first")
+	factory.CreateLogger("second").Info("second")
+	factory.CreateMCPLogger("mcp").Warn("mcp")
+	factory.CreateTestLogger(t).Error("test")
+	if n := len(factory.files.byPath); n != 1 {
+		t.Errorf("Expected 1 open file for one path, got %d", n)
+	}
+
+	// A derived factory with another path opens its own file
+	other := factory.config.Clone()
+	other.FilePath = filepath.Join(tempDir, "other.log")
+	factory.derive(other).CreateLogger("other").Info("other")
+	if n := len(factory.files.byPath); n != 2 {
+		t.Errorf("Expected 2 open files for two paths, got %d", n)
+	}
+
+	data, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatalf("Failed to read log file: %v", err)
+	}
+	for _, msg := range []string{"first", "second", "mcp", "test"} {
+		if !strings.Contains(string(data), `"message":"`+msg+`"`) {
+			t.Errorf("Message %q missing in shared log file", msg)
+		}
 	}
 }

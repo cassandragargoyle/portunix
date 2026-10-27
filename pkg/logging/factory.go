@@ -1,12 +1,20 @@
+/*
+ *  SPDX-License-Identifier: MIT
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
+
 package logging
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -15,6 +23,17 @@ import (
 // Factory creates configured logger instances
 type Factory struct {
 	config *Config
+
+	// Log files opened by the loggers of this factory and of the factories
+	// derived from it, closed by Close
+	files *logFiles
+}
+
+// logFiles holds one open file per log path, shared by all loggers writing
+// to that path
+type logFiles struct {
+	mu     sync.Mutex
+	byPath map[string]*os.File
 }
 
 // NewFactory creates a new logger factory with the given configuration
@@ -22,7 +41,13 @@ func NewFactory(config *Config) *Factory {
 	if config == nil {
 		config = DefaultConfig()
 	}
-	return &Factory{config: config}
+	return &Factory{config: config, files: &logFiles{}}
+}
+
+// derive creates a factory with another configuration that shares the open
+// log files of this factory
+func (f *Factory) derive(config *Config) *Factory {
+	return &Factory{config: config, files: f.files}
 }
 
 // CreateLogger creates a new logger with the specified component name
@@ -79,8 +104,7 @@ func (f *Factory) CreateMCPLogger(component string) Logger {
 	}
 
 	// Create new factory with modified config
-	mcpFactory := NewFactory(config)
-	return mcpFactory.CreateLogger(component)
+	return f.derive(config).CreateLogger(component)
 }
 
 // CreateTestLogger creates a logger optimized for testing
@@ -97,10 +121,25 @@ func (f *Factory) CreateTestLogger(t *testing.T) Logger {
 	}
 
 	// Create factory with test config
-	testFactory := NewFactory(config)
-	logger := testFactory.CreateLogger(t.Name())
+	return f.derive(config).CreateLogger(t.Name())
+}
 
-	return logger
+// Close closes the log files opened by loggers of this factory and of the
+// factories derived from it. Loggers created by them must not be used after
+// Close
+func (f *Factory) Close() error {
+	f.files.mu.Lock()
+	files := f.files.byPath
+	f.files.byPath = nil
+	f.files.mu.Unlock()
+
+	var errs []error
+	for _, file := range files {
+		if err := file.Close(); err != nil {
+			errs = append(errs, err)
+		}
+	}
+	return errors.Join(errs...)
 }
 
 // parseLevel converts string level to zerolog.Level
@@ -187,6 +226,19 @@ func (f *Factory) createFileWriter() io.Writer {
 		return nil
 	}
 
+	key := f.config.FilePath
+	if abs, err := filepath.Abs(key); err == nil {
+		key = abs
+	}
+
+	f.files.mu.Lock()
+	defer f.files.mu.Unlock()
+
+	// Loggers writing to the same path share one open file
+	if file, ok := f.files.byPath[key]; ok {
+		return file
+	}
+
 	// Ensure directory exists
 	dir := filepath.Dir(f.config.FilePath)
 	if err := os.MkdirAll(dir, 0750); err != nil {
@@ -200,6 +252,11 @@ func (f *Factory) createFileWriter() io.Writer {
 		fmt.Fprintf(os.Stderr, "Failed to open log file %s: %v\n", f.config.FilePath, err)
 		return nil
 	}
+
+	if f.files.byPath == nil {
+		f.files.byPath = make(map[string]*os.File)
+	}
+	f.files.byPath[key] = file
 
 	// For file output, always use JSON format
 	return file

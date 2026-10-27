@@ -2,9 +2,15 @@
 
 ## Overview
 
-The **Security Scan** job in GitHub Actions runs [gosec](https://github.com/securego/gosec)
-on every Go module in the repository and fails on any finding. This guide describes the exact
-invocation, the rules that are excluded on purpose, and how to annotate an intentional pattern.
+The **Security Scan** job in GitHub Actions runs two scanners on every Go module in the
+repository and fails on any finding:
+
+- [gosec](https://github.com/securego/gosec) — static analysis of the Portunix source code
+- [govulncheck](https://go.dev/doc/security/vuln/) — known vulnerabilities in dependencies and
+  the standard library, see [Dependency Scan](#dependency-scan)
+
+This guide describes the exact invocation, the rules that are excluded on purpose, and how to
+annotate an intentional pattern.
 
 ## Invocation
 
@@ -74,6 +80,7 @@ Only two kinds of HIGH findings may carry a `#nosec`, everything else is fixed i
 | ---- | ---- | ----- |
 | Files that may hold credentials (configs with tokens, compose files, caches) | `0600` | No annotation needed |
 | Log files and log directories | `0600` / `0750` | No annotation needed |
+| Per-user state (plugin `registry.json`, its lock, plugin `plugin.log`) | `0600` / `0750` | Written through a temporary file and rename where readers run concurrently; a symlinked file is updated at its target |
 | Installed software, build artifacts, public assets | `0644` / `0755` | `#nosec G301`/`G306` with reason |
 | Directories mounted into containers | `0755` | Container users must traverse them, `#nosec G301` with reason |
 | VM disks, ISO images and Windows Sandbox folders | `0644` / `0755` | Read by hypervisors and sandbox users, `#nosec G301`/`G306` with reason |
@@ -97,14 +104,55 @@ cannot be loaded fails the scan instead of being skipped silently.
 gosec analyses the files of the platform it runs on — files with a Windows build constraint
 are not covered by the Linux CI job.
 
+## Dependency Scan
+
+`scripts/govulncheck-scan.py` runs `govulncheck ./...` in every module, discovered and joined
+into a temporary Go workspace the same way as for gosec. It queries the Go vulnerability
+database (`vuln.go.dev`), needs no account and no credentials.
+
+A module fails when govulncheck reports a vulnerability whose vulnerable function the code
+calls. Vulnerabilities in imported packages or required modules that the code does not call
+are not reported. Each finding lists the OSV ID, the module, the found and the fixed version:
+
+```text
+FAIL  src/helpers/ptx-ssh  - 1 called vulnerability(ies)
+        GO-2026-5013  golang.org/x/crypto v0.47.0 -> v0.52.0  ...
+```
+
+| Option | Purpose |
+| ------ | ------- |
+| `--report-dir DIR` | Keep the raw govulncheck JSON output per module (`govulncheck-<module>.json`), used by CI for the artifact |
+| `REPO_DIR` | Scan another checkout instead of the one the script lives in |
+
+### Fixing a Finding
+
+- **Module dependency** — raise the module to the fixed version in every `go.mod` that requires
+  it, then run `go mod tidy` in that module and in the helper modules that point at it through
+  `replace` (otherwise `make build` stops with `updates to go.mod needed`)
+- **Standard library** (`stdlib`) — the finding belongs to the Go toolchain the scan runs with,
+  upgrade the local Go installation. The script prints the minimum Go version that fixes all
+  stdlib findings. The CI job uses the latest stable Go, the release is built with the local Go,
+  so the local toolchain must be up to date before a release
+
+To inspect a finding in detail, including the call stack, run govulncheck in the module:
+
+```bash
+cd src/helpers/ptx-ssh && govulncheck -show traces ./...
+```
+
 ## Running Locally
 
 ```bash
-# With gosec installed
+# Install the scanners
+go install github.com/securego/gosec/v2/cmd/gosec@latest
+go install golang.org/x/vuln/cmd/govulncheck@latest
+
+# Both scans
 make security
 
-# Scan only, with per-finding output
+# One scan only, with per-finding output
 python3 scripts/gosec-scan.py
+python3 scripts/govulncheck-scan.py
 
 # Without gosec — runs it in a golang container through portunix container
 ./scripts/github-01-preflight-check.sh

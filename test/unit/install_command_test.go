@@ -33,7 +33,24 @@ func portunixBinary() string {
 	return filepath.Join(projectRootAtStartup, exe)
 }
 
+// requireInstallBinaries skips the test when portunix or the ptx-installer
+// helper (which serves the install command) is not built at project root
+func requireInstallBinaries(t *testing.T) {
+	t.Helper()
+	installer := "ptx-installer"
+	if filepath.Separator == '\\' {
+		installer += ".exe"
+	}
+	for _, path := range []string{portunixBinary(), filepath.Join(projectRootAtStartup, installer)} {
+		if _, err := os.Stat(path); err != nil {
+			t.Skipf("%s not built (run make build first)", filepath.Base(path))
+		}
+	}
+}
+
 func TestInstallCommandHelpFlag(t *testing.T) {
+	requireInstallBinaries(t)
+
 	// Test that --help flag works correctly
 	cmd := exec.Command(portunixBinary(), "install", "--help")
 	cmd.Dir = projectRootAtStartup
@@ -64,6 +81,8 @@ func TestInstallCommandHelpFlag(t *testing.T) {
 }
 
 func TestInstallCommandShortHelpFlag(t *testing.T) {
+	requireInstallBinaries(t)
+
 	// Test that -h flag works correctly
 	cmd := exec.Command(portunixBinary(), "install", "-h")
 	cmd.Dir = projectRootAtStartup

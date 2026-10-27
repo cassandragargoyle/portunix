@@ -52,15 +52,18 @@ src/app/plugins/
 ├── types.go            # Plugin interface, PluginConfig, PluginInfo, PluginManifest, …
 ├── manifest.go         # LoadManifest / SaveManifest / ValidateManifest
 ├── grpc_client.go      # GRPCPlugin — client-side impl of Plugin over gRPC
+├── proc_*.go           # detached start and process checks (Unix / Windows)
 ├── prerequisites.go    # Runtime (Java/Python/native) availability checks
 ├── semver.go           # SemVer parsing + range matching for supported_platforms
 ├── manager/            # Plugin lifecycle & registry persistence
 │   ├── manager.go      # Manager: install/enable/start/stop/uninstall, health loop
-│   └── registry.go     # Registry: JSON-backed registry.json
+│   ├── registry.go     # Registry: JSON-backed registry.json
+│   └── filelock_*.go   # registry lock shared by Portunix processes
 ├── proto/              # gRPC definitions and generated code
 │   ├── plugin.proto           # PluginService (plugin → ptx)
 │   ├── plugin_registry.proto  # PluginRegistryService (ptx → platforms)
-│   ├── generated.go
+│   ├── plugin.pb.go           # generated from plugin.proto (protoc-gen-go)
+│   ├── plugin_grpc.pb.go      # generated from plugin.proto (protoc-gen-go-grpc)
 │   └── pluginregistry/        # generated code for the registry service
 └── server/
     └── registry_server.go     # gRPC server for PluginRegistryService
@@ -82,6 +85,38 @@ src/app/plugins/
   periodic health-check loop.
 - `manager.Registry` — persists the set of installed plugins in
   `registry.json`.
+
+## Lifecycle across processes
+
+Every CLI command runs in a new process, so the plugin state lives in
+`registry.json`, not in memory:
+
+- `enable` sets `enabled` and assigns a free gRPC port (`active_port`);
+  helper plugins get no port, they run on demand and cannot be started
+- `start` launches the plugin detached from the CLI and records its `pid`;
+  the plugin output goes to `plugin.log` in the plugin directory, and a
+  plugin that exits during startup fails the command at once with its output
+- later commands rebuild the instance from the registry and attach to the
+  recorded process; a dead process is reported as `failed`
+- `stop` ends the recorded process, `disable` clears `enabled`
+- changes are serialized by a lock on `registry.json.lock`, so concurrent
+  commands never start a plugin twice
+
+Regenerate the gRPC code after changing `proto/plugin.proto`:
+
+```bash
+cd src/app/plugins/proto
+protoc -I . --go_out=paths=source_relative:. --go-grpc_out=paths=source_relative:. plugin.proto
+```
+
+`portunix plugin create` embeds a copy of the protocol for new plugins; refresh it too
+(`TestPluginTemplateProtoInSync` in `src/cmd` fails while it differs):
+
+```bash
+cp plugin.proto ../../../cmd/plugintemplate/plugin.proto
+cp plugin.pb.go ../../../cmd/plugintemplate/plugin.pb.go.tmpl
+cp plugin_grpc.pb.go ../../../cmd/plugintemplate/plugin_grpc.pb.go.tmpl
+```
 
 ## Manifest
 

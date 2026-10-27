@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -19,8 +20,30 @@ func GetSelectedRuntime() (string, error) {
 		return "", fmt.Errorf("failed to load configuration: %w", err)
 	}
 
-	// Use configured runtime or default to podman
-	runtime := cfg.ContainerRuntime
+	return chooseRuntime(cfg.ContainerRuntime, systemRuntimeChecks)
+}
+
+// runtimeChecks reports whether a runtime is installed and usable; a
+// parameter so the selection rules can be tested without real runtimes
+type runtimeChecks struct {
+	dockerAvailable func() bool
+	dockerRunning   func() bool
+	podmanAvailable func() bool
+	podmanRunning   func() bool
+}
+
+// systemRuntimeChecks probes the runtimes installed on this host
+var systemRuntimeChecks = runtimeChecks{
+	dockerAvailable: IsDockerAvailable,
+	dockerRunning:   IsDockerRunning,
+	podmanAvailable: IsPodmanAvailable,
+	podmanRunning:   IsPodmanRunning,
+}
+
+// chooseRuntime applies the selection rules: the configured runtime, or
+// podman when none is configured, and only if it is installed and usable
+func chooseRuntime(configured string, checks runtimeChecks) (string, error) {
+	runtime := configured
 	if runtime == "" {
 		runtime = "podman"
 	}
@@ -28,18 +51,18 @@ func GetSelectedRuntime() (string, error) {
 	// Check if selected runtime is available and running
 	switch runtime {
 	case "docker":
-		if !IsDockerAvailable() {
+		if !checks.dockerAvailable() {
 			return "", fmt.Errorf("Docker not installed")
 		}
-		if !IsDockerRunning() {
+		if !checks.dockerRunning() {
 			return "", fmt.Errorf("Docker installed but daemon not running")
 		}
 		return "docker", nil
 	case "podman":
-		if !IsPodmanAvailable() {
+		if !checks.podmanAvailable() {
 			return "", fmt.Errorf("Podman not installed")
 		}
-		if !IsPodmanRunning() {
+		if !checks.podmanRunning() {
 			return "", fmt.Errorf("Podman installed but not functional")
 		}
 		return "podman", nil

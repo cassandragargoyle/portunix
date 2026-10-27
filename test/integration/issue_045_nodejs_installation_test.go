@@ -21,8 +21,8 @@ type Issue045NodeJSTestSuite struct {
 	tf         *testframework.TestFramework
 }
 
-// SupportedDistribution represents officially supported Linux distributions from ADR-009
-type SupportedDistribution struct {
+// nodeJSDistribution represents officially supported Linux distributions from ADR-009
+type nodeJSDistribution struct {
 	Name           string
 	Image          string
 	Priority       string // CRITICAL, HIGH, MEDIUM, SPECIAL
@@ -31,9 +31,9 @@ type SupportedDistribution struct {
 	TestCaseID     string
 }
 
-// GetOfficiallySupported returns all 10 officially supported distributions from ADR-009
-func GetOfficiallySupported() []SupportedDistribution {
-	return []SupportedDistribution{
+// nodeJSOfficiallySupported returns all 10 officially supported distributions from ADR-009
+func nodeJSOfficiallySupported() []nodeJSDistribution {
+	return []nodeJSDistribution{
 		// CRITICAL Priority - Must Pass
 		{
 			Name:           "Ubuntu 22.04 LTS",
@@ -129,7 +129,7 @@ func (suite *Issue045NodeJSTestSuite) setupTest(t *testing.T) {
 
 	// Find binary
 	suite.tf.Step(t, "Setup test environment")
-	binaryPath, err := findPortunixBinary()
+	binaryPath, err := nodeJSFindPortunixBinary()
 	if err != nil {
 		suite.tf.Error(t, "Failed to find portunix binary", err.Error())
 		t.Fatal("Cannot proceed without portunix binary")
@@ -143,8 +143,8 @@ func (suite *Issue045NodeJSTestSuite) setupTest(t *testing.T) {
 func (suite *Issue045NodeJSTestSuite) testCriticalPlatforms(t *testing.T) {
 	suite.tf.Step(t, "CRITICAL Priority Tests - Must Pass (Ubuntu 22.04, 24.04, Debian 12)")
 
-	criticalDistributions := []SupportedDistribution{}
-	for _, dist := range GetOfficiallySupported() {
+	criticalDistributions := []nodeJSDistribution{}
+	for _, dist := range nodeJSOfficiallySupported() {
 		if dist.Priority == "CRITICAL" {
 			criticalDistributions = append(criticalDistributions, dist)
 		}
@@ -178,8 +178,8 @@ func (suite *Issue045NodeJSTestSuite) testCriticalPlatforms(t *testing.T) {
 func (suite *Issue045NodeJSTestSuite) testHighPriorityPlatforms(t *testing.T) {
 	suite.tf.Step(t, "HIGH Priority Tests - Should Pass (Debian 11, Fedora 40, Rocky 9)")
 
-	highDistributions := []SupportedDistribution{}
-	for _, dist := range GetOfficiallySupported() {
+	highDistributions := []nodeJSDistribution{}
+	for _, dist := range nodeJSOfficiallySupported() {
 		if dist.Priority == "HIGH" {
 			highDistributions = append(highDistributions, dist)
 		}
@@ -214,8 +214,8 @@ func (suite *Issue045NodeJSTestSuite) testHighPriorityPlatforms(t *testing.T) {
 func (suite *Issue045NodeJSTestSuite) testMediumPriorityPlatforms(t *testing.T) {
 	suite.tf.Step(t, "MEDIUM Priority Tests - Nice to Pass (Fedora 39, Arch, Snap)")
 
-	mediumDistributions := []SupportedDistribution{}
-	for _, dist := range GetOfficiallySupported() {
+	mediumDistributions := []nodeJSDistribution{}
+	for _, dist := range nodeJSOfficiallySupported() {
 		if dist.Priority == "MEDIUM" {
 			mediumDistributions = append(mediumDistributions, dist)
 		}
@@ -294,7 +294,7 @@ func (suite *Issue045NodeJSTestSuite) testContainerExecParsing(t *testing.T) {
 		"Will test against actual containers with Node.js installed")
 }
 
-func (suite *Issue045NodeJSTestSuite) testNodeJSInstallationForDistribution(t *testing.T, dist SupportedDistribution) bool {
+func (suite *Issue045NodeJSTestSuite) testNodeJSInstallationForDistribution(t *testing.T, dist nodeJSDistribution) bool {
 	suite.tf.Info(t, fmt.Sprintf("Testing %s (%s)", dist.Name, dist.Image))
 
 	startTime := time.Now()
@@ -361,7 +361,7 @@ func (suite *Issue045NodeJSTestSuite) testNodeJSInstallationForDistribution(t *t
 	return false
 }
 
-func findPortunixBinary() (string, error) {
+func nodeJSFindPortunixBinary() (string, error) {
 	// Check current directory
 	if _, err := os.Stat("./portunix"); err == nil {
 		abs, _ := filepath.Abs("./portunix")
@@ -390,7 +390,7 @@ func TestDistributionMatrix(t *testing.T) {
 	tf := testframework.NewTestFramework("Distribution_Matrix_Overview")
 	tf.Start(t, "Overview of all 10 officially supported Linux distributions from ADR-009")
 
-	distributions := GetOfficiallySupported()
+	distributions := nodeJSOfficiallySupported()
 
 	tf.Step(t, "Distribution Support Matrix")
 
@@ -418,7 +418,7 @@ func TestDistributionMatrix(t *testing.T) {
 
 // Benchmark test for installation performance
 func BenchmarkNodeJSInstallation(b *testing.B) {
-	binaryPath, err := findPortunixBinary()
+	binaryPath, err := nodeJSFindPortunixBinary()
 	if err != nil {
 		b.Skip("Portunix binary not found")
 	}

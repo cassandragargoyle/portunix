@@ -1,8 +1,11 @@
+// Copyright (c) CassandraGargoyle Community Project.
+// Licensed under the MIT License - see LICENSE file for details.
+
 syntax = "proto3";
 
 package portunix.plugins;
 
-option go_package = "portunix.cz/app/plugins/proto";
+option go_package = "portunix.ai/app/plugins/proto";
 
 // PluginService defines the main interface for plugin communication
 service PluginService {

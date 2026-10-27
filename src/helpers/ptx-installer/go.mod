@@ -1,13 +1,14 @@
 module portunix.ai/portunix/src/helpers/ptx-installer
 
-go 1.25.0
+go 1.26.0
 
 // Use parent module for dependencies
 replace portunix.ai/portunix => ../../..
 
 require (
 	github.com/spf13/cobra v1.10.1
-	golang.org/x/sys v0.44.0
+	golang.org/x/sys v0.49.0
+	golang.org/x/term v0.47.0
 	portunix.ai/portunix v0.0.0-00010101000000-000000000000
 )
 

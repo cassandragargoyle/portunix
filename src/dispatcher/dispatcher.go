@@ -1,3 +1,8 @@
+/*
+ *  SPDX-License-Identifier: MIT
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
 package dispatcher
 
 import (
@@ -94,8 +99,9 @@ func (d *Dispatcher) registerHelpers() {
 	}
 
 	// Issue #100: PTX-Installer Helper for package installation
+	// Issue #190: "skills" installs AI-agent skills (ADR-043)
 	d.helpers["ptx-installer"] = &HelperConfig{
-		Commands: []string{"install", "package"},
+		Commands: []string{"install", "package", "skills"},
 		Binary:   "ptx-installer",
 		Required: false,
 	}

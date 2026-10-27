@@ -61,7 +61,9 @@ type RegistryPlugin struct {
 	PortunixMinVersion  string                      `json:"portunix_min_version,omitempty"`
 	OptionalTools       []plugins.OptionalTool      `json:"optional_tools,omitempty"`
 	Enabled             bool                        `json:"enabled"`
-	Interfaces          []string                    `json:"interfaces,omitempty"` // e.g. ["cli", "grpc"]
+	ActivePort          int                         `json:"active_port,omitempty"` // gRPC port assigned on enable
+	PID                 int                         `json:"pid,omitempty"`         // process of a running gRPC plugin
+	Interfaces          []string                    `json:"interfaces,omitempty"`  // e.g. ["cli", "grpc"]
 	SupportedPlatforms  []plugins.SupportedPlatform `json:"supported_platforms,omitempty"`
 }
 
@@ -176,8 +178,9 @@ func (r *Registry) ReregisterPlugin(manifest *plugins.PluginManifest, installPat
 		return fmt.Errorf("plugin %s not found in registry", manifest.Name)
 	}
 
-	// Preserve enabled state and install time from previous registration
+	// Preserve enabled state, runtime port and install time from previous registration
 	wasEnabled := existing.Enabled
+	activePort := existing.ActivePort
 	installTime := existing.InstallTime
 
 	// Convert manifest commands
@@ -231,6 +234,7 @@ func (r *Registry) ReregisterPlugin(manifest *plugins.PluginManifest, installPat
 		PortunixMinVersion:  manifest.Dependencies.PortunixMinVersion,
 		OptionalTools:       manifest.Dependencies.OptionalTools,
 		Enabled:             wasEnabled,
+		ActivePort:          activePort,
 		Interfaces:          manifest.Plugin.Interfaces,
 		SupportedPlatforms:  manifest.SupportedPlatforms,
 	}
@@ -303,6 +307,40 @@ func (r *Registry) DisablePlugin(name string) error {
 	r.data.LastUpdate = time.Now()
 
 	return r.save()
+}
+
+// SetPluginProcess stores the runtime port and process ID of a gRPC plugin so
+// later CLI processes can find a plugin started by an earlier one; pid 0
+// means not running
+func (r *Registry) SetPluginProcess(name string, port, pid int) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	plugin, exists := r.data.Plugins[name]
+	if !exists {
+		return fmt.Errorf("plugin %s not found in registry", name)
+	}
+
+	plugin.ActivePort = port
+	plugin.PID = pid
+	plugin.LastSeen = time.Now()
+	r.data.LastUpdate = time.Now()
+
+	return r.save()
+}
+
+// UsedActivePorts returns the runtime ports of enabled plugins except the named one
+func (r *Registry) UsedActivePorts(except string) map[int]bool {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	used := make(map[int]bool)
+	for name, plugin := range r.data.Plugins {
+		if name != except && plugin.Enabled && plugin.ActivePort > 0 {
+			used[plugin.ActivePort] = true
+		}
+	}
+	return used
 }
 
 // GetPlugin returns information about a specific plugin
@@ -446,6 +484,27 @@ func (r *Registry) GetAllPluginMCPTools() (map[string][]plugins.MCPTool, error) 
 	return tools, nil
 }
 
+// Reload replaces the in-memory registry with the file content, which another
+// Portunix process may have changed since this registry was loaded
+func (r *Registry) Reload() error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	previous := r.data
+	r.data = &RegistryData{
+		Version: "1.0.0",
+		Plugins: make(map[string]*RegistryPlugin),
+	}
+	if err := r.load(); err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		}
+		r.data = previous
+		return fmt.Errorf("failed to reload registry: %w", err)
+	}
+	return nil
+}
+
 // load loads the registry from file
 func (r *Registry) load() error {
 	file, err := os.Open(r.filePath)
@@ -465,15 +524,77 @@ func (r *Registry) save() error {
 		return fmt.Errorf("failed to create registry directory: %w", err)
 	}
 
-	file, err := os.Create(r.filePath)
+	// Write a temporary file and rename it over the registry, so a concurrent
+	// reader or a crash never sees a truncated registry. A symlinked registry
+	// (e.g. kept in a dotfiles repository) is updated at its target, the
+	// symlink itself stays
+	target := resolveSymlink(r.filePath)
+	tmp, err := os.CreateTemp(filepath.Dir(target), ".registry-*.tmp")
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create temporary registry file: %w", err)
 	}
-	defer file.Close()
+	tmpPath := tmp.Name()
+	defer os.Remove(tmpPath) // no-op once renamed
 
-	encoder := json.NewEncoder(file)
+	encoder := json.NewEncoder(tmp)
 	encoder.SetIndent("", "  ")
-	return encoder.Encode(r.data)
+	if err := encoder.Encode(r.data); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("failed to write registry: %w", err)
+	}
+	if err := tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return fmt.Errorf("failed to write registry: %w", err)
+	}
+	if err := tmp.Close(); err != nil {
+		return fmt.Errorf("failed to write registry: %w", err)
+	}
+
+	// Per-user state readable only by its owner (0600), in line with the file
+	// permission policy of docs/contributing/SECURITY-SCAN.md; os.CreateTemp
+	// already creates it so, the explicit mode documents the intent
+	if err := os.Chmod(tmpPath, 0600); err != nil {
+		return fmt.Errorf("failed to set registry permissions: %w", err)
+	}
+
+	return replaceFile(tmpPath, target)
+}
+
+// resolveSymlink returns the file a path finally points to; a path that is
+// not a symlink, or does not exist yet, is returned unchanged. A dangling
+// symlink resolves to its missing target so the target gets created
+func resolveSymlink(path string) string {
+	if resolved, err := filepath.EvalSymlinks(path); err == nil {
+		return resolved
+	}
+	for i := 0; i < 40; i++ { // same link depth limit as the kernel
+		info, err := os.Lstat(path)
+		if err != nil || info.Mode()&os.ModeSymlink == 0 {
+			return path
+		}
+		link, err := os.Readlink(path)
+		if err != nil {
+			return path
+		}
+		if !filepath.IsAbs(link) {
+			link = filepath.Join(filepath.Dir(path), link)
+		}
+		path = link
+	}
+	return path
+}
+
+// replaceFile renames src over dst; Windows refuses the rename while another
+// process has dst open for reading, so it is retried for a short time
+func replaceFile(src, dst string) error {
+	var err error
+	for attempt := 0; attempt < 20; attempt++ {
+		if err = os.Rename(src, dst); err == nil {
+			return nil
+		}
+		time.Sleep(25 * time.Millisecond)
+	}
+	return fmt.Errorf("failed to replace registry: %w", err)
 }
 
 // GetRegistryStats returns statistics about the registry

@@ -7,6 +7,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"portunix.ai/portunix/src/helpers/ptx-specpm/internal/kit"
 )
@@ -41,7 +42,7 @@ func showHelpAI() {
 }
 
 func showHelpExpert() {
-	fmt.Printf("%s v%s - Project-management specifications via spec-kit-pm\n", displayName, version)
+	fmt.Printf("%s v%s - Project-management specifications via spec-kit-pm\n", displayName, strings.TrimPrefix(version, "v"))
 	fmt.Println("================================================================")
 	fmt.Println()
 	fmt.Println("DESCRIPTION:")

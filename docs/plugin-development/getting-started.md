@@ -78,43 +78,43 @@ Contains your plugin's source code. The structure depends on your chosen languag
 
 1. **Create Plugin Scaffold**
 
-```bash
-portunix plugin create my-plugin
-cd my-plugin
-```
+   ```bash
+   portunix plugin create my-plugin
+   cd my-plugin
+   ```
 
 2. **Implement Plugin Logic**
 
-- Define your plugin's functionality in the source files
-- Follow language-specific best practices
-- Implement required gRPC interfaces
+   - Define your plugin's functionality in the source files
+   - Follow language-specific best practices
+   - Implement required gRPC interfaces
 
 3. **Configure Plugin Manifest**
 
-- Update `plugin.yaml` with correct metadata
-- Define required permissions
-- Configure MCP tools (if exposing to AI agents)
+   - Update `plugin.yaml` with correct metadata
+   - Define required permissions
+   - Configure MCP tools (if exposing to AI agents)
 
 4. **Test Plugin Locally**
 
-```bash
-portunix plugin install .
-portunix plugin enable my-plugin
-portunix plugin start my-plugin
-```
+   ```bash
+   portunix plugin install .
+   portunix plugin enable my-plugin
+   portunix plugin start my-plugin
+   ```
 
 5. **Validate Plugin**
 
-```bash
-portunix plugin validate my-plugin
-portunix plugin health my-plugin
-```
+   ```bash
+   portunix plugin validate my-plugin
+   portunix plugin health my-plugin
+   ```
 
 6. **Package for Distribution**
 
-```bash
-portunix plugin package my-plugin
-```
+   ```bash
+   portunix plugin package my-plugin
+   ```
 
 ## Plugin Types and Examples
 
@@ -326,8 +326,18 @@ an actionable error. Common failure modes:
 ## Resources
 
 - [Plugin Architecture](architecture.md) - Deep dive into the plugin system
-- [Testing Guide](testing/unit-testing.md) - How to test your plugins
-- [Deployment Guide](deployment/packaging.md) - Package and distribute plugins
+- Testing - How to test your plugins, see the language guides:
+  [Go](languages/go/getting-started.md#building-and-testing),
+  [Python](languages/python/getting-started.md#testing),
+  [Java](languages/java/getting-started.md#building-and-testing),
+  [JavaScript](languages/javascript/getting-started.md#building-and-testing),
+  [Rust](languages/rust/getting-started.md#building-and-testing)
+- Deployment - Package and distribute plugins, see the language guides:
+  [Go](languages/go/getting-started.md#deployment),
+  [Python](languages/python/getting-started.md#deployment),
+  [Java](languages/java/getting-started.md#deployment),
+  [JavaScript](languages/javascript/getting-started.md#deployment),
+  [Rust](languages/rust/getting-started.md#deployment)
 - [MCP Integration](mcp-integration/exposing-tools.md) - Expose tools to AI agents
 
 ---

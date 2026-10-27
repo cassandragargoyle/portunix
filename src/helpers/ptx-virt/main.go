@@ -75,7 +75,7 @@ func showHelpAI() {
 }
 
 func showHelpExpert() {
-	fmt.Printf("PTX-VIRT v%s - Virtualization Management\n", version)
+	fmt.Printf("PTX-VIRT v%s - Virtualization Management\n", strings.TrimPrefix(version, "v"))
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println()
 	fmt.Println("DESCRIPTION:")

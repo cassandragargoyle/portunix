@@ -21,6 +21,7 @@ These are the built-in commands available in Portunix.
 | [system](system/) | System information |
 | [make](make/) | Cross-platform Makefile utilities |
 | [package](package/) | Package management and registry |
+| [skills](skills/) | Install AI-agent skills from git repositories |
 | [pft](pft/) | Product feedback tool integration |
 | [specpm](specpm/) | Initialize project-management specifications (spec-kit-pm) |
 | [playbook](playbook/) | Infrastructure as Code management |

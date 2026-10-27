@@ -190,7 +190,7 @@ and a pass/fail.
 ## Files Touched
 
 | Path | Purpose |
-|------|---------|
+| ---- | ------- |
 | `assets/update-signing-pubkey.txt` | hex pubkey, source of truth |
 | `secrets/update-signing/private.key` | PEM private key, canonical location (gitignored, ADR-042) |
 | `scripts/sign-release.py` | generate-key / sign / verify |

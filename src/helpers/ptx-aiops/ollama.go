@@ -25,14 +25,15 @@ const (
 
 // OllamaContainerStatus represents the status of Ollama container
 type OllamaContainerStatus struct {
-	Exists     bool
-	Running    bool
-	Managed    bool // true for the Portunix-managed container, false for an external one
-	Name       string
-	Image      string
-	GPUEnabled bool
-	Port       string
-	Created    string
+	Exists      bool
+	Running     bool
+	Managed     bool // true for the Portunix-managed container, false for an external one
+	Name        string
+	Image       string
+	GPUEnabled  bool
+	Port        string // host port published for the API, empty if not published
+	APIEndpoint string // API base URL on the host, empty if not published
+	Created     string
 }
 
 // ollamaContainerCandidates lists container names checked in precedence order:
@@ -94,16 +95,166 @@ func inspectOllamaContainer(runtime, name string) OllamaContainerStatus {
 		}
 	}
 
-	// Check if GPU is enabled (look for GPU device in config)
-	cmd = exec.Command(runtime, "inspect", name,
-		"--format", "{{.HostConfig.DeviceRequests}}")
+	// GPU and published API port are read from the full inspect JSON
+	cmd = exec.Command(runtime, "inspect", name)
 	output, err = cmd.Output()
 	if err == nil {
-		status.GPUEnabled = strings.Contains(string(output), "gpu")
+		status.GPUEnabled = parseGPUEnabled(output)
+		host, port := parseHostPort(output)
+		status.Port = port
+		if port != "" {
+			status.APIEndpoint = "http://" + host + ":" + port
+		}
 	}
 
-	status.Port = OllamaPort
 	return status
+}
+
+// containerInspect holds the subset of `docker/podman inspect` output used to
+// detect GPU access and the published Ollama API port
+type containerInspect struct {
+	Config struct {
+		CreateCommand []string `json:"CreateCommand"`
+	} `json:"Config"`
+	HostConfig struct {
+		Devices        []inspectDevice                 `json:"Devices"`
+		DeviceRequests []inspectDeviceRequest          `json:"DeviceRequests"`
+		PortBindings   map[string][]inspectPortBinding `json:"PortBindings"`
+	} `json:"HostConfig"`
+	NetworkSettings struct {
+		Ports map[string][]inspectPortBinding `json:"Ports"`
+	} `json:"NetworkSettings"`
+}
+
+type inspectDevice struct {
+	PathOnHost string `json:"PathOnHost"`
+}
+
+// inspectDeviceRequest covers both Docker device requests (Capabilities,
+// DeviceIDs) and the Podman form, which lists resolved host device paths
+type inspectDeviceRequest struct {
+	Driver       string     `json:"Driver"`
+	DeviceIDs    []string   `json:"DeviceIDs"`
+	Capabilities [][]string `json:"Capabilities"`
+	PathOnHost   string     `json:"PathOnHost"`
+}
+
+type inspectPortBinding struct {
+	HostIP   string `json:"HostIp"`
+	HostPort string `json:"HostPort"`
+}
+
+// decodeContainerInspect decodes inspect output, which is a JSON array for
+// both Docker and Podman, a single object is accepted as well
+func decodeContainerInspect(data []byte) (containerInspect, bool) {
+	var list []containerInspect
+	if err := json.Unmarshal(data, &list); err == nil {
+		if len(list) == 0 {
+			return containerInspect{}, false
+		}
+		return list[0], true
+	}
+	var single containerInspect
+	if err := json.Unmarshal(data, &single); err != nil {
+		return containerInspect{}, false
+	}
+	return single, true
+}
+
+// isCDIGPUDevice reports whether a CDI device name refers to a GPU, e.g. nvidia.com/gpu=all
+func isCDIGPUDevice(name string) bool {
+	kind, _, found := strings.Cut(name, "=")
+	return found && strings.HasSuffix(kind, "/gpu")
+}
+
+// isNvidiaDevicePath reports whether a host device path is an NVIDIA device.
+// /dev/dri alone is not enough, it also exists for integrated GPUs
+func isNvidiaDevicePath(path string) bool {
+	return strings.HasPrefix(path, "/dev/nvidia")
+}
+
+// parseGPUEnabled reports whether the inspected container has GPU access:
+// Docker --gpus (gpu capability), CDI GPU devices (Docker or Podman create
+// command) or NVIDIA device nodes passed to the container
+func parseGPUEnabled(data []byte) bool {
+	info, ok := decodeContainerInspect(data)
+	if !ok {
+		return false
+	}
+
+	for _, req := range info.HostConfig.DeviceRequests {
+		for _, caps := range req.Capabilities {
+			for _, c := range caps {
+				if strings.EqualFold(c, "gpu") {
+					return true
+				}
+			}
+		}
+		for _, id := range req.DeviceIDs {
+			if isCDIGPUDevice(id) {
+				return true
+			}
+		}
+		if isNvidiaDevicePath(req.PathOnHost) {
+			return true
+		}
+	}
+
+	for _, dev := range info.HostConfig.Devices {
+		if isNvidiaDevicePath(dev.PathOnHost) {
+			return true
+		}
+	}
+
+	for _, arg := range info.Config.CreateCommand {
+		value := arg
+		if v, found := strings.CutPrefix(arg, "--device="); found {
+			value = v
+		}
+		if isCDIGPUDevice(value) || arg == "--gpus" || strings.HasPrefix(arg, "--gpus=") {
+			return true
+		}
+	}
+
+	return false
+}
+
+// parseHostPort returns the host address and port published for the Ollama API
+// port (11434/tcp). Runtime port data (NetworkSettings.Ports) is preferred,
+// since it holds the actual port even for randomly assigned ones; configured
+// bindings (HostConfig.PortBindings) are used for stopped containers. An empty
+// port means the API port is not published
+func parseHostPort(data []byte) (host, port string) {
+	info, ok := decodeContainerInspect(data)
+	if !ok {
+		return "", ""
+	}
+
+	key := OllamaPort + "/tcp"
+	for _, bindings := range [][]inspectPortBinding{
+		info.NetworkSettings.Ports[key],
+		info.HostConfig.PortBindings[key],
+	} {
+		for _, b := range bindings {
+			if b.HostPort == "" {
+				continue
+			}
+			return apiHost(b.HostIP), b.HostPort
+		}
+	}
+	return "", ""
+}
+
+// apiHost maps a published host IP to an address usable for local API calls
+func apiHost(hostIP string) string {
+	switch hostIP {
+	case "", "0.0.0.0", "::", "[::]":
+		return "localhost"
+	}
+	if strings.Contains(hostIP, ":") && !strings.HasPrefix(hostIP, "[") {
+		return "[" + hostIP + "]"
+	}
+	return hostIP
 }
 
 // getOllamaContainerStatus checks the status of the Ollama container, resolving
@@ -314,7 +465,11 @@ func handleOllamaContainerStatus() {
 		gpuStatus = "Enabled"
 	}
 	fmt.Printf("GPU:         %s\n", gpuStatus)
-	fmt.Printf("API Port:    %s\n", status.Port)
+	if status.Port != "" {
+		fmt.Printf("API Port:    %s\n", status.Port)
+	} else {
+		fmt.Println("API Port:    not published")
+	}
 
 	if status.Created != "" {
 		fmt.Printf("Created:     %s\n", status.Created[:19])
@@ -324,12 +479,16 @@ func handleOllamaContainerStatus() {
 	if status.Running {
 		fmt.Println()
 		fmt.Print("API Status:  ")
-		resp, err := http.Get(OllamaAPIEndpoint + "/api/tags")
-		if err == nil {
-			_ = resp.Body.Close()
-			fmt.Println("✓ Available at", OllamaAPIEndpoint)
+		if status.APIEndpoint == "" {
+			fmt.Printf("⚠ Not checked (container port %s is not published to the host)\n", OllamaPort)
 		} else {
-			fmt.Println("⚠ Not responding")
+			resp, err := http.Get(status.APIEndpoint + "/api/tags")
+			if err == nil {
+				_ = resp.Body.Close()
+				fmt.Println("✓ Available at", status.APIEndpoint)
+			} else {
+				fmt.Println("⚠ Not responding")
+			}
 		}
 	}
 
@@ -393,12 +552,19 @@ func handleOllamaContainerStart() {
 
 	fmt.Printf("✓ Container '%s' started\n", status.Name)
 
+	// Re-inspect: a randomly assigned host port is known only after start
+	endpoint := inspectOllamaContainer(runtime, status.Name).APIEndpoint
+	if endpoint == "" {
+		fmt.Printf("⚠ Container port %s is not published to the host, skipping API check\n", OllamaPort)
+		return
+	}
+
 	// Wait for API to be ready
 	fmt.Print("Waiting for Ollama API...")
 	for i := 0; i < 15; i++ {
 		time.Sleep(time.Second)
 		fmt.Print(".")
-		resp, err := http.Get(OllamaAPIEndpoint + "/api/tags")
+		resp, err := http.Get(endpoint + "/api/tags")
 		if err == nil {
 			_ = resp.Body.Close()
 			fmt.Println(" Ready!")

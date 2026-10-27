@@ -5,6 +5,53 @@ Všechny významné změny v Portunixu jsou dokumentovány v tomto souboru.
 Formát vychází z [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 a projekt dodržuje [Sémantické verzování](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-10-26
+
+### Přidáno ve 2.7.0
+
+- **`portunix skills`** (Issue #190, ADR-043) — instaluje skills pro AI agenty (balíčky `SKILL.md`) z git
+  repozitářů nebo lokálních cest příkazy `add`, `list`, `remove`, `update` a `sources`. Skills se zapisují do
+  univerzálního `.agents/skills/` a do adresářů jednotlivých agentů (Amp, Claude Code, GitHub Copilot, Cursor,
+  Gemini CLI, OpenCode, Zed) vybraných detekcí a interaktivně potvrzených; rozsah projekt nebo uživatel; původ
+  se zaznamenává do `.portunix-skills.json`. Doplňování v shellu pokrývá podpříkazy, flagy, agenty a názvy skills.
+- **Důvěryhodné zdroje skills** (Issue #190) — nový zdroj je nutné před instalací potvrdit; potvrzené zdroje se
+  pamatují pro celého uživatele v `skills-trusted-sources.json` (mód 0600, přepsání přes `PORTUNIX_SKILLS_TRUST`)
+  a lze je zobrazit nebo odvolat příkazem `portunix skills trust list|remove`.
+- **`--help-ai` a `--help-expert` u zbývajících helperů** (Issue #244) — `ptx-database`, `ptx-github`,
+  `ptx-plugin-registry` a `ptx-proxmox` implementují víceúrovňovou nápovědu, a to přímo i přes dispatcher
+  (`portunix github --help-expert`); `portunix proxmox --help-ai` dříve selhával. Všech 19 helperů nyní
+  projde kontrolou nápovědy v pre-flight checku.
+
+### Opraveno ve 2.7.0
+
+- **Stav pluginů přetrvá mezi procesy CLI** (Issue #241) — `plugin start`, `stop` a `health` hned po
+  `plugin enable` u gRPC pluginů selhávaly s „not enabled“, protože stav žil jen v paměti jednoho procesu.
+  Každé spuštění nyní obnoví povolené pluginy z registru a připojí se k zaznamenanému procesu pluginu; gRPC
+  pluginy běží odpojeně a lze je zastavit z libovolného procesu; souběžné starty serializuje zámek registru;
+  plugin, který skončí během startu, se nahlásí s návratovým kódem a koncem `plugin.log`; zápisy registru jsou
+  atomické. Šablona pluginu používá skutečný vygenerovaný gRPC kód.
+- **`aiops ollama container status` pod Podmanem** (Issue #242) — detekce GPU rozpozná kromě Docker gpu
+  capability i CDI zařízení (`--device nvidia.com/gpu=all`) a uzly `/dev/nvidia*` a port API se čte z mapování
+  portů kontejneru místo předpokladu 11434; nepublikovaný port se hlásí jako „not published“.
+- **Verze v hlavičce `--help-expert`** (Issue #244) — helpery vypisovaly `vv2.7.0`, když vložená verze
+  už obsahovala prefix `v`; všech 13 hlaviček helperů nyní vypisuje `v2.7.0`.
+- **Vytvoření Python venv** — `.python-version` připínal Python 3.12, zatímco `pyproject.toml` vyžaduje
+  `>=3.14`, takže `scripts/setup-venv.sh` selhával; pin je nyní 3.14 a `uv.lock` je aktualizovaný.
+
+### Změněno ve 2.7.0
+
+- **govulncheck nahrazuje nancy** (Issue #232) — `make security` a CI Security Scan selhávaly, protože OSS
+  Index začal nancy vracet 401. Nový `scripts/govulncheck-scan.py` prověří každý Go modul bez externího účtu
+  a CI job používá nejnovější stabilní Go, aby nálezy ve stdlib odpovídaly release buildům.
+- **Výjimky pro velké soubory v pre-flight checku** — `scripts/github-private-files.json` má nový klíč
+  `large_file_exceptions`; uvedené soubory třetích stran (`mermaid.min.js` z Hugo tématu) už neshodí
+  kontrolu velkých souborů.
+
+### Bezpečnost ve 2.7.0
+
+- **Aktualizace zranitelných závislostí** (Issue #232) — gRPC 1.84.0 a `golang.org/x/net` 0.61.0 v kořenovém
+  a sdílených modulech; go-git, go-billy, `x/crypto` a circl v ptx-github; `x/crypto` v ptx-ssh.
+
 ## [2.6.3] - 2026-10-24
 
 ### Opraveno ve 2.6.3

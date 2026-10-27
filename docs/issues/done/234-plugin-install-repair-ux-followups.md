@@ -11,8 +11,8 @@
 
 ## Summary
 
-Testing of #233 found three usability problems in the plugin manager. None of them blocks
-#233, but each one misleads the user or makes future breakage likely:
+Testing of #233 found three usability problems in the plugin manager. None of them blocks #233,
+but each one misleads the user or makes future breakage likely:
 
 1. The prerequisite check reports a missing Python runtime as an error even when uv is about
    to provide the interpreter

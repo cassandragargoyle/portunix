@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -162,30 +163,11 @@ Use -i or --interactive for interactive sessions.`,
 	Args: cobra.MinimumNArgs(2),
 	Run: func(cmd *cobra.Command, args []string) {
 		// Manual flag parsing since DisableFlagParsing is true
-		var interactive bool
-		var containerName string
-		var command []string
-
-		// Parse arguments manually to extract flags
-		filteredArgs := []string{}
-		for _, arg := range args {
-			if arg == "-i" || arg == "--interactive" {
-				interactive = true
-			} else if arg == "-it" {
-				interactive = true
-				filteredArgs = append(filteredArgs, "-t") // Keep -t for docker/podman
-			} else {
-				filteredArgs = append(filteredArgs, arg)
-			}
-		}
-
-		if len(filteredArgs) < 2 {
-			fmt.Printf("❌ Error: Usage: portunix container exec [flags] <container-name> <command>\n")
+		interactive, containerName, command, err := parseContainerExecArgs(args)
+		if err != nil {
+			fmt.Printf("❌ Error: %v\n", err)
 			return
 		}
-
-		containerName = filteredArgs[0]
-		command = filteredArgs[1:]
 
 		// Get configured runtime
 		runtime, err := container.GetSelectedRuntime()
@@ -212,6 +194,26 @@ Use -i or --interactive for interactive sessions.`,
 			fmt.Printf("❌ Error executing command: %v\n", err)
 		}
 	},
+}
+
+// parseContainerExecArgs extracts the interactive flags given before the
+// container name; everything after the name is the command, unchanged.
+// -it means interactive with a TTY, which the runtimes add for interactive mode
+func parseContainerExecArgs(args []string) (interactive bool, containerName string, command []string, err error) {
+	i := 0
+	for ; i < len(args); i++ {
+		switch args[i] {
+		case "-i", "--interactive", "-it", "-ti":
+			interactive = true
+			continue
+		}
+		break
+	}
+	rest := args[i:]
+	if len(rest) < 2 {
+		return false, "", nil, fmt.Errorf("usage: portunix container exec [flags] <container-name> <command>")
+	}
+	return interactive, rest[0], rest[1:], nil
 }
 
 // containerInfoCmd shows information about container runtimes
@@ -560,6 +562,14 @@ Use --follow flag to stream logs continuously.`,
 	},
 }
 
+// Runtime selection and runtime calls of the run command; tests replace
+// them to check the delegation without starting a container
+var (
+	selectContainerRuntime = container.GetSelectedRuntime
+	dockerRunContainer     = docker.RunContainer
+	podmanRunContainer     = podman.RunContainer
+)
+
 // containerRunCmd represents the universal run command
 var containerRunCmd = &cobra.Command{
 	Use:   "run [flags] <image> [command...]",
@@ -605,11 +615,10 @@ Use -- to separate flags from command arguments when needed.`,
 		envVars, _ := cmd.Flags().GetStringSlice("env")
 		network, _ := cmd.Flags().GetString("network")
 
-		image := args[0]
-		command := args[1:]
+		image, command := splitContainerRunArgs(args)
 
 		// Get configured runtime and delegate
-		runtime, err := container.GetSelectedRuntime()
+		runtime, err := selectContainerRuntime()
 		if err != nil {
 			fmt.Printf("❌ Error: %v\n", err)
 			fmt.Println("\n💡 Hint: Check available runtimes with 'portunix container info'")
@@ -618,7 +627,7 @@ Use -- to separate flags from command arguments when needed.`,
 
 		switch runtime {
 		case "docker":
-			err = docker.RunContainer(image, command, docker.ContainerRunOptions{
+			err = dockerRunContainer(image, command, docker.ContainerRunOptions{
 				Detach:      detach,
 				Interactive: interactive,
 				TTY:         tty,
@@ -629,7 +638,7 @@ Use -- to separate flags from command arguments when needed.`,
 				Network:     network,
 			})
 		case "podman":
-			err = podman.RunContainer(image, command, podman.ContainerRunOptions{
+			err = podmanRunContainer(image, command, podman.ContainerRunOptions{
 				Detach:      detach,
 				Interactive: interactive,
 				TTY:         tty,
@@ -648,6 +657,32 @@ Use -- to separate flags from command arguments when needed.`,
 			fmt.Printf("❌ Error running container: %v\n", err)
 		}
 	},
+}
+
+// splitContainerRunArgs splits run arguments into the image and its command.
+// Flags are parsed only before the image (SetInterspersed(false)), so the
+// command keeps its own flags as with docker/podman run; a "--" right after
+// the image is a separator, not the program to run (#235)
+func splitContainerRunArgs(args []string) (image string, command []string) {
+	image, command = args[0], args[1:]
+	if len(command) > 0 && command[0] == "--" {
+		command = command[1:]
+	}
+	return image, command
+}
+
+// addContainerRunFlags registers the flags of the run command
+func addContainerRunFlags(cmd *cobra.Command) {
+	cmd.Flags().BoolP("detach", "d", false, "Run container in background")
+	cmd.Flags().BoolP("interactive", "i", false, "Keep STDIN open")
+	cmd.Flags().BoolP("tty", "t", false, "Allocate pseudo-TTY")
+	cmd.Flags().String("name", "", "Assign a name to the container")
+	cmd.Flags().StringSliceP("port", "p", []string{}, "Publish container ports to host")
+	cmd.Flags().StringSliceP("volume", "v", []string{}, "Bind mount volumes")
+	cmd.Flags().StringSliceP("env", "e", []string{}, "Set environment variables")
+	cmd.Flags().String("network", "", "Connect container to a network")
+	// Everything after the image belongs to the container command (bash -c ...)
+	cmd.Flags().SetInterspersed(false)
 }
 
 // containerListCmd represents the universal list command
@@ -912,14 +947,7 @@ func init() {
 	containerCmd.AddCommand(containerComposeCmd)
 
 	// Add flags to run command
-	containerRunCmd.Flags().BoolP("detach", "d", false, "Run container in background")
-	containerRunCmd.Flags().BoolP("interactive", "i", false, "Keep STDIN open")
-	containerRunCmd.Flags().BoolP("tty", "t", false, "Allocate pseudo-TTY")
-	containerRunCmd.Flags().String("name", "", "Assign a name to the container")
-	containerRunCmd.Flags().StringSliceP("port", "p", []string{}, "Publish container ports to host")
-	containerRunCmd.Flags().StringSliceP("volume", "v", []string{}, "Bind mount volumes")
-	containerRunCmd.Flags().StringSliceP("env", "e", []string{}, "Set environment variables")
-	containerRunCmd.Flags().String("network", "", "Connect container to a network")
+	addContainerRunFlags(containerRunCmd)
 
 	// Add interactive flag to exec command
 	containerExecCmd.Flags().BoolP("interactive", "i", false, "Keep STDIN open and allocate pseudo-TTY")
