@@ -54,8 +54,7 @@ been dropped or skipped. The package-manifest-driven installation path used by
 `portunix install <package>` does not currently expose a prompt hook for packages
 that need directory selection.
 
-This is likely a regression relative to the behavior documented in issues #019 and
-#122.
+This is likely a regression relative to the behavior documented in issues #019 and #122.
 
 ## Acceptance Criteria
 

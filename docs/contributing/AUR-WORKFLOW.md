@@ -6,29 +6,29 @@ This document describes the complete workflow for publishing Portunix to the Arc
 
 1. **SSH Access to AUR**
 
-```bash
-# Generate SSH key (if you don't have one)
-ssh-keygen -t ed25519 -C "your_email@example.com"
+   ```bash
+   # Generate SSH key (if you don't have one)
+   ssh-keygen -t ed25519 -C "your_email@example.com"
 
-# Add public key to AUR account
-# https://aur.archlinux.org/account/
+   # Add public key to AUR account
+   # https://aur.archlinux.org/account/
 
-# Test connection
-ssh -T aur@aur.archlinux.org
-# Should return: "Hi username, you've successfully authenticated..."
-```
+   # Test connection
+   ssh -T aur@aur.archlinux.org
+   # Should return: "Hi username, you've successfully authenticated..."
+   ```
 
 2. **GitHub Release Created**
 
-- Git tag must exist on GitHub
-- Release tarball must be downloadable
-- URL format: `https://github.com/cassandragargoyle/portunix/archive/refs/tags/v1.7.5.tar.gz`
+   - Git tag must exist on GitHub
+   - Release tarball must be downloadable
+   - URL format: `https://github.com/cassandragargoyle/portunix/archive/refs/tags/v1.7.5.tar.gz`
 
 3. **Portunix Binary Built**
 
-```bash
-make build
-```
+   ```bash
+   make build
+   ```
 
 ## Complete Workflow
 

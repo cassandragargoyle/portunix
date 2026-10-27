@@ -9,10 +9,10 @@
 **Labels:** virtualization, qemu, kvm, windows, snapshot
 **Closed:** 2026-05-09
 **Superseded by:** the `portunix virt` command tree and the `ptx-virt` helper —
-implemented across #049 (QEMU full support), #089 (QEMU/KVM adapter),
-#088 (VirtualBox/KVM conflict detection), #090–#092 (libvirt detection,
-dependencies, package installation), #061 (snapshot list fix), and
-#121 (libvirt detection fix).
+implemented across #049 (QEMU full support), #089 (QEMU/KVM adapter), #088
+(VirtualBox/KVM conflict detection), #090–#092 (libvirt detection,
+dependencies, package installation), #061 (snapshot list fix), and #121
+(libvirt detection fix).
 
 ## Closure Note (2026-05-09)
 

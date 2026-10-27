@@ -84,8 +84,8 @@ follows the agent table of the `skills` CLI (`skills@1.5.9`); the IDs
 The universal target is always written unless `--no-universal` is given.
 Targets that resolve to the same directory are written once and listed as one
 row (for example `universal,amp,copilot,cursor,gemini,opencode,zed` in a
-project). An agent is detected when its registry package is installed (Issue
-#035 detection, `claude-code`, `gemini-cli`) or its configuration directory
+project). An agent is detected when its registry package is installed (Issue #035
+detection, `claude-code`, `gemini-cli`) or its configuration directory
 exists (`~/.claude`, `~/.cursor`, `~/.copilot`, `~/.gemini`, and `amp`,
 `opencode`, `zed` under `$XDG_CONFIG_HOME`). `portunix skills sources` shows
 the directories and the detection state of every target.

@@ -45,7 +45,7 @@ map. `NewManager` creates an empty map and never fills it from the registry, so 
 process every enabled plugin looks disabled. The registry flag `Enabled` is written but never
 read for this purpose.
 
-#156 fixed `plugin health` for helper (CLI) plugins only; gRPC plugins are still affected.
+Issue #156 fixed `plugin health` for helper (CLI) plugins only; gRPC plugins are still affected.
 
 ## Proposed Approach
 

@@ -2,7 +2,9 @@ package logging
 
 import (
 	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -345,5 +347,69 @@ func BenchmarkConfigClone(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		config.Clone()
+	}
+}
+
+func TestConfigManagerCloseReleasesReplacedFiles(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "manager.log")
+	before := openFileCount(t)
+
+	manager := NewConfigManager(&Config{
+		Level:    "info",
+		Format:   "json",
+		Output:   []string{"file"},
+		FilePath: logPath,
+	})
+	stale := manager.GetLogger("component")
+	manager.SetLevel("debug")
+	manager.SetModuleLevel("component", "warn")
+
+	// A logger obtained before the update keeps writing to its file
+	stale.Error("stale logger message")
+	data, err := os.ReadFile(logPath)
+	if err != nil {
+		t.Fatalf("Failed to read log file: %v", err)
+	}
+	if !strings.Contains(string(data), "stale logger message") {
+		t.Error("Logger obtained before UpdateConfig no longer writes to the log file")
+	}
+
+	if err := manager.Close(); err != nil {
+		t.Fatalf("Close() returned error: %v", err)
+	}
+	assertReleased(t, before, logPath)
+}
+
+func TestSetModuleLevelWithoutModules(t *testing.T) {
+	config := &Config{Level: "info"}
+	config.SetModuleLevel("Component", "debug")
+	if config.Modules["component"] != "debug" {
+		t.Errorf("Expected module level 'debug', got '%s'", config.Modules["component"])
+	}
+}
+
+func TestConfigManagerUpdateConfigReusesFiles(t *testing.T) {
+	logPath := filepath.Join(t.TempDir(), "updates.log")
+	before := openFileCount(t)
+
+	manager := NewConfigManager(&Config{
+		Level:    "info",
+		Format:   "json",
+		Output:   []string{"file"},
+		FilePath: logPath,
+	})
+	defer manager.Close()
+
+	manager.GetLogger("first")
+	manager.GetLogger("second")
+	for i := 0; i < 50; i++ {
+		manager.SetLevel("debug")
+	}
+
+	if n := len(manager.factory.files.byPath); n != 1 {
+		t.Errorf("Expected 1 open file after configuration changes, got %d", n)
+	}
+	if after := openFileCount(t); before >= 0 && after-before != 1 {
+		t.Errorf("Expected 1 additional open descriptor, got %d", after-before)
 	}
 }

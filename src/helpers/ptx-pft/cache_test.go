@@ -12,7 +12,8 @@ import (
 )
 
 func TestNewSyncCache(t *testing.T) {
-	cache := NewSyncCache("/tmp/test-project")
+	projectDir := filepath.Join(t.TempDir(), "test-project")
+	cache := NewSyncCache(projectDir)
 
 	if cache.Version != "1.0" {
 		t.Errorf("Expected version '1.0', got '%s'", cache.Version)
@@ -20,7 +21,7 @@ func TestNewSyncCache(t *testing.T) {
 	if cache.Entries == nil {
 		t.Error("Entries map should be initialized")
 	}
-	if cache.filePath != "/tmp/test-project/.pft-cache.json" {
+	if want := filepath.Join(projectDir, ".pft-cache.json"); cache.filePath != want {
 		t.Errorf("Unexpected file path: %s", cache.filePath)
 	}
 }

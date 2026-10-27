@@ -129,8 +129,8 @@ the primary name with `list, ps` as aliases — consistent with Docker/Podman.
 
 ### Broader Fix (optional, recommended as follow-up)
 
-The dispatcher duplicates cobra's alias list by hand, which is what caused both
-#094 and #181. Consider one of:
+The dispatcher duplicates cobra's alias list by hand, which is what caused both #094
+and #181. Consider one of:
 
 - Have the helper delegate straight to the cobra command tree (let cobra do the
   alias resolution), or
