@@ -24,16 +24,6 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Cache Go modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: Install dependencies
         run: |
           go mod download
@@ -83,16 +73,6 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Cache Go modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: Install dependencies
         run: go mod download
 
@@ -129,16 +109,6 @@ jobs:
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Cache Go modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
 
       - name: Install dependencies
         run: go mod download
@@ -185,16 +155,6 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
-
-      - name: Cache Go modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
 
       - name: Install dependencies
         run: go mod download
@@ -272,22 +232,14 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Cache Go modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: Install dependencies
         run: go mod download
 
       - name: Run benchmarks
+        shell: bash
         run: |
-          go test -bench=. -benchmem -count=3 ./... > benchmark-results.txt
+          # -run='^$' runs only benchmarks; the regular tests have their own jobs
+          go test -tags=unit -run='^$' -bench=. -benchmem -count=3 ./... | tee benchmark-results.txt
 
       - name: Upload benchmark results
         uses: actions/upload-artifact@v4
@@ -308,25 +260,15 @@ jobs:
         with:
           go-version-file: go.mod
 
-      - name: Cache Go modules
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cache/go-build
-            ~/go/pkg/mod
-          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
-          restore-keys: |
-            ${{ runner.os }}-go-
-
       - name: Install dependencies
         run: go mod download
 
-      - name: Build project first (needed for go:embed)
-        run: go build -o portunix ./
-        
+      - name: Build project first (needed for go:embed and helper binaries)
+        run: make build
+
       - name: Run all tests with coverage
         run: |
-          go test -race -coverprofile=coverage.out -covermode=atomic ./...
+          go test -tags=unit -race -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Generate coverage report
         run: |

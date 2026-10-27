@@ -45,20 +45,20 @@ src/helpers/
 
 1. **Create Directory Structure**
 
-```bash
-mkdir -p src/helpers/ptx-newfeature
-cd src/helpers/ptx-newfeature
-```
+   ```bash
+   mkdir -p src/helpers/ptx-newfeature
+   cd src/helpers/ptx-newfeature
+   ```
 
 2. **Initialize Go Module**
 
-```bash
-go mod init portunix.ai/portunix/src/helpers/ptx-newfeature
-```
+   ```bash
+   go mod init portunix.ai/portunix/src/helpers/ptx-newfeature
+   ```
 
 3. **Create main.go**
 
-```go
+   ```go
    package main
 
    import (
@@ -124,15 +124,13 @@ go mod init portunix.ai/portunix/src/helpers/ptx-newfeature
            os.Exit(1)
        }
    }
-```
-
-### Dispatcher Integration
+   ```
 
 4. **Register in Dispatcher**
 
    Edit `src/dispatcher/dispatcher.go` to add your helper:
 
-```go
+   ```go
    func (d *Dispatcher) registerHelpers() {
        // Existing helpers...
 
@@ -143,37 +141,37 @@ go mod init portunix.ai/portunix/src/helpers/ptx-newfeature
            Required: false,
        }
    }
-```
+   ```
 
 5. **Update Build System**
 
    Add to `Makefile`:
 
-```makefile
+   ```makefile
    build-helpers: ## Build all helper binaries
        @echo "🔧 Building helper binaries..."
        @cd src/helpers/ptx-container && go build -o ../../../ptx-container .
        @cd src/helpers/ptx-mcp && go build -o ../../../ptx-mcp .
        @cd src/helpers/ptx-newfeature && go build -o ../../../ptx-newfeature .
        @echo "✅ Helper binaries built: ptx-container, ptx-mcp, ptx-newfeature"
-```
+   ```
 
    Add to `build-with-version.sh`:
 
-```bash
+   ```bash
    # Build ptx-newfeature
    echo "Building ptx-newfeature..."
    cd src/helpers/ptx-newfeature
    go build -ldflags "-X main.version=$VERSION -s -w" -o ../../../ptx-newfeature .
    NEWFEATURE_BUILD=$?
    cd ../../..
-```
+   ```
 
 6. **Update GoReleaser**
 
    Add to `.goreleaser.yml`:
 
-```yaml
+   ```yaml
    builds:
      # ... existing builds ...
 
@@ -204,21 +202,21 @@ go mod init portunix.ai/portunix/src/helpers/ptx-newfeature
          - ptx-container
          - ptx-mcp
          - ptx-newfeature  # Add here
-```
+   ```
 
 7. **Update Installation**
 
    Add to `src/app/selfinstall/install.go`:
 
-```go
+   ```go
    helpers := []string{"ptx-container", "ptx-mcp", "ptx-newfeature"}
-```
+   ```
 
    Add to `src/app/update/github.go`:
 
-```go
+   ```go
    expectedBinaries := []string{"portunix", "ptx-container", "ptx-mcp", "ptx-newfeature"}
-```
+   ```
 
 ## Best Practices
 

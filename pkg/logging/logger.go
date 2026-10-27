@@ -1,3 +1,9 @@
+/*
+ *  SPDX-License-Identifier: MIT
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
+
 // Package logging provides structured logging for Portunix
 package logging
 

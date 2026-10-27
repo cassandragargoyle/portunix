@@ -3,9 +3,43 @@ package main
 import (
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 )
+
+// buildTestBinary builds the main binary into the repository root (next to
+// the helper binaries the dispatcher looks for) and returns its path. The
+// .exe suffix is required on Windows, otherwise exec cannot find the file
+func buildTestBinary(t *testing.T) string {
+	t.Helper()
+	name := "portunix_test"
+	if runtime.GOOS == "windows" {
+		name += ".exe"
+	}
+	path, err := filepath.Abs(name)
+	if err != nil {
+		t.Fatalf("Failed to resolve test binary path: %v", err)
+	}
+	if out, err := exec.Command("go", "build", "-o", path, ".").CombinedOutput(); err != nil {
+		t.Fatalf("Failed to build application: %v\n%s", err, out)
+	}
+	t.Cleanup(func() { _ = os.Remove(path) })
+	return path
+}
+
+// requireHelper skips the test when a helper binary is not built next to the
+// main binary (e.g. plain go test without make build)
+func requireHelper(t *testing.T, helper string) {
+	t.Helper()
+	if runtime.GOOS == "windows" {
+		helper += ".exe"
+	}
+	if _, err := os.Stat(helper); err != nil {
+		t.Skipf("Helper %s not built (run make build first)", helper)
+	}
+}
 
 // Issue #186 final cleanup (2026-05-19): TestInstallJavaRunDry and
 // TestProcessArgumentsInstallJava were removed together with the
@@ -29,15 +63,10 @@ import (
 // Related Issues: Issue #037 (MCP Serve Implementation), Issue #036 (Default stdio Mode),
 // Issue #225 (expectations updated from cobra help to the custom help layout)
 func TestMainWithoutArguments(t *testing.T) {
-	// Build the application first
-	buildCmd := exec.Command("go", "build", "-o", "portunix_test", ".")
-	if err := buildCmd.Run(); err != nil {
-		t.Fatalf("Failed to build application: %v", err)
-	}
-	defer os.Remove("portunix_test") // Cleanup
+	binary := buildTestBinary(t)
 
 	// Run the application without arguments
-	cmd := exec.Command("./portunix_test")
+	cmd := exec.Command(binary)
 	output, err := cmd.CombinedOutput()
 
 	// The application should exit successfully and show help
@@ -80,15 +109,12 @@ func TestMainWithoutArguments(t *testing.T) {
 }
 
 func TestMCPServeCommand(t *testing.T) {
-	// Build the application first
-	buildCmd := exec.Command("go", "build", "-o", "portunix_test", ".")
-	if err := buildCmd.Run(); err != nil {
-		t.Fatalf("Failed to build application: %v", err)
-	}
-	defer os.Remove("portunix_test") // Cleanup
+	// mcp is served by the ptx-mcp helper through the dispatcher
+	requireHelper(t, "ptx-mcp")
+	binary := buildTestBinary(t)
 
 	// Test that mcp serve command exists
-	cmd := exec.Command("./portunix_test", "mcp", "serve", "--help")
+	cmd := exec.Command(binary, "mcp", "serve", "--help")
 	output, err := cmd.CombinedOutput()
 
 	if err != nil {
@@ -125,15 +151,10 @@ func TestMCPServeCommand(t *testing.T) {
 }
 
 func TestMCPServerCommandRemoved(t *testing.T) {
-	// Build the application first
-	buildCmd := exec.Command("go", "build", "-o", "portunix_test", ".")
-	if err := buildCmd.Run(); err != nil {
-		t.Fatalf("Failed to build application: %v", err)
-	}
-	defer os.Remove("portunix_test") // Cleanup
+	binary := buildTestBinary(t)
 
 	// Test that old mcp serve command no longer exists
-	cmd := exec.Command("./portunix_test", "mcp serve", "--help")
+	cmd := exec.Command(binary, "mcp serve", "--help")
 	output, err := cmd.CombinedOutput()
 
 	// This should fail since the command no longer exists

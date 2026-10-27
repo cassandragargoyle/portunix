@@ -1,3 +1,9 @@
+/*
+ *  SPDX-License-Identifier: MIT
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
+
 package logging
 
 import (
@@ -169,6 +175,9 @@ func (c *Config) GetModuleLevel(module string) string {
 
 // SetModuleLevel sets the log level for a specific module
 func (c *Config) SetModuleLevel(module, level string) {
+	if c.Modules == nil {
+		c.Modules = make(map[string]string)
+	}
 	c.Modules[strings.ToLower(module)] = level
 }
 
@@ -219,12 +228,21 @@ func (cm *ConfigManager) GetLogger(component string) Logger {
 func (cm *ConfigManager) UpdateConfig(config *Config) {
 	_ = config.Validate() //nolint:errcheck // Validate corrects invalid values, error always nil
 	cm.config = config
-	cm.factory = NewFactory(config)
+	// Loggers obtained before the update may still be referenced by callers,
+	// so the new factory shares the open log files instead of closing them
+	cm.factory = cm.factory.derive(config)
 
 	// Recreate all existing loggers with new configuration
 	for component := range cm.loggers {
 		cm.loggers[component] = cm.factory.CreateLogger(component)
 	}
+}
+
+// Close closes the log files opened by loggers of this manager, including
+// those of configurations replaced by UpdateConfig. Loggers obtained from the
+// manager must not be used after Close
+func (cm *ConfigManager) Close() error {
+	return cm.factory.Close()
 }
 
 // SetLevel sets the global log level
@@ -250,6 +268,12 @@ func GetLogger(component string) Logger {
 // UpdateGlobalConfig updates the global logging configuration
 func UpdateGlobalConfig(config *Config) {
 	globalConfigManager.UpdateConfig(config)
+}
+
+// CloseGlobalLoggers closes the log files opened by the global loggers,
+// intended for process shutdown
+func CloseGlobalLoggers() error {
+	return globalConfigManager.Close()
 }
 
 // SetGlobalLogLevel sets the global log level

@@ -284,8 +284,8 @@ make undeploy-local
 ## Dokumentace
 
 - **[Windows Setup Guide](docs/WINDOWS-SETUP.md)**: Windows-specifické nastavení a UTF-8 konfigurace
-- **[TEST_GUIDE.md](TEST_GUIDE.md)**: Kompletní průvodce testováním pro vývojáře
-- **[TESTING.md](TESTING.md)**: Architektura testování a standardy
+- **[TEST_GUIDE.md](test/TEST_GUIDE.md)**: Kompletní průvodce testováním pro vývojáře
+- **[TESTING.md](test/TESTING.md)**: Architektura testování a standardy
 - **[Issues](https://github.com/cassandragargoyle/portunix/issues)**: GitHub issues, podrobné popisy v `docs/issues/`
 
 ## Konfigurace

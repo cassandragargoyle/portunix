@@ -481,9 +481,9 @@ func (suite *ContainerParamsTestSuite) TestValidateVolumePath_ValidPaths_Success
 		expectError bool
 	}{
 		{"Valid existing path", hostPath, false},
-		{"Valid absolute path", "/tmp", false},
+		{"Valid absolute path", os.TempDir(), false},
 		{"Invalid relative path", "relative/path", true},
-		{"Non-existent path", "/non/existent/path", true},
+		{"Non-existent path", filepath.Join(suite.testDir, "non", "existent", "path"), true},
 	}
 
 	for _, tc := range testCases {
@@ -503,7 +503,7 @@ func validateVolumePath(path string) error {
 	if !filepath.IsAbs(path) {
 		return assert.AnError
 	}
-	if path != "/tmp" && !pathExists(path) {
+	if !pathExists(path) {
 		return assert.AnError
 	}
 	return nil
