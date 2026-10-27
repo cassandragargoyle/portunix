@@ -188,7 +188,7 @@ deps: ## Install testing dependencies
 	go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 	go install github.com/golang/mock/mockgen@latest
 	go install golang.org/x/tools/cmd/goimports@latest
-	go install github.com/sonatype-nexus-community/nancy@latest
+	go install golang.org/x/vuln/cmd/govulncheck@latest
 	go install github.com/axw/gocov/gocov@latest
 	@echo "Testing dependencies installed"
 
@@ -255,7 +255,7 @@ mocks: ## Generate mocks
 security: ## Run security scans
 	@echo "Running security scans..."
 	@uv run --script scripts/gosec-scan.py
-	go list -json -deps ./... | nancy sleuth
+	@uv run --script scripts/govulncheck-scan.py
 
 setup-test: ## Setup test environment
 	@echo "Setting up test environment..."

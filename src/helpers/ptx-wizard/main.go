@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"portunix.ai/portunix/src/helpers/ptx-wizard/cmd"
 )
@@ -73,7 +74,7 @@ func showHelpAI() {
 }
 
 func showHelpExpert() {
-	fmt.Printf("PTX-WIZARD v%s - Interactive CLI Installation Wizards\n", version)
+	fmt.Printf("PTX-WIZARD v%s - Interactive CLI Installation Wizards\n", strings.TrimPrefix(version, "v"))
 	fmt.Println("════════════════════════════════════════════════════════")
 	fmt.Println()
 	fmt.Println("DESCRIPTION:")

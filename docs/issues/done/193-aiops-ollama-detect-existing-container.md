@@ -12,9 +12,10 @@ redundant Ollama container occupying port 11434.
 ## 📋 Status
 
 - **Created**: 2026-07-06
-- **Status**: 📋 Open
+- **Status**: ✅ Implemented
+- **Completed**: 2026-10-26
 - **Assignee**: -
-- **Branch**: feature/issue-193-aiops-ollama-detect-existing-container
+- **Branch**: feature/issue-193-aiops-ollama-detect-existing-container (merged into `main` at `d51b44d`)
 - **Related**:
   - `docs/commands/core/aiops/` — public documentation of the aiops commands
 

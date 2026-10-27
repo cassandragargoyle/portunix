@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"portunix.ai/portunix/src/helpers/ptx-prompting/cmd"
 )
@@ -104,7 +105,7 @@ func showHelpAI() {
 }
 
 func showHelpExpert() {
-	fmt.Printf("PTX-PROMPTING v%s - Template-Based Prompt Generation\n", version)
+	fmt.Printf("PTX-PROMPTING v%s - Template-Based Prompt Generation\n", strings.TrimPrefix(version, "v"))
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println()
 	fmt.Println("DESCRIPTION:")

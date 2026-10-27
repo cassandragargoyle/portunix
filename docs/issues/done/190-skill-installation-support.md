@@ -6,8 +6,9 @@
 **Assignee**: Developer
 **Reporter**: Architect
 **Created**: 2026-05-30
-**Status**: 📋 Open
-**Related ADR**: [ADR-043 — Skill Installation Architecture](../adr/043-skill-installation-architecture.md)
+**Status**: ✅ Implemented
+**Completed**: 2026-10-26
+**Related ADR**: [ADR-043 — Skill Installation Architecture](../../adr/043-skill-installation-architecture.md)
 
 ## Summary
 
@@ -144,33 +145,60 @@ Portunix only ever modifies skills recorded in its manifest; hand-placed skills 
 
 ### Phase 1 — Core + universal + Claude Code driver
 
-- [ ] Dispatcher: add `skills` to `ptx-installer` commands
-- [ ] `cmd_skills.go`: `add`, `list`, `remove`, `update`, `sources` skeletons + meta-flags
+- [x] Dispatcher: add `skills` to `ptx-installer` commands
+- [x] `cmd_skills.go`: `add`, `list`, `remove`, `update`, `sources` skeletons + meta-flags
       (`--version`, `--description`, `--list-commands`, `--help`, `--help-ai`, `--help-expert`)
-- [ ] `source.go`: git shallow clone + cache; `--source <path>`; `git`-missing remediation
-- [ ] `discover.go`: discover `SKILL.md` dirs + parse front-matter; validate `--skill`
-- [ ] `target.go`: `AgentTarget` interface + universal target
-- [ ] `agents.go`: registry + `claude` driver
-- [ ] `manifest.go`: read/write `.portunix-skills.json`
-- [ ] `install.go`: orchestration + trust gate (D6) + idempotency (`--force`)
-- [ ] Skill selection: `--skill` (repeatable), `--all`, interactive multi-select, no-TTY error
-- [ ] Scope: project default + `--global`/`--user`
-- [ ] `list` (table + `--json`), `remove`, `update` against the manifest
+- [x] `source.go`: git shallow clone + cache; `--source <path>`; `git`-missing remediation
+- [x] `discover.go`: discover `SKILL.md` dirs + parse front-matter; validate `--skill`
+- [x] `target.go`: `AgentTarget` interface + universal target
+- [x] `agents.go`: registry + `claude` driver
+- [x] `manifest.go`: read/write `.portunix-skills.json`
+- [x] `install.go`: orchestration + trust gate (D6) + idempotency (`--force`)
+- [x] Skill selection: `--skill` (repeatable), `--all`, interactive multi-select, no-TTY error
+- [x] Scope: project default + `--global`/`--user`
+- [x] `list` (table + `--json`), `remove`, `update` against the manifest
 
 ### Phase 2 — Additional agent drivers + parity
 
-- [ ] Per-agent drivers: Cursor, Gemini CLI, GitHub Copilot, Zed, OpenCode, Amp
+- [x] Per-agent drivers: Cursor, Gemini CLI, GitHub Copilot, Zed, OpenCode, Amp
       (each additive, owns its `SkillsDir`/`Install`)
-- [ ] Interactive agent multi-select pre-populated by detection
-- [ ] `--all-agents`
-- [ ] `sources` command output (targets + detection state)
+- [x] Interactive agent multi-select pre-populated by detection
+- [x] `--all-agents`
+- [x] `sources` command output (targets + detection state)
 
 ### Phase 3 — Polish
 
-- [ ] Progress + summary output (source@commit, targets written)
-- [ ] `update` for all managed skills; checksum/commit refresh
-- [ ] Documentation: `docs/helpers/ptx-installer.md` skills section + trust/safety note
-- [ ] Shell-completion entries for `skills` verbs
+- [x] Progress + summary output (source@commit, targets written)
+- [x] `update` for all managed skills; checksum/commit refresh
+- [x] Documentation: `docs/helpers/ptx-installer.md` skills section + trust/safety note
+- [x] Shell-completion entries for `skills` verbs
+
+### Acceptance Follow-ups (from [acceptance-190](../../testing/acceptance-190.md), Phase 1)
+
+- [x] **O1** — write errors are labelled `skipped (conflict)` in the summary; report them with a
+      separate `failed` action (exit code and message are already correct)
+- [x] **O2** — interactive paths (trust prompt, overwrite prompt, skill selection) are covered by
+      unit tests only; exercise them end-to-end on a pseudo-terminal
+- [x] **O3** — the issue stays open after the Phase 1 merge: Phase 2 and Phase 3, a Go
+      integration test in `test/integration/` run in a container via `portunix container`, and
+      Windows verification are still missing; do not archive as `Implemented` until done
+      (Phase 2, Phase 3 and `test/integration/issue_190_skills_test.go` done)
+- [ ] **Windows** — run the skills scenarios on Windows (paths via `os.UserHomeDir` /
+      `os.UserCacheDir`, `git.exe`), the remaining open item of O3; not executed — the issue
+      was closed by the project owner on 2026-10-26 with Windows covered only by cross-compiled
+      `go vet` (`GOOS=windows`)
+- [x] **O4** — trust is scoped to the current project and the user scope: a source installed in
+      project A is "new" again in project B, so installing the same source into many projects
+      asks for confirmation each time. Consistent with ADR-043 D6 (manifests are the record)
+      and safe; product decision whether to keep it or add a user-level trusted-sources record
+      (from retest 1 of [acceptance-190](../../testing/acceptance-190.md)); implemented as a
+      user-wide trust record `<user-config>/portunix/skills-trusted-sources.json` with
+      `portunix skills trust list|remove`
+- [x] **O5** — a corrupt `skills-trusted-sources.json` blocks installs from new sources
+      without `--yes` (fail closed, correct) and makes `trust list` fail, but the error does
+      not tell the user how to recover (fix or delete the file); add a recovery hint (from
+      retest 2 of [acceptance-190](../../testing/acceptance-190.md)); the parse error now names the
+      file and says to fix the JSON or delete the file to reset the record
 
 ## Acceptance Criteria
 

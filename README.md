@@ -27,8 +27,8 @@
 ```bash
 # Linux (amd64) — archive contains portunix + 12 ptx-* helpers + install.sh
 mkdir portunix-install && cd portunix-install
-wget https://github.com/cassandragargoyle/portunix/releases/latest/download/portunix_2.6.2_linux_amd64.tar.gz
-tar -xzf portunix_2.6.2_linux_amd64.tar.gz
+wget https://github.com/cassandragargoyle/portunix/releases/latest/download/portunix_2.7.0_linux_amd64.tar.gz
+tar -xzf portunix_2.7.0_linux_amd64.tar.gz
 sudo bash install.sh         # installs all binaries via `portunix install-self`
 cd .. && rm -rf portunix-install
 
@@ -351,6 +351,7 @@ export PORTUNIX_CACHE_DIR=/custom/cache/path
 - SSH helper — unified `portunix ssh` / `scp` (#174)
 - Docker install UX on Windows — UAC, WSL2, `install wsl` (#178, #179)
 - Version management strategy with internal `+dev.N` builds (#140, ADR-036)
+- AI-agent skill installation — `portunix skills` for Claude Code, Copilot, Cursor, Gemini CLI and more (#190, ADR-043)
 - AI assistant install & detection — bundles, `package detect`, `--recommend-ai`, MCP auto-hook (#35, partial)
 
 ### Upcoming Features

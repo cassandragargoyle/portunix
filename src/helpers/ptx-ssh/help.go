@@ -7,6 +7,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 // showHelpAI emits a machine-readable command summary (per Issue #163).
@@ -45,7 +46,7 @@ func showHelpAI() {
 }
 
 func showHelpExpert() {
-	fmt.Printf("PTX-SSH v%s - Unified SSH client and non-interactive password auth\n", version)
+	fmt.Printf("PTX-SSH v%s - Unified SSH client and non-interactive password auth\n", strings.TrimPrefix(version, "v"))
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println()
 	fmt.Println("DESCRIPTION:")

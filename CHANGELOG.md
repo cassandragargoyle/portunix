@@ -5,6 +5,54 @@ All notable changes to Portunix will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-10-26
+
+### Added in 2.7.0
+
+- **`portunix skills`** (Issue #190, ADR-043) — installs AI-agent skills (`SKILL.md` bundles) from git
+  repositories or local paths with `add`, `list`, `remove`, `update` and `sources`. Skills are written to the
+  universal `.agents/skills/` and to per-agent directories (Amp, Claude Code, GitHub Copilot, Cursor, Gemini
+  CLI, OpenCode, Zed) chosen by detection and confirmed interactively; project or user scope; provenance is
+  recorded in `.portunix-skills.json`. Shell completion covers subcommands, flags, agents and skill names.
+- **Trusted skill sources** (Issue #190) — a new source must be confirmed before installation; confirmed
+  sources are remembered user-wide in `skills-trusted-sources.json` (mode 0600, `PORTUNIX_SKILLS_TRUST`
+  override) and can be reviewed or revoked with `portunix skills trust list|remove`.
+- **`--help-ai` and `--help-expert` for the remaining helpers** (Issue #244) — `ptx-database`,
+  `ptx-github`, `ptx-plugin-registry` and `ptx-proxmox` implement the multi-level help flags, both
+  directly and through the dispatcher (`portunix github --help-expert`); `portunix proxmox --help-ai`
+  failed before. All 19 helpers now pass the pre-flight help check.
+
+### Fixed in 2.7.0
+
+- **Plugin state persists across CLI processes** (Issue #241) — `plugin start`, `stop` and `health` failed with
+  "not enabled" right after `plugin enable` for gRPC plugins, because the state lived only in the memory of
+  one process. Every run now rebuilds enabled plugins from the registry and attaches to the recorded plugin
+  process; gRPC plugins run detached and can be stopped from any process; concurrent starts are serialized
+  by a registry lock; a plugin that exits during startup is reported with its exit status and the tail of
+  `plugin.log`; registry writes are atomic. The plugin template uses real generated gRPC code.
+- **`aiops ollama container status` under Podman** (Issue #242) — GPU detection recognises CDI devices
+  (`--device nvidia.com/gpu=all`) and `/dev/nvidia*` device nodes besides the Docker gpu capability, and the
+  API port is read from the container's port mapping instead of assuming 11434; an unpublished port is
+  reported as "not published".
+- **Version in `--help-expert` headers** (Issue #244) — helpers printed `vv2.7.0` when the embedded
+  version already carried the `v` prefix; all 13 helper headers now print `v2.7.0`.
+- **Python venv setup** — `.python-version` pinned Python 3.12 while `pyproject.toml` requires
+  `>=3.14`, so `scripts/setup-venv.sh` failed; the pin is now 3.14 and `uv.lock` is refreshed.
+
+### Changed in 2.7.0
+
+- **govulncheck replaces nancy** (Issue #232) — `make security` and the CI Security Scan failed because OSS
+  Index started returning 401 to nancy. The new `scripts/govulncheck-scan.py` scans every Go module without
+  an external account, and the CI job uses the latest stable Go so stdlib findings match release builds.
+- **Pre-flight large file exceptions** — `scripts/github-private-files.json` gained
+  `large_file_exceptions`; listed third-party assets (the Hugo theme's `mermaid.min.js`) no longer
+  fail the large file check.
+
+### Security in 2.7.0
+
+- **Vulnerable dependencies updated** (Issue #232) — gRPC 1.84.0 and `golang.org/x/net` 0.61.0 in the root
+  and shared modules; go-git, go-billy, `x/crypto` and circl in ptx-github; `x/crypto` in ptx-ssh.
+
 ## [2.6.3] - 2026-10-24
 
 ### Fixed in 2.6.3

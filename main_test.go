@@ -21,12 +21,13 @@ import (
 // which specifies that CLI should follow standard conventions by showing help rather than entering MCP stdio mode.
 //
 // The test validates:
-// - Help content is displayed (Usage, Available Commands, Flags, help command)
+// - Help content is displayed (custom help from src/cmd/help_registry.go)
 // - MCP server does NOT start automatically (preventing stdio mode activation)
 // - Exit code behavior is correct
 //
 // Reference: docs/adr/005-revert-default-stdio-mode-for-mcp.md
-// Related Issues: Issue #037 (MCP Serve Implementation), Issue #036 (Default stdio Mode)
+// Related Issues: Issue #037 (MCP Serve Implementation), Issue #036 (Default stdio Mode),
+// Issue #225 (expectations updated from cobra help to the custom help layout)
 func TestMainWithoutArguments(t *testing.T) {
 	// Build the application first
 	buildCmd := exec.Command("go", "build", "-o", "portunix_test", ".")
@@ -56,10 +57,10 @@ func TestMainWithoutArguments(t *testing.T) {
 
 	// Verify that help content is displayed
 	expectedHelpContent := []string{
-		"Usage:",
-		"Available Commands:",
-		"Flags:",
-		"help", // The help command should be available
+		"Usage: portunix [command] [options]",
+		"Common commands:",
+		"Help levels:",
+		"--help-expert",
 	}
 
 	for _, expected := range expectedHelpContent {

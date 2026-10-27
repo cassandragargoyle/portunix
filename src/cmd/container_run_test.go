@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -108,15 +109,7 @@ func TestContainerRunCommand_FlagParsing(t *testing.T) {
 				Args: cobra.MinimumNArgs(1),
 				Run:  func(cmd *cobra.Command, args []string) {}, // No-op for testing
 			}
-
-			// Add flags exactly as in the real implementation
-			cmd.Flags().BoolP("detach", "d", false, "Run container in background")
-			cmd.Flags().BoolP("interactive", "i", false, "Keep STDIN open")
-			cmd.Flags().BoolP("tty", "t", false, "Allocate pseudo-TTY")
-			cmd.Flags().String("name", "", "Assign a name to the container")
-			cmd.Flags().StringSliceP("port", "p", []string{}, "Publish container ports to host")
-			cmd.Flags().StringSliceP("volume", "v", []string{}, "Bind mount volumes")
-			cmd.Flags().StringSliceP("env", "e", []string{}, "Set environment variables")
+			addContainerRunFlags(cmd) // flags of the real run command
 
 			// Parse the flags
 			cmd.SetArgs(tc.args)
@@ -165,6 +158,20 @@ func TestContainerRunCommand_ArgumentParsing(t *testing.T) {
 			expectedErr:   false,
 		},
 		{
+			name:          "TC-038-U008b: Flags, then separator after the image",
+			args:          []string{"-d", "--name", "test", "ubuntu:22.04", "--", "bash", "-c", "echo test"},
+			expectedImage: "ubuntu:22.04",
+			expectedCmd:   []string{"bash", "-c", "echo test"},
+			expectedErr:   false,
+		},
+		{
+			name:          "TC-038-U008c: Flag-like arguments after the image belong to the command",
+			args:          []string{"ubuntu:22.04", "ls", "-d", "/tmp"},
+			expectedImage: "ubuntu:22.04",
+			expectedCmd:   []string{"ls", "-d", "/tmp"},
+			expectedErr:   false,
+		},
+		{
 			name:        "TC-038-U009: No arguments - should fail",
 			args:        []string{},
 			expectedErr: true,
@@ -178,15 +185,14 @@ func TestContainerRunCommand_ArgumentParsing(t *testing.T) {
 				Args: cobra.MinimumNArgs(1),
 				Run: func(cmd *cobra.Command, args []string) {
 					if !tc.expectedErr && len(args) > 0 {
-						// Simulate argument parsing
-						image := args[0]
-						command := args[1:]
+						image, command := splitContainerRunArgs(args)
 
 						assert.Equal(t, tc.expectedImage, image, "Image should match expected")
 						assert.Equal(t, tc.expectedCmd, command, "Command should match expected")
 					}
 				},
 			}
+			addContainerRunFlags(cmd) // flags of the real run command
 
 			cmd.SetArgs(tc.args)
 			err := cmd.Execute()
@@ -221,9 +227,11 @@ func TestContainerRunCommand_FlagValidation(t *testing.T) {
 			errorMsg:    "unknown flag",
 		},
 		{
+			// --name takes "ubuntu:22.04" as its value, so no image is left
 			name:        "TC-038-U012: Missing flag value",
-			args:        []string{"--name", "ubuntu:22.04"}, // name flag without value, image becomes value
-			expectedErr: false,                              // This should work as name gets "ubuntu:22.04" as value
+			args:        []string{"--name", "ubuntu:22.04"},
+			expectedErr: true,
+			errorMsg:    "requires at least 1 arg(s)",
 		},
 	}
 
@@ -234,15 +242,7 @@ func TestContainerRunCommand_FlagValidation(t *testing.T) {
 				Args: cobra.MinimumNArgs(1),
 				Run:  func(cmd *cobra.Command, args []string) {},
 			}
-
-			// Add flags
-			cmd.Flags().BoolP("detach", "d", false, "Run container in background")
-			cmd.Flags().BoolP("interactive", "i", false, "Keep STDIN open")
-			cmd.Flags().BoolP("tty", "t", false, "Allocate pseudo-TTY")
-			cmd.Flags().String("name", "", "Assign a name to the container")
-			cmd.Flags().StringSliceP("port", "p", []string{}, "Publish container ports to host")
-			cmd.Flags().StringSliceP("volume", "v", []string{}, "Bind mount volumes")
-			cmd.Flags().StringSliceP("env", "e", []string{}, "Set environment variables")
+			addContainerRunFlags(cmd) // flags of the real run command
 
 			cmd.SetArgs(tc.args)
 			err := cmd.Execute()
@@ -277,10 +277,7 @@ func TestContainerRunCommand_OriginalIssueRepro(t *testing.T) {
 				assert.Equal(t, []string{"bash", "-c", "apt-get update && apt-get install -y curl wget git python3 python3-pip nodejs npm && sleep 3600"}, args[1:], "Command should be parsed correctly")
 			},
 		}
-
-		// Add flags
-		cmd.Flags().BoolP("detach", "d", false, "Run container in background")
-		cmd.Flags().String("name", "", "Assign a name to the container")
+		addContainerRunFlags(cmd) // flags of the real run command
 
 		// The original failing command
 		args := []string{"-d", "--name", "portunix-e2e-test", "ubuntu:22.04", "bash", "-c", "apt-get update && apt-get install -y curl wget git python3 python3-pip nodejs npm && sleep 3600"}

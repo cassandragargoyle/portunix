@@ -5,7 +5,6 @@ package integration
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -13,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/docker/docker/api/types/container"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -59,10 +59,17 @@ func TestContainerVolumeIntegrationSuite(t *testing.T) {
 	suite.Run(t, new(ContainerVolumeIntegrationTestSuite))
 }
 
-// Mock isDockerAvailable function
-func isDockerAvailable() bool {
-	// In real implementation, this would check if Docker daemon is running
-	return true
+// bindMounts maps host paths to container paths; a ":ro" suffix on the host path makes the mount read-only
+func bindMounts(mounts map[string]string) func(*container.HostConfig) {
+	return func(hc *container.HostConfig) {
+		for host, target := range mounts {
+			if strings.HasSuffix(host, ":ro") {
+				hc.Binds = append(hc.Binds, strings.TrimSuffix(host, ":ro")+":"+target+":ro")
+				continue
+			}
+			hc.Binds = append(hc.Binds, host+":"+target)
+		}
+	}
 }
 
 // Test single volume mounting
@@ -81,9 +88,9 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_SingleVolume_S
 	req := testcontainers.ContainerRequest{
 		Image: "alpine:latest",
 		Cmd:   []string{"sh", "-c", "cat /mounted_data/test_file.txt && sleep 30"},
-		BindMounts: map[string]string{
+		HostConfigModifier: bindMounts(map[string]string{
 			suite.tempHostDir: containerPath,
-		},
+		}),
 		WaitingFor: wait.ForLog("Hello from host!").WithStartupTimeout(30 * time.Second),
 	}
 
@@ -131,10 +138,10 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_MultipleVolume
 		Image: "alpine:latest",
 		Cmd: []string{"sh", "-c",
 			"cat /mount1/file1.txt && cat /mount2/file2.txt && sleep 30"},
-		BindMounts: map[string]string{
+		HostConfigModifier: bindMounts(map[string]string{
 			dir1: "/mount1",
 			dir2: "/mount2",
-		},
+		}),
 		WaitingFor: wait.ForLog(file2Content).WithStartupTimeout(30 * time.Second),
 	}
 
@@ -176,9 +183,9 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_ReadOnly_Succe
 			"cat /readonly_mount/readonly_test.txt && " +
 				"echo 'test' > /readonly_mount/write_test.txt 2>&1 || echo 'Write failed as expected' && " +
 				"sleep 30"},
-		BindMounts: map[string]string{
+		HostConfigModifier: bindMounts(map[string]string{
 			suite.tempHostDir + ":ro": "/readonly_mount",
-		},
+		}),
 		WaitingFor: wait.ForLog("Write failed as expected").WithStartupTimeout(30 * time.Second),
 	}
 
@@ -219,9 +226,9 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_ContainerWrite
 			"echo 'Created by container' > /write_mount/container_file.txt && " +
 				"cat /write_mount/container_file.txt && " +
 				"sleep 30"},
-		BindMounts: map[string]string{
+		HostConfigModifier: bindMounts(map[string]string{
 			writeTestDir: "/write_mount",
-		},
+		}),
 		WaitingFor: wait.ForLog("Created by container").WithStartupTimeout(30 * time.Second),
 	}
 
@@ -261,9 +268,9 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_NonExistentHos
 			"echo 'Created in new dir' > /new_mount/new_file.txt && " +
 				"cat /new_mount/new_file.txt && " +
 				"sleep 30"},
-		BindMounts: map[string]string{
+		HostConfigModifier: bindMounts(map[string]string{
 			nonExistentDir: "/new_mount",
-		},
+		}),
 		WaitingFor: wait.ForLog("Created in new dir").WithStartupTimeout(30 * time.Second),
 	}
 
@@ -310,9 +317,9 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_PermissionHand
 			"ls -la /perm_mount/ && " +
 				"cat /perm_mount/perm_file.txt && " +
 				"sleep 30"},
-		BindMounts: map[string]string{
+		HostConfigModifier: bindMounts(map[string]string{
 			permTestDir: "/perm_mount",
-		},
+		}),
 		WaitingFor: wait.ForLog("Permission test").WithStartupTimeout(30 * time.Second),
 	}
 
@@ -362,9 +369,9 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_SymbolicLinks_
 			"cat /symlink_mount/symlink.txt && " +
 				"ls -la /symlink_mount/ && " +
 				"sleep 30"},
-		BindMounts: map[string]string{
+		HostConfigModifier: bindMounts(map[string]string{
 			symlinkTestDir: "/symlink_mount",
-		},
+		}),
 		WaitingFor: wait.ForLog("Original content").WithStartupTimeout(30 * time.Second),
 	}
 
@@ -413,9 +420,9 @@ func (suite *ContainerVolumeIntegrationTestSuite) TestVolumeMount_Performance_Be
 			"wc -l /perf_mount/large_file.txt && " +
 				"head -n 1 /perf_mount/large_file.txt && " +
 				"sleep 30"},
-		BindMounts: map[string]string{
+		HostConfigModifier: bindMounts(map[string]string{
 			perfTestDir: "/perf_mount",
-		},
+		}),
 		WaitingFor: wait.ForLog("Performance test data").WithStartupTimeout(60 * time.Second),
 	}
 

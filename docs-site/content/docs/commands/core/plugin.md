@@ -30,6 +30,7 @@ Available Commands:
   install-github Install a plugin from GitHub
   list           List installed plugins
   list-available List available plugins from the official repository
+  repair         Repair an installed plugin
   run            Run a plugin with arguments
   start          Start a plugin
   stop           Stop a plugin
@@ -61,6 +62,7 @@ Use "portunix plugin [command] --help" for more information about a command.
 | [install-github](#install-github) | Install a plugin from GitHub |
 | [list](#list) | List installed plugins |
 | [list-available](#list-available) | List available plugins from the official repository |
+| [repair](#repair) | Repair an installed plugin |
 | [run](#run) | Run a plugin with arguments |
 | [start](#start) | Start a plugin |
 | [stop](#stop) | Stop a plugin |
@@ -235,6 +237,22 @@ Usage:
 
 Flags:
   -h, --help   help for list-available
+
+Global Flags:
+      --help-ai       Show machine-readable help in JSON format
+      --help-expert   Show extended help with all options and examples
+```
+
+### repair
+
+Repair an installed plugin
+
+```
+Usage:
+  portunix plugin repair <plugin-name> [flags]
+
+Flags:
+  -h, --help   help for repair
 
 Global Flags:
       --help-ai       Show machine-readable help in JSON format

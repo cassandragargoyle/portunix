@@ -5,6 +5,7 @@ package integration
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 	"testing"
@@ -338,13 +339,13 @@ func verifyPowerShellViaSSH(t *testing.T, client *ssh.Client, dist SupportedDist
 
 // Helper functions
 
-func readContainerOutput(reader *testcontainers.ExecResult) string {
+func readContainerOutput(reader io.Reader) string {
 	if reader == nil {
 		return ""
 	}
 
 	buffer := make([]byte, 4096)
-	n, _ := reader.Reader.Read(buffer)
+	n, _ := reader.Read(buffer)
 	return string(buffer[:n])
 }
 

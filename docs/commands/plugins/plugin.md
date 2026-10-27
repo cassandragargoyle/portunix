@@ -80,19 +80,24 @@ portunix plugin create weather-tracker \
   --output ~/plugins/
 ```
 
-This creates:
+This creates a Go plugin that implements the Portunix plugin protocol:
 
 ```text
 weather-tracker/
-├── plugin.json          # Plugin manifest
+├── plugin.json              # Plugin manifest
+├── go.mod
+├── main.go                  # gRPC server with example commands (help, hello)
 ├── proto/
-│   └── plugin.proto     # gRPC definitions
-├── src/
-│   └── main.go         # Main plugin code
+│   ├── plugin.proto         # Host plugin protocol (copy, do not edit)
+│   ├── plugin.pb.go         # Generated message code
+│   └── plugin_grpc.pb.go    # Generated service code
 ├── README.md
-├── Makefile
 └── .gitignore
 ```
+
+Build it with `go mod tidy && go build -o weather-tracker`. Portunix starts the binary with
+`--port`, calls `Initialize`, then `Execute` and `Health`, and `Shutdown` on `plugin stop`.
+The plugin output goes to `plugin.log` in the installed plugin directory.
 
 ### Plugin Installation
 

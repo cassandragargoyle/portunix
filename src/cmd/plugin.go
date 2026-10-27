@@ -1,5 +1,6 @@
 /*
  *  SPDX-License-Identifier: MIT
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -1214,7 +1215,7 @@ func goVersion() string {
 // createPluginStructure creates basic plugin file structure
 func createPluginStructure(pluginDir, pluginName string) error {
 	// Create directories
-	dirs := []string{"src", "proto"}
+	dirs := []string{"proto"}
 	for _, dir := range dirs {
 		if err := os.MkdirAll(filepath.Join(pluginDir, dir), 0755); err != nil { // #nosec G301 -- scaffolded project files use regular source tree permissions
 			return err
@@ -1227,7 +1228,9 @@ func createPluginStructure(pluginDir, pluginName string) error {
 go %s
 
 require (
-	google.golang.org/grpc v1.78.0
+	google.golang.org/grpc v1.84.0
+	google.golang.org/protobuf v1.36.11
+	golang.org/x/net v0.61.0 // indirect
 )
 `, pluginName, goVersion())
 
@@ -1249,97 +1252,25 @@ require (
 		return err
 	}
 
-	// Create proto/plugin.proto
-	protoContent := fmt.Sprintf(`syntax = "proto3";
-
-package %s;
-
-option go_package = "./%s";
-
-// Plugin service definition
-service PluginService {
-  rpc Execute (ExecuteRequest) returns (ExecuteResponse);
-  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
-}
-
-message ExecuteRequest {
-  string command = 1;
-  map<string, string> parameters = 2;
-}
-
-message ExecuteResponse {
-  bool success = 1;
-  string output = 2;
-  string error = 3;
-}
-
-message HealthCheckRequest {}
-
-message HealthCheckResponse {
-  bool healthy = 1;
-  string message = 2;
-}
-`, pluginName, pluginName)
-
-	if err := os.WriteFile(filepath.Join(pluginDir, "proto", "plugin.proto"), []byte(protoContent), 0644); err != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
+	// Copy the host plugin protocol and its generated code into proto/
+	if err := writePluginTemplateProto(pluginDir); err != nil {
 		return err
 	}
 
-	// Create main.go template
-	mainGoContent := fmt.Sprintf(`package main
-
-import (
-	"fmt"
-	"log"
-	"net"
-	"os"
-	"os/signal"
-	"syscall"
-
-	"google.golang.org/grpc"
-)
-
-func main() {
-	// Parse command line arguments
-	port := "9001"
-	if len(os.Args) > 2 && os.Args[1] == "--port" {
-		port = os.Args[2]
-	}
-
-	// Start gRPC server
-	listener, err := net.Listen("tcp", ":"+port)
-	if err != nil {
-		log.Fatalf("Failed to listen on port %%s: %%v", port, err)
-	}
-
-	server := grpc.NewServer()
-
-	// Register your plugin service
-	// pb.RegisterPluginServiceServer(server, &YourPluginService{})
-
-	fmt.Printf("%%s plugin starting on port %%s\n", "%s", port)
-
-	// Handle graceful shutdown
-	go func() {
-		sigChan := make(chan os.Signal, 1)
-		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-		<-sigChan
-		fmt.Println("Shutting down...")
-		server.GracefulStop()
-	}()
-
-	if err := server.Serve(listener); err != nil {
-		log.Fatalf("Failed to serve: %%v", err)
-	}
-}
-`, pluginName)
-
-	if err := os.WriteFile(filepath.Join(pluginDir, "main.go"), []byte(mainGoContent), 0644); err != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
+	// Create main.go implementing the plugin protocol
+	if err := os.WriteFile(filepath.Join(pluginDir, "main.go"), []byte(pluginTemplateMain(pluginName)), 0644); err != nil { // #nosec G306 -- scaffolded project files use regular source tree permissions
 		return err
 	}
 
 	// Create README.md
-	readmeContent := fmt.Sprintf("# %s Plugin\n\nA Portunix plugin for %s functionality.\n\n## Building\n\n```bash\ngo mod tidy\ngo build -o %s\n```\n\n## Installation\n\n```bash\nportunix plugin install .\n```\n\n## Usage\n\n```bash\nportunix plugin enable %s\nportunix plugin start %s\n```\n", pluginName, pluginName, pluginName, pluginName, pluginName)
+	readmeContent := fmt.Sprintf("# %s Plugin\n\nA Portunix plugin for %s functionality.\n\n"+
+		"## Protocol\n\n`main.go` implements the Portunix plugin protocol defined in `proto/plugin.proto`. "+
+		"`proto/` is a copy of the host protocol with its generated Go code, do not edit it. "+
+		"Portunix starts the binary with `--port`, calls `Initialize`, then `Execute` and `Health`, and `Shutdown` on stop. "+
+		"Plugin output goes to `plugin.log` in the installed plugin directory.\n\n"+
+		"## Building\n\n```bash\ngo mod tidy\ngo build -o %s\n```\n\n## Installation\n\n```bash\nportunix plugin install .\n```\n\n"+
+		"## Usage\n\n```bash\nportunix plugin enable %s\nportunix plugin start %s\nportunix plugin health %s\nportunix plugin stop %s\n```\n",
+		pluginName, pluginName, pluginName, pluginName, pluginName, pluginName, pluginName)
 
 	return os.WriteFile(filepath.Join(pluginDir, "README.md"), []byte(readmeContent), 0644) // #nosec G306 -- scaffolded project files use regular source tree permissions
 }

@@ -76,6 +76,12 @@ func NewManager(config ManagerConfig) (*Manager, error) {
 
 // InstallPlugin installs a plugin from a manifest file
 func (m *Manager) InstallPlugin(manifestPath string) error {
+	unlock, err := m.lockRegistry()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -127,6 +133,12 @@ func (m *Manager) InstallPlugin(manifestPath string) error {
 // staged and checked first, the old installation is kept as a backup until
 // the new one is set up and registered, and it is restored on any failure
 func (m *Manager) ForceInstallPlugin(manifestPath string) error {
+	unlock, err := m.lockRegistry()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -136,6 +148,12 @@ func (m *Manager) ForceInstallPlugin(manifestPath string) error {
 // RepairPlugin reinstalls a plugin from its own installed manifest and files,
 // recreating the Python venv; the original plugin source is not needed
 func (m *Manager) RepairPlugin(name string) error {
+	unlock, err := m.lockRegistry()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
@@ -209,7 +227,7 @@ func (m *Manager) forceInstallPlugin(manifestPath string) error {
 
 	// Stop running plugin if it exists
 	if existsInRegistry {
-		if p, running := m.plugins[manifest.Name]; running {
+		if p, enabled := m.activePlugin(manifest.Name); enabled {
 			if err := p.Stop(m.ctx); err != nil {
 				return fmt.Errorf("failed to stop plugin before reinstall: %w", err)
 			}
@@ -269,11 +287,17 @@ func (m *Manager) forceInstallPlugin(manifestPath string) error {
 
 // UninstallPlugin removes a plugin
 func (m *Manager) UninstallPlugin(name string) error {
+	unlock, err := m.lockRegistry()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
 	// Stop plugin if running
-	if plugin, exists := m.plugins[name]; exists {
+	if plugin, exists := m.activePlugin(name); exists {
 		if err := plugin.Stop(m.ctx); err != nil {
 			return fmt.Errorf("failed to stop plugin before uninstall: %w", err)
 		}
@@ -303,11 +327,17 @@ func (m *Manager) UninstallPlugin(name string) error {
 
 // EnablePlugin enables a plugin and adds it to active plugins
 func (m *Manager) EnablePlugin(name string) error {
+	unlock, err := m.lockRegistry()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	// Check if already enabled
-	if _, exists := m.plugins[name]; exists {
+	// Check if already enabled (also by an earlier CLI process)
+	if _, exists := m.activePlugin(name); exists {
 		return fmt.Errorf("plugin %s is already enabled", name)
 	}
 
@@ -327,36 +357,29 @@ func (m *Manager) EnablePlugin(name string) error {
 		}
 	}
 
-	// Create plugin configuration
-	config := plugins.PluginConfig{
-		Name:           registryData.Name,
-		Version:        registryData.Version,
-		BinaryPath:     registryData.BinaryPath(),
-		Runtime:        registryData.Runtime,
-		RuntimeVersion: registryData.RuntimeVersion,
-		JVMArgs:        registryData.JVMArgs,
-		Port:           m.assignPort(),
-		WorkingDir:     registryData.InstallPath,
-		Environment:    make(map[string]string),
-		Permissions:    registryData.RequiredPermissions,
+	// Create plugin instance; helper plugins run on demand and need no port
+	port := 0
+	if registryData.Mode != "helper" {
+		port = m.assignPort(name)
+	}
+	plugin, err := m.newPluginInstance(registryData, port)
+	if err != nil {
+		return err
 	}
 
-	// Create plugin instance
-	plugin := plugins.NewGRPCPlugin(config)
-	if err := plugin.Initialize(m.ctx, config); err != nil {
-		return fmt.Errorf("failed to initialize plugin: %w", err)
+	// Mark plugin as enabled in registry; the port lets later CLI processes rebuild the instance
+	if err := m.registry.SetPluginProcess(name, port, 0); err != nil {
+		return fmt.Errorf("failed to store plugin port: %w", err)
+	}
+	if err := m.registry.EnablePlugin(name); err != nil {
+		return fmt.Errorf("failed to enable plugin in registry: %w", err)
 	}
 
 	// Add to active plugins
 	m.plugins[name] = plugin
 
-	// Mark plugin as enabled in registry
-	if err := m.registry.EnablePlugin(name); err != nil {
-		return fmt.Errorf("failed to enable plugin in registry: %w", err)
-	}
-
 	// Update registry status
-	if err := m.registry.UpdatePluginStatus(name, plugins.PluginStatusStopped); err != nil {
+	if err := m.registry.UpdatePluginStatus(name, idleStatus(registryData)); err != nil {
 		return fmt.Errorf("failed to update plugin status: %w", err)
 	}
 
@@ -365,10 +388,16 @@ func (m *Manager) EnablePlugin(name string) error {
 
 // DisablePlugin disables a plugin and removes it from active plugins
 func (m *Manager) DisablePlugin(name string) error {
+	unlock, err := m.lockRegistry()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	plugin, exists := m.plugins[name]
+	plugin, exists := m.activePlugin(name)
 	if !exists {
 		return fmt.Errorf("plugin %s is not enabled", name)
 	}
@@ -386,8 +415,20 @@ func (m *Manager) DisablePlugin(name string) error {
 	// Remove from active plugins
 	delete(m.plugins, name)
 
+	// Mark plugin as disabled in registry
+	if err := m.registry.SetPluginProcess(name, 0, 0); err != nil {
+		return fmt.Errorf("failed to clear plugin process: %w", err)
+	}
+	if err := m.registry.DisablePlugin(name); err != nil {
+		return fmt.Errorf("failed to disable plugin in registry: %w", err)
+	}
+
 	// Update registry status
-	if err := m.registry.UpdatePluginStatus(name, plugins.PluginStatusStopped); err != nil {
+	registryData, err := m.registry.GetPluginRegistryData(name)
+	if err != nil {
+		return err
+	}
+	if err := m.registry.UpdatePluginStatus(name, idleStatus(registryData)); err != nil {
 		return fmt.Errorf("failed to update plugin status: %w", err)
 	}
 
@@ -396,9 +437,20 @@ func (m *Manager) DisablePlugin(name string) error {
 
 // StartPlugin starts a specific plugin
 func (m *Manager) StartPlugin(name string) error {
-	m.mutex.RLock()
-	plugin, exists := m.plugins[name]
-	m.mutex.RUnlock()
+	// Held for the whole start so a concurrent start sees this plugin as running
+	unlock, err := m.lockRegistry()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	if registryData, err := m.registry.GetPluginRegistryData(name); err == nil && registryData.Mode == "helper" {
+		return fmt.Errorf("plugin %s is a helper plugin: it runs on demand through its commands and has no service to start", name)
+	}
+
+	m.mutex.Lock()
+	plugin, exists := m.activePlugin(name)
+	m.mutex.Unlock()
 
 	if !exists {
 		return fmt.Errorf("plugin %s is not enabled", name)
@@ -427,7 +479,12 @@ func (m *Manager) StartPlugin(name string) error {
 	// Start plugin
 	if err := plugin.Start(m.ctx); err != nil {
 		_ = m.registry.UpdatePluginStatus(name, plugins.PluginStatusFailed)
-		return fmt.Errorf("failed to start plugin: %w", err)
+		return err
+	}
+
+	// Record the process so later CLI processes can stop it
+	if err := m.setPluginPID(name, pluginPID(plugin)); err != nil {
+		return fmt.Errorf("failed to store plugin process: %w", err)
 	}
 
 	// Update status to running
@@ -440,9 +497,15 @@ func (m *Manager) StartPlugin(name string) error {
 
 // StopPlugin stops a specific plugin
 func (m *Manager) StopPlugin(name string) error {
-	m.mutex.RLock()
-	plugin, exists := m.plugins[name]
-	m.mutex.RUnlock()
+	unlock, err := m.lockRegistry()
+	if err != nil {
+		return err
+	}
+	defer unlock()
+
+	m.mutex.Lock()
+	plugin, exists := m.activePlugin(name)
+	m.mutex.Unlock()
 
 	if !exists {
 		return fmt.Errorf("plugin %s is not enabled", name)
@@ -460,7 +523,11 @@ func (m *Manager) StopPlugin(name string) error {
 	// Stop plugin
 	if err := plugin.Stop(m.ctx); err != nil {
 		_ = m.registry.UpdatePluginStatus(name, plugins.PluginStatusFailed)
-		return fmt.Errorf("failed to stop plugin: %w", err)
+		return err
+	}
+
+	if err := m.setPluginPID(name, 0); err != nil {
+		return fmt.Errorf("failed to clear plugin process: %w", err)
 	}
 
 	// Update status to stopped
@@ -473,9 +540,10 @@ func (m *Manager) StopPlugin(name string) error {
 
 // ExecuteCommand executes a command on a specific plugin
 func (m *Manager) ExecuteCommand(pluginName, command string, args []string, options map[string]string) (*plugins.ExecuteResponse, error) {
-	m.mutex.RLock()
-	plugin, exists := m.plugins[pluginName]
-	m.mutex.RUnlock()
+	plugin, exists, err := m.lookupActivePlugin(pluginName)
+	if err != nil {
+		return nil, err
+	}
 
 	if !exists {
 		return nil, fmt.Errorf("plugin %s is not enabled", pluginName)
@@ -515,6 +583,11 @@ func (m *Manager) applyInstallStatus(info *plugins.PluginInfo) {
 	}
 	state, _ := registryData.CheckInstall()
 	info.Status = installStatus(info.Status, state)
+
+	// A running plugin whose process is gone has failed, even before a command notices it
+	if info.Status == plugins.PluginStatusRunning && registryData.PID > 0 && !plugins.ProcessAlive(registryData.PID) {
+		info.Status = plugins.PluginStatusFailed
+	}
 }
 
 // CheckPluginInstall returns the install state of a registered plugin, the
@@ -552,23 +625,22 @@ func (m *Manager) GetPluginRegistryData(name string) (*RegistryPlugin, error) {
 
 // GetPluginHealth returns health status of a plugin
 func (m *Manager) GetPluginHealth(name string) (plugins.PluginHealth, error) {
-	// Check active (gRPC/service) plugins first
-	m.mutex.RLock()
-	plugin, exists := m.plugins[name]
-	m.mutex.RUnlock()
-
-	if exists {
-		return plugin.Health(m.ctx), nil
-	}
-
-	// Plugin not in active plugins map — check registry for helper plugins
 	registryData, err := m.registry.GetPluginRegistryData(name)
 	if err != nil {
 		return plugins.PluginHealth{}, fmt.Errorf("plugin %s not found", name)
 	}
 
+	// Helper plugins do not run as a daemon, enabled or not
 	if registryData.Mode == "helper" {
 		return m.checkHelperPluginHealth(registryData), nil
+	}
+
+	plugin, exists, err := m.lookupActivePlugin(name)
+	if err != nil {
+		return plugins.PluginHealth{}, err
+	}
+	if exists {
+		return plugin.Health(m.ctx), nil
 	}
 
 	// Service plugin that is not enabled
@@ -649,7 +721,9 @@ func (m *Manager) checkHelperPluginHealth(plugin *RegistryPlugin) plugins.Plugin
 	}
 }
 
-// Shutdown stops all plugins and shuts down the manager
+// Shutdown releases all plugins and shuts down the manager; running gRPC
+// plugins are detached, not stopped, because they outlive the CLI process
+// that started them and are stopped with "plugin stop"
 func (m *Manager) Shutdown() error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
@@ -659,8 +733,12 @@ func (m *Manager) Shutdown() error {
 		m.healthTicker.Stop()
 	}
 
-	// Stop all plugins
+	// Release all plugins
 	for name, plugin := range m.plugins {
+		if detachable, ok := plugin.(detachablePlugin); ok {
+			detachable.Detach()
+			continue
+		}
 		if plugin.IsRunning() {
 			if err := plugin.Stop(m.ctx); err != nil {
 				fmt.Printf("Error stopping plugin %s: %v\n", name, err)
@@ -1001,25 +1079,19 @@ func (m *Manager) copyPluginFiles(manifestPath, destDir string) error {
 	})
 }
 
-// assignPort assigns an available port to a plugin
-func (m *Manager) assignPort() int {
+// assignPort assigns a port that is free and not used by another enabled plugin
+func (m *Manager) assignPort(name string) int {
 	// Start from default port and find next available
 	port := m.config.DefaultPort
 	if port == 0 {
 		port = m.config.PortRange.Start
 	}
 
-	usedPorts := make(map[int]bool)
-	for _, plugin := range m.plugins {
-		if grpcPlugin, ok := plugin.(*plugins.GRPCPlugin); ok {
-			// We'll need to add a method to get port from plugin
-			// For now, skip this optimization
-			_ = grpcPlugin
-		}
-	}
+	usedPorts := m.registry.UsedActivePorts(name)
 
 	for port <= m.config.PortRange.End {
-		if !usedPorts[port] {
+		// Skip ports of other enabled plugins and ports another program listens on
+		if !usedPorts[port] && plugins.PortAvailable(port) == nil {
 			return port
 		}
 		port++
@@ -1027,6 +1099,147 @@ func (m *Manager) assignPort() int {
 
 	// Return default if no port available
 	return m.config.DefaultPort
+}
+
+// idleStatus is the status of a plugin that is not running: helper plugins
+// are ready to run on demand, service plugins are stopped
+func idleStatus(registryData *RegistryPlugin) plugins.PluginStatus {
+	if registryData.Mode == "helper" {
+		return plugins.PluginStatusReady
+	}
+	return plugins.PluginStatusStopped
+}
+
+// detachablePlugin is a plugin whose process can outlive this manager
+type detachablePlugin interface {
+	Detach()
+}
+
+// processPlugin is a plugin backed by an operating system process
+type processPlugin interface {
+	PID() int
+}
+
+// pluginPID returns the process ID of a plugin, 0 if it has none
+func pluginPID(p plugins.Plugin) int {
+	if pp, ok := p.(processPlugin); ok {
+		return pp.PID()
+	}
+	return 0
+}
+
+// setPluginPID stores the plugin process ID, keeping its runtime port
+func (m *Manager) setPluginPID(name string, pid int) error {
+	registryData, err := m.registry.GetPluginRegistryData(name)
+	if err != nil {
+		return err
+	}
+	return m.registry.SetPluginProcess(name, registryData.ActivePort, pid)
+}
+
+// newPluginInstance creates the gRPC plugin instance for a registry entry
+func (m *Manager) newPluginInstance(registryData *RegistryPlugin, port int) (*plugins.GRPCPlugin, error) {
+	config := plugins.PluginConfig{
+		Name:           registryData.Name,
+		Version:        registryData.Version,
+		BinaryPath:     registryData.BinaryPath(),
+		Runtime:        registryData.Runtime,
+		RuntimeVersion: registryData.RuntimeVersion,
+		JVMArgs:        registryData.JVMArgs,
+		Port:           port,
+		WorkingDir:     registryData.InstallPath,
+		Environment:    make(map[string]string),
+		Permissions:    registryData.RequiredPermissions,
+	}
+
+	plugin := plugins.NewGRPCPlugin(config)
+	if err := plugin.Initialize(m.ctx, config); err != nil {
+		return nil, fmt.Errorf("failed to initialize plugin: %w", err)
+	}
+	return plugin, nil
+}
+
+// lockRegistry serializes plugin changes across Portunix processes: it takes
+// an exclusive lock on a file next to the registry and reloads the registry,
+// so every decision uses the state written by other processes. Callers take
+// it before m.mutex
+func (m *Manager) lockRegistry() (func(), error) {
+	lockPath := m.config.RegistryFile + ".lock"
+	lockFileHandle, err := os.OpenFile(lockPath, os.O_CREATE|os.O_RDWR, 0600)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open registry lock %s: %w", lockPath, err)
+	}
+	locked, err := tryLockFile(lockFileHandle)
+	if err == nil && !locked {
+		// Another plugin command runs; say why this one waits
+		fmt.Fprintf(os.Stderr, "Waiting for another Portunix plugin command to finish (lock %s)...\n", lockPath)
+		err = lockFile(lockFileHandle)
+	}
+	if err != nil {
+		_ = lockFileHandle.Close()
+		return nil, fmt.Errorf("failed to lock registry: %w", err)
+	}
+	unlock := func() {
+		_ = unlockFile(lockFileHandle)
+		_ = lockFileHandle.Close()
+	}
+	if err := m.registry.Reload(); err != nil {
+		unlock()
+		return nil, err
+	}
+	return unlock, nil
+}
+
+// lookupActivePlugin returns the instance of an enabled plugin under the registry lock
+func (m *Manager) lookupActivePlugin(name string) (plugins.Plugin, bool, error) {
+	unlock, err := m.lockRegistry()
+	if err != nil {
+		return nil, false, err
+	}
+	defer unlock()
+
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+	plugin, exists := m.activePlugin(name)
+	return plugin, exists, nil
+}
+
+// activePlugin returns the instance of an enabled plugin. Each CLI command
+// runs in a new process, so a plugin enabled or started by an earlier one is
+// rebuilt from the registry and attached to its recorded process. Caller
+// holds m.mutex for writing
+func (m *Manager) activePlugin(name string) (plugins.Plugin, bool) {
+	if plugin, exists := m.plugins[name]; exists {
+		return plugin, true
+	}
+
+	registryData, err := m.registry.GetPluginRegistryData(name)
+	if err != nil || !registryData.Enabled {
+		return nil, false
+	}
+
+	// Plugins enabled before the port was stored get one now
+	port := registryData.ActivePort
+	if port == 0 && registryData.Mode != "helper" {
+		port = m.assignPort(name)
+		_ = m.registry.SetPluginProcess(name, port, registryData.PID)
+	}
+
+	plugin, err := m.newPluginInstance(registryData, port)
+	if err != nil {
+		return nil, false
+	}
+
+	if registryData.PID > 0 {
+		if err := plugin.Attach(m.ctx, registryData.PID); err != nil && !plugin.IsRunning() {
+			// Recorded process is gone: the plugin exited without "plugin stop"
+			_ = m.registry.SetPluginProcess(name, port, 0)
+			_ = m.registry.UpdatePluginStatus(name, plugins.PluginStatusFailed)
+		}
+	}
+
+	m.plugins[name] = plugin
+	return plugin, true
 }
 
 // healthCheckLoop runs periodic health checks on all plugins

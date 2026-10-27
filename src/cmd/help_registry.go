@@ -162,6 +162,20 @@ var CommandRegistry = []CommandInfo{
 		},
 	},
 	{
+		Name:        "skills",
+		Brief:       "Install AI-agent skills from git repositories",
+		Description: "Install AI-agent skills (directories with SKILL.md) from git repositories or local paths into the universal .agents/skills/ directory and per-agent skills directories (Claude Code). Tracks provenance in .portunix-skills.json so list, update and remove only touch Portunix-installed skills. See ADR-043.",
+		Category:    "core",
+		Examples: []string{
+			"portunix skills add https://github.com/obra/superpowers --skill brainstorming",
+			"portunix skills add --source ./my-skills --all --global",
+			"portunix skills list",
+			"portunix skills update",
+			"portunix skills remove brainstorming",
+			"portunix skills sources",
+		},
+	},
+	{
 		Name:        "pft",
 		Brief:       "Product feedback tool integration",
 		Description: "Manage integration with external Product Feedback Tools (Fider.io, Canny, ProductBoard). Provides bidirectional synchronization between local project documentation and external feedback systems.",
@@ -338,7 +352,7 @@ var CommandRegistry = []CommandInfo{
 
 // GetBasicCommands returns only the essential commands for basic help
 func GetBasicCommands() []CommandInfo {
-	essentials := []string{"install", "update", "plugin", "mcp", "container", "virt", "playbook", "python", "aiops", "system", "make", "package", "pft", "credential", "specpm"}
+	essentials := []string{"install", "update", "plugin", "mcp", "container", "virt", "playbook", "python", "aiops", "system", "make", "package", "pft", "credential", "specpm", "skills"}
 	var basic []CommandInfo
 	for _, cmd := range CommandRegistry {
 		for _, name := range essentials {

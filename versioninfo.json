@@ -2,14 +2,14 @@
     "FixedFileInfo": {
         "FileVersion": {
             "Major": 2,
-            "Minor": 6,
-            "Patch": 3,
+            "Minor": 7,
+            "Patch": 0,
             "Build": 0
         },
         "ProductVersion": {
             "Major": 2,
-            "Minor": 6,
-            "Patch": 3,
+            "Minor": 7,
+            "Patch": 0,
             "Build": 0
         },
         "FileFlagsMask": "3f",
@@ -22,14 +22,14 @@
         "Comments": "",
         "CompanyName": "Portunix",
         "FileDescription": "Portunix install and config applications",
-        "FileVersion": "2.6.3",
+        "FileVersion": "2.7.0",
         "InternalName": "portunix",
         "LegalCopyright": "CassandraGargoyle team. All rights reserved.",
         "LegalTrademarks": "",
         "OriginalFilename": "portunix.exe",
         "PrivateBuild": "",
         "ProductName": "Portunix",
-        "ProductVersion": "2.6.3",
+        "ProductVersion": "2.7.0",
         "SpecialBuild": ""
     },
     "VarFileInfo": {

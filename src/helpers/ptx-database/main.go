@@ -389,6 +389,9 @@ func init() {
 }
 
 func main() {
+	if handleMetaArgs(os.Args[1:]) {
+		return
+	}
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
