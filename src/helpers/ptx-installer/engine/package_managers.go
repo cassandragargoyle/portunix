@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"regexp"
 	"runtime"
 	"strings"
 )
@@ -405,6 +406,23 @@ func InstallViaChocolatey(packages []string) error {
 	return nil
 }
 
+// msstoreIDPattern matches Microsoft Store product IDs such as 9NBLGGH4NNS1
+var msstoreIDPattern = regexp.MustCompile(`^[0-9A-Z]{12}$`)
+
+// wingetInstallArgs builds the winget arguments for one package. The source
+// is always named: without it winget queries every source and fails when one
+// of them is unavailable (msstore returns 0x8a15003b in Windows Sandbox and
+// on systems without the Store, issue #203), although the package is in the
+// community source
+func wingetInstallArgs(pkg string) []string {
+	source := "winget"
+	if msstoreIDPattern.MatchString(pkg) {
+		source = "msstore"
+	}
+	return []string{"install", "--id", pkg, "-e", "--source", source,
+		"--accept-package-agreements", "--accept-source-agreements"}
+}
+
 // InstallViaWinget installs packages using Windows Package Manager (winget)
 func InstallViaWinget(packages []string) error {
 	if runtime.GOOS != "windows" {
@@ -412,15 +430,15 @@ func InstallViaWinget(packages []string) error {
 	}
 
 	if !isCommandAvailable("winget") {
-		return fmt.Errorf("Winget is not installed")
+		return fmt.Errorf("Winget is not installed, install it first with: portunix install winget")
 	}
 
 	fmt.Printf("📦 Installing via Winget: %v\n", packages)
 
 	for _, pkg := range packages {
-		cmd := exec.Command("winget", "install", "--id", pkg, "-e", "--accept-package-agreements", "--accept-source-agreements")
-		cmd.Stdout = nil
-		cmd.Stderr = nil
+		cmd := exec.Command("winget", wingetInstallArgs(pkg)...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 
 		if err := cmd.Run(); err != nil {
 			return fmt.Errorf("winget install failed for %s: %w", pkg, err)

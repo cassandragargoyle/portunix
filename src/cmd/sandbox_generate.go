@@ -64,23 +64,12 @@ Example:
 
 		var mappedFolders []sandbox.MappedFolder
 		for _, mf := range mapFolders {
-			parts := strings.Split(mf, ":")
-			if len(parts) != 3 {
-				fmt.Printf("Invalid --map-folder format: %s. Expected HostPath:SandboxPath:ReadOnly\n", mf)
-				return
-			}
-			hostPath := parts[0]
-			sandboxPath := parts[1]
-			readOnly, err := strconv.ParseBool(parts[2])
+			folder, err := parseMapFolder(mf)
 			if err != nil {
-				fmt.Printf("Invalid ReadOnly value for --map-folder: %s. Expected true or false\n", parts[2])
+				fmt.Println(err)
 				return
 			}
-			mappedFolders = append(mappedFolders, sandbox.MappedFolder{
-				HostPath:    hostPath,
-				SandboxPath: sandboxPath,
-				ReadOnly:    readOnly,
-			})
+			mappedFolders = append(mappedFolders, folder)
 		}
 
 		config := sandbox.SandboxConfig{
@@ -103,6 +92,59 @@ Example:
 
 		fmt.Printf("Generated .wsb file: %s\n", wsbFilePath)
 	},
+}
+
+// parseMapFolder parses a --map-folder value HostPath:SandboxPath:ReadOnly.
+// Windows paths carry a drive-letter colon (C:\...), so the value cannot be
+// split on every ':' (issue #203)
+func parseMapFolder(value string) (sandbox.MappedFolder, error) {
+	formatErr := fmt.Errorf("Invalid --map-folder format: %s. Expected HostPath:SandboxPath:ReadOnly", value)
+
+	last := strings.LastIndex(value, ":")
+	if last < 0 {
+		return sandbox.MappedFolder{}, formatErr
+	}
+	readOnlyText := value[last+1:]
+	paths := value[:last]
+
+	sep := -1
+	for i := 0; i < len(paths); i++ {
+		if paths[i] == ':' && !isDriveColon(paths, i) {
+			if sep >= 0 {
+				return sandbox.MappedFolder{}, formatErr
+			}
+			sep = i
+		}
+	}
+	if sep <= 0 || sep == len(paths)-1 {
+		return sandbox.MappedFolder{}, formatErr
+	}
+
+	readOnly, err := strconv.ParseBool(readOnlyText)
+	if err != nil {
+		return sandbox.MappedFolder{}, fmt.Errorf("Invalid ReadOnly value for --map-folder: %s. Expected true or false", readOnlyText)
+	}
+	return sandbox.MappedFolder{
+		HostPath:    paths[:sep],
+		SandboxPath: paths[sep+1:],
+		ReadOnly:    readOnly,
+	}, nil
+}
+
+// isDriveColon reports whether the colon at index i belongs to a drive
+// letter: a single letter at the start of a path, followed by a separator
+func isDriveColon(s string, i int) bool {
+	if i < 1 || i+1 >= len(s) {
+		return false
+	}
+	letter := s[i-1]
+	if !(letter >= 'A' && letter <= 'Z' || letter >= 'a' && letter <= 'z') {
+		return false
+	}
+	if i >= 2 && s[i-2] != ':' {
+		return false
+	}
+	return s[i+1] == '\\' || s[i+1] == '/'
 }
 
 func init() {

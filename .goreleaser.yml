@@ -19,9 +19,11 @@ builds:
   # - Multi-file helpers with separate module: Use main: ./ + dir: ./src/helpers/xxx/
 
   # Main portunix binary
+  # main must be the package (./), not ./main.go - go build ignores portunix_windows_*.syso
+  # (icon, version info, manifest) when given a file list
   - id: portunix
     binary: portunix
-    main: ./main.go
+    main: ./
     goos:
       - linux
       - windows

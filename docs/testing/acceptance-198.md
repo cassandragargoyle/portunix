@@ -30,7 +30,7 @@ actions, and external backlog sync — not tested here.
 - `gofmt -l` clean, `go vet ./...` clean
 - Execution via the main dispatcher: `./portunix pft ideas …` (real routing path)
 - Schema validation via the api #015 contract validator (ajv 2020, Draft 2020-12)
-  against `/home/zdenek/DEV/CassandraGargoyle/api/contract/schemas/`
+  against the `contract/schemas/` directory of the api repository
 - No containers required: #198 is a pure Go authoring feature (writes git-tracked
   JSON), not a software-installation flow, so the container-testing policy does
   not apply.

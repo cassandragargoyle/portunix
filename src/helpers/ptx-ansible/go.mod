@@ -2,7 +2,7 @@ module portunix.ai/portunix/src/helpers/ptx-ansible
 
 go 1.24.0
 
-toolchain go1.24.2
+toolchain go1.26.11
 
 // Use parent module for dependencies
 replace portunix.ai/portunix => ../../..

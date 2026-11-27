@@ -21,6 +21,9 @@ type HelperConfig struct {
 	Commands []string // Commands that this helper handles
 	Binary   string   // Binary name (e.g., "ptx-container")
 	Required bool     // Whether this helper is required for operation
+	// HelpLevelFlags marks helpers that handle `<command> --help-expert` and
+	// `<command> --help-ai` themselves
+	HelpLevelFlags bool
 }
 
 // Dispatcher manages the Git-like dispatch architecture
@@ -75,6 +78,8 @@ func (d *Dispatcher) registerHelpers() {
 		Commands: []string{"mcp"},
 		Binary:   "ptx-mcp",
 		Required: false,
+
+		HelpLevelFlags: true,
 	}
 
 	// Phase 1: Ansible Infrastructure as Code
@@ -118,6 +123,8 @@ func (d *Dispatcher) registerHelpers() {
 		Commands: []string{"make"},
 		Binary:   "ptx-make",
 		Required: false,
+
+		HelpLevelFlags: true,
 	}
 
 	// Issue #107: PTX-PFT Helper for Product Feedback Tool integration
@@ -132,6 +139,8 @@ func (d *Dispatcher) registerHelpers() {
 		Commands: []string{"credential"},
 		Binary:   "ptx-credential",
 		Required: false,
+
+		HelpLevelFlags: true,
 	}
 
 	// Issue #141: PTX-Trace Helper - universal tracing system for software development
@@ -139,6 +148,8 @@ func (d *Dispatcher) registerHelpers() {
 		Commands: []string{"trace"},
 		Binary:   "ptx-trace",
 		Required: false,
+
+		HelpLevelFlags: true,
 	}
 
 	// Issue #068: PTX-Virt Helper for virtualization management
@@ -146,6 +157,8 @@ func (d *Dispatcher) registerHelpers() {
 		Commands: []string{"virt"},
 		Binary:   "ptx-virt",
 		Required: false,
+
+		HelpLevelFlags: true,
 	}
 
 	// Issue #174: PTX-SSH Helper for unified SSH client with non-interactive password auth
@@ -153,6 +166,8 @@ func (d *Dispatcher) registerHelpers() {
 		Commands: []string{"ssh", "scp"},
 		Binary:   "ptx-ssh",
 		Required: false,
+
+		HelpLevelFlags: true,
 	}
 
 	// Issue #175: PTX-Plugin-Registry Helper serves the plugin-registry gRPC API
@@ -162,6 +177,8 @@ func (d *Dispatcher) registerHelpers() {
 		Commands: []string{"plugin-registry"},
 		Binary:   "ptx-plugin-registry",
 		Required: false,
+
+		HelpLevelFlags: true,
 	}
 
 	// Issue #167: PTX-Proxmox Helper for remote Proxmox VE management
@@ -170,6 +187,8 @@ func (d *Dispatcher) registerHelpers() {
 		Commands: []string{"proxmox"},
 		Binary:   "ptx-proxmox",
 		Required: false,
+
+		HelpLevelFlags: true,
 	}
 
 	// Issue #183: PTX-SpecPM Helper for spec-kit-pm project-management
@@ -178,6 +197,8 @@ func (d *Dispatcher) registerHelpers() {
 		Commands: []string{"specpm"},
 		Binary:   "ptx-specpm",
 		Required: false,
+
+		HelpLevelFlags: true,
 	}
 
 	// Issue #013: PTX-Database Helper for installing, managing, and inspecting
@@ -186,6 +207,8 @@ func (d *Dispatcher) registerHelpers() {
 		Commands: []string{"database", "db"},
 		Binary:   "ptx-database",
 		Required: false,
+
+		HelpLevelFlags: true,
 	}
 
 	// Issue #025: PTX-GitHub Helper for GitHub repository, releases, and
@@ -195,6 +218,8 @@ func (d *Dispatcher) registerHelpers() {
 		Commands: []string{"github"},
 		Binary:   "ptx-github",
 		Required: false,
+
+		HelpLevelFlags: true,
 	}
 
 	// Issue #014: PTX-Wizard Helper - interactive YAML-based CLI wizards
@@ -230,6 +255,58 @@ func (d *Dispatcher) ShouldDispatch(args []string) (string, bool) {
 	return "", false
 }
 
+// helpLevelArgs rewrites --help-expert and --help-ai to --help, which every
+// helper handles without running anything; helpers marked HelpLevelFlags keep
+// them in the top level form `<command> --help-expert`. Without the rewrite
+// e.g. `docker install --help-expert` ran the Docker installation (issue
+// #203). Arguments after "--" belong to the invoked program and stay as is
+func (d *Dispatcher) helpLevelArgs(args []string) []string {
+	if len(args) < 2 {
+		return args
+	}
+	keepTopLevel := false
+	if config := d.helperForCommand(args[0]); config != nil {
+		keepTopLevel = config.HelpLevelFlags
+	}
+	out := make([]string, len(args))
+	copy(out, args)
+	for i := 1; i < len(out); i++ {
+		if out[i] == "--" {
+			break
+		}
+		if !isHelpLevelFlag(out[i]) {
+			continue
+		}
+		if keepTopLevel && len(out) == 2 {
+			continue
+		}
+		out[i] = "--help"
+	}
+	return out
+}
+
+// isHelpLevelFlag reports whether arg is --help-expert or --help-ai, also in
+// the --flag=value form
+func isHelpLevelFlag(arg string) bool {
+	name, value, hasValue := strings.Cut(arg, "=")
+	if name != "--help-expert" && name != "--help-ai" {
+		return false
+	}
+	return !hasValue || value != "false"
+}
+
+// helperForCommand returns the configuration of the helper handling command
+func (d *Dispatcher) helperForCommand(command string) *HelperConfig {
+	for _, config := range d.helpers {
+		for _, cmd := range config.Commands {
+			if cmd == command {
+				return config
+			}
+		}
+	}
+	return nil
+}
+
 // helperExists checks if a helper binary exists and is executable
 func (d *Dispatcher) helperExists(path string) bool {
 	info, err := os.Stat(path)
@@ -256,7 +333,7 @@ func (d *Dispatcher) Dispatch(helperPath string, args []string) error {
 	}
 
 	// Execute helper binary
-	cmd := exec.Command(helperPath, args...)
+	cmd := exec.Command(helperPath, d.helpLevelArgs(args)...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

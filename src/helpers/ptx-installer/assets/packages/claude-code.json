@@ -21,6 +21,7 @@
         "variants": {
           "npm": {
             "version": "latest",
+            "scriptShell": "powershell",
             "installScript": "Write-Host 'Installing Claude Code via npm...'; npm install -g @anthropic-ai/claude-code; Write-Host 'Installation completed!'",
             "postInstall": [
               "claude --version"
@@ -28,7 +29,8 @@
           },
           "curl": {
             "version": "latest",
-            "installScript": "iwr -useb https://claude.ai/cli/install.sh | iex",
+            "scriptShell": "powershell",
+            "installScript": "irm https://claude.ai/install.ps1 | iex",
             "postInstall": [
               "claude --version"
             ]
@@ -37,6 +39,9 @@
         "verification": {
           "command": "claude --version",
           "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "${USERPROFILE}\\.local\\bin"
         }
       },
       "linux": {

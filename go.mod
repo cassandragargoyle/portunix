@@ -2,6 +2,8 @@ module portunix.ai/portunix
 
 go 1.26.0
 
+toolchain go1.26.11
+
 replace portunix.ai/app => ./src/app
 
 replace portunix.ai/parser => ./src/parser

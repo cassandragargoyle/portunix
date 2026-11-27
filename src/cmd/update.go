@@ -6,6 +6,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -97,6 +98,11 @@ func performUpdate(force bool) {
 		os.Exit(1)
 	}
 	defer os.Remove(archiveFile)
+	// os.Exit skips deferred calls, so failures remove the archive first
+	abort := func() {
+		_ = os.Remove(archiveFile)
+		os.Exit(1)
+	}
 
 	// Verify checksum
 	fmt.Println("✓ Verifying checksum...")
@@ -109,7 +115,7 @@ func performUpdate(force bool) {
 			fmt.Printf("Error: Checksum verification failed\n  %v\n", err)
 			fmt.Println("  This could indicate a corrupted download or security issue")
 			fmt.Println("  Update aborted for safety")
-			os.Exit(1)
+			abort()
 		}
 	}
 
@@ -122,18 +128,10 @@ func performUpdate(force bool) {
 		} else if update.RequireSignature {
 			fmt.Println("Error: No signature available for this release")
 			fmt.Println("  Signature is required and update was aborted for safety")
-			os.Exit(1)
+			abort()
 		} else {
 			fmt.Println("⚠ Warning: No signature available for this release (older release)")
 		}
-	}
-
-	// Create backup
-	fmt.Println("✓ Creating backup...")
-	backupPath, err := update.CreateBackup()
-	if err != nil {
-		fmt.Printf("Error: Failed to create backup\n  %v\n", err)
-		os.Exit(1)
 	}
 
 	// Apply update
@@ -150,20 +148,15 @@ func performUpdate(force bool) {
 			fmt.Println("  3. Or move portunix to a user-writable location (like Documents)")
 		}
 
-		// Try to restore backup
-		fmt.Println("Attempting to restore backup...")
-		if restoreErr := update.RestoreBackup(backupPath); restoreErr != nil {
-			fmt.Printf("Error: Failed to restore backup\n  %v\n", restoreErr)
+		// ApplyUpdate has already rolled back every binary it replaced
+		if errors.Is(err, update.ErrRestoreFailed) {
+			fmt.Println("  Some binaries could not be restored, their *.backup files were kept")
 			fmt.Println("  Manual intervention may be required")
-			fmt.Println("  Your original portunix.exe should still work")
 		} else {
-			fmt.Println("✓ Backup restored successfully")
+			fmt.Println("✓ Previous version kept")
 		}
-		os.Exit(1)
+		abort()
 	}
-
-	// Clean up backup on success
-	_ = os.Remove(backupPath)
 
 	fmt.Println("✓ Update completed successfully!")
 	if !force {

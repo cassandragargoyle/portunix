@@ -8,6 +8,8 @@
 
 - Ubuntu 26.04, kernel 7.0.0-34, amd64 (host) — all scenarios; Go 1.26.0, Temurin JDK 21,
   Python 3, bash
+- Windows 11 Pro 10.0.26300.9711, amd64 (host) — Windows verification under #230 on
+  2026-11-06, see [Windows Verification (#230)](#windows-verification-230)
 
 No software was installed during testing, so no container was needed. Stub plugins ran
 against an isolated `HOME` with its own plugin registry; the real registry was only read.
@@ -21,10 +23,9 @@ variables stay unchanged. Long-running plugin services (`grpc_client.go`) are
 intentionally untouched; the decision is documented in
 `docs/plugin-development/architecture.md`.
 
-**Not covered**: Windows. The code and the test were only compiled for Windows
-(`GOOS=windows go vet`, `GOOS=windows go test -c`), not executed. Acceptance criterion 5
-(test passes on Windows) and the manual `cabinet` verification on Windows are open — see
-Final Decision.
+**Not covered in the first run**: Windows. The code and the test were only compiled for
+Windows (`GOOS=windows go vet`, `GOOS=windows go test -c`), not executed. Covered later
+under issue #230 — see [Windows Verification (#230)](#windows-verification-230).
 
 ## Test Summary
 
@@ -179,8 +180,8 @@ The listing of the `cabinet` plugin directory was identical before and after the
 
 | Scenario | Reason |
 | -------- | ------ |
-| `go test portunix.ai/cmd -run 'TestPluginEnvironment\|TestBuildPluginCommand'` on Windows | no Windows environment in this session |
-| Manual `cabinet` verification (criteria 1–3) on Windows | no Windows environment in this session |
+| `go test portunix.ai/cmd -run 'TestPluginEnvironment\|TestBuildPluginCommand'` on Windows | no Windows environment in this session; executed later under #230 |
+| Manual `cabinet` verification (criteria 1–3) on Windows | no Windows environment in this session; executed later under #230 with a stub emulating `cabinet` |
 
 ## Acceptance Criteria
 
@@ -190,7 +191,7 @@ The listing of the `cabinet` plugin directory was identical before and after the
 | 2 | `-o out.pdf` writes into the caller's directory | PASS (Linux) |
 | 3 | Absolute paths work as before | PASS (Linux) |
 | 4 | Plugin not reading the variable behaves as before | PASS (Linux) |
-| 5 | Test passes on Linux and on Windows | Linux PASS, Windows NOT EXECUTED |
+| 5 | Test passes on Linux and on Windows | PASS (Linux; Windows under #230) |
 | 6 | `PORTUNIX_CWD` documented, including the service / MCP decision | PASS |
 
 ## Coverage
@@ -223,21 +224,45 @@ The listing of the `cabinet` plugin directory was identical before and after the
 
 ## Recommendations
 
-1. Run on Windows before or right after merge:
+1. (Done under #230 — see below) Run on Windows before or right after merge:
    `go test portunix.ai/cmd -run "TestPluginEnvironment|TestBuildPluginCommand" -v`
    and the `cabinet` checks A1, A4, A6
 2. Consider an automated E2E test of `executePlugin` with an isolated `HOME`, as used
    manually in this protocol
 
+## Windows Verification (#230)
+
+**Date**: 2026-11-06
+**Branch**: `fix/230-windows-portunix-cwd` (commit `d8eb1dd4`, adds tests only)
+**Testing OS**: Windows 11 Pro 10.0.26300.9711, amd64 (host); Go 1.26.0, PowerShell 7.6.3,
+Windows PowerShell 5.1.26100.9711, Temurin JDK 21.0.6
+**Full protocol**: [acceptance-230.md](acceptance-230.md)
+
+Recommendation 1 above was executed. Stub plugins ran against an isolated user profile;
+the real plugin registry was not modified.
+
+| Item | Result |
+| ---- | ------ |
+| `go test portunix.ai/cmd -run "TestPluginEnvironment\|TestBuildPluginCommand" -v` (incl. `.ps1` stub through `powershell.exe`) | PASS |
+| Windows-only case-insensitive branch of `pluginEnvironment` — covered by a new subtest, mutation detected | PASS |
+| E2E native, Python wrapper (`.ps1`), Java — `PORTUNIX_CWD` = caller directory, working directory = install path | PASS |
+| Caller directory with a space and non-ASCII characters (PowerShell, `cmd.exe`) | PASS |
+| Inherited `PORTUNIX_CWD` and `Portunix_Cwd` — plugin sees exactly one, correct value | PASS |
+| Relative input / output, absolute paths, path on another drive (A1, A4, A6 equivalents) | PASS (stub emulating `cabinet`) |
+| Plugin ignoring the variable — stdout, stderr, exit code identical to `main` before #229 | PASS |
+
+**Deviation**: the `cabinet` plugin is not available on the Windows host; the `cabinet`
+checks were run with a stub plugin that emulates its path handling. Details in
+`acceptance-230.md`.
+
 ## Final Decision
 
-**STATUS**: CONDITIONAL
+**STATUS**: PASS
 
-Linux: all executed scenarios passed, no defects found. The only open item is the
-execution on Windows required by acceptance criterion 5.
+Linux (2026-10-10): all executed scenarios passed, no defects found. Windows (2026-11-06,
+under #230): all scenarios passed, no defects found, no production code change needed.
+The previous status CONDITIONAL was caused only by the missing Windows run.
 
-**Approval for merge**: YES for the Linux scope; full acceptance requires either a
-passing Windows run (Recommendation 1) or an explicit decision of the Product Owner to
-merge with Windows verification outstanding
-**Date**: 2026-10-10
+**Approval for merge**: YES
+**Date**: 2026-11-06 (Linux run 2026-10-10)
 **Tester signature**: Claude Code (tester role), on behalf of zdendaku

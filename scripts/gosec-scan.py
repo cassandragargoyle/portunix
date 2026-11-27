@@ -71,12 +71,19 @@ def workspace_modules(repo: Path) -> List[Path]:
 def write_workspace(repo: Path, members: List[Path], work_dir: Path) -> Path:
     """Create a temporary go.work that joins the workspace members"""
     go_line = "go 1.25"
+    toolchain_line = ""
     for line in (repo / "go.mod").read_text(encoding="utf-8").splitlines():
         if re.match(r"^go \d", line):
             go_line = line.strip()
-            break
+        elif re.match(r"^toolchain go\d", line):
+            # Without it the workspace runs the local toolchain, so the scan
+            # reports stdlib vulnerabilities the release build does not have
+            toolchain_line = line.strip()
 
-    lines = [go_line, "", "use ("]
+    lines = [go_line, ""]
+    if toolchain_line:
+        lines += [toolchain_line, ""]
+    lines.append("use (")
     for member in members:
         lines.append("\t" + (repo / member).as_posix())
     lines.append(")")

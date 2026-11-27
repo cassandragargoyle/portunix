@@ -5,6 +5,89 @@ All notable changes to Portunix will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-11-27
+
+### Added in 2.8.0
+
+- **Plugin runtime `node` for JavaScript plugins** (Issue #260) — manifests accept `runtime: node` with an
+  optional `runtime_version`; plugins run as `node <script>` in CLI dispatch, gRPC start and health check.
+  Install checks the Node.js runtime (hint `portunix install nodejs`) and installs npm dependencies
+  (`npm ci` / `npm install --omit=dev`) unless `node_modules` is shipped; a missing `node_modules` is
+  reported as a broken install fixed by `portunix plugin repair`. The JavaScript template implements the
+  `portunix.plugins.PluginService` contract.
+- **Opt-in wheel extras for Python wheel plugins** (Issue #261) — manifests declare `optional_extras`,
+  `portunix plugin install` / `install-github` take `--extra` (repeatable, comma separated) and install
+  `<wheel>[extras]` via uv with pip fallback; an undeclared extra fails before any change. The registry
+  records declared and installed extras, `repair` keeps them and `plugin info` lists them.
+
+### Fixed in 2.8.0
+
+- **Security: Go toolchain and dependencies** — every module pins `toolchain go1.26.11`, so builds and
+  releases no longer ship the Go 1.26.8 standard library with 14 known vulnerabilities (`net/http`,
+  `crypto/tls`, `crypto/x509`, `html/template`, `os`, `net/textproto`). `gorilla/websocket` is bumped to
+  a revision that fixes the weak PRNG for the WebSocket mask key (GO-2026-6278). The scan scripts run
+  with the pinned toolchain.
+- **Plugin templates implement the Portunix contract** (Issue #262) — the Go, Java and Rust templates use
+  the `PluginService` part of the contract, implement all six RPCs, read plugin info and commands from
+  `plugin.json`, bind gRPC to `127.0.0.1` and stop on SIGTERM; the Go template compiles again and the
+  Java template's JUnit 5 tests actually run. The Rust template requires Rust 1.85.
+- **Plugin health check for interpreter-run plugins** (Issue #263) — the executable bit is checked only
+  for native binaries and Python wheel entry points; `java`, `node` and `python` script plugins are no
+  longer reported unhealthy.
+- **Pre-flight check for GitHub publication** — the sensitive-content scan searched every file for the
+  last private file name instead of the configured patterns; it now matches the patterns, supports
+  case-sensitive rules and scans only files that would be published.
+
+### Changed in 2.8.0
+
+- **Use of AI documented** — README and `CONTRIBUTING.md` state that AI tools are used in development and
+  that a human must review all AI output; contributions with unchecked AI output are rejected.
+
+## [2.7.1] - 2026-11-20
+
+### Added in 2.7.1
+
+- **Windows application icon** (Issue #250) — `portunix.exe` and the installer carry the Portunix gear
+  icon (`assets/brand/portunix.svg` master, multi-size `portunix.ico`) instead of the old `home.ico`.
+- **`portunix plugin list` ordering and `--json`** (Issue #251) — plugins are listed alphabetically
+  (case-insensitive) in table, JSON, YAML and gRPC output, the DESCRIPTION column is wider (45 chars),
+  `--json` is a shorthand for `--output json`, and an empty registry prints `[]` for JSON/YAML.
+- **Placeholder command warning in `portunix plugin validate`** (Issue #257) — warns when the only manifest
+  command is named like the plugin, `ptx-<plugin>`, the binary or a prefix of the plugin name; the plugin
+  guide now defines the `commands` rule and the templates list a real `hello` command.
+
+### Fixed in 2.7.1
+
+- **`portunix <plugin> --help-ai` prints JSON** (Issue #257) — the help guard showed the text usage of the
+  plugin wrapper, so clients got no command list. The plugin is now asked first (stdin closed,
+  `PORTUNIX_HELP_AI=1`); without a JSON answer Portunix prints JSON built from the registry entry. A plugin
+  that does not answer within 10 s is killed with its whole process tree and the call fails.
+- **PATH_APPEND for package-manager installs** (Issue #253) — the platform `PATH_APPEND` was applied to
+  `apt`, `deb`, `dnf`, `yum`, `snap` and `pacman` variants and wrote non-existent directories such as
+  `/opt/maven/bin`; it is now skipped for them, and a variant-level `environment` can override it.
+- **PowerShell install scripts on Windows** (Issue #203) — `installScript` written in PowerShell was run by
+  `cmd.exe`. A new variant field `scriptShell` runs it from a temp `.ps1` with PowerShell (15 variants in
+  12 packages); dependencies install first, `--help-expert` / `--help-ai` on a subcommand show help instead
+  of running it, and winget sources and output are shown.
+- **Self-update delivers every helper** (Issue #200) — `portunix update` extracts `portunix` and all
+  `ptx-*` binaries from the release archive (not a fixed subset), replaces running binaries by rename,
+  rolls back only once and cleans up backups and temp files; `make-release.py` fails when an archive lacks
+  a helper.
+- **`build-with-version.sh` builds all helpers** (Issue #243) — the helper list is derived from
+  `src/helpers/ptx-*/`, so `ptx-credential` and `ptx-python` now get the embedded version.
+- **Windows resources in release builds** (Issue #250) — GoReleaser built from a file list and ignored
+  `portunix.syso`, so the release `.exe` had no icon, version info or manifest; `.syso` files are now
+  generated per architecture, which also fixes corrupted resources in the Windows arm64 executables.
+- **Log file descriptors no longer leak** (Issue #246) — loggers share one open file per log path and
+  `ConfigManager.UpdateConfig` hands files over instead of leaking them; the Windows, Coverage and
+  Performance CI jobs pass again.
+
+### Changed in 2.7.1
+
+- **Java plugin template** (Issue #257) — uses `runtime: java` with the JAR path as `binary`, so it passes
+  `portunix plugin validate`.
+- **CI test workflow** — the Go version is read from `go.mod` instead of a fixed 1.21.
+
 ## [2.7.0] - 2026-10-26
 
 ### Added in 2.7.0

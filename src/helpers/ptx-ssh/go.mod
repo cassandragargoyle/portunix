@@ -2,6 +2,8 @@ module portunix.ai/portunix/src/helpers/ptx-ssh
 
 go 1.26.0
 
+toolchain go1.26.11
+
 require (
 	github.com/creack/pty v1.1.18
 	github.com/pkg/sftp v1.13.10

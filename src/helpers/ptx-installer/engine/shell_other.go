@@ -33,6 +33,7 @@ func refreshPath() {
 		}
 		if !IsInUserPath(dir) {
 			_ = os.Setenv("PATH", os.Getenv("PATH")+string(os.PathListSeparator)+dir)
+			markSessionPathDir(dir)
 		}
 	}
 }

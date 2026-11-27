@@ -56,8 +56,33 @@ entry point — the full set of guidelines lives under
   [`docs/contributing/TESTING_METHODOLOGY.md`](docs/contributing/TESTING_METHODOLOGY.md).
 - Software-installation tests **must** run in containers, never directly on the host — see the container-based testing policy in
   [`docs/contributing/ISSUE-DEVELOPMENT-METHODOLOGY.md`](docs/contributing/ISSUE-DEVELOPMENT-METHODOLOGY.md).
-- Do not add co-authored-by attributions for AI tools in commits.
 - `CHANGELOG.md` is kept current — add an entry under the target version when landing a user-visible change.
+
+## Use of Artificial Intelligence
+
+The project team uses artificial intelligence (AI) tools in software development.
+Contributors may also use AI tools (for example Claude Code, GitHub Copilot, or other
+assistants) to write code, tests, and documentation.
+
+The following rules apply to every contribution, whether AI helped with it or not:
+
+- **A human must review all AI output.** You must read, understand, and check every line
+  that an AI tool produced before you submit it
+- You are responsible for the contribution as if you wrote all of it yourself: it must be
+  correct, tested, and follow the project rules
+- Run the tests and check the result yourself; do not rely on the statement of an AI tool
+  that the code works
+- Do not send secrets, credentials, or customer data to AI tools
+  (see [AI-ASSISTANTS.md](docs/contributing/AI-ASSISTANTS.md))
+- Do not add AI attribution lines (for example `Co-Authored-By: Claude`) to code or commits
+
+**If a review finds that a human did not check the AI output, the change is rejected.**
+Signs of unchecked output include code that does not build or run, tests that were not run,
+invented APIs, files, or references, changes unrelated to the issue, and descriptions that
+do not match the code.
+
+See [AI-ASSISTANTS.md](docs/contributing/AI-ASSISTANTS.md) for practical guidance on
+working with AI assistants in this project.
 
 ## Detailed Guidelines
 

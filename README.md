@@ -27,8 +27,8 @@
 ```bash
 # Linux (amd64) — archive contains portunix + 12 ptx-* helpers + install.sh
 mkdir portunix-install && cd portunix-install
-wget https://github.com/cassandragargoyle/portunix/releases/latest/download/portunix_2.7.0_linux_amd64.tar.gz
-tar -xzf portunix_2.7.0_linux_amd64.tar.gz
+wget https://github.com/cassandragargoyle/portunix/releases/latest/download/portunix_2.8.0_linux_amd64.tar.gz
+tar -xzf portunix_2.8.0_linux_amd64.tar.gz
 sudo bash install.sh         # installs all binaries via `portunix install-self`
 cd .. && rm -rf portunix-install
 
@@ -341,6 +341,9 @@ export PORTUNIX_CACHE_DIR=/custom/cache/path
 - Python development helper with project-local venv support
 - Plugin system with gRPC architecture (#7)
 - Plugin registry for platform-capability discovery (#175)
+- Plugin command dispatcher — `portunix <plugin> <command>`, machine-readable `--help-ai` for plugins (#133, #257)
+- Plugin runtime `node` for JavaScript plugins (#260)
+- Opt-in wheel extras for Python wheel plugins (#261)
 - Playbook template system for documentation environments
 - Auto-dependency resolution for package installation
 - Docusaurus, Hugo, Docsy, Docsify, VitePress, MkDocs support (#154)
@@ -364,6 +367,8 @@ export PORTUNIX_CACHE_DIR=/custom/cache/path
 - Cross-platform binary distribution (#125)
 - Distributed MCP server ecosystem for plugins (#150)
 - Plugin security hardening — TLS, signing, audit (#185)
+- Service plugin commands via gRPC `Execute` (#258)
+- Consistent `--help-expert` / `--help-ai` on every command level (#259)
 
 ## Contributing
 
@@ -395,6 +400,15 @@ make status
 3. Run quality checks: `make ci-test`
 4. Submit pull request
 5. Automated CI/CD pipeline will validate changes
+
+## Use of Artificial Intelligence
+
+Artificial intelligence (AI) tools are used in the development of this software. A human
+always reviews the AI output before it becomes part of the project.
+
+Contributors may use AI tools too, but they must review all AI output themselves before
+they submit a change. A change where the AI output was not checked by a human is rejected.
+See [CONTRIBUTING.md](CONTRIBUTING.md#use-of-artificial-intelligence) for the rules.
 
 ## Creating a Release
 

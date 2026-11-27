@@ -201,20 +201,8 @@ def update_version_files(version: str) -> None:
     print_step("Updating version in source files...")
     project_root = get_project_root()
 
-    # Update build-with-version.sh default version
-    build_script = project_root / "build-with-version.sh"
-    if build_script.exists():
-        content = build_script.read_text(encoding='utf-8')
-        content = re.sub(
-            r'^VERSION=\$\{1:-v[0-9]+\.[0-9]+\.[0-9]+\}',
-            f'VERSION=${{1:-{version}}}',
-            content,
-            flags=re.MULTILINE
-        )
-        build_script.write_text(content, encoding='utf-8')
-        print_info("✓ Updated build-with-version.sh default version")
-
     # Run build-with-version.sh to update portunix.rc
+    # (its default version is read from portunix.rc, nothing to rewrite in the script)
     print_info(f"Updating portunix.rc with version {version}...")
     try:
         run_command(["./build-with-version.sh", version], cwd=project_root, capture=True, check=False)
@@ -270,6 +258,40 @@ def run_goreleaser(version: str, goreleaser_cmd: str) -> bool:
     return True
 
 
+def discover_helpers(project_root: Path) -> List[str]:
+    """Return the names of all ptx-* helpers under src/helpers/"""
+    helpers_dir = project_root / "src" / "helpers"
+    return sorted(
+        d.name for d in helpers_dir.iterdir()
+        if d.is_dir() and d.name.startswith("ptx-") and any(d.glob("*.go"))
+    )
+
+
+def archive_member_names(archive: Path) -> List[str]:
+    """Return base names of regular files in a release archive"""
+    if archive.name.endswith(".zip"):
+        with zipfile.ZipFile(archive) as zf:
+            return [Path(n).name for n in zf.namelist() if not n.endswith("/")]
+    with tarfile.open(archive, "r:gz") as tf:
+        return [Path(m.name).name for m in tf.getmembers() if m.isfile()]
+
+
+def verify_archive_helpers(release_archives: List[Path], helpers: List[str]) -> bool:
+    """Check that every release archive ships portunix and all helpers (Issue #200)"""
+    ok = True
+    for archive in sorted(release_archives):
+        suffix = ".exe" if "_windows_" in archive.name else ""
+        expected = ["portunix" + suffix] + [h + suffix for h in helpers]
+        present = set(archive_member_names(archive))
+        missing = [name for name in expected if name not in present]
+        if missing:
+            print_error(f"{archive.name} is missing: {', '.join(missing)}")
+            ok = False
+    if ok:
+        print_info(f"All release archives contain portunix and {len(helpers)} helpers")
+    return ok
+
+
 def build_platform_archives() -> bool:
     """Build cross-platform binaries using pure Python (Windows compatible)"""
     print_step("Building cross-platform binaries for ADR-031...")
@@ -283,20 +305,8 @@ def build_platform_archives() -> bool:
         ("darwin", "amd64"),
     ]
 
-    # Define helper binaries to build
-    helpers = [
-        "ptx-container",
-        "ptx-virt",
-        "ptx-mcp",
-        "ptx-ansible",
-        "ptx-prompting",
-        "ptx-python",
-        "ptx-installer",
-        "ptx-aiops",
-        "ptx-make",
-        "ptx-pft",
-        "ptx-credential",
-    ]
+    # Helper binaries are discovered from src/helpers/ (Issue #200)
+    helpers = discover_helpers(project_root)
 
     dist_dir = project_root / "dist"
     platforms_dir = dist_dir / "platforms"
@@ -570,6 +580,9 @@ def verify_outputs() -> bool:
 
     if len(release_archives) == 0:
         print_error("No release archive files generated")
+        return False
+
+    if not verify_archive_helpers(release_archives, discover_helpers(project_root)):
         return False
 
     print()

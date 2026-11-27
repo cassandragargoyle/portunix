@@ -79,7 +79,6 @@ impl PluginConfig {
         }
         let raw = fs::read_to_string(path)
             .with_context(|| format!("reading config {}", path.display()))?;
-        serde_yaml::from_str(&raw)
-            .with_context(|| format!("parsing config {}", path.display()))
+        serde_yaml::from_str(&raw).with_context(|| format!("parsing config {}", path.display()))
     }
 }

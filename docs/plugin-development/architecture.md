@@ -432,6 +432,22 @@ portunix my-plugin command --arg value
 
 ```
 
+#### Plugin Runtimes
+
+The `plugin.runtime` field in `plugin.json` decides how Portunix starts the plugin
+`binary` (a path relative to the plugin install directory):
+
+| Runtime | Started as | Runtime check |
+| ------- | ---------- | ------------- |
+| `native` (default) | `<binary>` (`.exe` added on Windows) | none |
+| `java` | `java <jvm_args> -jar <binary>` | `java -version` vs. `runtime_version` |
+| `python` | `python3 <binary>`, or the venv entry point for `wheel` plugins | `python3 --version` vs. `runtime_version` |
+| `node` | `node <binary>` | `node --version` vs. `runtime_version` |
+
+Service plugins also receive `--port <port>`. For `node` plugins, npm dependencies from
+`package.json` are installed at install time unless the plugin ships `node_modules`
+(see the [JavaScript guide](languages/javascript/getting-started.md#npm-dependencies)).
+
 #### Process Environment and Working Directory
 
 When a plugin is started through CLI dispatch (`portunix <plugin> ...`):
@@ -458,7 +474,7 @@ def resolve_user_path(path: str) -> Path:
     return (base / path).resolve()  # absolute paths are kept as they are
 ```
 
-The variable applies to all plugin runtimes (native, Java, Python) on Linux and Windows.
+The variable applies to all plugin runtimes (native, Java, Python, Node.js) on Linux and Windows.
 
 **Long-running plugins (service / gRPC / MCP)**: `PORTUNIX_CWD` is **not** set for plugin
 processes started as services. A service outlives the command that started it and serves

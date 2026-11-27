@@ -2790,7 +2790,7 @@ func showAddHelp() {
 	fmt.Println("Examples:")
 	fmt.Println("  portunix pft add --area vos --title \"Search summarization\"")
 	fmt.Println("  portunix pft add --area voc --title \"Dark mode\" --category A --author \"John\"")
-	fmt.Println("  portunix pft add --area voc --title \"Chat\" --legacy-id UC001 --product \"Tovek AI\" --tag ai")
+	fmt.Println("  portunix pft add --area voc --title \"Chat\" --legacy-id UC001 --product \"Acme AI\" --tag ai")
 }
 
 func showShowHelp() {

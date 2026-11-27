@@ -35,13 +35,20 @@
         }
       },
       "windows": {
-        "type": "script",
+        "type": "winget",
         "variants": {
-          "latest": {
+          "winget": {
             "version": "latest",
-            "installScript": "$url = 'https://qemu.weilnetz.de/w64/'; Write-Host 'Please download QEMU from $url manually'",
-            "postInstall": ["echo 'QEMU installation requires manual setup on Windows'"]
+            "description": "Stefan Weil's QEMU for Windows build via winget",
+            "packages": ["SoftwareFreedomConservancy.QEMU"]
           }
+        },
+        "verification": {
+          "command": "qemu-system-x86_64 --version",
+          "expectedExitCode": 0
+        },
+        "environment": {
+          "PATH_APPEND": "C:\\Program Files\\qemu"
         }
       }
     },

@@ -6,6 +6,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -14,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	"portunix.ai/app/plugins"
 	"portunix.ai/app/plugins/manager"
 )
 
@@ -76,7 +78,12 @@ Runtime: %s`,
 			getPluginRuntime(plugin.Runtime)),
 		DisableFlagParsing: true, // pass all flags to plugin
 		SilenceUsage:       true, // args belong to the plugin; errors here are runtime failures
+		// --help-ai is answered by the plugin or from the registry, not by the help guard
+		Annotations: map[string]string{selfHandledHelpAIAnnotation: "true"},
 		RunE: func(cmd *cobra.Command, args []string) error {
+			if hasRawHelpFlag(args, "--help-ai") {
+				return runPluginHelpAI(reloadPluginForHelpAI(plugin), args, os.Stdout, pluginHelpAITimeout)
+			}
 			return executePlugin(plugin, args)
 		},
 	}
@@ -149,6 +156,9 @@ func executePlugin(plugin *manager.RegistryPlugin, args []string) error {
 		if exitError, ok := err.(*exec.ExitError); ok {
 			os.Exit(exitError.ExitCode())
 		}
+		if freshPlugin.Runtime == "node" && errors.Is(err, exec.ErrNotFound) {
+			return fmt.Errorf("plugin '%s' needs the Node.js runtime, which was not found in PATH. Install it with: %s", plugin.Name, plugins.NodeInstallFix)
+		}
 		return fmt.Errorf("failed to execute plugin: %w", err)
 	}
 
@@ -184,6 +194,8 @@ func buildPluginCommand(plugin *manager.RegistryPlugin, args []string, callerDir
 		} else {
 			cmd = buildPythonCommand(binaryPath, args)
 		}
+	case "node":
+		cmd = buildNodeCommand(binaryPath, args)
 	default: // native
 		cmd = buildNativeCommand(binaryPath, args)
 	}
@@ -245,6 +257,12 @@ func buildJavaCommand(jarPath string, jvmArgs []string, pluginArgs []string) *ex
 	args = append(args, pluginArgs...)
 
 	return exec.Command("java", args...)
+}
+
+// buildNodeCommand builds command for Node.js plugin
+func buildNodeCommand(scriptPath string, pluginArgs []string) *exec.Cmd {
+	args := append([]string{scriptPath}, pluginArgs...)
+	return exec.Command("node", args...) // #nosec G204 -- script path comes from the installed plugin manifest
 }
 
 // buildPythonCommand builds command for Python plugin

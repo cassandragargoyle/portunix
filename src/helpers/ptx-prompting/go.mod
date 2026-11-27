@@ -2,6 +2,8 @@ module portunix.ai/portunix/src/helpers/ptx-prompting
 
 go 1.26.0
 
+toolchain go1.26.11
+
 // Use parent module for dependencies
 replace portunix.ai/portunix => ../../..
 

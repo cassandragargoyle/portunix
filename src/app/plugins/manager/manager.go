@@ -8,6 +8,7 @@ package manager
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -76,6 +77,17 @@ func NewManager(config ManagerConfig) (*Manager, error) {
 
 // InstallPlugin installs a plugin from a manifest file
 func (m *Manager) InstallPlugin(manifestPath string) error {
+	return m.InstallPluginWithOptions(manifestPath, InstallOptions{})
+}
+
+// InstallOptions holds the user choices for a plugin installation
+type InstallOptions struct {
+	// Extras lists the wheel extras (optional_extras) to install with the plugin
+	Extras []string
+}
+
+// InstallPluginWithOptions installs a plugin with the given install options
+func (m *Manager) InstallPluginWithOptions(manifestPath string, opts InstallOptions) error {
 	unlock, err := m.lockRegistry()
 	if err != nil {
 		return err
@@ -95,6 +107,21 @@ func (m *Manager) InstallPlugin(manifestPath string) error {
 		return fmt.Errorf("plugin validation failed: %w", err)
 	}
 
+	// Reject unknown extras before anything is copied or installed
+	extras, err := plugins.ResolveWheelExtras(manifest, opts.Extras)
+	if err != nil {
+		return err
+	}
+
+	// Check npm before anything is copied, so a missing tool leaves nothing
+	// behind and its error is not preceded by a "will be installed" warning
+	var nodePlan *nodeDepsPlan
+	if manifest.Plugin.Runtime == "node" {
+		if nodePlan, err = planNodeDependencies(filepath.Dir(manifestPath)); err != nil {
+			return fmt.Errorf("failed to setup Node.js plugin: %w", err)
+		}
+	}
+
 	// Check prerequisites (warn but don't block installation)
 	prereqResult := manifestPrerequisites(manifest, filepath.Dir(manifestPath))
 	if prereqResult.HasErrors() {
@@ -111,16 +138,22 @@ func (m *Manager) InstallPlugin(manifestPath string) error {
 		return fmt.Errorf("failed to copy plugin files: %w", err)
 	}
 
+	// Install npm dependencies of a Node.js plugin
+	if err := setupNodeDependencies(nodePlan, pluginDir); err != nil {
+		_ = os.RemoveAll(pluginDir)
+		return fmt.Errorf("failed to setup Node.js plugin: %w", err)
+	}
+
 	// Setup Python wheel plugin (venv + pip install)
 	if manifest.Plugin.Runtime == "python" && manifest.Plugin.Wheel != "" {
-		if err := m.setupPythonWheelPlugin(manifest, pluginDir); err != nil {
+		if err := m.setupPythonWheelPlugin(manifest, pluginDir, extras); err != nil {
 			_ = os.RemoveAll(pluginDir)
 			return fmt.Errorf("failed to setup Python wheel plugin: %w", err)
 		}
 	}
 
 	// Register plugin (never leave files behind without a registry entry)
-	if err := m.registry.RegisterPlugin(manifest, pluginDir); err != nil {
+	if err := m.registry.RegisterPlugin(manifest, pluginDir, extras...); err != nil {
 		_ = os.RemoveAll(pluginDir)
 		return fmt.Errorf("failed to register plugin: %w", err)
 	}
@@ -133,6 +166,12 @@ func (m *Manager) InstallPlugin(manifestPath string) error {
 // staged and checked first, the old installation is kept as a backup until
 // the new one is set up and registered, and it is restored on any failure
 func (m *Manager) ForceInstallPlugin(manifestPath string) error {
+	return m.ForceInstallPluginWithOptions(manifestPath, InstallOptions{})
+}
+
+// ForceInstallPluginWithOptions reinstalls a plugin with the given install
+// options; only the requested extras are installed
+func (m *Manager) ForceInstallPluginWithOptions(manifestPath string, opts InstallOptions) error {
 	unlock, err := m.lockRegistry()
 	if err != nil {
 		return err
@@ -142,7 +181,7 @@ func (m *Manager) ForceInstallPlugin(manifestPath string) error {
 	m.mutex.Lock()
 	defer m.mutex.Unlock()
 
-	return m.forceInstallPlugin(manifestPath)
+	return m.forceInstallPlugin(manifestPath, opts.Extras, true)
 }
 
 // RepairPlugin reinstalls a plugin from its own installed manifest and files,
@@ -167,11 +206,13 @@ func (m *Manager) RepairPlugin(name string) error {
 		return fmt.Errorf("installed manifest not found at %s; reinstall from source with: portunix plugin install --force <plugin-path>", manifestPath)
 	}
 
-	return m.forceInstallPlugin(manifestPath)
+	// Repair keeps the extras of the existing installation
+	return m.forceInstallPlugin(manifestPath, registryData.InstalledExtras, false)
 }
 
-// forceInstallPlugin implements ForceInstallPlugin; caller holds m.mutex
-func (m *Manager) forceInstallPlugin(manifestPath string) error {
+// forceInstallPlugin implements ForceInstallPlugin; caller holds m.mutex;
+// warnDropped reports extras of the old installation that are not requested
+func (m *Manager) forceInstallPlugin(manifestPath string, requestedExtras []string, warnDropped bool) error {
 	manifest, err := plugins.LoadManifest(manifestPath)
 	if err != nil {
 		return fmt.Errorf("failed to load manifest: %w", err)
@@ -187,12 +228,36 @@ func (m *Manager) forceInstallPlugin(manifestPath string) error {
 	if manifest.Plugin.Binary == "" {
 		return fmt.Errorf("plugin binary is required")
 	}
+	if err := plugins.ValidateOptionalExtras(manifest); err != nil {
+		return fmt.Errorf("plugin validation failed: %w", err)
+	}
+
+	// Reject unknown extras before the old installation is touched
+	extras, err := plugins.ResolveWheelExtras(manifest, requestedExtras)
+	if err != nil {
+		return err
+	}
 
 	// Check if plugin exists (to decide register vs reregister)
 	_, registryErr := m.registry.GetPlugin(manifest.Name)
 	existsInRegistry := registryErr == nil
+	if existsInRegistry && warnDropped {
+		if old, err := m.registry.GetPluginRegistryData(manifest.Name); err == nil {
+			if dropped := droppedExtras(old.InstalledExtras, extras); len(dropped) > 0 {
+				fmt.Printf("⚠️  Extras installed before are not requested and will be removed: %s (keep them with --extra %s)\n",
+					strings.Join(dropped, ", "), strings.Join(old.InstalledExtras, ","))
+			}
+		}
+	}
 	pluginDir := filepath.Join(m.config.PluginsDir, manifest.Name)
 	isWheel := manifest.Plugin.Runtime == "python" && manifest.Plugin.Wheel != ""
+
+	// Missing node/npm is a hard error; report it before the prerequisite warning
+	if manifest.Plugin.Runtime == "node" {
+		if _, err := planNodeDependencies(filepath.Dir(manifestPath)); err != nil {
+			return fmt.Errorf("failed to setup Node.js plugin (existing installation left unchanged): %w", err)
+		}
+	}
 
 	// Check prerequisites
 	prereqResult := manifestPrerequisites(manifest, filepath.Dir(manifestPath))
@@ -222,6 +287,18 @@ func (m *Manager) forceInstallPlugin(manifestPath string) error {
 	if isWheel {
 		if _, err := planPythonWheelVenv(manifest, stagingDir); err != nil {
 			return fmt.Errorf("failed to setup Python wheel plugin: %w (existing installation left unchanged)", err)
+		}
+	}
+
+	// node_modules holds no absolute paths, so npm runs in the staging directory
+	// and a failure leaves the old installation untouched
+	if manifest.Plugin.Runtime == "node" {
+		nodePlan, err := planNodeDependencies(stagingDir)
+		if err == nil {
+			err = setupNodeDependencies(nodePlan, stagingDir)
+		}
+		if err != nil {
+			return fmt.Errorf("failed to setup Node.js plugin (existing installation left unchanged): %w", err)
 		}
 	}
 
@@ -261,7 +338,7 @@ func (m *Manager) forceInstallPlugin(manifestPath string) error {
 
 	// The venv is created in its final location: venvs embed absolute paths
 	if isWheel {
-		if err := m.setupPythonWheelPlugin(manifest, pluginDir); err != nil {
+		if err := m.setupPythonWheelPlugin(manifest, pluginDir, extras); err != nil {
 			restore()
 			return fmt.Errorf("failed to setup Python wheel plugin: %w (previous installation restored)", err)
 		}
@@ -269,9 +346,9 @@ func (m *Manager) forceInstallPlugin(manifestPath string) error {
 
 	// Register or re-register
 	if existsInRegistry {
-		err = m.registry.ReregisterPlugin(manifest, pluginDir)
+		err = m.registry.ReregisterPlugin(manifest, pluginDir, extras...)
 	} else {
-		err = m.registry.RegisterPlugin(manifest, pluginDir)
+		err = m.registry.RegisterPlugin(manifest, pluginDir, extras...)
 	}
 	if err != nil {
 		restore()
@@ -647,6 +724,20 @@ func (m *Manager) GetPluginHealth(name string) (plugins.PluginHealth, error) {
 	return plugins.PluginHealth{}, fmt.Errorf("plugin %s is not enabled. Enable it with: portunix plugin enable %s", name, name)
 }
 
+// requiresExecBit reports whether the plugin binary is executed directly and
+// so needs the executable bit; java, node and python scripts are run by their
+// interpreter, a wheel entry point and a native binary are executed directly
+func requiresExecBit(plugin *RegistryPlugin) bool {
+	switch plugin.Runtime {
+	case "java", "node":
+		return false
+	case "python":
+		return plugin.Wheel != ""
+	default: // native
+		return true
+	}
+}
+
 // checkHelperPluginHealth performs health check for helper-type plugins
 func (m *Manager) checkHelperPluginHealth(plugin *RegistryPlugin) plugins.PluginHealth {
 	// Installed files first: a broken venv still leaves the entry script in place
@@ -673,7 +764,7 @@ func (m *Manager) checkHelperPluginHealth(plugin *RegistryPlugin) plugins.Plugin
 	}
 
 	// Check binary is executable (Unix only — Windows uses extension-based execution)
-	if goruntime.GOOS != "windows" && info.Mode()&0111 == 0 {
+	if goruntime.GOOS != "windows" && requiresExecBit(plugin) && info.Mode()&0111 == 0 {
 		return plugins.PluginHealth{
 			Healthy:       false,
 			Status:        "not_executable",
@@ -687,6 +778,8 @@ func (m *Manager) checkHelperPluginHealth(plugin *RegistryPlugin) plugins.Plugin
 	switch plugin.Runtime {
 	case "java":
 		cmd = exec.Command("java", "-jar", binaryPath, "--version")
+	case "node":
+		cmd = exec.Command("node", binaryPath, "--version")
 	case "python":
 		if plugin.Wheel != "" {
 			// Wheel plugin: entry point is a standalone script in .venv/bin/
@@ -700,6 +793,16 @@ func (m *Manager) checkHelperPluginHealth(plugin *RegistryPlugin) plugins.Plugin
 
 	output, err := cmd.CombinedOutput()
 	versionInfo := strings.TrimSpace(string(output))
+
+	// A missing interpreter (java, python3, node) means the plugin cannot run
+	if errors.Is(err, exec.ErrNotFound) {
+		return plugins.PluginHealth{
+			Healthy:       false,
+			Status:        "runtime_missing",
+			Message:       fmt.Sprintf("Runtime not found: %s. Fix: %s", cmd.Path, plugins.RuntimeInstallFix(plugin.Runtime)),
+			LastCheckTime: time.Now(),
+		}
+	}
 
 	if err != nil {
 		// Binary exists and is executable but --version failed
@@ -855,8 +958,9 @@ func systemPythonForVenv(manifest *plugins.PluginManifest, pyVersion string) (st
 	return pythonCmd, nil
 }
 
-// setupPythonWheelPlugin creates venv and installs the wheel package
-func (m *Manager) setupPythonWheelPlugin(manifest *plugins.PluginManifest, pluginDir string) error {
+// setupPythonWheelPlugin creates venv and installs the wheel package with
+// the given (already resolved) extras
+func (m *Manager) setupPythonWheelPlugin(manifest *plugins.PluginManifest, pluginDir string, extras []string) error {
 	plan, err := planPythonWheelVenv(manifest, pluginDir)
 	if err != nil {
 		return err
@@ -870,9 +974,42 @@ func (m *Manager) setupPythonWheelPlugin(manifest *plugins.PluginManifest, plugi
 				manifest.Name, pyRequest, pluginPythonVersionEnv)
 			fmt.Printf("     Recommended: pin the interpreter in plugin.json: \"python_version\": \"%s\"\n", pyRequest)
 		}
-		return m.setupPythonWheelPluginUV(manifest, pluginDir, plan.wheelPath, venvPath, plan.uv, pyRequest)
+		return m.setupPythonWheelPluginUV(manifest, pluginDir, plan.wheelPath, extras, venvPath, plan.uv, pyRequest)
 	}
-	return m.setupPythonWheelPluginSystem(manifest, pluginDir, plan.wheelPath, venvPath, plan.pythonCmd)
+	return m.setupPythonWheelPluginSystem(manifest, pluginDir, plan.wheelPath, extras, venvPath, plan.pythonCmd)
+}
+
+// wheelRequirement returns the pip/uv install argument for the main wheel:
+// the wheel path, with "[extra,...]" appended when extras are requested
+func wheelRequirement(wheelPath string, extras []string) string {
+	if len(extras) == 0 {
+		return wheelPath
+	}
+	return wheelPath + "[" + strings.Join(extras, ",") + "]"
+}
+
+// droppedExtras returns the previously installed extras that are not in requested
+func droppedExtras(installed, requested []string) []string {
+	keep := make(map[string]bool, len(requested))
+	for _, e := range requested {
+		keep[plugins.NormalizeExtraName(e)] = true
+	}
+	var dropped []string
+	for _, e := range installed {
+		if !keep[plugins.NormalizeExtraName(e)] {
+			dropped = append(dropped, e)
+		}
+	}
+	return dropped
+}
+
+// printWheelInstall reports the main wheel installation step
+func printWheelInstall(wheel string, extras []string) {
+	if len(extras) == 0 {
+		fmt.Printf("  Installing wheel: %s\n", wheel)
+		return
+	}
+	fmt.Printf("  Installing wheel: %s (extras: %s)\n", wheel, strings.Join(extras, ", "))
 }
 
 // uvPythonRequest returns the --python request for uv: the exact minor when
@@ -905,7 +1042,7 @@ func uvVenvArgs(venvPath, pyRequest string, managed bool) []string {
 }
 
 // setupPythonWheelPluginUV creates the venv with a uv-managed interpreter
-func (m *Manager) setupPythonWheelPluginUV(manifest *plugins.PluginManifest, pluginDir, wheelPath, venvPath, uv, pyRequest string) error {
+func (m *Manager) setupPythonWheelPluginUV(manifest *plugins.PluginManifest, pluginDir, wheelPath string, extras []string, venvPath, uv, pyRequest string) error {
 	fmt.Printf("  Creating Python virtual environment with uv (Python %s)...\n", pyRequest)
 	cmd := exec.Command(uv, uvVenvArgs(venvPath, pyRequest, true)...)
 	if output, err := cmd.CombinedOutput(); err != nil {
@@ -932,8 +1069,8 @@ func (m *Manager) setupPythonWheelPluginUV(manifest *plugins.PluginManifest, plu
 	}
 
 	// Install main wheel
-	fmt.Printf("  Installing wheel: %s\n", manifest.Plugin.Wheel)
-	if err := install(wheelPath); err != nil {
+	printWheelInstall(manifest.Plugin.Wheel, extras)
+	if err := install(wheelRequirement(wheelPath, extras)); err != nil {
 		return err
 	}
 
@@ -942,7 +1079,7 @@ func (m *Manager) setupPythonWheelPluginUV(manifest *plugins.PluginManifest, plu
 }
 
 // setupPythonWheelPluginSystem creates the venv with the host's python3 (fallback)
-func (m *Manager) setupPythonWheelPluginSystem(manifest *plugins.PluginManifest, pluginDir, wheelPath, venvPath, pythonCmd string) error {
+func (m *Manager) setupPythonWheelPluginSystem(manifest *plugins.PluginManifest, pluginDir, wheelPath string, extras []string, venvPath, pythonCmd string) error {
 	// Create virtual environment
 	fmt.Printf("  Creating Python virtual environment...\n")
 	cmd := exec.Command(pythonCmd, "-m", "venv", venvPath)
@@ -965,8 +1102,8 @@ func (m *Manager) setupPythonWheelPluginSystem(manifest *plugins.PluginManifest,
 	}
 
 	// Install main wheel via pip
-	fmt.Printf("  Installing wheel: %s\n", manifest.Plugin.Wheel)
-	if err := install(wheelPath); err != nil {
+	printWheelInstall(manifest.Plugin.Wheel, extras)
+	if err := install(wheelRequirement(wheelPath, extras)); err != nil {
 		return err
 	}
 

@@ -5,6 +5,7 @@
 package selfinstall
 
 import (
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -55,4 +56,44 @@ func TestNormalizeTargetPath(t *testing.T) {
 			t.Fatalf("case-insensitive file input: want %q, got %q", full, got)
 		}
 	})
+}
+
+// TestInstallAllBinariesCopiesEveryHelper verifies that install-self copies
+// every ptx-* helper next to the source binary, not a hardcoded subset
+// (Issue #200)
+func TestInstallAllBinariesCopiesEveryHelper(t *testing.T) {
+	suffix := ""
+	foreign := ".exe"
+	if runtime.GOOS == "windows" {
+		suffix = ".exe"
+		foreign = ""
+	}
+
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+	helpers := []string{"ptx-installer", "ptx-container", "ptx-future"}
+	files := []string{"portunix" + suffix, "README.md", "ptx-stray" + foreign}
+	for _, h := range helpers {
+		files = append(files, h+suffix)
+	}
+	for _, name := range files {
+		if err := os.WriteFile(filepath.Join(srcDir, name), []byte(name), 0600); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+
+	if err := installAllBinaries(filepath.Join(srcDir, "portunix"+suffix), filepath.Join(dstDir, "portunix"+suffix)); err != nil {
+		t.Fatalf("installAllBinaries: %v", err)
+	}
+
+	for _, name := range append([]string{"portunix"}, helpers...) {
+		if _, err := os.Stat(filepath.Join(dstDir, name+suffix)); err != nil {
+			t.Errorf("%s%s not installed: %v", name, suffix, err)
+		}
+	}
+	for _, name := range []string{"README.md", "ptx-stray" + foreign} {
+		if _, err := os.Stat(filepath.Join(dstDir, name)); err == nil {
+			t.Errorf("%s must not be installed", name)
+		}
+	}
 }

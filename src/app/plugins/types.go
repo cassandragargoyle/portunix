@@ -41,7 +41,7 @@ type PluginConfig struct {
 	Name           string            `json:"name"`
 	Version        string            `json:"version"`
 	BinaryPath     string            `json:"binary_path"`
-	Runtime        string            `json:"runtime"`         // native, java, python
+	Runtime        string            `json:"runtime"`         // native, java, python, node
 	RuntimeVersion string            `json:"runtime_version"` // e.g., ">=21" for Java
 	JVMArgs        []string          `json:"jvm_args"`        // JVM arguments for Java plugins
 	Port           int               `json:"port"`
@@ -196,16 +196,23 @@ type SupportedPlatform struct {
 	PlatformPayload json.RawMessage `json:"platform_payload,omitempty"`
 }
 
+// WheelExtra declares an optional dependency group (extra) of the plugin wheel
+type WheelExtra struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
 // PluginBinaryConfig holds binary-specific configuration
 type PluginBinaryConfig struct {
 	Type                string        `json:"type"`
 	Binary              string        `json:"binary"`
 	Mode                string        `json:"mode,omitempty"`               // service (default) or helper
-	Runtime             string        `json:"runtime,omitempty"`            // native, java, python
+	Runtime             string        `json:"runtime,omitempty"`            // native, java, python, node
 	RuntimeVersion      string        `json:"runtime_version,omitempty"`    // e.g., ">=21" for Java
 	JVMArgs             []string      `json:"jvm_args,omitempty"`           // JVM arguments for Java plugins
 	Wheel               string        `json:"wheel,omitempty"`              // Python wheel filename (.whl)
 	ExtraWheels         []string      `json:"extra_wheels,omitempty"`       // Additional wheel files (glob patterns)
+	OptionalExtras      []WheelExtra  `json:"optional_extras,omitempty"`    // Wheel extras a user can opt into at install time
 	PythonMinVersion    string        `json:"python_min_version,omitempty"` // Minimum required Python version
 	PythonVersion       string        `json:"python_version,omitempty"`     // Exact interpreter minor for bytecode wheels, e.g. "3.13"
 	Interfaces          []string      `json:"interfaces,omitempty"`         // e.g. ["cli", "grpc"]

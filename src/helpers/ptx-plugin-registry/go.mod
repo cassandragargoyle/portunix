@@ -2,6 +2,8 @@ module portunix.ai/portunix/src/helpers/ptx-plugin-registry
 
 go 1.26.0
 
+toolchain go1.26.11
+
 replace portunix.ai/app => ../../app
 
 replace portunix.ai/portunix => ../../..

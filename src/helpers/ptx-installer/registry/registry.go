@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -177,6 +178,9 @@ type VariantSpec struct {
 	PostInstall       []string          `json:"postInstall,omitempty"`
 	InstallArgs       []string          `json:"installArgs,omitempty"`
 	Distributions     interface{}       `json:"distributions,omitempty"`
+	// ScriptShell names the interpreter of an inline installScript:
+	// "powershell", "cmd" or "sh"; empty means cmd on Windows, sh elsewhere
+	ScriptShell string `json:"scriptShell,omitempty"`
 	// VersionResolver names a source that resolves the newest version at
 	// install time; the result replaces {version} in url/urls (e.g. "python.org")
 	VersionResolver string `json:"versionResolver,omitempty"`
@@ -186,6 +190,10 @@ type VariantSpec struct {
 	Checksum        map[string]string `json:"checksum,omitempty"`
 	Container       *ContainerSpec    `json:"container,omitempty"`
 	AdditionalFiles []AdditionalFile  `json:"additionalFiles,omitempty"`
+	// Environment overrides the platform-level environment for this variant;
+	// a key present here (even with an empty value) wins over the platform
+	// value, e.g. "PATH_APPEND": "" disables the platform PATH entry (issue #253)
+	Environment map[string]string `json:"environment,omitempty"`
 }
 
 // AdditionalFile represents an extra file to download alongside the main package
@@ -593,8 +601,23 @@ func (r *PackageRegistry) validateVariant(variantName string, variant *VariantSp
 		return fmt.Errorf("variant must specify at least one installation method (url, urls, packages, installScript, container, additionalFiles, or versionResolver)")
 	}
 
+	if !containsString(ValidScriptShells, variant.ScriptShell) {
+		return fmt.Errorf("invalid scriptShell %q (allowed: powershell, cmd, sh)", variant.ScriptShell)
+	}
+
 	return nil
 }
+
+// Interpreters accepted in VariantSpec.ScriptShell; "" selects the platform default
+const (
+	ScriptShellDefault    = ""
+	ScriptShellPowerShell = "powershell"
+	ScriptShellCmd        = "cmd"
+	ScriptShellSh         = "sh"
+)
+
+// ValidScriptShells lists every accepted ScriptShell value
+var ValidScriptShells = []string{ScriptShellDefault, ScriptShellPowerShell, ScriptShellCmd, ScriptShellSh}
 
 // validateAIPrompts validates AI prompts configuration
 func (r *PackageRegistry) validateAIPrompts(prompts *AIPrompts) error {

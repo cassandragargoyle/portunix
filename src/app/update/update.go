@@ -1,86 +1,25 @@
+/*
+ *  SPDX-License-Identifier: MIT
+ *  This file is part of CassandraGargoyle Community Project
+ *  Licensed under the MIT License - see LICENSE file for details
+ */
+
 package update
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
 )
 
-// CreateBackup creates a backup of the current binary
-func CreateBackup() (string, error) {
-	execPath, err := os.Executable()
-	if err != nil {
-		return "", fmt.Errorf("failed to get executable path: %w", err)
-	}
-
-	// Resolve symlinks
-	execPath, err = filepath.EvalSymlinks(execPath)
-	if err != nil {
-		return "", fmt.Errorf("failed to resolve symlinks: %w", err)
-	}
-
-	backupPath := execPath + ".backup"
-
-	// Copy current binary to backup
-	if err := copyFile(execPath, backupPath); err != nil {
-		return "", fmt.Errorf("failed to create backup: %w", err)
-	}
-
-	return backupPath, nil
-}
-
-// RestoreBackup restores the binary from backup
-func RestoreBackup(backupPath string) error {
-	if backupPath == "" {
-		return fmt.Errorf("no backup path provided")
-	}
-
-	execPath, err := os.Executable()
-	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
-	}
-
-	// Resolve symlinks
-	execPath, err = filepath.EvalSymlinks(execPath)
-	if err != nil {
-		return fmt.Errorf("failed to resolve symlinks: %w", err)
-	}
-
-	// On Windows, we need to rename the files instead of overwriting
-	if runtime.GOOS == "windows" {
-		// First, try to rename backup to a temp location
-		tempPath := execPath + ".restore"
-		if err := copyFile(backupPath, tempPath); err != nil {
-			return fmt.Errorf("failed to prepare restore: %w", err)
-		}
-
-		// Try to remove the current (broken) binary
-		if err := os.Remove(execPath); err != nil {
-			// If we can't remove it, we don't have permission
-			_ = os.Remove(tempPath)
-			return fmt.Errorf("failed to remove broken binary: %w", err)
-		}
-
-		// Rename temp to original location
-		if err := os.Rename(tempPath, execPath); err != nil {
-			_ = os.Remove(tempPath)
-			return fmt.Errorf("failed to restore backup: %w", err)
-		}
-
-		// Remove backup file
-		_ = os.Remove(backupPath)
-	} else {
-		// On Unix-like systems, we can overwrite
-		if err := copyFile(backupPath, execPath); err != nil {
-			return fmt.Errorf("failed to restore backup: %w", err)
-		}
-	}
-
-	return nil
-}
+// ErrRestoreFailed marks a failed update whose rollback left some binaries
+// unrestored, their *.backup files are kept
+var ErrRestoreFailed = errors.New("restoring backups failed")
 
 // ApplyUpdate replaces the current binary and helper binaries with new ones
 func ApplyUpdate(archivePath string) error {
@@ -95,8 +34,9 @@ func ApplyUpdate(archivePath string) error {
 		return fmt.Errorf("failed to resolve symlinks: %w", err)
 	}
 
-	// Check if we have write permission
-	if err := checkWritePermission(execPath); err != nil {
+	// Check write permission on the directory, the running binary itself
+	// cannot be opened for writing (ETXTBSY on Linux)
+	if err := checkWritePermission(filepath.Dir(execPath)); err != nil {
 		if runtime.GOOS != "windows" {
 			return fmt.Errorf("permission denied\n  Cannot write to %s\n  Try running with sudo: sudo portunix update", execPath)
 		}
@@ -118,135 +58,57 @@ func ApplyUpdate(archivePath string) error {
 	return nil
 }
 
-// applyUpdateUnix applies update on Unix-like systems
-func applyUpdateUnix(execPath, newBinaryPath string) error {
-	// Open new binary
-	newBinary, err := os.Open(newBinaryPath)
-	if err != nil {
-		return fmt.Errorf("failed to open new binary: %w", err)
-	}
-	defer newBinary.Close()
+// replaceBinary installs src at target by renaming instead of overwriting, so
+// a running target can be replaced (ETXTBSY on Linux, sharing violation on
+// Windows), the previous file is moved aside to target.old
+func replaceBinary(src, target string) error {
+	newPath := target + ".new"
+	oldPath := target + ".old"
 
-	// Get file info for permissions
-	info, err := newBinary.Stat()
-	if err != nil {
-		return fmt.Errorf("failed to stat new binary: %w", err)
+	if err := copyFile(src, newPath); err != nil {
+		_ = os.Remove(newPath)
+		return err
 	}
-
-	// Create temporary file in the same directory
-	dir := filepath.Dir(execPath)
-	tmpFile, err := os.CreateTemp(dir, ".portunix-update-*")
-	if err != nil {
-		return fmt.Errorf("failed to create temp file: %w", err)
-	}
-	tmpPath := tmpFile.Name()
-
-	// Copy new binary to temp file
-	if _, err := io.Copy(tmpFile, newBinary); err != nil {
-		_ = tmpFile.Close()
-		_ = os.Remove(tmpPath)
-		return fmt.Errorf("failed to copy new binary: %w", err)
-	}
-	_ = tmpFile.Close()
-
-	// Set executable permissions
-	if err := os.Chmod(tmpPath, info.Mode()|0755); err != nil {
-		_ = os.Remove(tmpPath)
-		return fmt.Errorf("failed to set permissions: %w", err)
+	if err := os.Chmod(newPath, 0755); err != nil { // #nosec G302 -- binaries must be executable by all users
+		_ = os.Remove(newPath)
+		return err
 	}
 
-	// Atomic rename
-	if err := os.Rename(tmpPath, execPath); err != nil {
-		_ = os.Remove(tmpPath)
-		return fmt.Errorf("failed to replace binary: %w", err)
+	// Leftover from a previous update, gone unless that process still runs
+	_ = os.Remove(oldPath)
+
+	movedAside := false
+	if _, err := os.Stat(target); err == nil {
+		if err := os.Rename(target, oldPath); err != nil {
+			_ = os.Remove(newPath)
+			return fmt.Errorf("failed to move %s aside: %w", filepath.Base(target), err)
+		}
+		movedAside = true
 	}
 
+	if err := os.Rename(newPath, target); err != nil {
+		_ = os.Remove(newPath)
+		if movedAside {
+			if restoreErr := os.Rename(oldPath, target); restoreErr != nil {
+				return fmt.Errorf("%w (moving %s back failed: %v)", err, filepath.Base(oldPath), restoreErr)
+			}
+		}
+		return err
+	}
+
+	// A running binary cannot be removed on Windows, it is cleaned up by the next update
+	_ = os.Remove(oldPath)
 	return nil
 }
 
-// applyUpdateWindows applies update on Windows
-func applyUpdateWindows(execPath, newBinaryPath string) error {
-	// Try direct replacement first (works if we have admin rights)
-	tempPath := execPath + ".new"
-
-	// Copy new binary to temporary location
-	if err := copyFile(newBinaryPath, tempPath); err != nil {
-		return fmt.Errorf("failed to copy new binary: %w", err)
-	}
-
-	// Set executable permissions
-	if err := os.Chmod(tempPath, 0755); err != nil { // #nosec G302 -- binaries must be executable by all users
-		_ = os.Remove(tempPath)
-		return fmt.Errorf("failed to set permissions: %w", err)
-	}
-
-	// Try to rename current binary to backup
-	backupPath := execPath + ".old"
-	if err := os.Rename(execPath, backupPath); err != nil {
-		// If we can't rename, we don't have permission - create PowerShell fallback
-		_ = os.Remove(tempPath)
-
-		// Create PowerShell update script as fallback
-		psScriptPath := execPath + ".update.ps1"
-		psScript := fmt.Sprintf(`# Portunix Update Fallback Script
-Write-Host "Finalizing Portunix update..." -ForegroundColor Cyan
-Write-Host "This may take a few seconds..." -ForegroundColor Yellow
-Start-Sleep -Seconds 2
-
-try {
-    # Remove old binary
-    if (Test-Path "%s") {
-        Remove-Item "%s" -Force
-    }
-    
-    # Move new binary to final location
-    Move-Item "%s" "%s" -Force
-    
-    Write-Host "✓ Update completed successfully!" -ForegroundColor Green
-    Write-Host "You can now run: portunix --version" -ForegroundColor Green
-    
-} catch {
-    Write-Error "Update failed: $_"
-    Write-Host "Please run this script as Administrator" -ForegroundColor Red
-}
-
-# Clean up
-Remove-Item $PSCommandPath -Force
-Read-Host "Press Enter to close"
-`, execPath, execPath, newBinaryPath, execPath)
-
-		if err := os.WriteFile(psScriptPath, []byte(psScript), 0600); err == nil {
-			return fmt.Errorf("permission denied\n  Cannot write to %s\n  \n  Alternative: Run this PowerShell script as Administrator:\n  %s\n  \n  Or try running as administrator: Right-click cmd.exe -> Run as administrator", execPath, psScriptPath)
-		}
-
-		return fmt.Errorf("permission denied\n  Cannot write to %s\n  Try running as administrator", execPath)
-	}
-
-	// Rename new binary to original location
-	if err := os.Rename(tempPath, execPath); err != nil {
-		// If this fails, try to restore the backup
-		restoreErr := os.Rename(backupPath, execPath)
-		_ = os.Remove(tempPath)
-		if restoreErr != nil {
-			return fmt.Errorf("failed to install update: %w (restoring the backup %s failed too: %v)", err, backupPath, restoreErr)
-		}
-		return fmt.Errorf("failed to install update: %w", err)
-	}
-
-	// Remove backup on success
-	_ = os.Remove(backupPath)
-	return nil
-}
-
-// checkWritePermission checks if we have write permission to a file
-func checkWritePermission(path string) error {
-	// Try to open the file for writing (without truncating)
-	file, err := os.OpenFile(path, os.O_WRONLY, 0)
+// checkWritePermission checks if new files can be created in dir
+func checkWritePermission(dir string) error {
+	file, err := os.CreateTemp(dir, ".portunix-write-check-*")
 	if err != nil {
 		return err
 	}
 	_ = file.Close()
-	return nil
+	return os.Remove(file.Name())
 }
 
 // IsPermissionError checks if an error is related to permissions
@@ -324,26 +186,28 @@ func applyUpdateAllBinaries(targetDir string, binaries []*BinaryInfo) error {
 	}
 
 	// Now apply updates for all binaries
-	for _, binary := range binaries {
+	for i, binary := range binaries {
 		targetPath := filepath.Join(targetDir, binary.Name+binSuffix)
 
-		if err := copyFile(binary.Path, targetPath); err != nil {
-			// Restore all backups on failure
-			if restoreErr := restoreBackups(backups, targetDir, binSuffix); restoreErr != nil {
-				return fmt.Errorf("failed to update %s: %w (%v)", binary.Name, err, restoreErr)
+		if err := replaceBinary(binary.Path, targetPath); err != nil {
+			removeExtracted(binaries[i:])
+
+			// Roll back only the binaries already replaced, the others are untouched
+			applied := make(map[string]string)
+			for _, done := range binaries[:i] {
+				if backupPath, ok := backups[done.Name]; ok {
+					applied[done.Name] = backupPath
+					delete(backups, done.Name)
+				}
+			}
+			for _, backupPath := range backups {
+				_ = os.Remove(backupPath)
+			}
+
+			if restoreErr := restoreBackups(applied, targetDir, binSuffix); restoreErr != nil {
+				return fmt.Errorf("failed to update %s: %w (%w)", binary.Name, err, restoreErr)
 			}
 			return fmt.Errorf("failed to update %s: %w", binary.Name, err)
-		}
-
-		// Set executable permissions on Unix
-		if runtime.GOOS != "windows" {
-			if err := os.Chmod(targetPath, 0755); err != nil { // #nosec G302 -- binaries must be executable by all users
-				// Restore all backups on failure
-				if restoreErr := restoreBackups(backups, targetDir, binSuffix); restoreErr != nil {
-					return fmt.Errorf("failed to set permissions for %s: %w (%v)", binary.Name, err, restoreErr)
-				}
-				return fmt.Errorf("failed to set permissions for %s: %w", binary.Name, err)
-			}
 		}
 
 		// Clean up temporary file
@@ -358,18 +222,22 @@ func applyUpdateAllBinaries(targetDir string, binaries []*BinaryInfo) error {
 	return nil
 }
 
-// restoreBackups copies every backup back over its binary and reports the
-// binaries that could not be restored, their backup files are left in place
+// restoreBackups puts every backup back in place of its binary and removes
+// it, the backups of binaries that could not be restored are left in place
+// and reported
 func restoreBackups(backups map[string]string, targetDir, binSuffix string) error {
 	var failed []string
 	for name, backupPath := range backups {
 		targetPath := filepath.Join(targetDir, name+binSuffix)
-		if err := copyFile(backupPath, targetPath); err != nil {
+		if err := replaceBinary(backupPath, targetPath); err != nil {
 			failed = append(failed, fmt.Sprintf("%s from %s: %v", name, backupPath, err))
+			continue
 		}
+		_ = os.Remove(backupPath)
 	}
+	sort.Strings(failed)
 	if len(failed) > 0 {
-		return fmt.Errorf("restoring backups failed: %s", strings.Join(failed, "; "))
+		return fmt.Errorf("%w: %s", ErrRestoreFailed, strings.Join(failed, "; "))
 	}
 	return nil
 }

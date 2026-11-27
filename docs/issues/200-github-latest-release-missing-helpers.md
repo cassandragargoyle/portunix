@@ -14,7 +14,7 @@ containing it has been published to GitHub.
 - **Created**: 2026-10-06
 - **Status**: Open
 - **Assignee**: -
-- **Branch**: -
+- **Branch**: `fix/200-update-all-helpers`
 - **Related**:
   - Commit `40d1375` — `fix(selfinstall): install all ptx-* helpers via glob, not a hardcoded list`
   - Issue #197 — `install-self --path` normalization (also not on GitHub yet)
@@ -96,6 +96,60 @@ Please ensure ptx-installer is in the same directory as portunix.
 - [ ] On a clean Windows, `install-self` from the latest GitHub archive installs all
       `ptx-*.exe` helpers of the archive
 - [ ] `portunix install python --variant=full` works right after that install
-- [ ] `portunix update` on a `v2.2.2` install reaches the new release and leaves all
-      helpers in place
+- [ ] (4a) From the first release containing this fix, `portunix update` replaces the
+      running `portunix` and all helpers, installs helpers missing locally, and on
+      failure rolls back to the previous version without leftover files
+- [ ] (4b) Installations before that release (`v2.6.3` and older, incl. `v2.2.2`) are
+      documented to upgrade once by reinstalling from the release archive
+      (`install.ps1` / `install.sh` / `install-self`), because their updater cannot
+      replace its own running binary
 - [ ] The release workflow checks the installed helpers against the archive
+
+AC4 originally required `portunix update` on a `v2.2.2` install to leave all helpers in
+place. Acceptance testing showed this is not possible: the updater of every release up
+to `v2.6.3` fails on its own running binary and cannot be fixed retroactively. AC4 was
+split into 4a and 4b on 2026-10-27 (architect).
+
+## Implementation
+
+### Findings (2026-10-27)
+
+- GitHub `releases/latest` is now `v2.6.3`, which contains `40d1375`; its Windows
+  and Linux archives ship `portunix` plus all 19 helpers
+- `portunix update` had the same defect as the old `install-self`:
+  `extractAllFromZip` and `extractAllFromTarGz` in `src/app/update/github.go`
+  extracted only `portunix`, `ptx-container` and `ptx-mcp`, so an update never
+  delivered `ptx-installer` or any helper added later
+- The helper list in `scripts/make-release.py` (`build_platform_archives`, the
+  `portunix-platforms` bundle) covered only 11 of 19 helpers
+- Acceptance testing ([acceptance-200.md](../testing/acceptance-200.md)) found that
+  `portunix update` could not replace the running binary at all: the write check and
+  the copy opened the running executable for writing (`ETXTBSY` on Linux, sharing
+  violation on Windows), and `DownloadUpdate` deleted the archive it returned before
+  the caller could extract it
+
+### Changes
+
+- `src/app/update/github.go` — the update extracts `portunix` and every `ptx-*`
+  entry of the release archive (`.exe` on Windows), the main binary stays
+  mandatory
+- `src/app/update/update.go` — binaries are replaced by rename (`replaceBinary`:
+  copy to `<name>.new`, move the current file to `<name>.old`, rename `.new` into
+  place), also for backup restore; the write check creates a temp file in the
+  directory; the unused `applyUpdateUnix` / `applyUpdateWindows` are removed
+- `src/app/update/github.go` — `DownloadUpdate` keeps the archive on success
+- `scripts/make-release.py` — helpers are discovered from `src/helpers/`;
+  `verify_outputs` fails the release when an archive in `dist/` lacks
+  `portunix` or any helper
+- Unit tests: `src/app/update/extract_test.go`, `src/app/update/replace_test.go`
+  (replacing a binary while a process runs from it),
+  `TestInstallAllBinariesCopiesEveryHelper` in
+  `src/app/selfinstall/install_test.go`
+
+### Existing Installations Before This Fix
+
+The updater of every released version up to `v2.6.3` cannot replace its own running
+binary, which cannot be fixed retroactively. Installations made before the first release
+containing this fix are therefore upgraded by reinstalling from the release archive
+(`install.ps1` / `install.sh`, or `portunix install-self` from the unpacked archive);
+`portunix update` works from that release on.

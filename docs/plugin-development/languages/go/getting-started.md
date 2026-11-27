@@ -5,8 +5,8 @@ help you create robust, efficient plugins using Go.
 
 ## Prerequisites
 
-- Go 1.19 or later
-- Protocol Buffers compiler (`protoc`)
+- Go 1.24 or later
+- Protocol Buffers compiler (`protoc`) with the `protoc-gen-go` and `protoc-gen-go-grpc` plugins
 - Portunix development environment
 
 ## Quick Start
@@ -16,29 +16,51 @@ Create a new Go plugin using the Portunix CLI:
 ```bash
 portunix plugin create my-go-plugin --language=go
 cd my-go-plugin
-
+make build
 ```
 
 This creates a complete Go project structure:
 
 ```text
 my-go-plugin/
-├── plugin.yaml              # Plugin manifest
-├── go.mod                   # Go module definition
-├── go.sum                   # Go dependencies
-├── main.go                  # Plugin entry point
-├── internal/                # Internal packages
-│   ├── config/             # Configuration handling
-│   ├── handlers/           # gRPC handlers
-│   └── services/           # Business logic
-├── proto/                  # Protocol Buffer definitions
-├── scripts/                # Build and deployment scripts
-├── tests/                  # Test files
-└── README.md               # Plugin documentation
-
+├── plugin.json                  # Plugin manifest
+├── config.yaml                  # Plugin configuration (optional)
+├── go.mod                       # Go module definition
+├── go.sum                       # Go dependencies
+├── Makefile                     # Build, proto, test and install targets
+├── main.go                      # Plugin entry point
+├── internal/
+│   ├── config/config.go         # Configuration handling
+│   ├── manifest/manifest.go     # plugin.json reader
+│   ├── handlers/                # gRPC handlers
+│   │   ├── plugin.go
+│   │   └── plugin_test.go
+│   └── services/                # Business logic
+│       ├── plugin.go
+│       └── plugin_test.go
+└── proto/
+    └── plugin.proto             # gRPC service definition
 ```
 
+`make build` generates `proto/plugin.pb.go` and `proto/plugin_grpc.pb.go` and writes the
+binary `./plugin` next to `plugin.json`, where its `binary` field points.
+
 ## Plugin Structure
+
+### Service Mode and CLI Mode
+
+The plugin binary runs in one of two modes:
+
+- **Service mode** — `portunix plugin start` launches the binary without a command, with
+  `--port N` and the plugin install directory as working directory. The plugin serves the
+  gRPC service `portunix.plugins.PluginService` on `127.0.0.1:N`. Portunix then calls
+  `Initialize`, `Health` and `Execute`; on `portunix plugin stop` it calls `Shutdown` and
+  then sends SIGTERM
+- **CLI mode** — `portunix <plugin> <command> [args...]` runs the binary directly with the
+  command as positional arguments. The plugin executes the command once, prints the output
+  to stdout and exits; no gRPC is involved
+
+Both modes share the same business logic in `internal/services`.
 
 ### Main Entry Point (main.go)
 
@@ -46,765 +68,559 @@ my-go-plugin/
 package main
 
 import (
-    "context"
-    "flag"
-    "fmt"
-    "log"
-    "net"
-    "os"
-    "os/signal"
-    "syscall"
+	"context"
+	"flag"
+	"fmt"
+	"log/slog"
+	"net"
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
 
-    "google.golang.org/grpc"
-    "google.golang.org/grpc/health"
-    "google.golang.org/grpc/health/grpc_health_v1"
-    
-    pb "my-go-plugin/proto"
-    "my-go-plugin/internal/config"
-    "my-go-plugin/internal/handlers"
+	"google.golang.org/grpc"
+
+	"go-plugin-template/internal/config"
+	"go-plugin-template/internal/handlers"
+	"go-plugin-template/internal/manifest"
+	"go-plugin-template/internal/services"
+	pb "go-plugin-template/proto"
 )
 
+// version is set at build time (-ldflags "-X main.version=...")
+var version = "dev"
+
+// Without a command the plugin runs as a gRPC service (portunix plugin start);
+// with a command it runs once as a CLI (portunix <plugin> <command> [args...])
 func main() {
-    var (
-        port       = flag.Int("port", 50051, "gRPC server port")
-        configPath = flag.String("config", "config.yaml", "Configuration file path")
-    )
-    flag.Parse()
+	var (
+		port         = flag.Int("port", 50051, "gRPC server port")
+		configPath   = flag.String("config", "config.yaml", "Configuration file path")
+		manifestPath = flag.String("manifest", "plugin.json", "Plugin manifest path")
+		showVersion  = flag.Bool("version", false, "Print the plugin version and exit")
+	)
+	flag.Parse()
 
-    // Load configuration
-    cfg, err := config.Load(*configPath)
-    if err != nil {
-        log.Fatalf("Failed to load configuration: %v", err)
-    }
+	cfg, err := config.Load(*configPath)
+	if err != nil {
+		fail("failed to load configuration: %v", err)
+	}
+	configureLogging(cfg.LogLevel)
 
-    // Create gRPC server
-    server := grpc.NewServer()
-    
-    // Register plugin service
-    pluginHandler := handlers.NewPluginHandler(cfg)
-    pb.RegisterPluginServiceServer(server, pluginHandler)
-    
-    // Register health service
-    healthServer := health.NewServer()
-    grpc_health_v1.RegisterHealthServer(server, healthServer)
-    healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
+	if *showVersion {
+		fmt.Printf("%s %s (build %s)\n", cfg.Plugin.Name, cfg.Plugin.Version, version)
+		return
+	}
 
-    // Start server
-    listener, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
-    if err != nil {
-        log.Fatalf("Failed to listen: %v", err)
-    }
+	if flag.NArg() > 0 {
+		runCommand(cfg, flag.Arg(0), flag.Args()[1:])
+		return
+	}
 
-    // Graceful shutdown
-    go func() {
-        sigChan := make(chan os.Signal, 1)
-        signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
-        <-sigChan
-        
-        log.Println("Shutting down gracefully...")
-        server.GracefulStop()
-    }()
-
-    log.Printf("Plugin server listening on port %d", *port)
-    if err := server.Serve(listener); err != nil {
-        log.Fatalf("Failed to serve: %v", err)
-    }
+	// Portunix runs the plugin with the install directory as working
+	// directory, so the default manifest path resolves to its plugin.json
+	m, err := manifest.Load(*manifestPath)
+	if err != nil {
+		fail("%v", err)
+	}
+	if err := serve(cfg, m, *port); err != nil {
+		fail("%v", err)
+	}
 }
 
+// runCommand executes one command and prints its output (CLI mode)
+func runCommand(cfg *config.Config, command string, args []string) {
+	output, err := services.NewPluginService(cfg).Execute(context.Background(), command, args)
+	if err != nil {
+		fail("%v", err)
+	}
+	fmt.Println(output)
+}
+
+// serve runs the gRPC server implementing portunix.plugins.PluginService
+// until SIGINT or SIGTERM
+func serve(cfg *config.Config, m *manifest.Manifest, port int) error {
+	// Portunix connects over localhost; the plugin is not exposed to the network
+	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		return fmt.Errorf("failed to listen: %w", err)
+	}
+
+	server := grpc.NewServer()
+	pb.RegisterPluginServiceServer(server, handlers.NewPluginHandler(cfg, m))
+
+	go func() {
+		sigChan := make(chan os.Signal, 1)
+		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+		<-sigChan
+		slog.Info("Shutting down gracefully...")
+		server.GracefulStop()
+	}()
+
+	slog.Info("Plugin server listening", "plugin", m.Name, "version", m.Version, "address", listener.Addr().String())
+	if err := server.Serve(listener); err != nil {
+		return fmt.Errorf("failed to serve: %w", err)
+	}
+	return nil
+}
+
+// configureLogging logs to stderr, so stdout carries only command output
+func configureLogging(level string) {
+	var l slog.Level
+	if err := l.UnmarshalText([]byte(strings.ToUpper(level))); err != nil {
+		l = slog.LevelInfo
+	}
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: l})))
+}
+
+func fail(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
+	os.Exit(1)
+}
 ```
 
-### Configuration Package (internal/config/config.go)
+Command-line flags:
+
+| Flag | Default | Description |
+| ----- | ----- | ----- |
+| `--port` | `50051` | gRPC server port (Portunix passes the port from `plugin.json`) |
+| `--config` | `config.yaml` | Configuration file path |
+| `--manifest` | `plugin.json` | Plugin manifest path |
+| `--version` | `false` | Print the plugin version and exit |
+
+Logging uses `log/slog` and goes to stderr, so stdout carries only command output in CLI mode.
+
+### Configuration (internal/config/config.go)
+
+`config.yaml` is optional; a missing file falls back to the defaults.
+
+```yaml
+plugin:
+  name: my-go-plugin
+  version: 1.0.0
+  description: Example Go plugin for Portunix
+
+log_level: info
+timeout: 30
+```
 
 ```go
-package config
-
-import (
-    "io/ioutil"
-    "gopkg.in/yaml.v3"
-)
-
+// Config is the plugin configuration from config.yaml
 type Config struct {
-    Plugin   PluginConfig   `yaml:"plugin"`
-    Server   ServerConfig   `yaml:"server"`
-    Database DatabaseConfig `yaml:"database,omitempty"`
-    API      APIConfig      `yaml:"api,omitempty"`
+	Plugin   PluginConfig `yaml:"plugin"`
+	LogLevel string       `yaml:"log_level"`
+	Timeout  int          `yaml:"timeout"`
 }
 
+// PluginConfig is the plugin section of config.yaml
 type PluginConfig struct {
-    Name        string `yaml:"name"`
-    Version     string `yaml:"version"`
-    Description string `yaml:"description"`
-    LogLevel    string `yaml:"log_level" default:"info"`
+	Name        string `yaml:"name"`
+	Version     string `yaml:"version"`
+	Description string `yaml:"description"`
 }
 
-type ServerConfig struct {
-    Port        int    `yaml:"port" default:"50051"`
-    HealthPort  int    `yaml:"health_port" default:"50052"`
-    MetricsPort int    `yaml:"metrics_port" default:"8080"`
-}
-
-type DatabaseConfig struct {
-    URL      string `yaml:"url"`
-    Username string `yaml:"username"`
-    Password string `yaml:"password"`
-}
-
-type APIConfig struct {
-    Endpoints []Endpoint `yaml:"endpoints"`
-}
-
-type Endpoint struct {
-    Path    string `yaml:"path"`
-    Method  string `yaml:"method"`
-    Handler string `yaml:"handler"`
-}
-
+// Load reads the configuration; a missing file falls back to the defaults
 func Load(path string) (*Config, error) {
-    data, err := ioutil.ReadFile(path)
-    if err != nil {
-        return nil, err
-    }
+	var config Config
+	data, err := os.ReadFile(path) // #nosec G304 -- path of the plugin's own config
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		config.Plugin = PluginConfig{Name: "my-go-plugin", Version: "1.0.0"}
+	case err != nil:
+		return nil, fmt.Errorf("failed to read config file: %w", err)
+	default:
+		if err := yaml.Unmarshal(data, &config); err != nil {
+			return nil, fmt.Errorf("failed to parse config: %w", err)
+		}
+	}
 
-    var config Config
-    if err := yaml.Unmarshal(data, &config); err != nil {
-        return nil, err
-    }
+	// Set defaults
+	if config.LogLevel == "" {
+		config.LogLevel = "info"
+	}
+	if config.Timeout == 0 {
+		config.Timeout = 30
+	}
 
-    return &config, nil
+	if err := config.Validate(); err != nil {
+		return nil, fmt.Errorf("invalid configuration: %w", err)
+	}
+
+	return &config, nil
 }
+```
 
-func (c *Config) Validate() error {
-    if c.Plugin.Name == "" {
-        return fmt.Errorf("plugin name is required")
-    }
-    if c.Plugin.Version == "" {
-        return fmt.Errorf("plugin version is required")
-    }
-    return nil
+`Validate` requires `plugin.name` and `plugin.version` and a positive `timeout`. The
+`timeout` (seconds) limits each gRPC `Execute` call.
+
+### Plugin Manifest Reader (internal/manifest/manifest.go)
+
+`plugin.json` is the single source of the plugin information and commands reported to
+Portunix over gRPC. The `manifest` package parses it and maps it onto the contract
+messages:
+
+- `PluginInfo()` — name, version, description, author, license, `dependencies.os_support`,
+  commands, capabilities and `permissions` (level defaults to `limited`)
+- `PluginCommands()` — the `commands` array as `PluginCommand` messages (parameter type
+  defaults to `string`)
+- `Capabilities()` — access flags derived from the declared permissions, plus the names of
+  the `ai_integration.mcp_tools`
+
+```go
+// Capabilities derives the plugin capabilities from the declared permissions
+func (m *Manifest) Capabilities() *pb.PluginCapabilities {
+	tools := make([]string, 0, len(m.AIIntegration.MCPTools))
+	for _, t := range m.AIIntegration.MCPTools {
+		tools = append(tools, t.Name)
+	}
+	return &pb.PluginCapabilities{
+		FilesystemAccess: len(m.Permissions.Filesystem) > 0,
+		NetworkAccess:    len(m.Permissions.Network) > 0,
+		DatabaseAccess:   len(m.Permissions.Database) > 0,
+		ContainerAccess:  false,
+		SystemCommands:   len(m.Permissions.System) > 0,
+		McpTools:         tools,
+	}
 }
-
 ```
 
 ### gRPC Handlers (internal/handlers/plugin.go)
 
+The handlers implement `portunix.plugins.PluginService` — the service Portunix calls when
+it starts the plugin as a service (`portunix plugin start`): `Initialize`, `GetInfo`,
+`Health`, `Execute`, `ListCommands` and `Shutdown`. `proto/plugin.proto` is a copy of the
+`PluginService` part of the Portunix contract (`src/app/plugins/proto/plugin.proto`); keep
+its package, service and messages unchanged, otherwise Portunix fails with `Unimplemented`
+on `Initialize`. Only the language options (`go_package`) may differ.
+
+Two rules matter:
+
+- **`Execute` reports command errors in the response** (`success=false`, `error`,
+  `exit_code=1`), not as gRPC errors, so Portunix can show them to the user
+- **`Shutdown` only cleans up and answers — it must not exit.** Portunix sends SIGTERM
+  right after the call (handled in `main.go` with `GracefulStop`); a plugin that exits
+  inside `Shutdown` drops the response and `portunix plugin stop` fails with `EOF`
+
 ```go
-package handlers
-
-import (
-    "context"
-    "fmt"
-
-    pb "my-go-plugin/proto"
-    "my-go-plugin/internal/config"
-    "my-go-plugin/internal/services"
-)
-
+// PluginHandler implements portunix.plugins.PluginService; plugin info and
+// commands come from plugin.json, so the manifest stays the single source
 type PluginHandler struct {
-    pb.UnimplementedPluginServiceServer
-    config  *config.Config
-    service *services.PluginService
+	pb.UnimplementedPluginServiceServer
+	config    *config.Config
+	manifest  *manifest.Manifest
+	service   *services.PluginService
+	startedAt time.Time
 }
 
-func NewPluginHandler(cfg *config.Config) *PluginHandler {
-    return &PluginHandler{
-        config:  cfg,
-        service: services.NewPluginService(cfg),
-    }
+// NewPluginHandler creates the gRPC handler
+func NewPluginHandler(cfg *config.Config, m *manifest.Manifest) *PluginHandler {
+	return &PluginHandler{
+		config:    cfg,
+		manifest:  m,
+		service:   services.NewPluginService(cfg),
+		startedAt: time.Now(),
+	}
 }
 
+// Initialize is the first call Portunix makes after starting the plugin
+func (h *PluginHandler) Initialize(ctx context.Context, req *pb.InitializeRequest) (*pb.InitializeResponse, error) {
+	slog.Info("Initialize called", "plugin", req.GetPluginName(), "version", req.GetVersion())
+	return &pb.InitializeResponse{
+		Success:    true,
+		Message:    "initialized",
+		PluginInfo: h.manifest.PluginInfo(),
+	}, nil
+}
+
+// GetInfo returns the plugin information from plugin.json
 func (h *PluginHandler) GetInfo(ctx context.Context, req *pb.GetInfoRequest) (*pb.GetInfoResponse, error) {
-    return &pb.GetInfoResponse{
-        Info: &pb.PluginInfo{
-            Name:         h.config.Plugin.Name,
-            Version:      h.config.Plugin.Version,
-            Description:  h.config.Plugin.Description,
-            Capabilities: []string{"example-capability"},
-        },
-    }, nil
+	return &pb.GetInfoResponse{PluginInfo: h.manifest.PluginInfo()}, nil
 }
 
-func (h *PluginHandler) HealthCheck(ctx context.Context, req *pb.HealthCheckRequest) (*pb.HealthCheckResponse, error) {
-    status := h.service.CheckHealth()
-    return &pb.HealthCheckResponse{
-        Status: pb.HealthCheckResponse_Status(status),
-    }, nil
+// Health reports the plugin state for portunix plugin health
+func (h *PluginHandler) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
+	healthy := h.service.CheckHealth()
+	status, message := "running", "ok"
+	if !healthy {
+		status, message = "unhealthy", "health check failed"
+	}
+	return &pb.HealthResponse{
+		Healthy:       healthy,
+		Status:        status,
+		Message:       message,
+		UptimeSeconds: int64(time.Since(h.startedAt).Seconds()),
+		Metrics:       map[string]string{},
+	}, nil
 }
 
+// Execute runs a plugin command; command errors are reported in the
+// response, not as gRPC errors, so Portunix can show them to the user
 func (h *PluginHandler) Execute(ctx context.Context, req *pb.ExecuteRequest) (*pb.ExecuteResponse, error) {
-    result, err := h.service.Execute(ctx, req.Command, req.Args)
-    if err != nil {
-        return nil, fmt.Errorf("execution failed: %w", err)
-    }
+	slog.Info("Executing command", "command", req.GetCommand(), "args", req.GetArgs())
 
-    return &pb.ExecuteResponse{
-        Result: result,
-        Status: pb.ExecuteResponse_SUCCESS,
-    }, nil
+	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(h.config.Timeout)*time.Second)
+	defer cancel()
+
+	output, err := h.service.Execute(timeoutCtx, req.GetCommand(), req.GetArgs())
+	if err != nil {
+		slog.Error("Command execution failed", "error", err)
+		return &pb.ExecuteResponse{
+			Success:  false,
+			Message:  err.Error(),
+			Error:    err.Error(),
+			ExitCode: 1,
+		}, nil
+	}
+	return &pb.ExecuteResponse{Success: true, Output: output, ExitCode: 0}, nil
 }
 
+// ListCommands returns the commands declared in plugin.json
+func (h *PluginHandler) ListCommands(ctx context.Context, req *pb.ListCommandsRequest) (*pb.ListCommandsResponse, error) {
+	return &pb.ListCommandsResponse{
+		Commands:     h.manifest.PluginCommands(),
+		Capabilities: h.manifest.Capabilities(),
+	}, nil
+}
+
+// Shutdown only cleans up and answers; Portunix stops the process right after
+// this call (SIGTERM, handled in main.go), exiting here would drop the response
 func (h *PluginHandler) Shutdown(ctx context.Context, req *pb.ShutdownRequest) (*pb.ShutdownResponse, error) {
-    // Perform cleanup operations
-    h.service.Cleanup()
-    
-    return &pb.ShutdownResponse{
-        Status: pb.ShutdownResponse_SUCCESS,
-    }, nil
+	slog.Info("Shutdown requested")
+	h.service.Cleanup()
+	return &pb.ShutdownResponse{Success: true, Message: "cleanup done"}, nil
 }
-
 ```
 
 ### Business Logic (internal/services/plugin.go)
 
+`PluginService` holds the command implementations, shared by the gRPC handler and the CLI
+mode. The template provides `hello`, `echo` and `uppercase`:
+
 ```go
-package services
-
-import (
-    "context"
-    "fmt"
-    "log"
-
-    "my-go-plugin/internal/config"
-)
-
-type PluginService struct {
-    config *config.Config
-}
-
-func NewPluginService(cfg *config.Config) *PluginService {
-    return &PluginService{
-        config: cfg,
-    }
-}
-
+// Execute runs a plugin command
 func (s *PluginService) Execute(ctx context.Context, command string, args []string) (string, error) {
-    switch command {
-    case "hello":
-        return s.handleHello(args)
-    case "process":
-        return s.handleProcess(args)
-    default:
-        return "", fmt.Errorf("unknown command: %s", command)
-    }
+	slog.Debug("Executing command", "command", command, "args", args)
+
+	switch command {
+	case "hello":
+		return s.handleHello(args)
+	case "echo":
+		return s.handleEcho(args)
+	case "uppercase":
+		return s.handleUppercase(args)
+	default:
+		return "", fmt.Errorf("unknown command: %s", command)
+	}
 }
 
 func (s *PluginService) handleHello(args []string) (string, error) {
-    name := "World"
-    if len(args) > 0 {
-        name = args[0]
-    }
-    return fmt.Sprintf("Hello, %s!", name), nil
+	name := "World"
+	if len(args) > 0 && args[0] != "" {
+		name = args[0]
+	}
+	return fmt.Sprintf("Hello, %s! This is %s v%s", name, s.config.Plugin.Name, s.config.Plugin.Version), nil
 }
 
-func (s *PluginService) handleProcess(args []string) (string, error) {
-    if len(args) == 0 {
-        return "", fmt.Errorf("process command requires at least one argument")
-    }
-    
-    // Implement your processing logic here
-    result := fmt.Sprintf("Processed: %v", args)
-    return result, nil
+func (s *PluginService) handleEcho(args []string) (string, error) {
+	if len(args) == 0 {
+		return "", fmt.Errorf("echo command requires at least one argument")
+	}
+	return strings.Join(args, " "), nil
 }
 
-func (s *PluginService) CheckHealth() int32 {
-    // Implement health check logic
-    // Return appropriate status code
-    return 1 // SERVING
+func (s *PluginService) handleUppercase(args []string) (string, error) {
+	if len(args) == 0 {
+		return "", fmt.Errorf("uppercase command requires at least one argument")
+	}
+	return strings.ToUpper(strings.Join(args, " ")), nil
 }
-
-func (s *PluginService) Cleanup() {
-    log.Println("Performing cleanup operations...")
-    // Implement cleanup logic
-}
-
 ```
+
+`CheckHealth()` backs the `Health` RPC (always healthy in the template; check database
+connections, external services or internal state here), and `Cleanup()` backs `Shutdown`
+(close connections, remove temporary files, cancel background work). When you add a
+command, declare it in the `commands` array of `plugin.json` as well, so Portunix lists it.
 
 ## Building and Testing
 
-### Build Script (scripts/build.sh)
+### Makefile Targets
+
+| Target | Description |
+| ----- | ----- |
+| `make build` | Run `make proto`, then build `./plugin` with the version from `git describe` |
+| `make proto` | Generate `proto/*.pb.go` with `protoc` (`paths=source_relative`) |
+| `make test` | Run `go test -race` with a coverage report (`coverage.html`) |
+| `make dev` | Run the plugin with `go run . --config=config.yaml` |
+| `make package` | Build and pack `plugin`, `plugin.json` and `config.yaml` into `dist/` |
+| `make install` | Build and run `portunix plugin install .` |
+| `make validate` | Run `portunix plugin validate .` |
+| `make clean` | Remove the binary, generated protobuf files and coverage output |
+
+`make proto` runs:
 
 ```bash
-#!/bin/bash
-
-set -e
-
-# Build plugin binary
-
-echo "Building plugin..."
-go build -o bin/plugin main.go
-
-# Generate protocol buffers (if needed)
-
-if [ -d "proto" ]; then
-    echo "Generating protocol buffers..."
-    protoc --go_out=. --go-grpc_out=. proto/*.proto
-fi
-
-# Run tests
-
-echo "Running tests..."
-go test ./...
-
-# Create plugin package
-
-echo "Creating plugin package..."
-mkdir -p dist
-tar -czf dist/plugin.tar.gz bin/ plugin.yaml
-
-echo "Build completed successfully!"
-
+protoc --go_out=. --go_opt=paths=source_relative \
+	--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+	proto/*.proto
 ```
 
-### Test Example (tests/plugin_test.go)
+### Tests
+
+The template has unit tests next to the code: `internal/services/plugin_test.go` covers the
+commands, `internal/handlers/plugin_test.go` covers the gRPC handlers against the real
+`plugin.json`.
+
+```bash
+make test
+```
+
+#### Test Example (internal/handlers/plugin_test.go)
 
 ```go
-package tests
-
-import (
-    "context"
-    "testing"
-    
-    "my-go-plugin/internal/config"
-    "my-go-plugin/internal/handlers"
-    pb "my-go-plugin/proto"
-)
-
-func TestPluginInfo(t *testing.T) {
-    cfg := &config.Config{
-        Plugin: config.PluginConfig{
-            Name:        "test-plugin",
-            Version:     "1.0.0",
-            Description: "Test plugin",
-        },
-    }
-    
-    handler := handlers.NewPluginHandler(cfg)
-    
-    resp, err := handler.GetInfo(context.Background(), &pb.GetInfoRequest{})
-    if err != nil {
-        t.Fatalf("GetInfo failed: %v", err)
-    }
-    
-    if resp.Info.Name != cfg.Plugin.Name {
-        t.Errorf("Expected name %s, got %s", cfg.Plugin.Name, resp.Info.Name)
-    }
+func newHandler(t *testing.T) *PluginHandler {
+	t.Helper()
+	m, err := manifest.Load(filepath.Join("..", "..", "plugin.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg := &config.Config{Plugin: config.PluginConfig{Name: "my-go-plugin", Version: "1.0.0"}, Timeout: 30}
+	return NewPluginHandler(cfg, m)
 }
 
-func TestHealthCheck(t *testing.T) {
-    cfg := &config.Config{}
-    handler := handlers.NewPluginHandler(cfg)
-    
-    resp, err := handler.HealthCheck(context.Background(), &pb.HealthCheckRequest{})
-    if err != nil {
-        t.Fatalf("HealthCheck failed: %v", err)
-    }
-    
-    if resp.Status != pb.HealthCheckResponse_SERVING {
-        t.Errorf("Expected SERVING status, got %v", resp.Status)
-    }
-}
+func TestExecute(t *testing.T) {
+	h := newHandler(t)
 
+	resp, err := h.Execute(context.Background(), &pb.ExecuteRequest{Command: "echo", Args: []string{"hi"}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !resp.GetSuccess() || resp.GetOutput() != "hi" || resp.GetExitCode() != 0 {
+		t.Errorf("echo response = %v", resp)
+	}
+
+	// A failing command is reported in the response, not as a gRPC error
+	resp, err = h.Execute(context.Background(), &pb.ExecuteRequest{Command: "unknown"})
+	if err != nil {
+		t.Fatalf("unexpected gRPC error: %v", err)
+	}
+	if resp.GetSuccess() || resp.GetExitCode() == 0 || resp.GetError() == "" {
+		t.Errorf("unknown command response = %v", resp)
+	}
+}
 ```
 
 ## Development Workflow
 
-### 1. Development Setup
-
 ```bash
 # Install dependencies
+make deps
 
-go mod download
-
-# Generate protocol buffers
-
-make proto
-
-# Run in development mode
-
-go run main.go -config=config.dev.yaml
-
-```
-
-### 2. Testing
-
-```bash
-# Run unit tests
-
-go test ./...
-
-# Run integration tests
-
-go test -tags=integration ./tests/integration/
-
-# Test with Portunix
-
-portunix plugin install .
-portunix plugin test my-go-plugin
-
-```
-
-### 3. Building
-
-```bash
-# Build binary
-
+# Build (generates protobuf files first)
 make build
 
-# Build for multiple platforms
+# Run a command in CLI mode
+./plugin hello Portunix
 
-make build-all
+# Run as a gRPC service on 127.0.0.1:50051
+./plugin --port 50051
 
-# Create distribution package
-
-make package
-
+# Install into Portunix
+portunix plugin install .
+portunix plugin enable go-plugin-template
+portunix plugin start go-plugin-template
+portunix plugin health go-plugin-template
+portunix go-plugin-template hello Portunix
+portunix plugin stop go-plugin-template
 ```
 
 ## Advanced Features
 
-### MCP Integration
+### MCP Tool Exposure
 
-For plugins that expose tools to AI agents:
+The Portunix contract has no separate tool RPCs. Declare MCP tools in `plugin.json` under
+`ai_integration.mcp_tools`; the template reports their names in `capabilities.mcp_tools`
+of `Initialize`, `GetInfo` and `ListCommands`, and a tool call reaches the plugin as an
+`Execute` request with the tool name as `command`:
 
-```go
-// internal/handlers/mcp.go
-package handlers
-
-import (
-    "context"
-    "encoding/json"
-    
-    pb "my-go-plugin/proto"
-)
-
-func (h *PluginHandler) ListTools(ctx context.Context, req *pb.ListToolsRequest) (*pb.ListToolsResponse, error) {
-    tools := []*pb.MCPTool{
-        {
-            Name:        "process_file",
-            Description: "Process a file with custom logic",
-            Schema: `{
-                "type": "object",
-                "properties": {
-                    "file_path": {"type": "string"},
-                    "options": {"type": "object"}
-                },
-                "required": ["file_path"]
-            }`,
-        },
-    }
-    
-    return &pb.ListToolsResponse{Tools: tools}, nil
+```json
+{
+  "ai_integration": {
+    "mcp_tools": [
+      { "name": "process_file", "description": "Process a file with custom logic" }
+    ]
+  }
 }
-
-func (h *PluginHandler) CallTool(ctx context.Context, req *pb.CallToolRequest) (*pb.CallToolResponse, error) {
-    switch req.ToolName {
-    case "process_file":
-        return h.handleProcessFile(ctx, req.Arguments)
-    default:
-        return nil, fmt.Errorf("unknown tool: %s", req.ToolName)
-    }
-}
-
-func (h *PluginHandler) handleProcessFile(ctx context.Context, args string) (*pb.CallToolResponse, error) {
-    var params struct {
-        FilePath string                 `json:"file_path"`
-        Options  map[string]interface{} `json:"options"`
-    }
-    
-    if err := json.Unmarshal([]byte(args), &params); err != nil {
-        return nil, fmt.Errorf("invalid arguments: %w", err)
-    }
-    
-    // Process the file
-    result := fmt.Sprintf("Processed file: %s", params.FilePath)
-    
-    return &pb.CallToolResponse{
-        Result: result,
-        Status: pb.CallToolResponse_SUCCESS,
-    }, nil
-}
-
 ```
 
-### Configuration Validation
-
 ```go
-func (c *Config) Validate() error {
-    if c.Plugin.Name == "" {
-        return fmt.Errorf("plugin name is required")
-    }
-    
-    if c.Server.Port <= 0 || c.Server.Port > 65535 {
-        return fmt.Errorf("invalid server port: %d", c.Server.Port)
-    }
-    
-    // Validate API endpoints
-    for _, endpoint := range c.API.Endpoints {
-        if endpoint.Path == "" {
-            return fmt.Errorf("endpoint path cannot be empty")
-        }
-        if endpoint.Method == "" {
-            return fmt.Errorf("endpoint method cannot be empty")
-        }
-    }
-    
-    return nil
-}
-
+// internal/services/plugin.go — handle the tool like any other command
+case "process_file":
+	if len(args) == 0 {
+		return "", fmt.Errorf("process_file requires a file path")
+	}
+	return fmt.Sprintf("Processed file: %s", args[0]), nil
 ```
-
-### Logging and Metrics
-
-```go
-import (
-    "github.com/sirupsen/logrus"
-    "github.com/prometheus/client_golang/prometheus"
-    "github.com/prometheus/client_golang/prometheus/promauto"
-)
-
-var (
-    requestsTotal = promauto.NewCounterVec(
-        prometheus.CounterOpts{
-            Name: "plugin_requests_total",
-            Help: "Total number of requests processed",
-        },
-        []string{"method", "status"},
-    )
-    
-    requestDuration = promauto.NewHistogramVec(
-        prometheus.HistogramOpts{
-            Name: "plugin_request_duration_seconds",
-            Help: "Duration of requests",
-        },
-        []string{"method"},
-    )
-)
-
-func (h *PluginHandler) Execute(ctx context.Context, req *pb.ExecuteRequest) (*pb.ExecuteResponse, error) {
-    timer := prometheus.NewTimer(requestDuration.WithLabelValues("execute"))
-    defer timer.ObserveDuration()
-    
-    logrus.WithFields(logrus.Fields{
-        "command": req.Command,
-        "args":    req.Args,
-    }).Info("Executing command")
-    
-    result, err := h.service.Execute(ctx, req.Command, req.Args)
-    
-    status := "success"
-    if err != nil {
-        status = "error"
-        logrus.WithError(err).Error("Command execution failed")
-    }
-    
-    requestsTotal.WithLabelValues("execute", status).Inc()
-    
-    if err != nil {
-        return nil, err
-    }
-    
-    return &pb.ExecuteResponse{
-        Result: result,
-        Status: pb.ExecuteResponse_SUCCESS,
-    }, nil
-}
-
-```
-
-## Best Practices
 
 ### Error Handling
 
-```go
-import (
-    "errors"
-    "fmt"
-)
-
-var (
-    ErrInvalidConfiguration = errors.New("invalid configuration")
-    ErrServiceUnavailable   = errors.New("service unavailable")
-    ErrInvalidInput        = errors.New("invalid input")
-)
-
-func (s *PluginService) ProcessData(data []byte) error {
-    if len(data) == 0 {
-        return fmt.Errorf("%w: data cannot be empty", ErrInvalidInput)
-    }
-    
-    // Process data...
-    
-    return nil
-}
-
-```
-
-### Resource Management
-
-```go
-type PluginService struct {
-    config   *config.Config
-    db       *sql.DB
-    clients  map[string]*http.Client
-    shutdown chan struct{}
-}
-
-func (s *PluginService) Start() error {
-    s.shutdown = make(chan struct{})
-    
-    // Initialize resources
-    if err := s.initDatabase(); err != nil {
-        return fmt.Errorf("failed to initialize database: %w", err)
-    }
-    
-    return nil
-}
-
-func (s *PluginService) Stop() error {
-    close(s.shutdown)
-    
-    // Cleanup resources
-    if s.db != nil {
-        s.db.Close()
-    }
-    
-    for _, client := range s.clients {
-        client.CloseIdleConnections()
-    }
-    
-    return nil
-}
-
-```
-
-### Testing Patterns
-
-```go
-func TestPluginServiceWithMocks(t *testing.T) {
-    // Create mock dependencies
-    mockDB := &MockDatabase{}
-    mockClient := &MockHTTPClient{}
-    
-    service := &PluginService{
-        db:     mockDB,
-        client: mockClient,
-    }
-    
-    // Set up expectations
-    mockDB.On("Query", mock.Anything).Return([]byte("result"), nil)
-    
-    // Execute test
-    result, err := service.ProcessData([]byte("input"))
-    
-    // Verify results
-    assert.NoError(t, err)
-    assert.Equal(t, "expected result", result)
-    
-    // Verify mock calls
-    mockDB.AssertExpectations(t)
-}
-
-```
+Return errors from `PluginService` with context (`fmt.Errorf("...: %w", err)`). The
+handler turns every error into an `ExecuteResponse` with `success=false`, so do not return
+gRPC status errors from `Execute`; reserve those for transport-level failures. In CLI mode
+`main.go` prints the error to stderr and exits with code 1.
 
 ## Deployment
 
-### Dockerfile
-
-```dockerfile
-FROM golang:1.19-alpine AS builder
-
-WORKDIR /app
-COPY go.mod go.sum ./
-RUN go mod download
-
-COPY . .
-RUN go build -o plugin main.go
-
-FROM alpine:latest
-RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-
-COPY --from=builder /app/plugin .
-COPY --from=builder /app/plugin.yaml .
-
-EXPOSE 50051 50052 8080
-
-CMD ["./plugin"]
-
-```
-
 ### Plugin Manifest
 
-```yaml
-name: my-go-plugin
-version: 1.0.0
-description: Example Go plugin for Portunix
-author: Developer Name
-license: MIT
+Go plugins use the `native` runtime. `binary` is the path of the executable relative to
+the plugin directory:
 
-type: service
-capabilities:
-  - data-processing
-  - file-handling
-
-runtime:
-  language: go
-  main: ./plugin
-  port: 50051
-  health_check_port: 50052
-  metrics_port: 8080
-
-dependencies:
-  system:
-    - docker: ">=20.0.0"
-
-permissions:
-  filesystem:
-    read: ["/tmp", "/var/log"]
-    write: ["/tmp/plugin-data"]
-  network:
-    outbound: ["api.example.com:443"]
-
-configuration:
-  required:
-    database_url:
-      type: string
-      description: Database connection URL
-  optional:
-    timeout:
-      type: integer
-      default: 30
-      description: Request timeout in seconds
-
+```json
+{
+  "plugin": {
+    "type": "grpc",
+    "binary": "./plugin",
+    "runtime": "native",
+    "port": 9001,
+    "health_check_interval": 30000000000
+  }
+}
 ```
+
+- Portunix starts the plugin as `<install_path>/plugin --port <port>` with the install
+  directory as working directory, so the default `--manifest plugin.json` and
+  `--config config.yaml` resolve to the installed files
+- The `commands` array is what `GetInfo` and `ListCommands` report; keep it in sync with
+  `PluginService.Execute`
+- `permissions` drive the reported `capabilities` and `required_permissions`
+
+See `template/plugin.json` for the complete manifest.
+
+### Containers
+
+The plugin binds `127.0.0.1` only, because Portunix connects over localhost. Running it in
+a container would require binding all interfaces, which the template deliberately does not
+do; the template ships no Dockerfile. Distribute the plugin with `make package` instead.
 
 ## Troubleshooting
 
-### Common Issues
-
-1. **gRPC Connection Failed**
-   - Verify port configuration
-   - Check firewall settings
-   - Ensure plugin implements required interfaces
-
-2. **Configuration Errors**
-   - Validate YAML syntax
-   - Check required fields
-   - Verify file permissions
-
-3. **Build Failures**
-   - Update Go dependencies: `go mod tidy`
-   - Regenerate protobuf files: `make proto`
-   - Check Go version compatibility
+1. **`Unimplemented` on `Initialize`** — `proto/plugin.proto` diverged from the Portunix
+   contract; restore the `portunix.plugins` package, service and messages and run `make proto`
+2. **`portunix plugin stop` fails with `EOF`** — `Shutdown` exits the process; let it only
+   clean up and answer, Portunix sends SIGTERM afterwards
+3. **`failed to read manifest`** — the plugin was started outside its directory; pass
+   `--manifest <path>/plugin.json`
+4. **Build failures** — run `make deps`, check that `protoc-gen-go` and `protoc-gen-go-grpc`
+   are on `PATH` and regenerate with `make proto`
 
 ## Next Steps
 
 - Study the [template code](template/) for a complete example
-- Read [best practices](best-practices.md) for production deployment
-- Explore [examples](examples/) for specific use cases
 - Learn about [MCP integration](../../mcp-integration/exposing-tools.md) for AI agents
+- Review the [plugin architecture](../../architecture.md)
 
 ## Resources
 
 - [Go gRPC Documentation](https://grpc.io/docs/languages/go/)
-- [Protocol Buffers Go Tutorial](https://developers.google.com/protocol-buffers/docs/gotutorial)
-- [Portunix Plugin API Reference](../../api-reference.md)
+- [Protocol Buffers Go Tutorial](https://protobuf.dev/getting-started/gotutorial/)
+- [log/slog package](https://pkg.go.dev/log/slog)

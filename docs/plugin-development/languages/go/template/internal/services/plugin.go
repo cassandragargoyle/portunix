@@ -3,28 +3,28 @@ package services
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 
 	"go-plugin-template/internal/config"
 )
 
+// PluginService holds the plugin business logic, shared by the gRPC handler
+// and the CLI mode
 type PluginService struct {
 	config *config.Config
 }
 
+// NewPluginService creates the business service
 func NewPluginService(cfg *config.Config) *PluginService {
 	return &PluginService{
 		config: cfg,
 	}
 }
 
+// Execute runs a plugin command
 func (s *PluginService) Execute(ctx context.Context, command string, args []string) (string, error) {
-	logrus.WithFields(logrus.Fields{
-		"command": command,
-		"args":    args,
-	}).Debug("Executing command")
+	slog.Debug("Executing command", "command", command, "args", args)
 
 	switch command {
 	case "hello":
@@ -60,40 +60,23 @@ func (s *PluginService) handleUppercase(args []string) (string, error) {
 	return strings.ToUpper(strings.Join(args, " ")), nil
 }
 
-func (s *PluginService) ProcessExample(ctx context.Context, input string) (string, error) {
-	logrus.WithField("input", input).Debug("Processing example input")
-
-	if input == "" {
-		return "", fmt.Errorf("input cannot be empty")
-	}
-
-	// Example processing: reverse the string
-	runes := []rune(input)
-	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-		runes[i], runes[j] = runes[j], runes[i]
-	}
-
-	result := string(runes)
-	logrus.WithField("result", result).Debug("Processing completed")
-
-	return fmt.Sprintf("Processed by %s: %s", s.config.Plugin.Name, result), nil
-}
-
-func (s *PluginService) CheckHealth() int32 {
+// CheckHealth reports whether the plugin can serve requests
+func (s *PluginService) CheckHealth() bool {
 	// Implement health check logic here
-	// For this example, we'll always return healthy
+	// For this example, the plugin is always healthy
 	// In a real plugin, you might check:
 	// - Database connections
 	// - External service availability
 	// - Resource usage
 	// - Internal state consistency
 
-	logrus.Debug("Health check performed")
-	return 1 // SERVING (corresponds to grpc_health_v1.HealthCheckResponse_SERVING)
+	slog.Debug("Health check performed")
+	return true
 }
 
+// Cleanup releases resources before the plugin stops
 func (s *PluginService) Cleanup() {
-	logrus.Info("Performing cleanup operations")
+	slog.Info("Performing cleanup operations")
 
 	// Implement cleanup logic here:
 	// - Close database connections
@@ -101,5 +84,5 @@ func (s *PluginService) Cleanup() {
 	// - Cancel background operations
 	// - Release resources
 
-	logrus.Info("Cleanup completed")
+	slog.Info("Cleanup completed")
 }

@@ -1,6 +1,5 @@
 /*
  *  SPDX-License-Identifier: MIT
- *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -45,7 +44,7 @@ The plugin system allows you to extend Portunix functionality through
 independent plugins using gRPC communication.
 
 Examples:
-  portunix plugin list                    # List all plugins
+  portunix plugin list                   # List all plugins
   portunix plugin install ./my-plugin/   # Install plugin from directory
   portunix plugin enable my-plugin       # Enable plugin
   portunix plugin start my-plugin        # Start plugin`,
@@ -73,6 +72,9 @@ In the default compact view, long descriptions are truncated. Pass --verbose
 (-v) to print the full description (wrapped to the terminal width) below each
 plugin row.
 
+Plugins are listed alphabetically by name. For machine-readable output pass
+--json (shorthand for --output json) or --output yaml.
+
 Platform-capability query (schema v1.1.0+):
   Use --platform to list only plugins that declare support for a given hosting
   platform (e.g. synapse, pack, agent) in their supported_platforms[] manifest
@@ -86,11 +88,17 @@ Platform-capability query (schema v1.1.0+):
   platform_payload.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		showAll, _ := cmd.Flags().GetBool("all")
-		outputFormat, _ := cmd.Flags().GetString("output")
+		outputFlag, _ := cmd.Flags().GetString("output")
+		jsonFlag, _ := cmd.Flags().GetBool("json")
 		platform, _ := cmd.Flags().GetString("platform")
 		platformVersion, _ := cmd.Flags().GetString("platform-version")
 		features, _ := cmd.Flags().GetStringArray("feature")
 		verbose, _ := cmd.Flags().GetBool("verbose")
+
+		outputFormat, err := resolvePluginListFormat(jsonFlag, outputFlag, cmd.Flags().Changed("output"))
+		if err != nil {
+			return err
+		}
 
 		if platform != "" {
 			return listPluginsForPlatform(platform, platformVersion, features, outputFormat, verbose)
@@ -116,14 +124,20 @@ The plugin directory must contain:
 
 Use --force to reinstall an existing plugin (preserves enabled state).
 
+Use --extra to install an optional dependency group (extra) of a Python
+wheel plugin; the plugin must declare it in plugin.optional_extras.
+With --force, only the extras given now are installed.
+
 Example:
   portunix plugin install ./agile-plugin/
-  portunix plugin install --force ./agile-plugin/`,
+  portunix plugin install --force ./agile-plugin/
+  portunix plugin install --extra train ./reco-plugin/`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		pluginPath := args[0]
 		force, _ := cmd.Flags().GetBool("force")
-		return installPlugin(pluginPath, force)
+		extras, _ := cmd.Flags().GetStringSlice("extra")
+		return installPlugin(pluginPath, force, extras)
 	},
 }
 
@@ -311,7 +325,8 @@ Examples:
 		pluginName := args[0]
 		version, _ := cmd.Flags().GetString("version")
 		force, _ := cmd.Flags().GetBool("force")
-		return installPluginFromGitHub(pluginName, version, force)
+		extras, _ := cmd.Flags().GetStringSlice("extra")
+		return installPluginFromGitHub(pluginName, version, force, extras)
 	},
 }
 
@@ -400,6 +415,7 @@ func init() {
 	// Flags for list command
 	pluginListCmd.Flags().BoolP("all", "a", false, "Show all plugins (including disabled)")
 	pluginListCmd.Flags().StringP("output", "o", "table", "Output format: table, json, yaml")
+	pluginListCmd.Flags().Bool("json", false, "Output in JSON format (shorthand for --output json)")
 	pluginListCmd.Flags().String("platform", "", "Filter plugins by declared hosting platform (e.g. synapse, pack)")
 	pluginListCmd.Flags().String("platform-version", "", "Platform SemVer for range matching; requires --platform")
 	pluginListCmd.Flags().StringArray("feature", nil, "Required capability token(s); AND-filter, repeatable; requires --platform")
@@ -409,6 +425,7 @@ func init() {
 
 	// Flags for install command
 	pluginInstallCmd.Flags().BoolP("force", "f", false, "Force reinstall if plugin already exists")
+	pluginInstallCmd.Flags().StringSlice("extra", nil, "Wheel extra to install (repeatable or comma separated)")
 
 	// Flags for uninstall command
 	pluginUninstallCmd.Flags().BoolP("force", "f", false, "Force uninstall without confirmation")
@@ -421,6 +438,7 @@ func init() {
 	// Flags for GitHub install command
 	pluginInstallGitHubCmd.Flags().StringP("version", "v", "", "Specific version to install (default: latest)")
 	pluginInstallGitHubCmd.Flags().BoolP("force", "f", false, "Force install even if plugin already exists")
+	pluginInstallGitHubCmd.Flags().StringSlice("extra", nil, "Wheel extra to install (repeatable or comma separated)")
 }
 
 // initializePluginManager initializes the plugin manager
@@ -455,24 +473,46 @@ func initializePluginManager() error {
 
 // listPlugins lists all installed plugins
 func listPlugins(showAll bool, outputFormat string, verbose bool) error {
-	plugins, err := pluginManager.ListPlugins()
+	pluginList, err := pluginManager.ListPlugins()
 	if err != nil {
 		return fmt.Errorf("failed to list plugins: %w", err)
 	}
 
-	if len(plugins) == 0 {
-		fmt.Println("No plugins installed.")
-		return nil
+	// Structured outputs must stay parseable, so an empty registry is "[]"
+	if pluginList == nil {
+		pluginList = []plugins.PluginInfo{}
 	}
 
 	switch outputFormat {
 	case "json":
-		return outputJSON(plugins)
+		return outputJSON(pluginList)
 	case "yaml":
-		return outputYAML(plugins)
-	default:
-		return outputPluginTable(plugins, showAll, verbose)
+		return outputYAML(pluginList)
 	}
+
+	if len(pluginList) == 0 {
+		fmt.Println("No plugins installed.")
+		return nil
+	}
+	return outputPluginTable(pluginList, showAll, verbose)
+}
+
+// resolvePluginListFormat validates --output (case-insensitive) and merges
+// --json into it; --json conflicts with an explicitly set non-JSON --output
+func resolvePluginListFormat(jsonFlag bool, output string, outputChanged bool) (string, error) {
+	format := strings.ToLower(strings.TrimSpace(output))
+	switch format {
+	case "table", "json", "yaml":
+	default:
+		return "", fmt.Errorf("invalid --output %q: allowed formats are table, json, yaml", output)
+	}
+	if !jsonFlag {
+		return format, nil
+	}
+	if outputChanged && format != "json" {
+		return "", fmt.Errorf("--json conflicts with --output %s", output)
+	}
+	return "json", nil
 }
 
 // listPluginsForPlatform runs the platform-capability query added in schema
@@ -534,7 +574,7 @@ func formatPlatformRange(minV, maxV string) string {
 }
 
 // installPlugin installs a plugin
-func installPlugin(pluginPath string, force bool) error {
+func installPlugin(pluginPath string, force bool, extras []string) error {
 	manifestPath := filepath.Join(pluginPath, "plugin.json")
 
 	// Check if manifest exists
@@ -544,13 +584,13 @@ func installPlugin(pluginPath string, force bool) error {
 
 	if force {
 		fmt.Printf("Force installing plugin from %s...\n", pluginPath)
-		if err := pluginManager.ForceInstallPlugin(manifestPath); err != nil {
+		if err := pluginManager.ForceInstallPluginWithOptions(manifestPath, manager.InstallOptions{Extras: extras}); err != nil {
 			return fmt.Errorf("failed to install plugin: %w", err)
 		}
 		fmt.Println("✅ Plugin reinstalled successfully!")
 	} else {
 		fmt.Printf("Installing plugin from %s...\n", pluginPath)
-		if err := pluginManager.InstallPlugin(manifestPath); err != nil {
+		if err := pluginManager.InstallPluginWithOptions(manifestPath, manager.InstallOptions{Extras: extras}); err != nil {
 			return fmt.Errorf("failed to install plugin: %w", err)
 		}
 		fmt.Println("✅ Plugin installed successfully!")
@@ -670,6 +710,10 @@ func showPluginInfo(pluginName string) error {
 
 	fmt.Printf("\nSupported OS: %s\n", strings.Join(pluginInfo.SupportedOS, ", "))
 
+	if registryData, err := pluginManager.GetPluginRegistryData(pluginName); err == nil {
+		printWheelExtras(registryData)
+	}
+
 	fmt.Printf("\nCommands:\n")
 	for _, cmd := range pluginInfo.Commands {
 		fmt.Printf("  - %s: %s\n", cmd.Name, cmd.Description)
@@ -690,6 +734,34 @@ func showPluginInfo(pluginName string) error {
 	}
 
 	return nil
+}
+
+// printWheelExtras lists the declared wheel extras and marks the installed ones
+func printWheelExtras(p *manager.RegistryPlugin) {
+	if len(p.OptionalExtras) == 0 && len(p.InstalledExtras) == 0 {
+		return
+	}
+	installed := make(map[string]bool, len(p.InstalledExtras))
+	for _, e := range p.InstalledExtras {
+		installed[plugins.NormalizeExtraName(e)] = true
+	}
+	fmt.Printf("\nOptional Extras:\n")
+	for _, e := range p.OptionalExtras {
+		mark := "[ ]"
+		if installed[plugins.NormalizeExtraName(e.Name)] {
+			mark = "[x]"
+		}
+		if e.Description != "" {
+			fmt.Printf("  %s %s: %s\n", mark, e.Name, e.Description)
+		} else {
+			fmt.Printf("  %s %s\n", mark, e.Name)
+		}
+	}
+	if len(p.InstalledExtras) > 0 {
+		fmt.Printf("  Installed: %s\n", strings.Join(p.InstalledExtras, ", "))
+	} else {
+		fmt.Printf("  Installed: none (add with: portunix plugin install --force --extra <name> <plugin-path>)\n")
+	}
 }
 
 // checkPluginHealth checks plugin health
@@ -847,11 +919,16 @@ func validatePlugin(pluginPath string) error {
 	fmt.Printf("Author: %s\n", manifest.Author)
 	fmt.Printf("Description: %s\n", manifest.Description)
 
+	// Non-fatal manifest problems (issue #257)
+	for _, warning := range plugins.CommandWarnings(manifest) {
+		fmt.Printf("⚠️  Warning: %s\n", warning)
+	}
+
 	return nil
 }
 
 // installPluginFromGitHub installs a plugin from GitHub releases
-func installPluginFromGitHub(pluginName, version string, force bool) error {
+func installPluginFromGitHub(pluginName, version string, force bool, extras []string) error {
 	const defaultOwner = "cassandragargoyle"
 	const defaultRepo = "portunix-plugins"
 
@@ -987,7 +1064,7 @@ func installPluginFromGitHub(pluginName, version string, force bool) error {
 
 	// Install the plugin using existing plugin manager
 	fmt.Printf("🔧 Installing plugin...\n")
-	if err := pluginManager.InstallPlugin(manifestPath); err != nil {
+	if err := pluginManager.InstallPluginWithOptions(manifestPath, manager.InstallOptions{Extras: extras}); err != nil {
 		return fmt.Errorf("failed to install plugin: %w", err)
 	}
 
@@ -1063,14 +1140,20 @@ func outputYAML(data interface{}) error {
 	return encoder.Encode(data)
 }
 
+// pluginListDescriptionWidth is the DESCRIPTION column width (in runes) of
+// the compact plugin list table; longer descriptions are truncated
+const pluginListDescriptionWidth = 45
+
 // Helper functions for output formatting
 func outputPluginTable(pluginList []plugins.PluginInfo, showAll, verbose bool) error {
 	if verbose {
 		fmt.Printf("%-20s %-10s %-12s %-15s\n", "NAME", "VERSION", "INTERFACE", "STATUS")
 		fmt.Printf("%-20s %-10s %-12s %-15s\n", "----", "-------", "---------", "------")
 	} else {
-		fmt.Printf("%-20s %-10s %-12s %-15s %-30s\n", "NAME", "VERSION", "INTERFACE", "STATUS", "DESCRIPTION")
-		fmt.Printf("%-20s %-10s %-12s %-15s %-30s\n", "----", "-------", "---------", "------", "-----------")
+		fmt.Printf("%-20s %-10s %-12s %-15s %-*s\n", "NAME", "VERSION", "INTERFACE", "STATUS",
+			pluginListDescriptionWidth, "DESCRIPTION")
+		fmt.Printf("%-20s %-10s %-12s %-15s %-*s\n", "----", "-------", "---------", "------",
+			pluginListDescriptionWidth, "-----------")
 	}
 
 	for _, plugin := range pluginList {
@@ -1100,12 +1183,13 @@ func outputPluginTable(pluginList []plugins.PluginInfo, showAll, verbose bool) e
 				fmt.Println(line)
 			}
 		} else {
-			fmt.Printf("%-20s %-10s %-12s %-15s %-30s\n",
+			fmt.Printf("%-20s %-10s %-12s %-15s %-*s\n",
 				plugin.Name,
 				plugin.Version,
 				iface,
 				status,
-				truncateString(plugin.Description, 30))
+				pluginListDescriptionWidth,
+				truncateString(plugin.Description, pluginListDescriptionWidth))
 		}
 	}
 

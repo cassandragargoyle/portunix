@@ -179,8 +179,9 @@ Usage:
   portunix plugin install <plugin-path> [flags]
 
 Flags:
-  -f, --force   Force reinstall if plugin already exists
-  -h, --help    help for install
+      --extra strings   Wheel extra to install (repeatable or comma separated)
+  -f, --force           Force reinstall if plugin already exists
+  -h, --help            help for install
 
 Global Flags:
       --help-ai       Show machine-readable help in JSON format
@@ -196,6 +197,7 @@ Usage:
   portunix plugin install-github <plugin-name> [flags]
 
 Flags:
+      --extra strings    Wheel extra to install (repeatable or comma separated)
   -f, --force            Force install even if plugin already exists
   -h, --help             help for install-github
   -v, --version string   Specific version to install (default: latest)
@@ -217,6 +219,7 @@ Flags:
   -a, --all                       Show all plugins (including disabled)
       --feature stringArray       Required capability token(s); AND-filter, repeatable; requires --platform
   -h, --help                      help for list
+      --json                      Output in JSON format (shorthand for --output json)
   -o, --output string             Output format: table, json, yaml (default "table")
       --platform string           Filter plugins by declared hosting platform (e.g. synapse, pack)
       --platform-version string   Platform SemVer for range matching; requires --platform

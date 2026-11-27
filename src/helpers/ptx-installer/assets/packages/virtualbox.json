@@ -21,6 +21,7 @@
         "variants": {
           "latest": {
             "version": "7.0.14",
+            "scriptShell": "powershell",
             "installScript": "$url = 'https://download.virtualbox.org/virtualbox/7.0.14/VirtualBox-7.0.14-161095-Win.exe'; $output = Join-Path $env:TEMP 'VirtualBox-installer.exe'; Invoke-WebRequest -Uri $url -OutFile $output; Start-Process -FilePath $output -ArgumentList '--silent' -Wait; Remove-Item $output"
           }
         },

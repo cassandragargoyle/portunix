@@ -117,3 +117,82 @@ func TestSatisfiesVersionConstraint(t *testing.T) {
 		}
 	}
 }
+
+func TestParseNodeVersion(t *testing.T) {
+	tests := map[string]string{
+		"v20.11.1":   "20.11.1",
+		"v18.19.0\n": "18.19.0",
+		"22.3":       "22.3",
+		"node":       "",
+		"":           "",
+	}
+	for input, want := range tests {
+		if got := parseNodeVersion(input); got != want {
+			t.Errorf("parseNodeVersion(%q) = %q, want %q", input, got, want)
+		}
+	}
+}
+
+func TestCheckNodeRuntime(t *testing.T) {
+	skipOnWindows(t)
+
+	t.Run("missing node", func(t *testing.T) {
+		t.Setenv("PATH", t.TempDir())
+		result := CheckNodeRuntime("node", "")
+		if result.Status != CheckStatusError || result.Fix != NodeInstallFix {
+			t.Fatalf("result = %+v, want error with fix %q", result, NodeInstallFix)
+		}
+	})
+
+	tests := []struct {
+		name       string
+		version    string
+		constraint string
+		want       CheckStatus
+	}{
+		{"no constraint", "v20.11.1", "", CheckStatusOK},
+		{"satisfied", "v20.11.1", ">=18", CheckStatusOK},
+		{"too old", "v16.20.2", ">=18", CheckStatusError},
+		{"unparsable", "unknown", ">=18", CheckStatusWarning},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			dir := t.TempDir()
+			writeScript(t, dir, "node", "echo "+tt.version)
+			t.Setenv("PATH", dir)
+
+			result := CheckNodeRuntime("node "+tt.constraint, tt.constraint)
+			if result.Status != tt.want {
+				t.Fatalf("status = %s (%+v), want %s", result.Status, result, tt.want)
+			}
+			if tt.want == CheckStatusError && result.Fix != suggestNodeUpgrade(runtime.GOOS, tt.constraint) {
+				t.Errorf("fix = %q, want the upgrade hint", result.Fix)
+			}
+		})
+	}
+}
+
+func TestSuggestNodeUpgrade(t *testing.T) {
+	if got := suggestNodeUpgrade("windows", ">=20"); got != "portunix install nodejs --variant=latest" {
+		t.Errorf("windows fix = %q", got)
+	}
+	got := suggestNodeUpgrade("linux", ">=20")
+	if !strings.Contains(got, ">=20") || !strings.Contains(got, "nodejs.org") || !strings.Contains(got, NodeInstallFix) {
+		t.Errorf("linux fix = %q, want constraint, nodejs.org and the distribution note", got)
+	}
+}
+
+func TestRuntimeInstallFix(t *testing.T) {
+	tests := map[string]string{
+		"java":   "portunix install java-21",
+		"python": "portunix install python",
+		"node":   NodeInstallFix,
+		"native": "",
+		"":       "",
+	}
+	for runtimeType, want := range tests {
+		if got := RuntimeInstallFix(runtimeType); got != want {
+			t.Errorf("RuntimeInstallFix(%q) = %q, want %q", runtimeType, got, want)
+		}
+	}
+}

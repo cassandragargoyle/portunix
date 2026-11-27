@@ -9,7 +9,7 @@ setup(
     name="ptx-trace",
     version="1.0.0",
     author="Portunix Team",
-    author_email="portunix@cassandragargoyle.cz",
+    author_email="cassandragargoyle@gmail.com",
     description="Python SDK for PTX-TRACE - Universal tracing system for software development",
     long_description=long_description,
     long_description_content_type="text/markdown",

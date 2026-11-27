@@ -115,11 +115,8 @@ sourceLoop:
 				break sourceLoop
 			}
 		case "direct":
-			if latestVersion, err := ai.discoverDirectLatestVersion(source, context.AIPrompts); err == nil {
-				result.LatestVersion = latestVersion
-				result.UpdateAvailable = ai.isUpdateAvailable(result.CurrentVersion, latestVersion)
-				break sourceLoop
-			}
+			// Direct version discovery is not implemented yet; skip the source
+			continue
 		}
 	}
 
@@ -172,13 +169,6 @@ func (ai *AIPackageManager) discoverGitHubLatestVersion(source SourceSpec) (stri
 	// Clean up the version tag (remove 'v' prefix if present)
 	version := strings.TrimPrefix(release.TagName, "v")
 	return version, nil
-}
-
-// discoverDirectLatestVersion discovers version from direct sources
-func (ai *AIPackageManager) discoverDirectLatestVersion(source SourceSpec, prompts *AIPrompts) (string, error) {
-	// This would implement direct URL parsing based on AI prompts
-	// For now, return an error to indicate it's not implemented
-	return "", fmt.Errorf("direct version discovery not yet implemented")
 }
 
 // findMostRecentVersion finds the most recent version from a map of versions

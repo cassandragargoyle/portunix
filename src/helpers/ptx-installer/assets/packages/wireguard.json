@@ -39,6 +39,7 @@
         "variants": {
           "latest": {
             "version": "latest",
+            "scriptShell": "powershell",
             "installScript": "$url = 'https://download.wireguard.com/windows-client/wireguard-installer.exe'; $output = Join-Path $env:TEMP 'wireguard-installer.exe'; Invoke-WebRequest -Uri $url -OutFile $output; Start-Process -FilePath $output -ArgumentList '/S' -Wait; Remove-Item $output"
           }
         },

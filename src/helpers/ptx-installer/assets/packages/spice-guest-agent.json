@@ -62,6 +62,7 @@
         "variants": {
           "latest": {
             "version": "latest",
+            "scriptShell": "powershell",
             "installScript": "$url = 'https://www.spice-space.org/download/windows/spice-guest-tools/spice-guest-tools-latest.exe'; $output = Join-Path $env:TEMP 'spice-guest-tools.exe'; Invoke-WebRequest -Uri $url -OutFile $output; Start-Process -FilePath $output -ArgumentList '/S' -Wait; Remove-Item $output",
             "postInstall": [
               "echo '✅ SPICE guest tools installed on Windows'",

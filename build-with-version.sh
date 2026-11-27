@@ -132,8 +132,8 @@ if [ -f "portunix.rc" ]; then
     echo "portunix.rc updated successfully"
 fi
 
-# Update versioninfo.json (source for portunix.syso) and regenerate the .syso.
-# portunix.syso is what go build actually embeds into portunix.exe (version
+# Update versioninfo.json (source for portunix_windows_*.syso) and regenerate
+# the .syso files. They are what go build actually embeds into portunix.exe (version
 # metadata, application manifest, icon). Without this step, Windows file
 # properties stay frozen at whatever .syso was last committed.
 if [ -f "versioninfo.json" ]; then
@@ -170,18 +170,28 @@ PYEOF
     echo "versioninfo.json updated successfully"
 fi
 
-# Regenerate portunix.syso so the new version + manifest land in the binary.
+# Regenerate the .syso files so the new version + manifest land in the binary.
 GOVERSIONINFO_BIN="$(go env GOPATH)/bin/goversioninfo${EXT}"
+
+# Generate <name>_windows_amd64.syso and <name>_windows_arm64.syso from
+# versioninfo.json in the current directory. One object per architecture: an
+# amd64 .syso linked into an arm64 image keeps unrelocated resource offsets
+# (corrupted manifest); the file name suffix limits each one to its GOARCH
+gen_syso() {
+    "$GOVERSIONINFO_BIN" -64 -o "$1_windows_amd64.syso" versioninfo.json &&
+        "$GOVERSIONINFO_BIN" -64 -arm -o "$1_windows_arm64.syso" versioninfo.json
+}
+
 if [ -x "$GOVERSIONINFO_BIN" ]; then
-    echo "Regenerating portunix.syso..."
-    "$GOVERSIONINFO_BIN" -o portunix.syso versioninfo.json
+    echo "Regenerating portunix_windows_{amd64,arm64}.syso..."
+    gen_syso portunix
     if [ $? -ne 0 ]; then
-        echo "portunix.syso generation failed!"
+        echo "portunix .syso generation failed!"
         exit 1
     fi
 else
     echo "WARNING: goversioninfo not found at $GOVERSIONINFO_BIN"
-    echo "         portunix.exe will be built with the existing (possibly stale) portunix.syso."
+    echo "         portunix.exe will be built with the existing (possibly stale) portunix_windows_*.syso."
     echo "         Run: go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest"
 fi
 
@@ -194,80 +204,12 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
-# Build helper binaries with the same version
-echo "Building helper binaries..."
-
-# Build ptx-container
-echo "Building ptx-container..."
-cd src/helpers/ptx-container
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-container${EXT} .
-CONTAINER_BUILD=$?
-cd ../../..
-
-# Build ptx-mcp
-echo "Building ptx-mcp..."
-cd src/helpers/ptx-mcp
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-mcp${EXT} .
-MCP_BUILD=$?
-cd ../../..
-
-# Build ptx-virt
-echo "Building ptx-virt..."
-cd src/helpers/ptx-virt
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-virt${EXT} .
-VIRT_BUILD=$?
-cd ../../..
-
-# Build ptx-ansible
-echo "Building ptx-ansible..."
-cd src/helpers/ptx-ansible
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-ansible${EXT} .
-ANSIBLE_BUILD=$?
-cd ../../..
-
-# Build ptx-prompting
-echo "Building ptx-prompting..."
-cd src/helpers/ptx-prompting
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-prompting${EXT} .
-PROMPTING_BUILD=$?
-cd ../../..
-
-# Build ptx-aiops
-echo "Building ptx-aiops..."
-cd src/helpers/ptx-aiops
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-aiops${EXT} .
-AIOPS_BUILD=$?
-cd ../../..
-
-# Build ptx-make
-echo "Building ptx-make..."
-cd src/helpers/ptx-make
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-make${EXT} .
-MAKE_BUILD=$?
-cd ../../..
-
-# Build ptx-pft
-echo "Building ptx-pft..."
-cd src/helpers/ptx-pft
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-pft${EXT} .
-PFT_BUILD=$?
-cd ../../..
-
-# Build ptx-trace
-echo "Building ptx-trace..."
-cd src/helpers/ptx-trace
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-trace${EXT} .
-TRACE_BUILD=$?
-cd ../../..
-
-# Build ptx-installer
 # ptx-installer.exe needs its OWN embedded asInvoker manifest: its filename
 # contains "installer", which triggers Windows' installer-detection heuristic
 # and auto-elevates the binary unless a requestedExecutionLevel is embedded.
-# Regenerate ptx-installer.syso (version + manifest) so go build picks it up.
-echo "Building ptx-installer..."
-cd src/helpers/ptx-installer
-if [ -f "versioninfo.json" ]; then
+# Regenerate ptx-installer_windows_*.syso (version + manifest) so go build picks it up.
+prepare_ptx_installer() {
+    [ -f "versioninfo.json" ] || return 0
     python3 - <<PYEOF
 import json, pathlib
 p = pathlib.Path("versioninfo.json")
@@ -284,69 +226,36 @@ data["StringFileInfo"]["ProductVersion"] = "$VERSION_NUM"
 p.write_text(json.dumps(data, indent=4) + "\n")
 PYEOF
     if [ -x "$GOVERSIONINFO_BIN" ]; then
-        echo "Regenerating ptx-installer.syso (asInvoker manifest + version)..."
-        "$GOVERSIONINFO_BIN" -o ptx-installer.syso versioninfo.json || {
-            echo "ptx-installer.syso generation failed!"; exit 1; }
+        echo "Regenerating ptx-installer_windows_{amd64,arm64}.syso (asInvoker manifest + version)..."
+        gen_syso ptx-installer || {
+            echo "ptx-installer .syso generation failed!"; exit 1; }
     else
-        echo "WARNING: goversioninfo not found; ptx-installer.exe will use the existing (committed) ptx-installer.syso."
+        echo "WARNING: goversioninfo not found; ptx-installer.exe will use the existing (committed) ptx-installer_windows_*.syso."
     fi
-fi
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-installer${EXT} .
-INSTALLER_BUILD=$?
-cd ../../..
+}
 
-# Build ptx-ssh
-echo "Building ptx-ssh..."
-cd src/helpers/ptx-ssh
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-ssh${EXT} .
-SSH_BUILD=$?
-cd ../../..
+# Build helper binaries with the same version. The helper list is derived from
+# src/helpers/ so a newly added helper cannot be missed (issue #243)
+echo "Building helper binaries..."
 
-# Build ptx-plugin-registry
-echo "Building ptx-plugin-registry..."
-cd src/helpers/ptx-plugin-registry
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-plugin-registry${EXT} .
-PLUGIN_REGISTRY_BUILD=$?
-cd ../../..
+HELPERS=()
+for dir in src/helpers/ptx-*/; do
+    HELPERS+=("$(basename "$dir")")
+done
 
-# Build ptx-proxmox (issue #167)
-echo "Building ptx-proxmox..."
-cd src/helpers/ptx-proxmox
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-proxmox${EXT} .
-PROXMOX_BUILD=$?
-cd ../../..
+FAILED_HELPERS=()
+for helper in "${HELPERS[@]}"; do
+    echo "Building $helper..."
+    cd "src/helpers/$helper"
+    if [ "$helper" == "ptx-installer" ]; then
+        prepare_ptx_installer
+    fi
+    go build -ldflags "$LDFLAGS_COMMON" -o "../../../${helper}${EXT}" . || FAILED_HELPERS+=("$helper")
+    cd ../../..
+done
 
-# Build ptx-specpm (issue #183)
-echo "Building ptx-specpm..."
-cd src/helpers/ptx-specpm
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-specpm${EXT} .
-SPECPM_BUILD=$?
-cd ../../..
-
-# Build ptx-database (issue #013)
-echo "Building ptx-database..."
-cd src/helpers/ptx-database
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-database${EXT} .
-DATABASE_BUILD=$?
-cd ../../..
-
-# Build ptx-github (issue #025)
-echo "Building ptx-github..."
-cd src/helpers/ptx-github
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-github${EXT} .
-GITHUB_BUILD=$?
-cd ../../..
-
-# Build ptx-wizard (issue #014)
-echo "Building ptx-wizard..."
-cd src/helpers/ptx-wizard
-go build -ldflags "$LDFLAGS_COMMON" -o ../../../ptx-wizard${EXT} .
-WIZARD_BUILD=$?
-cd ../../..
-
-# Check all builds
-if [ $CONTAINER_BUILD -ne 0 ] || [ $MCP_BUILD -ne 0 ] || [ $VIRT_BUILD -ne 0 ] || [ $ANSIBLE_BUILD -ne 0 ] || [ $PROMPTING_BUILD -ne 0 ] || [ $AIOPS_BUILD -ne 0 ] || [ $MAKE_BUILD -ne 0 ] || [ $PFT_BUILD -ne 0 ] || [ $TRACE_BUILD -ne 0 ] || [ $INSTALLER_BUILD -ne 0 ] || [ $SSH_BUILD -ne 0 ] || [ $PLUGIN_REGISTRY_BUILD -ne 0 ] || [ $PROXMOX_BUILD -ne 0 ] || [ $SPECPM_BUILD -ne 0 ] || [ $DATABASE_BUILD -ne 0 ] || [ $GITHUB_BUILD -ne 0 ] || [ $WIZARD_BUILD -ne 0 ]; then
-    echo "Helper binary build failed!"
+if [ ${#FAILED_HELPERS[@]} -ne 0 ]; then
+    echo "Helper binary build failed: ${FAILED_HELPERS[*]}"
     exit 1
 fi
 
@@ -355,20 +264,6 @@ echo "Version checks:"
 echo "Main binary:"
 ./portunix${EXT} version
 echo "Helper binaries:"
-./ptx-container${EXT} --version
-./ptx-mcp${EXT} --version
-./ptx-virt${EXT} --version
-./ptx-ansible${EXT} --version
-./ptx-prompting${EXT} --version
-./ptx-aiops${EXT} --version
-./ptx-make${EXT} --version
-./ptx-pft${EXT} --version
-./ptx-trace${EXT} --version
-./ptx-installer${EXT} --version
-./ptx-ssh${EXT} --version
-./ptx-plugin-registry${EXT} --version
-./ptx-proxmox${EXT} --version
-./ptx-specpm${EXT} --version
-./ptx-database${EXT} --version
-./ptx-github${EXT} --version
-./ptx-wizard${EXT} --version
+for helper in "${HELPERS[@]}"; do
+    "./${helper}${EXT}" --version
+done

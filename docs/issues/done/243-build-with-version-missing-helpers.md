@@ -1,10 +1,11 @@
 # Issue #243: build-with-version.sh does not build ptx-credential and ptx-python
 
-**Status**: Open
+**Status**: ✅ Implemented
 **Priority**: Low
 **Type**: Bug
 **Component**: portunix (build tooling), ptx-credential, ptx-python
 **Created**: 2026-10-26
+**Completed**: 2026-10-27
 **GitHub**: #243
 
 ## Summary

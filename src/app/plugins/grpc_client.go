@@ -366,6 +366,11 @@ func (p *GRPCPlugin) startPluginBinary(ctx context.Context) error {
 		cmd = "python3"
 		args = []string{p.config.BinaryPath, "--port", strconv.Itoa(p.config.Port)}
 
+	case "node":
+		// For Node.js plugins, use node to run the entry script
+		cmd = "node"
+		args = []string{p.config.BinaryPath, "--port", strconv.Itoa(p.config.Port)}
+
 	default: // native
 		// For native plugins, run the binary directly
 		cmd = p.config.BinaryPath

@@ -1,0 +1,6 @@
+# Build output
+/target/
+dependency-reduced-pom.xml
+
+# Written by portunix plugin start
+plugin.log
