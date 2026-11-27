@@ -39,6 +39,11 @@ func (rp *RegistryPlugin) CheckInstall() (InstallState, string) {
 			return InstallStateBroken, err.Error()
 		}
 	}
+	if rp.Runtime == "node" {
+		if err := checkNodeModules(rp.InstallPath); err != nil {
+			return InstallStateBroken, err.Error()
+		}
+	}
 	return InstallStateOK, ""
 }
 

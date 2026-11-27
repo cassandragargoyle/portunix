@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -211,9 +212,9 @@ func isPodmanAvailable() bool {
 }
 
 func compilePortunixBinary() error {
-	// Change to project root and compile
+	// Compile in project root (tests run in the package directory src/app/<pkg>)
 	cmd := exec.Command("go", "build", "-o", "portunix")
-	cmd.Dir = "/media/zdenek/DevDisk/DEV/CassandraGargoyle/portunix/portunix"
+	cmd.Dir = filepath.Join("..", "..", "..")
 	return cmd.Run()
 }
 

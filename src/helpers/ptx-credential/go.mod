@@ -2,6 +2,8 @@ module portunix.ai/ptx-credential
 
 go 1.24.0
 
+toolchain go1.26.11
+
 require (
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/crypto v0.31.0

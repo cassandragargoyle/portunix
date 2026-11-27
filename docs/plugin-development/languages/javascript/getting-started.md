@@ -75,28 +75,61 @@ my-js-plugin/
 
 ### Main Entry Point (src/main.js)
 
+The entry point has two modes. With a command (`portunix my-js-plugin hello Portunix`)
+it runs the command once and exits; without a command (`portunix plugin start`) it
+boots the gRPC server. The gRPC modules are imported only in service mode, so CLI
+commands start fast.
+
 ```javascript
+import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
-import grpc from '@grpc/grpc-js';
-import protoLoader from '@grpc/proto-loader';
 
 import { loadConfig } from './config.js';
-import { createPluginHandler } from './handlers/plugin.js';
+import { PluginBusinessService } from './services/plugin.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const PROTO_PATH = resolve(__dirname, '..', 'proto', 'plugin.proto');
+const MANIFEST_PATH = resolve(__dirname, '..', 'plugin.json');
 
+// Without a command the plugin runs as a gRPC service (portunix plugin start);
+// with a command it runs once as a CLI (portunix <plugin> <command> [args...])
 async function main() {
-    const { values } = parseArgs({
+    const { values, positionals } = parseArgs({
+        allowPositionals: true,
         options: {
             port: { type: 'string', default: '50051' },
             config: { type: 'string', default: 'config.yaml' },
+            version: { type: 'boolean', default: false },
         },
     });
 
     const config = await loadConfig(values.config);
+
+    if (values.version) {
+        console.log(`${config.plugin.name} ${config.plugin.version}`);
+        return;
+    }
+
+    if (positionals.length > 0) {
+        const [command, ...args] = positionals;
+        const service = new PluginBusinessService(config);
+        console.log(service.execute(command, args));
+        return;
+    }
+
+    await serve(config, values.port);
+}
+
+// serve boots the gRPC server implementing portunix.plugins.PluginService;
+// gRPC modules load only in service mode
+async function serve(config, port) {
+    const { default: grpc } = await import('@grpc/grpc-js');
+    const { default: protoLoader } = await import('@grpc/proto-loader');
+    const { createPluginHandler } = await import('./handlers/plugin.js');
+
+    const manifest = JSON.parse(await readFile(MANIFEST_PATH, 'utf8'));
 
     const packageDefinition = protoLoader.loadSync(PROTO_PATH, {
         keepCase: true,
@@ -105,30 +138,31 @@ async function main() {
         defaults: true,
         oneofs: true,
     });
-    const proto = grpc.loadPackageDefinition(packageDefinition).js_plugin_template;
+    const proto = grpc.loadPackageDefinition(packageDefinition).portunix.plugins;
 
     const server = new grpc.Server();
-    server.addService(proto.PluginService.service, createPluginHandler(config));
-
-    const bindAddress = `0.0.0.0:${values.port}`;
-    server.bindAsync(bindAddress, grpc.ServerCredentials.createInsecure(), (err, port) => {
-        if (err) {
-            console.error('Failed to bind:', err);
-            process.exit(1);
-        }
-        console.log(`Plugin server listening on port ${port}`);
-    });
-
     const shutdown = () => {
         console.log('Shutting down gracefully...');
         server.tryShutdown(() => process.exit(0));
     };
+    server.addService(proto.PluginService.service, createPluginHandler(config, manifest));
+
+    // Portunix connects over localhost; the plugin is not exposed to the network
+    const bindAddress = `127.0.0.1:${port}`;
+    server.bindAsync(bindAddress, grpc.ServerCredentials.createInsecure(), (err, boundPort) => {
+        if (err) {
+            console.error('Failed to bind:', err);
+            process.exit(1);
+        }
+        console.log(`Plugin server listening on port ${boundPort}`);
+    });
+
     process.on('SIGINT', shutdown);
     process.on('SIGTERM', shutdown);
 }
 
 main().catch((err) => {
-    console.error(err);
+    console.error(`Error: ${err.message}`);
     process.exit(1);
 });
 ```
@@ -171,48 +205,108 @@ export async function loadConfig(path) {
 
 ### gRPC Handlers (src/handlers/plugin.js)
 
+The handlers implement `portunix.plugins.PluginService` — the service Portunix
+calls when it starts the plugin as a service (`portunix plugin start`): `Initialize`,
+`GetInfo`, `Health`, `Execute`, `ListCommands` and `Shutdown`. `proto/plugin.proto`
+is a copy of the `PluginService` part of the Portunix contract
+(`src/app/plugins/proto/plugin.proto`); keep its package, service and messages
+unchanged, otherwise Portunix fails with `Unimplemented` on `Initialize`. Plugin
+info and commands are read from `plugin.json`, and the server listens on
+`127.0.0.1` only, because Portunix connects over localhost. `Shutdown` only cleans
+up and answers: Portunix ends the process right after it (SIGTERM, handled in
+`main.js`), and a plugin that exits inside `Shutdown` drops the response.
+
 ```javascript
 import { PluginBusinessService } from '../services/plugin.js';
 
-export function createPluginHandler(config) {
+// toPluginCommand maps a plugin.json command onto the PluginCommand message
+function toPluginCommand(command) {
+    return {
+        name: command.name,
+        description: command.description ?? '',
+        subcommands: command.subcommands ?? [],
+        parameters: (command.parameters ?? []).map((p) => ({
+            name: p.name,
+            type: p.type ?? 'string',
+            description: p.description ?? '',
+            required: Boolean(p.required),
+            default_value: p.default_value ?? '',
+        })),
+        examples: command.examples ?? [],
+    };
+}
+
+// createPluginHandler implements portunix.plugins.PluginService; plugin info
+// and commands come from plugin.json, so the manifest stays the single source
+export function createPluginHandler(config, manifest) {
     const service = new PluginBusinessService(config);
+    const startedAt = Date.now();
+    const permissions = manifest.permissions ?? {};
+
+    const pluginInfo = () => ({
+        name: manifest.name,
+        version: manifest.version,
+        description: manifest.description ?? '',
+        author: manifest.author ?? '',
+        license: manifest.license ?? '',
+        supported_os: manifest.dependencies?.os_support ?? [],
+        commands: (manifest.commands ?? []).map(toPluginCommand),
+        capabilities: capabilities(),
+        required_permissions: {
+            filesystem: permissions.filesystem ?? [],
+            network: permissions.network ?? [],
+            database: permissions.database ?? [],
+            system: permissions.system ?? [],
+            level: permissions.level ?? 'limited',
+        },
+    });
+
+    const capabilities = () => ({
+        filesystem_access: (permissions.filesystem ?? []).length > 0,
+        network_access: (permissions.network ?? []).length > 0,
+        database_access: (permissions.database ?? []).length > 0,
+        container_access: false,
+        system_commands: (permissions.system ?? []).length > 0,
+        mcp_tools: (manifest.ai_integration?.mcp_tools ?? []).map((t) => t.name),
+    });
 
     return {
-        GetInfo(call, callback) {
-            callback(null, {
-                info: {
-                    name: config.plugin.name,
-                    version: config.plugin.version,
-                    description: config.plugin.description,
-                    capabilities: ['example-capability'],
-                },
-            });
+        Initialize(call, callback) {
+            callback(null, { success: true, message: 'initialized', plugin_info: pluginInfo() });
         },
 
-        HealthCheck(call, callback) {
-            callback(null, { status: 'SERVING' });
+        GetInfo(call, callback) {
+            callback(null, { plugin_info: pluginInfo() });
+        },
+
+        Health(call, callback) {
+            callback(null, {
+                healthy: true,
+                status: 'running',
+                message: 'ok',
+                uptime_seconds: Math.floor((Date.now() - startedAt) / 1000),
+                metrics: {},
+            });
         },
 
         Execute(call, callback) {
             try {
-                const result = service.execute(call.request.command, call.request.args || []);
-                callback(null, { result, status: 'SUCCESS' });
+                const output = service.execute(call.request.command, call.request.args ?? []);
+                callback(null, { success: true, output, exit_code: 0 });
             } catch (err) {
-                callback(null, { status: 'ERROR', error_message: err.message });
+                callback(null, { success: false, message: err.message, error: err.message, exit_code: 1 });
             }
         },
 
+        ListCommands(call, callback) {
+            callback(null, { commands: (manifest.commands ?? []).map(toPluginCommand), capabilities: capabilities() });
+        },
+
+        // Portunix stops the process after this call (SIGTERM, handled in
+        // main.js); exiting here would drop the response before it is sent
         Shutdown(call, callback) {
             service.cleanup();
-            callback(null, { status: 'SUCCESS' });
-        },
-
-        ListTools(call, callback) {
-            callback(null, { tools: [] });
-        },
-
-        CallTool(call, callback) {
-            callback(null, { status: 'NOT_FOUND', error_message: 'No tools registered' });
+            callback(null, { success: true, message: 'cleanup done' });
         },
     };
 }
@@ -325,31 +419,25 @@ portunix plugin start my-js-plugin
 
 ### MCP Tool Exposure
 
-```javascript
-ListTools(call, callback) {
-    callback(null, {
-        tools: [
-            {
-                name: 'process_file',
-                description: 'Process a file with custom logic',
-                schema: JSON.stringify({
-                    type: 'object',
-                    properties: { file_path: { type: 'string' } },
-                    required: ['file_path'],
-                }),
-            },
-        ],
-    });
-},
+The Portunix contract has no separate tool RPCs. Declare MCP tools in `plugin.json`
+under `ai_integration.mcp_tools`; the template reports their names in
+`capabilities.mcp_tools` of `Initialize`, `GetInfo` and `ListCommands`, and a tool
+call reaches the plugin as an `Execute` request with the tool name as `command`:
 
-CallTool(call, callback) {
-    if (call.request.tool_name !== 'process_file') {
-        callback(null, { status: 'NOT_FOUND' });
-        return;
-    }
-    const args = JSON.parse(call.request.arguments || '{}');
-    callback(null, { status: 'SUCCESS', result: `Processed file: ${args.file_path}` });
-},
+```json
+{
+  "ai_integration": {
+    "mcp_tools": [
+      { "name": "process_file", "description": "Process a file with custom logic" }
+    ]
+  }
+}
+```
+
+```javascript
+// src/services/plugin.js — handle the tool like any other command
+case 'process_file':
+    return `Processed file: ${args[0]}`;
 ```
 
 ### Logging
@@ -386,7 +474,50 @@ CMD ["node", "src/main.js"]
 
 ### Plugin Manifest
 
+JavaScript plugins use the `node` runtime. `binary` is the path of the entry script
+relative to the plugin directory, without the `node` command:
+
+```json
+{
+  "plugin": {
+    "type": "grpc",
+    "binary": "src/main.js",
+    "runtime": "node",
+    "runtime_version": ">=18",
+    "port": 9001
+  }
+}
+```
+
+- Portunix runs the plugin as `node <install_path>/src/main.js [args...]`, with the
+  plugin install directory as working directory and `PORTUNIX_CWD` set to the caller
+  directory (see the [plugin architecture](../../architecture.md))
+- `runtime_version` is optional; `portunix plugin install` and `portunix plugin check`
+  compare it with `node --version`
+- A missing Node.js runtime is reported with the fix `portunix install nodejs`;
+  `plugin health` reports the plugin as unhealthy (`runtime_missing`)
+- A Node.js older than `runtime_version` is reported with an upgrade hint: on Windows
+  `portunix install nodejs --variant=latest`; on Linux the `nodejs` package comes from
+  the distribution and may be older, so the hint points to https://nodejs.org or nvm
+
 See `template/plugin.json` for the complete manifest.
+
+### npm Dependencies
+
+`portunix plugin install` copies the plugin directory and then handles the
+`dependencies` from `package.json`:
+
+- **`node_modules` shipped with the plugin** — used as is, npm is not run. Use this
+  for offline installation or native modules built for the target platform
+- **No `node_modules`** — Portunix runs npm in the install directory:
+  `npm ci --omit=dev` when `package-lock.json` (or `npm-shrinkwrap.json`) is present,
+  otherwise `npm install --omit=dev`. Commit the lockfile for reproducible installs
+- **No `dependencies`** — nothing is installed
+
+npm must be available when dependencies are installed; otherwise the installation
+stops with the hint `portunix install nodejs` and leaves nothing behind. An installed
+plugin whose `node_modules` is missing is reported as broken and fixed with
+`portunix plugin repair <name>`. `devDependencies` are never installed.
 
 ## Troubleshooting
 

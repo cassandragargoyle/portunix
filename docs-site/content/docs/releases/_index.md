@@ -8,9 +8,9 @@ bookFlatSection: true
 
 Latest updates and version history.
 
-## Current Version: v2.7.0
+## Current Version: v2.8.0
 
-Released: 2026-10-26
+Released: 2026-11-27
 
 For detailed release notes, please visit the [GitHub Releases](https://github.com/cassandragargoyle/portunix/releases) page.
 

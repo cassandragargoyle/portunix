@@ -2,6 +2,8 @@ module portunix.ai/helpers/ptx-python
 
 go 1.24.2
 
+toolchain go1.26.11
+
 require github.com/spf13/cobra v1.10.1
 
 require (

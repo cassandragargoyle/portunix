@@ -86,9 +86,10 @@ def get_binaries(source_dir: Path):
     if main_binary.exists():
         binaries.append(main_binary)
 
-    # Helper binaries (ptx-*)
+    # Helper binaries (ptx-*); with an empty ext the glob also matches stale
+    # Windows ptx-*.exe files left in the repository root, so skip them
     for helper in source_dir.glob(f"ptx-*{ext}"):
-        if helper.is_file():
+        if helper.is_file() and (IS_WINDOWS or helper.suffix != ".exe"):
             binaries.append(helper)
 
     return binaries

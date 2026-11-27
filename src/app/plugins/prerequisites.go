@@ -282,6 +282,8 @@ func checkRuntime(runtimeType, runtimeVersion string) *RuntimeCheckResult {
 		return checkJavaRuntime(required, runtimeVersion)
 	case "python":
 		return CheckPythonRuntime(required, runtimeVersion)
+	case "node":
+		return CheckNodeRuntime(required, runtimeVersion)
 	default:
 		return &RuntimeCheckResult{
 			Status:   CheckStatusWarning,
@@ -334,6 +336,60 @@ func checkJavaRuntime(required, versionConstraint string) *RuntimeCheckResult {
 		Required: required,
 		Found:    javaVersion,
 	}
+}
+
+// NodeInstallFix is the command that installs the Node.js runtime
+const NodeInstallFix = "portunix install nodejs"
+
+// CheckNodeRuntime checks if Node.js is installed and meets version requirements
+func CheckNodeRuntime(required, versionConstraint string) *RuntimeCheckResult {
+	output, err := exec.Command("node", "--version").CombinedOutput()
+	if err != nil {
+		return &RuntimeCheckResult{
+			Status:   CheckStatusError,
+			Required: required,
+			Message:  "Node.js runtime not found",
+			Fix:      NodeInstallFix,
+		}
+	}
+
+	// Parse Node.js version from output (e.g., 'v20.11.1')
+	outputStr := strings.TrimSpace(string(output))
+	nodeVersion := parseNodeVersion(outputStr)
+	if nodeVersion == "" {
+		return &RuntimeCheckResult{
+			Status:   CheckStatusWarning,
+			Required: required,
+			Found:    outputStr,
+			Message:  "Could not parse Node.js version",
+		}
+	}
+
+	if versionConstraint != "" && !satisfiesConstraint(nodeVersion, versionConstraint) {
+		return &RuntimeCheckResult{
+			Status:   CheckStatusError,
+			Required: required,
+			Found:    nodeVersion,
+			Message:  fmt.Sprintf("Node.js version %s does not satisfy %s", nodeVersion, versionConstraint),
+			Fix:      suggestNodeUpgrade(runtime.GOOS, versionConstraint),
+		}
+	}
+
+	return &RuntimeCheckResult{
+		Status:   CheckStatusOK,
+		Required: required,
+		Found:    nodeVersion,
+	}
+}
+
+// suggestNodeUpgrade returns the fix for a Node.js older than the constraint;
+// on Linux the nodejs package comes from the distribution and cannot be
+// pinned, so the hint says so instead of repeating the same install
+func suggestNodeUpgrade(goos, constraint string) string {
+	if goos == "windows" {
+		return NodeInstallFix + " --variant=latest"
+	}
+	return fmt.Sprintf("install Node.js %s from https://nodejs.org (or with nvm) and put it first in PATH; the distribution package from '%s' may be older", constraint, NodeInstallFix)
 }
 
 // CheckPythonRuntime checks if Python is installed and meets version requirements
@@ -562,6 +618,16 @@ func parsePythonVersion(output string) string {
 	return matches[1]
 }
 
+// parseNodeVersion extracts version from "vX.Y.Z" output of node --version
+func parseNodeVersion(output string) string {
+	re := regexp.MustCompile(`^v?(\d+\.\d+(?:\.\d+)?)`)
+	matches := re.FindStringSubmatch(strings.TrimSpace(output))
+	if len(matches) < 2 {
+		return ""
+	}
+	return matches[1]
+}
+
 // SatisfiesVersionConstraint reports whether version satisfies a constraint
 // like ">=3.10"; a constraint without operator is treated as ">="
 func SatisfiesVersionConstraint(version, constraint string) bool {
@@ -669,6 +735,21 @@ func suggestJavaInstall(constraint string) string {
 		}
 	}
 	return "portunix install java-21"
+}
+
+// RuntimeInstallFix returns the command that installs the interpreter of a
+// plugin runtime, or "" for native plugins
+func RuntimeInstallFix(runtimeType string) string {
+	switch runtimeType {
+	case "java":
+		return suggestToolInstall("java")
+	case "python":
+		return suggestToolInstall("python3")
+	case "node":
+		return NodeInstallFix
+	default:
+		return ""
+	}
 }
 
 // suggestToolInstall returns a portunix install command for a tool if available

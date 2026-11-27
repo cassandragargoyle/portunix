@@ -6,8 +6,9 @@
   "license": "MIT",
   "plugin": {
     "type": "grpc",
-    "binary": "java -jar target/my-java-plugin-1.0.0.jar",
-    "runtime": "jvm",
+    "binary": "target/my-java-plugin-1.0.0.jar",
+    "runtime": "java",
+    "runtime_version": ">=17",
     "port": 9001,
     "health_check_interval": 30000000000
   },
@@ -35,11 +36,19 @@
   },
   "commands": [
     {
-      "name": "help",
-      "description": "Show help for plugin",
+      "name": "hello",
+      "description": "Print a greeting",
       "subcommands": [],
-      "parameters": [],
-      "examples": ["portunix plugin-name help"]
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "description": "Name to greet",
+          "required": false,
+          "default_value": "World"
+        }
+      ],
+      "examples": ["portunix plugin-name hello", "portunix plugin-name hello Portunix"]
     }
   ]
 }

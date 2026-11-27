@@ -21,6 +21,7 @@
         "variants": {
           "latest": {
             "version": "7.4.6",
+            "scriptShell": "powershell",
             "installScript": "Write-Host 'Installing PowerShell 7.4.6...'; $url = 'https://github.com/PowerShell/PowerShell/releases/download/v7.4.6/PowerShell-7.4.6-win-x64.msi'; $output = Join-Path $env:TEMP 'PowerShell-7.4.6-win-x64.msi'; Invoke-WebRequest -Uri $url -OutFile $output; Start-Process msiexec.exe -Wait -ArgumentList \"/i $output /quiet ADD_EXPLORER_CONTEXT_MENU_OPENPOWERSHELL=1 ADD_FILE_CONTEXT_MENU_RUNPOWERSHELL=1\"; Remove-Item $output",
             "postInstall": [
               "pwsh --version"

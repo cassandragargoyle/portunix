@@ -2,7 +2,7 @@ module portunix.ai/portunix/src/helpers/ptx-wizard
 
 go 1.24.0
 
-toolchain go1.24.2
+toolchain go1.26.11
 
 replace portunix.ai/app/wizard => ../../app/wizard
 

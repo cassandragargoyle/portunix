@@ -93,7 +93,7 @@ func (p *PodmanInstaller) installWindows() error {
 	// Try WinGet first
 	if _, err := exec.LookPath("winget"); err == nil {
 		fmt.Println("📦 Installing Podman Desktop via WinGet...")
-		cmd := exec.Command("winget", "install", "--id", "RedHat.Podman-Desktop", "-e", "--accept-package-agreements", "--accept-source-agreements")
+		cmd := exec.Command("winget", wingetInstallArgs("RedHat.Podman-Desktop")...)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		if err := cmd.Run(); err == nil {

@@ -32,11 +32,19 @@
   },
   "commands": [
     {
-      "name": "help",
-      "description": "Show help for plugin",
+      "name": "hello",
+      "description": "Print a greeting",
       "subcommands": [],
-      "parameters": [],
-      "examples": ["portunix plugin-name help"]
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "description": "Name to greet",
+          "required": false,
+          "default_value": "World"
+        }
+      ],
+      "examples": ["portunix plugin-name hello", "portunix plugin-name hello Portunix"]
     }
   ]
 }

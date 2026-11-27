@@ -1,99 +1,144 @@
+// Portunix plugin contract (service portunix.plugins.PluginService)
+// Copy of the PluginService part of src/app/plugins/proto/plugin.proto in the
+// Portunix repository; keep the package, service and messages unchanged, or
+// Portunix cannot talk to the plugin; only the language options may differ
+
 syntax = "proto3";
 
-package rust_plugin_template;
+package portunix.plugins;
 
+// PluginService defines the main interface for plugin communication
 service PluginService {
-    rpc GetInfo(GetInfoRequest) returns (GetInfoResponse);
-    rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
-    rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+    // Initialize plugin with configuration
+    rpc Initialize(InitializeRequest) returns (InitializeResponse);
 
+    // Execute a command on the plugin
     rpc Execute(ExecuteRequest) returns (ExecuteResponse);
 
-    rpc ListTools(ListToolsRequest) returns (ListToolsResponse);
-    rpc CallTool(CallToolRequest) returns (CallToolResponse);
+    // Get plugin information and capabilities
+    rpc GetInfo(GetInfoRequest) returns (GetInfoResponse);
+
+    // Health check for plugin
+    rpc Health(HealthRequest) returns (HealthResponse);
+
+    // Shutdown plugin gracefully
+    rpc Shutdown(ShutdownRequest) returns (ShutdownResponse);
+
+    // List available commands/tools provided by plugin
+    rpc ListCommands(ListCommandsRequest) returns (ListCommandsResponse);
+}
+
+// Initialize plugin
+message InitializeRequest {
+    string plugin_name = 1;
+    string version = 2;
+    map<string, string> config = 3;
+    map<string, string> environment = 4;
+    PluginPermissions permissions = 5;
+}
+
+message InitializeResponse {
+    bool success = 1;
+    string message = 2;
+    PluginInfo plugin_info = 3;
+}
+
+// Execute command
+message ExecuteRequest {
+    string command = 1;
+    repeated string args = 2;
+    map<string, string> options = 3;
+    map<string, string> environment = 4;
+    string working_directory = 5;
+}
+
+message ExecuteResponse {
+    bool success = 1;
+    string message = 2;
+    string output = 3;
+    string error = 4;
+    int32 exit_code = 5;
+    map<string, string> metadata = 6;
+}
+
+// Plugin information
+message GetInfoRequest {}
+
+message GetInfoResponse {
+    PluginInfo plugin_info = 1;
 }
 
 message PluginInfo {
     string name = 1;
     string version = 2;
     string description = 3;
-    repeated string capabilities = 4;
+    string author = 4;
+    string license = 5;
+    repeated string supported_os = 6;
+    repeated PluginCommand commands = 7;
+    PluginCapabilities capabilities = 8;
+    PluginPermissions required_permissions = 9;
 }
 
-message GetInfoRequest {}
-
-message GetInfoResponse {
-    PluginInfo info = 1;
-}
-
-message HealthCheckRequest {
-    string service = 1;
-}
-
-message HealthCheckResponse {
-    enum Status {
-        UNKNOWN = 0;
-        SERVING = 1;
-        NOT_SERVING = 2;
-        SERVICE_UNKNOWN = 3;
-    }
-    Status status = 1;
-}
-
-message ExecuteRequest {
-    string command = 1;
-    repeated string args = 2;
-}
-
-message ExecuteResponse {
-    enum Status {
-        SUCCESS = 0;
-        ERROR = 1;
-        TIMEOUT = 2;
-    }
-    string result = 1;
-    Status status = 2;
-    string error_message = 3;
-}
-
-message MCPTool {
+message PluginCommand {
     string name = 1;
     string description = 2;
-    string schema = 3;
+    repeated string subcommands = 3;
+    repeated PluginParameter parameters = 4;
+    repeated string examples = 5;
 }
 
-message ListToolsRequest {}
-
-message ListToolsResponse {
-    repeated MCPTool tools = 1;
+message PluginParameter {
+    string name = 1;
+    string type = 2;
+    string description = 3;
+    bool required = 4;
+    string default_value = 5;
 }
 
-message CallToolRequest {
-    string tool_name = 1;
-    string arguments = 2;
+message PluginCapabilities {
+    bool filesystem_access = 1;
+    bool network_access = 2;
+    bool database_access = 3;
+    bool container_access = 4;
+    bool system_commands = 5;
+    repeated string mcp_tools = 6;
 }
 
-message CallToolResponse {
-    enum Status {
-        SUCCESS = 0;
-        ERROR = 1;
-        NOT_FOUND = 2;
-        INVALID_ARGS = 3;
-    }
-    string result = 1;
-    Status status = 2;
-    string error_message = 3;
+message PluginPermissions {
+    repeated string filesystem = 1;
+    repeated string network = 2;
+    repeated string database = 3;
+    repeated string system = 4;
+    string level = 5; // limited, standard, full
 }
 
+// Health check
+message HealthRequest {}
+
+message HealthResponse {
+    bool healthy = 1;
+    string status = 2;
+    string message = 3;
+    int64 uptime_seconds = 4;
+    map<string, string> metrics = 5;
+}
+
+// Shutdown
 message ShutdownRequest {
     bool force = 1;
+    int32 timeout_seconds = 2;
 }
 
 message ShutdownResponse {
-    enum Status {
-        SUCCESS = 0;
-        ERROR = 1;
-    }
-    Status status = 1;
+    bool success = 1;
     string message = 2;
+}
+
+// List commands
+message ListCommandsRequest {}
+
+message ListCommandsResponse {
+    repeated PluginCommand commands = 1;
+    PluginCapabilities capabilities = 2;
 }

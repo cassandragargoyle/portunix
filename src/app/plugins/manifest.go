@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -11,6 +12,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -56,6 +58,9 @@ func SaveManifest(manifest *PluginManifest, manifestPath string) error {
 	return os.WriteFile(manifestPath, data, 0644) // #nosec G306 -- plugin manifest is a public asset
 }
 
+// supportedRuntimes lists the plugin runtimes the dispatcher can start
+var supportedRuntimes = map[string]bool{"native": true, "java": true, "python": true, "node": true}
+
 // ValidateManifest validates a plugin manifest
 func ValidateManifest(manifest *PluginManifest) error {
 	// Required fields
@@ -85,8 +90,8 @@ func ValidateManifest(manifest *PluginManifest) error {
 	if manifest.Plugin.Runtime == "" {
 		manifest.Plugin.Runtime = "native"
 	}
-	if manifest.Plugin.Runtime != "native" && manifest.Plugin.Runtime != "java" && manifest.Plugin.Runtime != "python" {
-		return fmt.Errorf("unsupported runtime: %s (supported: native, java, python)", manifest.Plugin.Runtime)
+	if !supportedRuntimes[manifest.Plugin.Runtime] {
+		return fmt.Errorf("unsupported runtime: %s (supported: native, java, python, node)", manifest.Plugin.Runtime)
 	}
 
 	// Validate Python wheel plugin configuration
@@ -102,6 +107,10 @@ func ValidateManifest(manifest *PluginManifest) error {
 	// Validate extra_wheels requires wheel field
 	if len(manifest.Plugin.ExtraWheels) > 0 && manifest.Plugin.Wheel == "" {
 		return fmt.Errorf("extra_wheels requires wheel field to be set")
+	}
+
+	if err := ValidateOptionalExtras(manifest); err != nil {
+		return err
 	}
 
 	if manifest.Plugin.PythonMinVersion != "" {
@@ -291,13 +300,19 @@ func CreateDefaultManifest(name, description, author string) *PluginManifest {
 			System:     []string{},
 			Level:      "limited",
 		},
+		// One entry per subcommand called as `portunix <plugin> <name>` (issue #257)
 		Commands: []PluginCommand{
 			{
-				Name:        "help",
-				Description: fmt.Sprintf("Show help for %s plugin", name),
+				Name:        "hello",
+				Description: "Print a greeting",
 				Subcommands: []string{},
-				Parameters:  []PluginParameter{},
-				Examples:    []string{fmt.Sprintf("portunix %s help", name)},
+				Parameters: []PluginParameter{
+					{Name: "name", Type: "string", Description: "Name to greet", DefaultValue: "World"},
+				},
+				Examples: []string{
+					fmt.Sprintf("portunix %s hello", name),
+					fmt.Sprintf("portunix %s hello Portunix", name),
+				},
 			},
 		},
 	}
@@ -338,14 +353,100 @@ func GetManifestTemplate(name, description, author string) string {
   },
   "commands": [
     {
-      "name": "help",
-      "description": "Show help for %s plugin",
+      "name": "hello",
+      "description": "Print a greeting",
       "subcommands": [],
-      "parameters": [],
-      "examples": ["portunix %s help"]
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "description": "Name to greet",
+          "required": false,
+          "default_value": "World"
+        }
+      ],
+      "examples": ["portunix %s hello", "portunix %s hello Portunix"]
     }
   ]
 }`, name, description, author, name, version.ProductVersion, name, name)
 	}
 	return string(data)
+}
+
+// wheelExtraNamePattern restricts extra names to characters that are safe
+// inside a pip requirement specifier ("<wheel>[name]")
+var wheelExtraNamePattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]*$`)
+
+// extraSeparatorRun matches the separator runs that PEP 685 folds into "-"
+var extraSeparatorRun = regexp.MustCompile(`[-_.]+`)
+
+// ValidateOptionalExtras checks the optional_extras declaration of a wheel plugin
+func ValidateOptionalExtras(manifest *PluginManifest) error {
+	extras := manifest.Plugin.OptionalExtras
+	if len(extras) == 0 {
+		return nil
+	}
+	if manifest.Plugin.Wheel == "" {
+		return fmt.Errorf("optional_extras requires wheel field to be set")
+	}
+	seen := make(map[string]bool, len(extras))
+	for _, extra := range extras {
+		if !wheelExtraNamePattern.MatchString(extra.Name) {
+			return fmt.Errorf("invalid optional_extras name %q: must match %s", extra.Name, wheelExtraNamePattern.String())
+		}
+		key := NormalizeExtraName(extra.Name)
+		if seen[key] {
+			return fmt.Errorf("duplicate optional_extras name: %s", extra.Name)
+		}
+		seen[key] = true
+	}
+	return nil
+}
+
+// NormalizeExtraName returns the PEP 685 normalized form of an extra name
+func NormalizeExtraName(name string) string {
+	return strings.ToLower(extraSeparatorRun.ReplaceAllString(name, "-"))
+}
+
+// ResolveWheelExtras checks the requested extras (entries may be comma
+// separated) against the manifest declaration and returns them as declared,
+// de-duplicated and sorted
+func ResolveWheelExtras(manifest *PluginManifest, requested []string) ([]string, error) {
+	if len(requested) == 0 {
+		return nil, nil
+	}
+	declared := make(map[string]string, len(manifest.Plugin.OptionalExtras))
+	var names []string
+	for _, extra := range manifest.Plugin.OptionalExtras {
+		declared[NormalizeExtraName(extra.Name)] = extra.Name
+		names = append(names, extra.Name)
+	}
+
+	// Accept comma separated values as well as separate entries
+	var items []string
+	for _, raw := range requested {
+		items = append(items, strings.Split(raw, ",")...)
+	}
+
+	chosen := make(map[string]bool)
+	var resolved []string
+	for _, raw := range items {
+		name := strings.TrimSpace(raw)
+		if name == "" {
+			continue
+		}
+		canonical, ok := declared[NormalizeExtraName(name)]
+		if !ok {
+			if len(names) == 0 {
+				return nil, fmt.Errorf("plugin %s declares no optional extras, so --extra %s cannot be installed", manifest.Name, name)
+			}
+			return nil, fmt.Errorf("plugin %s does not declare extra %q (declared extras: %s)", manifest.Name, name, strings.Join(names, ", "))
+		}
+		if !chosen[canonical] {
+			chosen[canonical] = true
+			resolved = append(resolved, canonical)
+		}
+	}
+	sort.Strings(resolved)
+	return resolved, nil
 }

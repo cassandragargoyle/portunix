@@ -4,108 +4,109 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
-	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/health"
-	"google.golang.org/grpc/health/grpc_health_v1"
 
 	"go-plugin-template/internal/config"
 	"go-plugin-template/internal/handlers"
+	"go-plugin-template/internal/manifest"
+	"go-plugin-template/internal/services"
 	pb "go-plugin-template/proto"
 )
 
+// version is set at build time (-ldflags "-X main.version=...")
+var version = "dev"
+
+// Without a command the plugin runs as a gRPC service (portunix plugin start);
+// with a command it runs once as a CLI (portunix <plugin> <command> [args...])
 func main() {
 	var (
-		port        = flag.Int("port", 50051, "gRPC server port")
-		healthPort  = flag.Int("health-port", 50052, "Health check port")
-		metricsPort = flag.Int("metrics-port", 8080, "Metrics port")
-		configPath  = flag.String("config", "config.yaml", "Configuration file path")
+		port         = flag.Int("port", 50051, "gRPC server port")
+		configPath   = flag.String("config", "config.yaml", "Configuration file path")
+		manifestPath = flag.String("manifest", "plugin.json", "Plugin manifest path")
+		showVersion  = flag.Bool("version", false, "Print the plugin version and exit")
 	)
 	flag.Parse()
 
-	// Load configuration
 	cfg, err := config.Load(*configPath)
 	if err != nil {
-		log.Fatalf("Failed to load configuration: %v", err)
+		fail("failed to load configuration: %v", err)
+	}
+	configureLogging(cfg.LogLevel)
+
+	if *showVersion {
+		fmt.Printf("%s %s (build %s)\n", cfg.Plugin.Name, cfg.Plugin.Version, version)
+		return
 	}
 
-	// Configure logging
-	level, err := logrus.ParseLevel(cfg.LogLevel)
+	if flag.NArg() > 0 {
+		runCommand(cfg, flag.Arg(0), flag.Args()[1:])
+		return
+	}
+
+	// Portunix runs the plugin with the install directory as working
+	// directory, so the default manifest path resolves to its plugin.json
+	m, err := manifest.Load(*manifestPath)
 	if err != nil {
-		level = logrus.InfoLevel
+		fail("%v", err)
 	}
-	logrus.SetLevel(level)
-	logrus.SetFormatter(&logrus.JSONFormatter{})
+	if err := serve(cfg, m, *port); err != nil {
+		fail("%v", err)
+	}
+}
 
-	logrus.WithFields(logrus.Fields{
-		"plugin":  cfg.Plugin.Name,
-		"version": cfg.Plugin.Version,
-	}).Info("Starting plugin")
+// runCommand executes one command and prints its output (CLI mode)
+func runCommand(cfg *config.Config, command string, args []string) {
+	output, err := services.NewPluginService(cfg).Execute(context.Background(), command, args)
+	if err != nil {
+		fail("%v", err)
+	}
+	fmt.Println(output)
+}
 
-	// Start metrics server
-	go startMetricsServer(*metricsPort)
+// serve runs the gRPC server implementing portunix.plugins.PluginService
+// until SIGINT or SIGTERM
+func serve(cfg *config.Config, m *manifest.Manifest, port int) error {
+	// Portunix connects over localhost; the plugin is not exposed to the network
+	listener, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		return fmt.Errorf("failed to listen: %w", err)
+	}
 
-	// Create gRPC server
 	server := grpc.NewServer()
+	pb.RegisterPluginServiceServer(server, handlers.NewPluginHandler(cfg, m))
 
-	// Register plugin service
-	pluginHandler := handlers.NewPluginHandler(cfg)
-	pb.RegisterPluginServiceServer(server, pluginHandler)
-
-	// Register health service
-	healthServer := health.NewServer()
-	grpc_health_v1.RegisterHealthServer(server, healthServer)
-	healthServer.SetServingStatus("", grpc_health_v1.HealthCheckResponse_SERVING)
-
-	// Start health check server
-	go startHealthServer(*healthPort, healthServer)
-
-	// Start gRPC server
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
-	if err != nil {
-		log.Fatalf("Failed to listen: %v", err)
-	}
-
-	// Graceful shutdown
 	go func() {
 		sigChan := make(chan os.Signal, 1)
 		signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 		<-sigChan
-
-		logrus.Info("Shutting down gracefully...")
-		pluginHandler.Shutdown()
+		slog.Info("Shutting down gracefully...")
 		server.GracefulStop()
 	}()
 
-	logrus.WithField("port", *port).Info("Plugin server listening")
+	slog.Info("Plugin server listening", "plugin", m.Name, "version", m.Version, "address", listener.Addr().String())
 	if err := server.Serve(listener); err != nil {
-		log.Fatalf("Failed to serve: %v", err)
+		return fmt.Errorf("failed to serve: %w", err)
 	}
+	return nil
 }
 
-func startMetricsServer(port int) {
-	http.Handle("/metrics", promhttp.Handler())
-	logrus.WithField("port", port).Info("Metrics server listening")
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+// configureLogging logs to stderr, so stdout carries only command output
+func configureLogging(level string) {
+	var l slog.Level
+	if err := l.UnmarshalText([]byte(strings.ToUpper(level))); err != nil {
+		l = slog.LevelInfo
+	}
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: l})))
 }
 
-func startHealthServer(port int, healthServer *health.Server) {
-	listener, err := net.Listen("tcp", fmt.Sprintf(":%d", port))
-	if err != nil {
-		log.Fatalf("Failed to listen for health checks: %v", err)
-	}
-
-	healthGRPCServer := grpc.NewServer()
-	grpc_health_v1.RegisterHealthServer(healthGRPCServer, healthServer)
-
-	logrus.WithField("port", port).Info("Health check server listening")
-	log.Fatal(healthGRPCServer.Serve(listener))
+func fail(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, "Error: "+format+"\n", args...)
+	os.Exit(1)
 }

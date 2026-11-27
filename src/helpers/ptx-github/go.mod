@@ -2,6 +2,8 @@ module portunix.ai/portunix/src/helpers/ptx-github
 
 go 1.26.0
 
+toolchain go1.26.11
+
 require (
 	github.com/go-git/go-git/v5 v5.19.3
 	github.com/google/go-github/v56 v56.0.0

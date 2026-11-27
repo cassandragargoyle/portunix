@@ -59,6 +59,7 @@
         "variants": {
           "latest": {
             "version": "11.0",
+            "scriptShell": "powershell",
             "installScript": "$url = 'https://releases.pagure.org/virt-viewer/virt-viewer-x64-11.0-1.0.msi'; $output = Join-Path $env:TEMP 'virt-viewer-x64.msi'; Invoke-WebRequest -Uri $url -OutFile $output; Start-Process msiexec.exe -ArgumentList '/i', $output, '/quiet', '/norestart' -Wait; Remove-Item $output",
             "postInstall": [
               "echo '✅ virt-viewer installed on Windows'",

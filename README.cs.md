@@ -371,6 +371,15 @@ make status
 4. Odešlete pull request
 5. Automatizovaná CI/CD pipeline ověří změny
 
+## Použití umělé inteligence
+
+Při vývoji tohoto softwaru se používají nástroje umělé inteligence (AI). Výstup AI vždy
+zkontroluje člověk, než se stane součástí projektu.
+
+Přispěvatelé mohou AI nástroje používat také, ale každý výstup AI musí před odesláním
+změny sami zkontrolovat. Změna, u které výstup AI nezkontroloval člověk, bude zamítnuta.
+Pravidla najdete v [CONTRIBUTING.md](CONTRIBUTING.md#use-of-artificial-intelligence).
+
 ## Vytvoření releasu
 
 ```bash

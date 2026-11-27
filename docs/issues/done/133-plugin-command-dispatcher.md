@@ -3,6 +3,7 @@
 ## Overview
 **Title**: Plugin Command Dispatcher
 **Status**: ✅ Implemented
+**Closed**: 2026-11-20
 **Priority**: High
 **Type**: Feature
 **Labels**: plugin, cli, dispatcher
@@ -73,6 +74,9 @@ portunix text-extractor extract document.pdf
 3. Handle JVM args from plugin.json
 
 ### Phase 3: Service Plugin Support
+
+> Moved to Issue #258 — not implemented in this issue.
+
 1. For running service plugins, use gRPC Execute method
 2. Handle plugin not running errors gracefully
 
@@ -90,17 +94,20 @@ portunix agile task add "New task"
 
 ## Acceptance Criteria
 
-- [ ] `portunix <plugin-name> --help` shows plugin commands
-- [ ] `portunix <plugin-name> <command>` executes plugin command
-- [ ] Java plugins are invoked with correct JVM args
-- [ ] Python plugins are invoked correctly
-- [ ] Native plugins are invoked correctly
-- [ ] Error handling for disabled/missing plugins
-- [ ] Output is streamed to user in real-time
+- [x] `portunix <plugin-name> --help` shows plugin commands (forwarded to the plugin)
+- [x] `portunix <plugin-name> <command>` executes plugin command
+- [x] Java plugins are invoked with correct JVM args
+- [x] Python plugins are invoked correctly
+- [x] Native plugins are invoked correctly
+- [x] Error handling for disabled/missing plugins
+- [x] Output is streamed to user in real-time
+- [ ] Service plugins via gRPC `Execute` — moved to Issue #258
 
 ## Related Issues
 
 - Issue #132: Text Extractor Plugin Integration (implemented plugin mode)
+- Issue #221: Plugin run command argument forwarding
+- Issue #258: Service plugin command execution via gRPC (Phase 3 follow-up)
 
 ## Notes
 

@@ -249,7 +249,7 @@ The AUR package uses MIT license (same as Portunix).
 
 ## Maintainer
 
-- **Maintainer**: CassandraGargoyle <info@cassandragargoyle.cz>
+- **Maintainer**: CassandraGargoyle <cassandragargoyle@gmail.com>
 - **AUR Package**: <https://aur.archlinux.org/packages/portunix>
 - **Upstream**: <https://github.com/cassandragargoyle/portunix>
 

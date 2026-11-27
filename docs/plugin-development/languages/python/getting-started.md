@@ -1169,6 +1169,35 @@ The canonical field definition lives in the
 [`plugin-manifest.schema.json`](https://cassandragargoyle.org/schemas/plugin-manifest.schema.json)
 contract.
 
+## Optional Wheel Extras
+
+A wheel can define optional dependency groups (extras) in `pyproject.toml`
+(`[project.optional-dependencies]`). Portunix installs only the main dependencies
+by default. Declare the extras a user can opt into in `plugin.json`:
+
+```json
+{
+  "plugin": {
+    "runtime": "python",
+    "wheel": "my_plugin-1.0.0-py3-none-any.whl",
+    "optional_extras": [
+      {"name": "train", "description": "Model training (torch, transformers, several GB)"}
+    ]
+  }
+}
+```
+
+- `optional_extras` requires `wheel`; a name matches `^[A-Za-z0-9][A-Za-z0-9._-]*$`
+  and must be unique (compared in the PEP 685 normalized form)
+- Install with an extra: `portunix plugin install --extra train ./my-plugin/`
+  (`--extra` is repeatable or comma separated); the wheel is installed as
+  `<wheel>[train]` with uv or with the pip fallback
+- An extra that the manifest does not declare stops the install before anything
+  is copied, and the error lists the declared extras
+- `portunix plugin info <plugin>` lists the declared extras and marks the installed ones
+- `portunix plugin repair <plugin>` keeps the installed extras; `plugin install --force`
+  installs only the extras given with it and warns about the ones it drops
+
 ## Next Steps
 
 - Study the [template code](template/) for a complete example

@@ -1,184 +1,101 @@
+// Package handlers implements portunix.plugins.PluginService
 package handlers
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"log/slog"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sirupsen/logrus"
-
 	"go-plugin-template/internal/config"
+	"go-plugin-template/internal/manifest"
 	"go-plugin-template/internal/services"
 	pb "go-plugin-template/proto"
 )
 
-var (
-	requestsTotal = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "plugin_requests_total",
-			Help: "Total number of requests processed",
-		},
-		[]string{"method", "status"},
-	)
-
-	requestDuration = promauto.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Name: "plugin_request_duration_seconds",
-			Help: "Duration of requests",
-		},
-		[]string{"method"},
-	)
-)
-
+// PluginHandler implements portunix.plugins.PluginService; plugin info and
+// commands come from plugin.json, so the manifest stays the single source
 type PluginHandler struct {
 	pb.UnimplementedPluginServiceServer
-	config  *config.Config
-	service *services.PluginService
+	config    *config.Config
+	manifest  *manifest.Manifest
+	service   *services.PluginService
+	startedAt time.Time
 }
 
-func NewPluginHandler(cfg *config.Config) *PluginHandler {
+// NewPluginHandler creates the gRPC handler
+func NewPluginHandler(cfg *config.Config, m *manifest.Manifest) *PluginHandler {
 	return &PluginHandler{
-		config:  cfg,
-		service: services.NewPluginService(cfg),
+		config:    cfg,
+		manifest:  m,
+		service:   services.NewPluginService(cfg),
+		startedAt: time.Now(),
 	}
 }
 
+// Initialize is the first call Portunix makes after starting the plugin
+func (h *PluginHandler) Initialize(ctx context.Context, req *pb.InitializeRequest) (*pb.InitializeResponse, error) {
+	slog.Info("Initialize called", "plugin", req.GetPluginName(), "version", req.GetVersion())
+	return &pb.InitializeResponse{
+		Success:    true,
+		Message:    "initialized",
+		PluginInfo: h.manifest.PluginInfo(),
+	}, nil
+}
+
+// GetInfo returns the plugin information from plugin.json
 func (h *PluginHandler) GetInfo(ctx context.Context, req *pb.GetInfoRequest) (*pb.GetInfoResponse, error) {
-	timer := prometheus.NewTimer(requestDuration.WithLabelValues("get_info"))
-	defer timer.ObserveDuration()
+	return &pb.GetInfoResponse{PluginInfo: h.manifest.PluginInfo()}, nil
+}
 
-	logrus.Debug("GetInfo called")
-
-	requestsTotal.WithLabelValues("get_info", "success").Inc()
-
-	return &pb.GetInfoResponse{
-		Info: &pb.PluginInfo{
-			Name:         h.config.Plugin.Name,
-			Version:      h.config.Plugin.Version,
-			Description:  h.config.Plugin.Description,
-			Capabilities: []string{"example-capability"},
-		},
+// Health reports the plugin state for portunix plugin health
+func (h *PluginHandler) Health(ctx context.Context, req *pb.HealthRequest) (*pb.HealthResponse, error) {
+	healthy := h.service.CheckHealth()
+	status, message := "running", "ok"
+	if !healthy {
+		status, message = "unhealthy", "health check failed"
+	}
+	return &pb.HealthResponse{
+		Healthy:       healthy,
+		Status:        status,
+		Message:       message,
+		UptimeSeconds: int64(time.Since(h.startedAt).Seconds()),
+		Metrics:       map[string]string{},
 	}, nil
 }
 
-func (h *PluginHandler) HealthCheck(ctx context.Context, req *pb.HealthCheckRequest) (*pb.HealthCheckResponse, error) {
-	timer := prometheus.NewTimer(requestDuration.WithLabelValues("health_check"))
-	defer timer.ObserveDuration()
-
-	status := h.service.CheckHealth()
-
-	requestsTotal.WithLabelValues("health_check", "success").Inc()
-
-	return &pb.HealthCheckResponse{
-		Status: pb.HealthCheckResponse_Status(status),
-	}, nil
-}
-
+// Execute runs a plugin command; command errors are reported in the
+// response, not as gRPC errors, so Portunix can show them to the user
 func (h *PluginHandler) Execute(ctx context.Context, req *pb.ExecuteRequest) (*pb.ExecuteResponse, error) {
-	timer := prometheus.NewTimer(requestDuration.WithLabelValues("execute"))
-	defer timer.ObserveDuration()
+	slog.Info("Executing command", "command", req.GetCommand(), "args", req.GetArgs())
 
-	logrus.WithFields(logrus.Fields{
-		"command": req.Command,
-		"args":    req.Args,
-	}).Info("Executing command")
-
-	// Add timeout context
 	timeoutCtx, cancel := context.WithTimeout(ctx, time.Duration(h.config.Timeout)*time.Second)
 	defer cancel()
 
-	result, err := h.service.Execute(timeoutCtx, req.Command, req.Args)
+	output, err := h.service.Execute(timeoutCtx, req.GetCommand(), req.GetArgs())
 	if err != nil {
-		logrus.WithError(err).Error("Command execution failed")
-		requestsTotal.WithLabelValues("execute", "error").Inc()
-		return nil, fmt.Errorf("execution failed: %w", err)
+		slog.Error("Command execution failed", "error", err)
+		return &pb.ExecuteResponse{
+			Success:  false,
+			Message:  err.Error(),
+			Error:    err.Error(),
+			ExitCode: 1,
+		}, nil
 	}
+	return &pb.ExecuteResponse{Success: true, Output: output, ExitCode: 0}, nil
+}
 
-	requestsTotal.WithLabelValues("execute", "success").Inc()
-
-	return &pb.ExecuteResponse{
-		Result: result,
-		Status: pb.ExecuteResponse_SUCCESS,
+// ListCommands returns the commands declared in plugin.json
+func (h *PluginHandler) ListCommands(ctx context.Context, req *pb.ListCommandsRequest) (*pb.ListCommandsResponse, error) {
+	return &pb.ListCommandsResponse{
+		Commands:     h.manifest.PluginCommands(),
+		Capabilities: h.manifest.Capabilities(),
 	}, nil
 }
 
-func (h *PluginHandler) ListTools(ctx context.Context, req *pb.ListToolsRequest) (*pb.ListToolsResponse, error) {
-	timer := prometheus.NewTimer(requestDuration.WithLabelValues("list_tools"))
-	defer timer.ObserveDuration()
-
-	tools := []*pb.MCPTool{
-		{
-			Name:        "example_tool",
-			Description: "Example tool for demonstration",
-			Schema: `{
-				"type": "object",
-				"properties": {
-					"input": {"type": "string", "description": "Input parameter"}
-				},
-				"required": ["input"]
-			}`,
-		},
-	}
-
-	requestsTotal.WithLabelValues("list_tools", "success").Inc()
-
-	return &pb.ListToolsResponse{Tools: tools}, nil
-}
-
-func (h *PluginHandler) CallTool(ctx context.Context, req *pb.CallToolRequest) (*pb.CallToolResponse, error) {
-	timer := prometheus.NewTimer(requestDuration.WithLabelValues("call_tool"))
-	defer timer.ObserveDuration()
-
-	logrus.WithFields(logrus.Fields{
-		"tool": req.ToolName,
-		"args": req.Arguments,
-	}).Info("Calling MCP tool")
-
-	switch req.ToolName {
-	case "example_tool":
-		return h.handleExampleTool(ctx, req.Arguments)
-	default:
-		requestsTotal.WithLabelValues("call_tool", "error").Inc()
-		return nil, fmt.Errorf("unknown tool: %s", req.ToolName)
-	}
-}
-
-func (h *PluginHandler) handleExampleTool(ctx context.Context, args string) (*pb.CallToolResponse, error) {
-	var params struct {
-		Input string `json:"input"`
-	}
-
-	if err := json.Unmarshal([]byte(args), &params); err != nil {
-		return nil, fmt.Errorf("invalid arguments: %w", err)
-	}
-
-	result, err := h.service.ProcessExample(ctx, params.Input)
-	if err != nil {
-		requestsTotal.WithLabelValues("call_tool", "error").Inc()
-		return nil, fmt.Errorf("tool execution failed: %w", err)
-	}
-
-	requestsTotal.WithLabelValues("call_tool", "success").Inc()
-
-	return &pb.CallToolResponse{
-		Result: result,
-		Status: pb.CallToolResponse_SUCCESS,
-	}, nil
-}
-
+// Shutdown only cleans up and answers; Portunix stops the process right after
+// this call (SIGTERM, handled in main.go), exiting here would drop the response
 func (h *PluginHandler) Shutdown(ctx context.Context, req *pb.ShutdownRequest) (*pb.ShutdownResponse, error) {
-	logrus.Info("Shutdown requested")
-
+	slog.Info("Shutdown requested")
 	h.service.Cleanup()
-
-	return &pb.ShutdownResponse{
-		Status: pb.ShutdownResponse_SUCCESS,
-	}, nil
-}
-
-func (h *PluginHandler) Shutdown() {
-	h.service.Cleanup()
+	return &pb.ShutdownResponse{Success: true, Message: "cleanup done"}, nil
 }

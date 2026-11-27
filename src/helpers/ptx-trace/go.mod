@@ -2,10 +2,12 @@ module portunix.ai/portunix/src/helpers/ptx-trace
 
 go 1.26.0
 
+toolchain go1.26.11
+
 require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/google/uuid v1.6.0
-	github.com/gorilla/websocket v1.5.3
+	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/lib/pq v1.10.9
 	github.com/spf13/cobra v1.8.1
 	google.golang.org/grpc v1.84.0

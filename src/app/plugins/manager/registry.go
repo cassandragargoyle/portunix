@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -12,6 +13,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"sync"
 	"time"
 
@@ -43,11 +46,13 @@ type RegistryPlugin struct {
 	InstallPath         string                      `json:"install_path"`
 	BinaryName          string                      `json:"binary_name"`
 	Mode                string                      `json:"mode"`                         // service or helper
-	Runtime             string                      `json:"runtime"`                      // native, java, python
+	Runtime             string                      `json:"runtime"`                      // native, java, python, node
 	RuntimeVersion      string                      `json:"runtime_version"`              // e.g., ">=21" for Java
 	JVMArgs             []string                    `json:"jvm_args"`                     // JVM arguments for Java plugins
 	Wheel               string                      `json:"wheel,omitempty"`              // Python wheel filename
 	ExtraWheels         []string                    `json:"extra_wheels,omitempty"`       // Additional wheel files
+	OptionalExtras      []plugins.WheelExtra        `json:"optional_extras,omitempty"`    // Wheel extras declared by the manifest
+	InstalledExtras     []string                    `json:"installed_extras,omitempty"`   // Wheel extras installed into the venv
 	PythonMinVersion    string                      `json:"python_min_version,omitempty"` // Minimum Python version
 	Port                int                         `json:"port"`
 	Status              plugins.PluginStatus        `json:"status"`
@@ -92,8 +97,9 @@ func NewRegistry(filePath string) (*Registry, error) {
 	return registry, nil
 }
 
-// RegisterPlugin adds a plugin to the registry
-func (r *Registry) RegisterPlugin(manifest *plugins.PluginManifest, installPath string) error {
+// RegisterPlugin adds a plugin to the registry; installedExtras records the
+// wheel extras installed into the plugin venv
+func (r *Registry) RegisterPlugin(manifest *plugins.PluginManifest, installPath string, installedExtras ...string) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -145,6 +151,8 @@ func (r *Registry) RegisterPlugin(manifest *plugins.PluginManifest, installPath 
 		JVMArgs:             manifest.Plugin.JVMArgs,
 		Wheel:               manifest.Plugin.Wheel,
 		ExtraWheels:         manifest.Plugin.ExtraWheels,
+		OptionalExtras:      manifest.Plugin.OptionalExtras,
+		InstalledExtras:     installedExtras,
 		PythonMinVersion:    manifest.Plugin.PythonMinVersion,
 		Port:                manifest.Plugin.Port,
 		Status:              initialStatus,
@@ -168,8 +176,9 @@ func (r *Registry) RegisterPlugin(manifest *plugins.PluginManifest, installPath 
 	return r.save()
 }
 
-// ReregisterPlugin updates an existing plugin entry in the registry
-func (r *Registry) ReregisterPlugin(manifest *plugins.PluginManifest, installPath string) error {
+// ReregisterPlugin updates an existing plugin entry in the registry;
+// installedExtras replaces the recorded wheel extras
+func (r *Registry) ReregisterPlugin(manifest *plugins.PluginManifest, installPath string, installedExtras ...string) error {
 	r.mutex.Lock()
 	defer r.mutex.Unlock()
 
@@ -222,6 +231,8 @@ func (r *Registry) ReregisterPlugin(manifest *plugins.PluginManifest, installPat
 		JVMArgs:             manifest.Plugin.JVMArgs,
 		Wheel:               manifest.Plugin.Wheel,
 		ExtraWheels:         manifest.Plugin.ExtraWheels,
+		OptionalExtras:      manifest.Plugin.OptionalExtras,
+		InstalledExtras:     installedExtras,
 		PythonMinVersion:    manifest.Plugin.PythonMinVersion,
 		Port:                manifest.Plugin.Port,
 		Status:              initialStatus,
@@ -395,7 +406,22 @@ func (r *Registry) ListPlugins() ([]plugins.PluginInfo, error) {
 		pluginList = append(pluginList, pluginInfo)
 	}
 
+	// Map iteration order is random; sort for deterministic output
+	sort.Slice(pluginList, func(i, j int) bool {
+		return pluginNameLess(pluginList[i].Name, pluginList[j].Name)
+	})
+
 	return pluginList, nil
+}
+
+// pluginNameLess orders plugin names case-insensitively, breaking ties by the
+// exact name so the result is a total order (e.g. "Foo" < "foo")
+func pluginNameLess(a, b string) bool {
+	la, lb := strings.ToLower(a), strings.ToLower(b)
+	if la != lb {
+		return la < lb
+	}
+	return a < b
 }
 
 // ListEnabledPlugins returns list of enabled plugins
@@ -673,7 +699,7 @@ func (r *Registry) GetPluginRegistryData(name string) (*RegistryPlugin, error) {
 // OS-specific executable suffix for native and Python wheel plugins
 func (rp *RegistryPlugin) BinaryPath() string {
 	switch rp.Runtime {
-	case "java":
+	case "java", "node":
 		return filepath.Join(rp.InstallPath, rp.BinaryName)
 	case "python":
 		if rp.Wheel != "" {
@@ -736,6 +762,10 @@ func (r *Registry) ListPluginsForPlatform(platformName, platformVersion string, 
 			MatchedFeatures: matched,
 		})
 	}
+	// Map iteration order is random; sort for deterministic output
+	sort.Slice(out, func(i, j int) bool {
+		return pluginNameLess(out[i].Plugin.Name, out[j].Plugin.Name)
+	})
 	return out, nil
 }
 

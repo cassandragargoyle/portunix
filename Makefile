@@ -99,26 +99,28 @@ build-main: gen-resources ## Build only the main Portunix binary
 	@echo "Building Portunix..."
 	go build -o portunix$(EXE_EXT) .
 
-# Regenerate portunix.syso from versioninfo.json (embeds version + manifest + icon).
-# .syso is Windows-only — it's only embedded by Go when GOOS=windows. On
-# non-Windows hosts native builds simply ignore it; cross-compiling to Windows
-# from those hosts still picks up the latest .syso via this target.
+# Regenerate portunix_windows_{amd64,arm64}.syso from versioninfo.json (embeds
+# version + manifest + icon). One object per architecture: an amd64 .syso linked
+# into an arm64 image keeps unrelocated resource offsets (corrupted manifest).
+# The _windows_<arch> file name suffix makes Go embed each object only for its
+# own GOOS/GOARCH, so non-Windows builds ignore them.
 #
 # We resolve goversioninfo at recipe-time (inside sh) rather than via $(shell)
 # to avoid Make's host-charset issues with non-ASCII GOPATH on Windows.
 # Override by exporting GOVERSIONINFO=/path/to/goversioninfo.
 gen-resources: ## Regenerate Windows .syso (version, manifest, icon) from versioninfo.json
 ifeq ($(OS),Windows_NT)
-	@powershell -Command "[Console]::OutputEncoding = [Text.Encoding]::UTF8; $$bin = if ($$env:GOVERSIONINFO) { $$env:GOVERSIONINFO } else { Join-Path (go env GOPATH) 'bin\goversioninfo.exe' }; if (-not (Test-Path $$bin)) { Write-Host \"goversioninfo not found at $$bin\"; Write-Host 'Run: make install-build-tools  (or:  go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest )'; exit 1 }; Write-Host 'Generating portunix.syso (version + manifest + icon)...'; & $$bin -o portunix.syso versioninfo.json; exit $$LASTEXITCODE"
+	@powershell -Command "[Console]::OutputEncoding = [Text.Encoding]::UTF8; $$bin = if ($$env:GOVERSIONINFO) { $$env:GOVERSIONINFO } else { Join-Path (go env GOPATH) 'bin\goversioninfo.exe' }; if (-not (Test-Path $$bin)) { Write-Host \"goversioninfo not found at $$bin\"; Write-Host 'Run: make install-build-tools  (or:  go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest )'; exit 1 }; Write-Host 'Generating portunix_windows_{amd64,arm64}.syso (version + manifest + icon)...'; & $$bin -64 -o portunix_windows_amd64.syso versioninfo.json; if ($$LASTEXITCODE -ne 0) { exit $$LASTEXITCODE }; & $$bin -64 -arm -o portunix_windows_arm64.syso versioninfo.json; exit $$LASTEXITCODE"
 else
 	@bin="$${GOVERSIONINFO:-$$(go env GOPATH)/bin/goversioninfo$(EXE_EXT)}"; \
 	if [ ! -f "$$bin" ]; then \
-		echo "WARNING: goversioninfo not found at $$bin - keeping existing portunix.syso"; \
+		echo "WARNING: goversioninfo not found at $$bin - keeping existing portunix_windows_*.syso"; \
 		echo "Run: make install-build-tools  (or:  go install github.com/josephspurrier/goversioninfo/cmd/goversioninfo@latest )"; \
 		exit 0; \
 	fi; \
-	echo "Generating portunix.syso (version + manifest + icon)..."; \
-	"$$bin" -o portunix.syso versioninfo.json
+	echo "Generating portunix_windows_{amd64,arm64}.syso (version + manifest + icon)..."; \
+	"$$bin" -64 -o portunix_windows_amd64.syso versioninfo.json && \
+	"$$bin" -64 -arm -o portunix_windows_arm64.syso versioninfo.json
 endif
 
 install-build-tools: ## Install Go build tooling required for resource generation

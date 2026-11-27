@@ -2,8 +2,10 @@ module portunix.ai/app
 
 go 1.26.0
 
+toolchain go1.26.11
+
 require (
-	github.com/gorilla/websocket v1.5.3
+	github.com/gorilla/websocket v1.5.4-0.20250319132907-e064f32e3674
 	github.com/pbnjay/memory v0.0.0-20210728143218-7b4eea64cf58
 	github.com/pkg/sftp v1.13.10
 	github.com/stretchr/testify v1.11.1

@@ -30,7 +30,7 @@ echo   BEGIN >> portunix.rc
 echo     VALUE "Translation", 0x409, 1200 >> portunix.rc
 echo   END >> portunix.rc
 echo END >> portunix.rc
-echo 2 ICON "home.ico" >> portunix.rc
+echo 2 ICON "assets/brand/portunix.ico" >> portunix.rc
 
 SET PATH=D:\msys64\opt\bin\;%PATH%
 SET PATH=D:\msys64\usr\bin\;%PATH%
@@ -38,6 +38,6 @@ SET PATH=D:\msys64\mingw64\bin\;%PATH%
 
 REM i686-w64-mingw32-windres.exe -i portunix.rc -O coff -o portunix.syso
 REM x86_64-w64-mingw32-windres.exe -i portunix.rc -O coff -o shconfig.syso
-windres.exe -i portunix.rc -O coff -o portunix.syso
+windres.exe -i portunix.rc -O coff -o portunix_windows_amd64.syso
 
 rsrc -manifest portunix.exe.manifest -o portunix.exe

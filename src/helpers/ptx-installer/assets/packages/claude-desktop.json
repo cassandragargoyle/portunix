@@ -17,18 +17,16 @@
     "hasVariants": true,
     "platforms": {
       "windows": {
-        "type": "script",
+        "type": "winget",
         "variants": {
-          "latest": {
+          "winget": {
             "version": "latest",
-            "installScript": "$url = 'https://claude.ai/download/win'; $output = Join-Path $env:TEMP 'claude-desktop-installer.exe'; Invoke-WebRequest -Uri $url -OutFile $output; Start-Process -FilePath $output -ArgumentList '/S' -Wait; Remove-Item $output",
-            "postInstall": [
-              "where claude-desktop"
-            ]
+            "description": "MSIX package via winget (claude.ai/download/win is behind a browser challenge)",
+            "packages": ["Anthropic.Claude"]
           }
         },
         "verification": {
-          "command": "where claude-desktop",
+          "command": "powershell -NoProfile -Command \"if ((Test-Path (Join-Path $env:LOCALAPPDATA 'AnthropicClaude\\claude.exe')) -or (Get-AppxPackage -Name '*Claude*')) { exit 0 } else { exit 1 }\"",
           "expectedExitCode": 0
         }
       },

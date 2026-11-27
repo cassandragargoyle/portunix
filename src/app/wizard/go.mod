@@ -2,6 +2,8 @@ module portunix.ai/app/wizard
 
 go 1.24.0
 
+toolchain go1.26.11
+
 require (
 	github.com/AlecAivazis/survey/v2 v2.3.7
 	github.com/briandowns/spinner v1.23.0

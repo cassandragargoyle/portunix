@@ -21,6 +21,8 @@
         "variants": {
           "github": {
             "version": "latest",
+            "description": "Pinned msixbundle v1.6.3482; fails on systems without the Microsoft.UI.Xaml.2.7 and VCLibs frameworks",
+            "scriptShell": "powershell",
             "installScript": "Write-Host 'Checking if winget is already installed...'; try { $wingetCheck = winget --version 2>$null; if ($wingetCheck) { Write-Host \"✓ Winget is already installed (version: $wingetCheck)\"; Write-Host 'No installation needed.'; exit 0 } } catch { Write-Host 'Winget not found, proceeding with installation...' }; Write-Host 'Downloading compatible winget from GitHub...'; $wingetUrl = 'https://github.com/microsoft/winget-cli/releases/download/v1.6.3482/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle'; $tempFile = Join-Path $env:TEMP 'Microsoft.DesktopAppInstaller.msixbundle'; Invoke-WebRequest -Uri $wingetUrl -OutFile $tempFile; Add-AppxPackage $tempFile; Remove-Item $tempFile; Write-Host 'Installation completed!'",
             "postInstall": [
               "winget --info"
@@ -28,6 +30,7 @@
           },
           "register": {
             "version": "latest",
+            "scriptShell": "powershell",
             "installScript": "Add-AppxPackage -RegisterByFamilyName -MainPackage Microsoft.DesktopAppInstaller_8wekyb3d8bbwe",
             "postInstall": [
               "winget --info"
@@ -35,6 +38,9 @@
           },
           "powershell-module": {
             "version": "latest",
+            "preferred": true,
+            "description": "Official Microsoft.WinGet.Client module; Repair-WinGetPackageManager installs winget with its framework dependencies",
+            "scriptShell": "powershell",
             "installScript": "$progressPreference = 'silentlyContinue'; Write-Host 'Installing WinGet PowerShell module from PSGallery...'; Install-PackageProvider -Name NuGet -Force | Out-Null; Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery | Out-Null; Write-Host 'Using Repair-WinGetPackageManager cmdlet to bootstrap WinGet...'; Repair-WinGetPackageManager -AllUsers; Write-Host 'Done.'",
             "postInstall": [
               "winget --info"

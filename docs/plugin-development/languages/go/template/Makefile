@@ -3,8 +3,8 @@
 .PHONY: help build test clean proto docker install dev
 
 # Build configuration
+# The binary lands next to plugin.json, where its "binary" field points
 BINARY_NAME=plugin
-BUILD_DIR=bin
 PROTO_DIR=proto
 DOCKER_IMAGE=go-plugin-template
 VERSION ?= $(shell git describe --tags --always --dirty)
@@ -15,16 +15,17 @@ help: ## Display this help message
 
 build: proto ## Build the plugin binary
 	@echo "Building $(BINARY_NAME)..."
-	@mkdir -p $(BUILD_DIR)
-	@go build -ldflags "-X main.version=$(VERSION)" -o $(BUILD_DIR)/$(BINARY_NAME) main.go
-	@echo "Build completed: $(BUILD_DIR)/$(BINARY_NAME)"
+	@go build -ldflags "-X main.version=$(VERSION)" -o $(BINARY_NAME) .
+	@echo "Build completed: $(BINARY_NAME)"
 
 proto: ## Generate protocol buffer files
 	@echo "Generating protocol buffers..."
-	@protoc --go_out=. --go-grpc_out=. $(PROTO_DIR)/*.proto
+	@protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		$(PROTO_DIR)/*.proto
 	@echo "Protocol buffers generated"
 
-test: ## Run tests
+test: proto ## Run tests
 	@echo "Running tests..."
 	@go test -v -race -coverprofile=coverage.out ./...
 	@go tool cover -html=coverage.out -o coverage.html
@@ -36,14 +37,14 @@ test-integration: ## Run integration tests
 
 clean: ## Clean build artifacts
 	@echo "Cleaning..."
-	@rm -rf $(BUILD_DIR)
+	@rm -f $(BINARY_NAME) $(PROTO_DIR)/*.pb.go
 	@rm -f coverage.out coverage.html
 	@rm -rf dist/
 	@echo "Clean completed"
 
 dev: proto ## Run in development mode
 	@echo "Starting development server..."
-	@go run main.go -config=config.dev.yaml
+	@go run . --config=config.yaml
 
 deps: ## Install dependencies
 	@echo "Installing dependencies..."
@@ -68,8 +69,7 @@ docker: ## Build Docker image
 package: build ## Create distribution package
 	@echo "Creating package..."
 	@mkdir -p dist
-	@tar -czf dist/$(BINARY_NAME)-$(VERSION).tar.gz -C $(BUILD_DIR) $(BINARY_NAME)
-	@cp plugin.json dist/
+	@tar -czf dist/$(BINARY_NAME)-$(VERSION).tar.gz $(BINARY_NAME) plugin.json config.yaml
 	@echo "Package created: dist/$(BINARY_NAME)-$(VERSION).tar.gz"
 
 install: build ## Install plugin to Portunix
@@ -86,17 +86,13 @@ validate: ## Validate plugin
 watch: ## Watch for changes and rebuild
 	@echo "Watching for changes..."
 	@while true; do \
-		inotifywait -r -e modify,create,delete --exclude='\.git|bin|dist' .; \
+		inotifywait -r -e modify,create,delete --exclude='\.git|dist|\.pb\.go' .; \
 		make build; \
 	done
 
 benchmark: ## Run benchmarks
 	@echo "Running benchmarks..."
 	@go test -bench=. -benchmem ./...
-
-profile: ## Run with profiling
-	@echo "Starting with profiling..."
-	@go run main.go -config=config.dev.yaml -cpuprofile=cpu.prof -memprofile=mem.prof
 
 # Default target
 all: clean proto build test ## Clean, generate proto, build and test

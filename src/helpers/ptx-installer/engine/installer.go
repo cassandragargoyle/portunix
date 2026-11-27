@@ -1,4 +1,5 @@
 /*
+ *  SPDX-License-Identifier: MIT
  *  This file is part of CassandraGargoyle Community Project
  *  Licensed under the MIT License - see LICENSE file for details
  */
@@ -203,6 +204,9 @@ type InstallOptions struct {
 	DBPort     string
 	DBUser     string
 	DBPassword string
+	// skipDependencies is set when Install is called for a dependency whose
+	// own dependencies were already handled by the caller
+	skipDependencies bool
 }
 
 // Installer handles package installation operations
@@ -418,8 +422,8 @@ func (i *Installer) Install(options *InstallOptions) error {
 		return nil
 	}
 
-	// Resolve dependencies first
-	if len(pkg.Spec.Dependencies) > 0 {
+	// Resolve and install missing dependencies first (issue #203)
+	if len(pkg.Spec.Dependencies) > 0 && !options.skipDependencies {
 		fmt.Printf("\n📋 Checking dependencies: %v\n", pkg.Spec.Dependencies)
 
 		deps, err := i.registry.ResolveDependencies(options.PackageName)
@@ -429,11 +433,8 @@ func (i *Installer) Install(options *InstallOptions) error {
 
 		fmt.Printf("✅ Dependency resolution: %d packages in order\n", len(deps))
 
-		// Install dependencies (simplified - in full implementation would check if already installed)
-		for _, dep := range deps {
-			if dep != options.PackageName {
-				fmt.Printf("⚠️  Dependency %s should be installed first\n", dep)
-			}
+		if err := i.installDependencies(options, deps); err != nil {
+			return err
 		}
 	}
 
@@ -476,8 +477,7 @@ func (i *Installer) Install(options *InstallOptions) error {
 
 	// Package-manager types have no install method of their own that runs
 	// postInstall, so it runs here (issue #227)
-	switch effectiveType {
-	case "deb", "apt", "dnf", "yum", "snap", "pacman":
+	if isPackageManagerType(effectiveType) {
 		runPackageManagerPostInstall(variantSpec.PostInstall)
 	}
 
@@ -487,7 +487,7 @@ func (i *Installer) Install(options *InstallOptions) error {
 	// installResult returned by the install method (Issue #187 phase 2).
 	// PATH failures are non-fatal — the package is installed even if PATH
 	// wiring breaks.
-	if pathAppend := platformSpec.Environment["PATH_APPEND"]; pathAppend != "" {
+	if pathAppend := effectivePathAppend(&platformSpec, &variantSpec, effectiveType); pathAppend != "" {
 		expanded := expandEnvVars(pathAppend)
 		if result.installPath != "" {
 			expanded = strings.ReplaceAll(expanded, "${install_path}", result.installPath)
@@ -507,6 +507,44 @@ func (i *Installer) Install(options *InstallOptions) error {
 		}
 	}
 	return nil
+}
+
+// installDependencies installs each dependency in resolution order unless its
+// verification command already succeeds, then refreshes PATH so the package
+// itself finds the tools its dependencies installed
+func (i *Installer) installDependencies(options *InstallOptions, deps []string) error {
+	installedAny := false
+	for _, dep := range deps {
+		if dep == options.PackageName {
+			continue
+		}
+		if isDependencyInstalled(i.registry, dep) {
+			fmt.Printf("✅ Dependency %s is already installed\n", dep)
+			continue
+		}
+
+		fmt.Printf("📦 Installing dependency %s...\n", dep)
+		err := i.Install(&InstallOptions{PackageName: dep, Force: options.Force, skipDependencies: true})
+		if err != nil {
+			return fmt.Errorf("dependency %s failed to install: %w", dep, err)
+		}
+		installedAny = true
+	}
+	if installedAny {
+		refreshPath()
+	}
+	return nil
+}
+
+// isDependencyInstalled reports whether the dependency's verification
+// command succeeds on this platform; a package without one counts as missing
+func isDependencyInstalled(reg *registry.PackageRegistry, name string) bool {
+	pkg, err := reg.GetPackage(name)
+	if err != nil {
+		return false
+	}
+	installed, _ := runVerification(verifyCommandForOS(pkg, GetOperatingSystem()))
+	return installed
 }
 
 // installBundle installs every package listed in a Kind: "Bundle" entry, in
@@ -972,7 +1010,13 @@ func (i *Installer) installScript(platform *registry.PlatformSpec, variant *regi
 		// Build a short label for the spinner
 		spinnerLabel := fmt.Sprintf("Running: %s", truncateCommand(expandedScript, 80))
 
-		if err := runCommandWithSpinner(shellCommand(expandedScript), spinnerLabel); err != nil {
+		cmd, cleanup, err := scriptCommand(variant.ScriptShell, expandedScript)
+		if err != nil {
+			return fmt.Errorf("script failed: %w", err)
+		}
+		err = runCommandWithSpinner(cmd, spinnerLabel)
+		cleanup()
+		if err != nil {
 			return fmt.Errorf("script failed: %w", err)
 		}
 	}
@@ -984,6 +1028,9 @@ func (i *Installer) installScript(platform *registry.PlatformSpec, variant *regi
 	// A script can exit 0 without installing anything — confirm the result
 	// with the package's verification command (issue #201)
 	if platform.Verification != nil && strings.TrimSpace(platform.Verification.Command) != "" {
+		// The PATH_APPEND directory is added to the user PATH only after this
+		// method returns; the verification must already see it (issue #203)
+		prependProcessPath(resolvePathAppend(effectivePathAppend(platform, variant, "script"), installPath))
 		if err := verifyInstallation(platform.Verification.Command, installPath); err != nil {
 			return err
 		}
@@ -991,6 +1038,63 @@ func (i *Installer) installScript(platform *registry.PlatformSpec, variant *regi
 
 	fmt.Printf("✅ Script installation completed\n")
 	return nil
+}
+
+// isPackageManagerType reports whether an install type delegates to a system
+// package manager, which places binaries on the system PATH by itself
+func isPackageManagerType(installType string) bool {
+	switch installType {
+	case "deb", "apt", "dnf", "yum", "snap", "pacman":
+		return true
+	}
+	return false
+}
+
+// effectivePathAppend returns the raw PATH_APPEND value for an install: a
+// variant-level value wins (an empty one disables PATH wiring), package
+// manager installs skip the platform value, everything else uses it (issue #253)
+func effectivePathAppend(platform *registry.PlatformSpec, variant *registry.VariantSpec, installType string) string {
+	if variant != nil {
+		if value, ok := variant.Environment["PATH_APPEND"]; ok {
+			return value
+		}
+	}
+	if isPackageManagerType(installType) || platform == nil {
+		return ""
+	}
+	return platform.Environment["PATH_APPEND"]
+}
+
+// resolvePathAppend expands an environment.PATH_APPEND value for a script
+// install; it returns "" when a placeholder stays unresolved
+func resolvePathAppend(pathAppend, installPath string) string {
+	if strings.TrimSpace(pathAppend) == "" {
+		return ""
+	}
+	expanded := expandEnvVars(pathAppend)
+	expanded = strings.ReplaceAll(expanded, "${install_path}", installPath)
+	expanded = strings.ReplaceAll(expanded, "%install_path%", installPath)
+	if strings.Contains(expanded, "${") {
+		return ""
+	}
+	return expanded
+}
+
+// prependProcessPath puts dir in front of PATH of the current process when it
+// is not there yet, so commands run afterwards find binaries installed into it
+func prependProcessPath(dir string) {
+	if dir == "" {
+		return
+	}
+	clean := filepath.Clean(dir)
+	current := os.Getenv("PATH")
+	for _, p := range filepath.SplitList(current) {
+		if p != "" && strings.EqualFold(filepath.Clean(p), clean) {
+			return
+		}
+	}
+	_ = os.Setenv("PATH", dir+string(os.PathListSeparator)+current)
+	markSessionPathDir(dir)
 }
 
 // usesInstallPath reports whether any script line references ${INSTALL_PATH}

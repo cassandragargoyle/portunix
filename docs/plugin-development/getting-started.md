@@ -211,6 +211,63 @@ permissions:
 
 ```
 
+### Declaring Commands (issue #257)
+
+The `commands` list in `plugin.json` describes what a user calls as
+`portunix <plugin> <command>`. Portunix uses it for `--help-ai` and AI clients
+use it to discover what the plugin can do.
+
+- One entry per subcommand that a user calls: `portunix scraper fetch` →
+  `"name": "fetch"`
+- No entry for the plugin or its binary itself (`scraper`, `ptx-scraper`)
+- An empty list (`"commands": []`) for a plugin without subcommands
+- `subcommands`, `parameters` and `examples` describe that one command
+
+```json
+"commands": [
+  {
+    "name": "fetch",
+    "description": "Fetch a page and print its text",
+    "subcommands": [],
+    "parameters": [
+      {
+        "name": "url",
+        "type": "string",
+        "description": "Page URL",
+        "required": true,
+        "default_value": ""
+      }
+    ],
+    "examples": ["portunix scraper fetch https://example.com"]
+  }
+]
+```
+
+`portunix plugin validate <plugin-path>` warns when the only command looks like
+a placeholder for the plugin itself.
+
+### Answering `--help-ai`
+
+For `portunix <plugin> [command] --help-ai` Portunix asks the plugin first:
+
+1. The plugin is started with the same arguments, stdin closed and
+   `PORTUNIX_HELP_AI=1` in its environment
+2. When it exits with code 0 and prints a JSON object to stdout, that JSON is
+   the answer, printed unchanged
+3. When it exits without a JSON object (for example with
+   `No such option: --help-ai`), Portunix answers with JSON built from the
+   `commands` list of the manifest (`"source": "registry"`)
+4. When it does not exit within 10 seconds, it is killed together with its
+   child processes (e.g. the interpreter started by a wrapper script) and the
+   call fails with a timeout error — there is no fallback. Ctrl+C kills it the
+   same way
+
+A plugin must therefore either answer `--help-ai` with JSON or reject it as an
+unknown option. It must never ignore the flag and run the command:
+`portunix scraper fetch https://example.com --help-ai` would then fetch the
+page. Standard argument parsers (argparse, click, picocli, Cobra, Go `flag`)
+reject unknown options by default.
+
 ### Declaring Platform Support (schema v1.1.0, issue #175)
 
 Plugins that extend a higher-level hosting platform — **Portunix Synapse**, Pack,

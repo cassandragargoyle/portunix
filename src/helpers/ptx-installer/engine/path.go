@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 )
 
 // AddToUserPath adds binPath to the current user's PATH environment variable.
@@ -21,7 +22,10 @@ func AddToUserPath(binPath string) error {
 	if binPath == "" {
 		return nil
 	}
-	if IsInUserPath(binPath) {
+	// A directory this process put on PATH itself (e.g. for the verification
+	// of a script install) is not persisted yet and must still be written
+	// (issue #203)
+	if !needsPersisting(binPath) {
 		return nil
 	}
 	switch runtime.GOOS {
@@ -43,6 +47,44 @@ func IsInUserPath(binPath string) bool {
 		}
 	}
 	return false
+}
+
+// needsPersisting reports whether binPath still has to be written to the
+// user PATH: it is missing from the process PATH, or only this process put
+// it there
+func needsPersisting(binPath string) bool {
+	return !IsInUserPath(binPath) || isSessionPathDir(binPath)
+}
+
+// sessionPathDirs holds directories this process added to its own PATH
+// without persisting them
+var (
+	sessionPathDirsMu sync.Mutex
+	sessionPathDirs   = map[string]bool{}
+)
+
+// markSessionPathDir records dir as added to the process PATH only
+func markSessionPathDir(dir string) {
+	sessionPathDirsMu.Lock()
+	defer sessionPathDirsMu.Unlock()
+	sessionPathDirs[pathKey(dir)] = true
+}
+
+// isSessionPathDir reports whether dir was added to the process PATH only
+func isSessionPathDir(dir string) bool {
+	sessionPathDirsMu.Lock()
+	defer sessionPathDirsMu.Unlock()
+	return sessionPathDirs[pathKey(dir)]
+}
+
+// pathKey normalizes a PATH entry for comparison; Windows paths are case
+// insensitive
+func pathKey(dir string) string {
+	key := filepath.Clean(dir)
+	if runtime.GOOS == "windows" {
+		key = strings.ToLower(key)
+	}
+	return key
 }
 
 func addToWindowsUserPath(binPath string) error {

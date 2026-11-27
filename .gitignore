@@ -19,7 +19,7 @@ src/helpers/ptx-*/ptx-*.exe
 # the binary name contains "installer", so it needs an embedded asInvoker
 # manifest or Windows auto-elevates it via installer-detection.
 !src/helpers/ptx-installer/ptx-installer.exe.manifest
-!src/helpers/ptx-installer/ptx-installer.syso
+!src/helpers/ptx-installer/ptx-installer_windows_*.syso
 
 # Distribution / build outputs
 /dist/
@@ -117,3 +117,6 @@ private.key
 secrets/
 .claude/skills/capability-registry/Thumbs.db
 portunix.exe~
+
+# Personal scratch notes (local only)
+NOTES.md

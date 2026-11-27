@@ -1,0 +1,7 @@
+plugin:
+  name: my-go-plugin
+  version: 1.0.0
+  description: Example Go plugin for Portunix
+
+log_level: info
+timeout: 30

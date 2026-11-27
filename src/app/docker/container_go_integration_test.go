@@ -6,13 +6,12 @@ package docker
 import (
 	"context"
 	"fmt"
-	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -172,9 +171,9 @@ func isDockerAvailable() bool {
 }
 
 func compilePortunixBinary() error {
-	// Change to project root and compile
+	// Compile in project root (tests run in the package directory src/app/<pkg>)
 	cmd := exec.Command("go", "build", "-o", "portunix")
-	cmd.Dir = "/media/zdenek/DevDisk/DEV/CassandraGargoyle/portunix/portunix"
+	cmd.Dir = filepath.Join("..", "..", "..")
 	return cmd.Run()
 }
 

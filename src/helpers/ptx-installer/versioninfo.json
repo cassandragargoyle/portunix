@@ -2,13 +2,13 @@
     "FixedFileInfo": {
         "FileVersion": {
             "Major": 2,
-            "Minor": 7,
+            "Minor": 8,
             "Patch": 0,
             "Build": 0
         },
         "ProductVersion": {
             "Major": 2,
-            "Minor": 7,
+            "Minor": 8,
             "Patch": 0,
             "Build": 0
         },
@@ -22,14 +22,14 @@
         "Comments": "",
         "CompanyName": "Portunix",
         "FileDescription": "Portunix installer helper",
-        "FileVersion": "2.7.0",
+        "FileVersion": "2.8.0",
         "InternalName": "ptx-installer",
         "LegalCopyright": "CassandraGargoyle team. All rights reserved.",
         "LegalTrademarks": "",
         "OriginalFilename": "ptx-installer.exe",
         "PrivateBuild": "",
         "ProductName": "Portunix",
-        "ProductVersion": "2.7.0",
+        "ProductVersion": "2.8.0",
         "SpecialBuild": ""
     },
     "VarFileInfo": {

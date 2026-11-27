@@ -120,3 +120,58 @@ func TestWrapForTerminal_UTF8_NoBrokenRunes(t *testing.T) {
 		}
 	}
 }
+
+func TestTruncateString_DescriptionWidth(t *testing.T) {
+	if pluginListDescriptionWidth != 45 {
+		t.Fatalf("pluginListDescriptionWidth = %d; want 45", pluginListDescriptionWidth)
+	}
+
+	exact := strings.Repeat("d", pluginListDescriptionWidth)
+	if got := truncateString(exact, pluginListDescriptionWidth); got != exact {
+		t.Errorf("description of exactly %d runes must not be truncated, got %q", pluginListDescriptionWidth, got)
+	}
+
+	long := "Universal plugin providing a very long description that exceeds the column"
+	got := truncateString(long, pluginListDescriptionWidth)
+	if utf8.RuneCountInString(got) != pluginListDescriptionWidth {
+		t.Errorf("expected %d runes, got %d (%q)", pluginListDescriptionWidth, utf8.RuneCountInString(got), got)
+	}
+	if !strings.HasSuffix(got, "...") {
+		t.Errorf("expected truncated description to end with ellipsis, got %q", got)
+	}
+}
+
+func TestResolvePluginListFormat(t *testing.T) {
+	cases := []struct {
+		name          string
+		jsonFlag      bool
+		output        string
+		outputChanged bool
+		want          string
+		wantErr       bool
+	}{
+		{"default table", false, "table", false, "table", false},
+		{"explicit yaml", false, "yaml", true, "yaml", false},
+		{"json flag alone", true, "table", false, "json", false},
+		{"json flag with output json", true, "json", true, "json", false},
+		{"json flag with output yaml", true, "yaml", true, "", true},
+		{"json flag with output table", true, "table", true, "", true},
+		{"uppercase output json", false, "JSON", true, "json", false},
+		{"mixed case output yaml", false, "Yaml", true, "yaml", false},
+		{"json flag with uppercase output json", true, "JSON", true, "json", false},
+		{"unknown output format", false, "xml", true, "", true},
+		{"json flag with unknown output format", true, "xml", true, "", true},
+		{"empty output format", false, "", true, "", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := resolvePluginListFormat(tc.jsonFlag, tc.output, tc.outputChanged)
+			if (err != nil) != tc.wantErr {
+				t.Fatalf("err = %v; wantErr %v", err, tc.wantErr)
+			}
+			if got != tc.want {
+				t.Errorf("format = %q; want %q", got, tc.want)
+			}
+		})
+	}
+}
